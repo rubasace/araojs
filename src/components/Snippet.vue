@@ -230,8 +230,8 @@ export default {
     background-position-y: center
     text-align: center
     flex-shrink: 0
-    font-size: 0.75em
-    padding: 0.15em 0
+    font-size: 1em
+    padding: 0.3em 0
 
   .code-content
     width: 100%
