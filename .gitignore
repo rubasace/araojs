@@ -1,0 +1,19 @@
+# Example .gitignore file for your config dir.
+# A * ensures that everything will be ignored.
+*
+.*
+
+# You can whitelist files/folders with !, these will not be ignored.
+!.gitignore
+!.eslintrc.js
+!.browserslistrc
+!babel.config.js
+!package.json
+!package-lock.json
+!README.md
+!TODO.txt
+!vue.config.js.back
+!src
+!src/**
+!public
+!public/**

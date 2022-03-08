@@ -1,0 +1,127 @@
+@import './base'
+@import url('https://fonts.googleapis.com/css?family=Roboto:100,300,400')
+@import url('https://fonts.googleapis.com/css?family=Source+Code+Pro')
+
+//Size variables
+$header-height: 14% !default
+$footer-height: 10% !default
+$horizontal-padding: 6% !default
+
+//Color variables
+$textColor: black !default
+$baseColor: rgb(62,201,125) !default
+$secondaryColor: rgb(46,129,142) !default
+
+//Processed colors
+$quoteColor: darken($baseColor, 20%) !default
+$baseColorGradient: linear-gradient(62deg, rgba($baseColor,0) 0%, rgba($baseColor,1) 80%, rgba($secondaryColor,1) 100%) !default
+
+//Background
+$background-color: whitesmoke !default
+$background-image-opacity: 0.07 !default
+
+.eg-slideshow
+  color: $textColor
+  font-family: 'Roboto', serif
+  background: black
+
+  .eg-slide-content
+    background-color: $background-color
+
+  .shadowbox
+    box-shadow: 0.45em 0.45em 0.25em 0.25em #bbb
+
+  .code-window
+    .code-header
+      background-color: #353b45
+      color: white
+    code
+      font-family: "Source Code Pro", Courier
+
+  .quote
+    .text
+      &:before
+        font-family: 'Sanchez'
+        font-weight: bold
+        color: $quoteColor
+
+      &:after
+        font-family: 'Sanchez'
+        font-weight: bold
+        color: $quoteColor
+
+  .baseSlide
+    display: flex
+    flex-direction: column
+    .header
+      height: $header-height
+      background: $baseColorGradient
+      padding: 0 $horizontal-padding
+      overflow: hidden
+
+      display: flex
+      flex-direction: column
+      justify-content: center
+      flex-shrink: 0
+
+      .title
+        margin: 0
+        text-align: left
+        text-transform: uppercase
+
+    .body
+      position: relative
+      box-sizing: border-box
+      padding: 3% $horizontal-padding
+      flex-grow: 1
+      overflow: hidden
+
+      .body-content
+        overflow: hidden
+        height: 100%
+        text-align: center
+
+    .footer
+      height: $footer-height
+      border-top: 0.05em solid $baseColor
+      overflow: hidden
+      margin: 0 $horizontal-padding/2
+      display: flex
+      flex-direction: column
+      justify-content: center
+      flex-shrink: 0
+      .logo
+        position: relative
+        //left: 89%
+        height: 1.2em
+
+  @if variable-exists(background-image)
+    .eg-slide-content::before
+      content: ' ' /* required to show background */
+      display: block
+      position: absolute
+      top: 0
+      left: 0
+      width: 100%
+      height: 100%
+      background-size: cover
+      background-image: $background-image
+      background-position-y: -2rem
+      opacity: $background-image-opacity
+
+@if variable-exists(logo)
+  .logo
+    background-image: $logo
+    background-repeat: no-repeat
+
+@if variable-exists(company-logo)
+  .companyLogo
+    background-image: $company-logo
+    background-repeat: no-repeat
+    background-size: cover
+
+//theme quick-fixes to avoid themes fixing certain values that break stuff
+code[class*="language-"],
+pre[class*="language-"]
+  line-height: initial !important
+  border-radius: 0 !important
