@@ -34,7 +34,7 @@ steps:
         from_secret: npm-token
     commands:
       - echo "//npm.nasvigo.com/:_authToken=\"$${NPM_TOKEN}\"" > ~/.npmrc
-      - npm version --no-git-tag-version ${DRONE_TAG}
+      - npm version --allow-same-version --no-git-tag-version ${DRONE_TAG}
       - npm publish
     when:
       event:
