@@ -3,15 +3,15 @@ type: kubernetes
 name: default
 
 steps:
-  - name: build
-    image: node:14.18.3-alpine3.15
-    environment:
-      NPM_TOKEN:
-        from_secret: npm_token
-    commands:
-      - echo "//npm.nasvigo.com/:_authToken=\"$${NPM_TOKEN}\"" > ~/.npmrc
-      - npm ci
-      - npm run build-lib
+#  - name: build
+#    image: node:14.18.3-alpine3.15
+#    environment:
+#      NPM_TOKEN:
+#        from_secret: npm_token
+#    commands:
+#      - echo "//npm.nasvigo.com/:_authToken=\"$${NPM_TOKEN}\"" > ~/.npmrc
+#      - npm ci
+#      - npm run build-lib
 
   - name: deploy-snapshot
     image: node:14.18.3-alpine3.15
@@ -25,7 +25,7 @@ steps:
       - npm publish
     when:
       branch:
-        - master
+        - main
 
   - name: deploy-release
     image: node:14.18.3-alpine3.15
