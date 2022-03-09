@@ -31,7 +31,7 @@ steps:
     image: node:14.18.3-alpine3.15
     environment:
       NPM_TOKEN:
-        from_secret: npm-token
+        from_secret: npm_token
     commands:
       - echo "//npm.nasvigo.com/:_authToken=\"$${NPM_TOKEN}\"" > ~/.npmrc
       - npm version --allow-same-version --no-git-tag-version ${DRONE_TAG}
