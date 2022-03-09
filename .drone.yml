@@ -1,0 +1,45 @@
+kind: pipeline
+type: kubernetes
+name: default
+
+steps:
+  - name: build
+    image: node:14.18.3-alpine3.15
+    environment:
+      NPM_TOKEN:
+        from_secret: npm_token
+    commands:
+      - echo "//npm.nasvigo.com/:_authToken=\"$${NPM_TOKEN}\"" > ~/.npmrc
+      - npm ci
+      - npm run build-lib
+
+  - name: deploy-snapshot
+    image: node:14.18.3-alpine3.15
+    environment:
+      NPM_TOKEN:
+        from_secret: npm_token
+    commands:
+      - echo "//npm.nasvigo.com/:_authToken=\"$${NPM_TOKEN}\"" > ~/.npmrc
+      - version=`node -p "require('./package.json').version"`
+      - npm version --no-git-tag-version $${version}-SNAPSHOT.${DRONE_BUILD_NUMBER}
+      - npm publish
+    when:
+      branch:
+        - master
+
+  - name: deploy-release
+    image: node:14.18.3-alpine3.15
+    environment:
+      NPM_TOKEN:
+        from_secret: npm-token
+    commands:
+      - echo "//npm.nasvigo.com/:_authToken=\"$${NPM_TOKEN}\"" > ~/.npmrc
+      - npm version --no-git-tag-version ${DRONE_TAG}
+      - npm publish
+    when:
+      event:
+        - tag
+trigger:
+  event:
+    - push
+    - tag
