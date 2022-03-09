@@ -273,7 +273,7 @@ $boxVerticalPadding: 0.5em
   margin-left: 0.5em
 ::v-deep .snippet-code
   &.dimmed
-    opacity: 20% !important
+    opacity: 0.15
   &.highlighted
     filter: brightness(120%) saturate(140%)
 
