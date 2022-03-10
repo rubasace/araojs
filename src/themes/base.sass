@@ -1,7 +1,17 @@
 @import './layout'
 @import './bootstrap'
 
+@keyframes hideMouse
+  0%
+    cursor: unset
+  99%
+    cursor: unset
+  100%
+    cursor: none
+
 .eg-slideshow
+  &:hover
+    animation: hideMouse 4s
   cursor: none
   margin-top: 0
   background-attachment: fixed
