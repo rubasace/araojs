@@ -3,7 +3,7 @@
     .eg-slide(v-if='active')
       .eg-slide-content.flex.center
         .full-size-box.flex.center
-          img(:src="imageFile").full
+          img(:src="imageFile").full-width
 </template>
 
 <script>
