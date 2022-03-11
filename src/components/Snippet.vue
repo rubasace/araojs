@@ -213,7 +213,7 @@ export default {
   flex-direction: column
   margin: 0 auto
   height: 90%
-  width: 90%
+  width: 80%
   border-radius: 0.5em
   overflow: hidden
 

@@ -36,5 +36,14 @@ export default {
         Vue.directive('visible', function(el, binding) {
             el.style.visibility = binding.value ? 'visible' : 'hidden';
         });
+        document.body.classList.add('nocursor');
+        let timeoutId;
+        document.addEventListener('mousemove', e => {
+            document.body.classList.remove('nocursor');
+            if(timeoutId){
+                clearTimeout(timeoutId)
+            }
+            timeoutId = setTimeout(() => document.body.classList.add('nocursor'), 4000);
+        });
     }
 }
