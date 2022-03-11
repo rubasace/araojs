@@ -20,7 +20,6 @@
 
 
 import CustomCodeBlock from "./CustomCodeBlock";
-import textfit from 'textfit';
 
 export default {
   components: {
@@ -61,29 +60,22 @@ export default {
   },
   data() {
     return {
-      rawContent: "",
+      stringContent: "",
+      processedSnippet: "",
       cssProps: {
         backgroundImage: `url(${require('../assets/icons/code-buttons.svg')})`
       }
     }
   },
-  beforeMount() {
-    import("!!raw-loader!@/assets/snippets/" + this.file).then(content => this.rawContent = content.default);
-  },
-  beforeUpdate() {
-    this.fitCode()
-  },
   created() {
-    window.addEventListener("resize", this.fitCode);
-  },
-  destroyed() {
-    window.removeEventListener("resize", this.fitCode);
+    import("!!raw-loader!@/assets/snippets/" + this.file).then(content => this.processContent(content))
   },
   methods: {
-    fitCode(){
-      this.$nextTick(() => {
-        textfit(document.getElementById(this.snippetId));
-      })
+    processContent(content) {
+      this.stringContent = typeof content.default !== "object" ? content.default : JSON.stringify(content.default, null, 4)
+      this.processedSnippet = this.stringContent.split('\n')
+          .map((line, index) => this.lineToTag(line, index, false))
+          .join('\n');
     },
     commentVisible(index) {
       let comment = this.comments[index + 1];
@@ -103,16 +95,16 @@ export default {
       div.textContent = content;
       return div.innerHTML;
     },
-    createLineNumberSpan(index, extraClass){
-      if(this.hideLineNumbers){
+    createLineNumberSpan(index, extraClass) {
+      if (this.hideLineNumbers) {
         return '';
       }
       const separator = index === 0 ? '<span class="separator"></span>' : '';
-      return `<span class="snippet-code line-number nohighlight ${extraClass}">${index+1}</span>${separator}`;
+      return `<span class="snippet-code line-number nohighlight ${extraClass}">${index + 1}</span>${separator}`;
     },
-    lineToTag(line, index) {
+    lineToTag(line, index, highlight) {
 
-      if (!this.highlightedLines.length) {
+      if (!highlight || !this.highlightedLines.length) {
         return `${this.createLineNumberSpan(index)}<span class='snippet-line'><span>${this.escapeContent(line)}</span></span>`;
       }
       const currentHighlight = this.highlightedLines.filter(e => e.active && (e.lines === undefined || e.lines.includes(index + 1)))[0];
@@ -171,9 +163,11 @@ export default {
       return this.lang ? this.lang : this.file.split('.').slice(-1)[0];
     },
     codeSnippet() {
-      const stringContent = typeof this.rawContent !== "object" ? this.rawContent : JSON.stringify(this.rawContent, null, 4);
-      return stringContent.split('\n')
-          .map((line, index) => this.lineToTag(line, index))
+      if(this.parentSlide.step == 1){
+        return this.processedSnippet
+      }
+      return this.stringContent.split('\n')
+          .map((line, index) => this.lineToTag(line, index, true))
           .join('\n');
     },
     parentSlide() {
@@ -263,17 +257,24 @@ $boxVerticalPadding: 0.5em
   top: $boxVerticalPadding
   bottom: $boxVerticalPadding
   border-right: solid 2px $lineColor
+
 ::v-deep .code-div
   padding-top: $boxVerticalPadding
   padding-bottom: $boxVerticalPadding
   padding-left: 0
   padding-right: $boxVerticalPadding
 
+::v-deep .language-java
+  //workaround while we don't fix Java on PrismJs
+  color: #fd9170
+
 ::v-deep .snippet-line
   margin-left: 0.5em
+
 ::v-deep .snippet-code
   &.dimmed
     opacity: 0.15
+
   &.highlighted
     filter: brightness(120%) saturate(140%)
 
@@ -284,6 +285,7 @@ $boxVerticalPadding: 0.5em
     margin-left: 1%
     display: inline-block
     color: lighten($lineColor, 35%) !important
+
     .hljs-number
       color: lighten($lineColor, 35%) !important
 

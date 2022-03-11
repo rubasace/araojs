@@ -1,45 +1,49 @@
 <template lang='pug'>
   .container
     .code-box
-      pre(:id='id' :class='"line-numbers language-"+lang')
-        code(:id='id3')
+      pre(:class='"line-numbers language-"+lang' ref='pre')
+        code(:id='id3' ref='code')
     .comments-box
       pre
-        code(:id='id2')
+        code(ref='raw')
           slot
 </template>
 
 <script>
 
-//TODO cleanup this copy-paste a bit :)
+import Prism from 'prismjs';
+import textfit from "textfit";
+
 function randId() {
   return Math.random().toString(36).substr(2, 10)
 }
 
-import Prism from 'prismjs';
 
 export default {
   props: {
-    id: {default: () => randId()},
-    id2: {default: () => randId()},
     id3: {default: () => randId()},
     lang: String
-  },
-  mounted: function () {
-    this.update()
   },
   updated: function () {
     this.update()
   },
+  created() {
+    window.addEventListener("resize", this.fitCode);
+  },
+  destroyed() {
+    window.removeEventListener("resize", this.fitCode);
+  },
   methods: {
-    update: function () {
-      var codeBlock = document.getElementById(this.id)
-      var commentsContent = document.getElementById(this.id2)
+    update() {
+      var codeBlock = this.$refs.pre
+      var commentsContent = this.$refs.raw
       var codeContent = document.getElementById(this.id3)
       codeContent.innerHTML = commentsContent.innerHTML
-      this.$nextTick(() => {
-        Prism.highlightElement(codeBlock)
-      })
+      Prism.highlightElement(codeBlock)
+      this.fitCode()
+    },
+    fitCode() {
+      textfit(this.$refs.pre)
     }
   }
 }
@@ -48,11 +52,14 @@ export default {
 .container
   position: relative
   width: 100%
+
   .eg-code-block
     text-align: left
     font-size: 0.5em
+
     .box
       padding: 0
+
   .comments-box
     position: absolute
     color: rgba(0, 0, 0, 0.0)
