@@ -1,9 +1,9 @@
 <template lang='pug'>
-  .container
-    .code-box
-      pre(:class='"line-numbers language-"+lang' ref='pre')
+  .container.full
+    .code-box.full
+      pre(:class='"processed-snippet language-"+lang' ref='pre').full
         code(:id='id3' ref='code')
-    .comments-box
+    .raw-snippet
       pre
         code(ref='raw')
           slot
@@ -43,7 +43,7 @@ export default {
       this.fitCode()
     },
     fitCode() {
-      textfit(this.$refs.pre)
+      textfit(this.$refs.pre, {minFontSize:1})
     }
   }
 }
@@ -52,15 +52,16 @@ export default {
 .container
   position: relative
   width: 100%
-
-  .eg-code-block
-    text-align: left
-    font-size: 0.5em
-
-    .box
-      padding: 0
-
-  .comments-box
+  .code-box
+    .processed-snippet
+      padding-right: 1em
+      box-sizing: border-box
+  pre,
+  code
+    padding: 0
+    box-sizing: border-box
+    margin: 0
+  .raw-snippet
     position: absolute
     color: rgba(0, 0, 0, 0.0)
     top: 0

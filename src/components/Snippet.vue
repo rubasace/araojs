@@ -11,10 +11,6 @@
 </template>
 
 <script>
-// TODO add targetStep and take it into consideration for processedHighlights
-// TODO make fit work on change of size
-// TODO resize automatically?
-// TODO load json files as String and not as Object
 // TODO fix line numbers width not being always the same (ObjectMapperConfiguration vs DefaultControllerAdvice)
 // TODO fix separator not always properly placed (LoggingInterceptor)
 
@@ -225,10 +221,9 @@ export default {
     text-align: center
     flex-shrink: 0
     font-size: 1em
-    padding: 0.3em 0
+    padding: 0.45em 0
 
   .code-content
-    width: 100%
     margin: 0
     padding: 0
     text-align: left
@@ -236,18 +231,6 @@ export default {
     flex: 1 0 auto
     height: 0
 
-    ::v-deep div
-      width: 100%
-      height: 100%
-      box-sizing: border-box
-
-    ::v-deep pre,
-    ::v-deep code
-      padding: 0
-      box-sizing: border-box
-      margin: 0
-      width: 100%
-      height: 100%
 
 $lineColor: #686868
 $boxVerticalPadding: 0.5em
@@ -285,20 +268,5 @@ $boxVerticalPadding: 0.5em
     margin-left: 1%
     display: inline-block
     color: lighten($lineColor, 35%) !important
-
-    .hljs-number
-      color: lighten($lineColor, 35%) !important
-
-    code-content
-      .eg-code-block.container
-        width: 100% !important
-
-        .code-box
-          width: 100% !important
-
-      span
-        width: 100%
-        height: 1em
-        text-align: left
 
 </style>
