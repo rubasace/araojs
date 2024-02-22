@@ -23,20 +23,20 @@ steps:
       - npm ci
       - npm run build-lib
 
-      - name: deploy-snapshot
-        image: twentyninetech.jfrog.io/default-docker/node:18.7.0-alpine3.16
-        volumes:
-          - name: m2-cache
-            path: /root/.npm
-        commands:
-          - version=`node -p "require('./package.json').version"`
-          - npm version --no-git-tag-version $${version}-SNAPSHOT.${DRONE_BUILD_NUMBER}
-          - npm publish
-        when:
-          branch:
-            - main
-          event:
-            - push
+  - name: deploy-snapshot
+    image: twentyninetech.jfrog.io/default-docker/node:18.7.0-alpine3.16
+    volumes:
+      - name: m2-cache
+        path: /root/.npm
+    commands:
+      - version=`node -p "require('./package.json').version"`
+      - npm version --no-git-tag-version $${version}-SNAPSHOT.${DRONE_BUILD_NUMBER}
+      - npm publish
+    when:
+      branch:
+        - main
+      event:
+        - push
 
   - name: deploy-feature-snapshot
     image: twentyninetech.jfrog.io/default-docker/node:18.7.0-alpine3.16
