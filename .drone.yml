@@ -3,43 +3,87 @@ type: kubernetes
 name: default
 
 steps:
-#  - name: build
-#    image: node:14.18.3-alpine3.15
-#    environment:
-#      NPM_TOKEN:
-#        from_secret: npm_token
-#    commands:
-#      - echo "//npm.nasvigo.com/:_authToken=\"$${NPM_TOKEN}\"" > ~/.npmrc
-#      - npm ci
-#      - npm run build-lib
-
-  - name: deploy-snapshot
-    image: node:14.18.3-alpine3.15
+  - name: npm-auth
+    image: twentyninetech.jfrog.io/default-docker/alpine:3.16.2
     environment:
-      NPM_TOKEN:
-        from_secret: npm_token
+      NPM_AUTH:
+        from_secret: npm_auth
+      NPM_EMAIL:
+        from_secret: npm_email
     commands:
-      - echo "//npm.nasvigo.com/:_authToken=\"$${NPM_TOKEN}\"" > ~/.npmrc
-      - version=`node -p "require('./package.json').version"`
-      - npm version --no-git-tag-version $${version}-SNAPSHOT.${DRONE_BUILD_NUMBER}
-      - npm publish
-    when:
-      branch:
-        - main
+      - apk add gettext
+      - envsubst < .drone/.npmrc > .npmrc
 
-  - name: deploy-release
-    image: node:14.18.3-alpine3.15
-    environment:
-      NPM_TOKEN:
-        from_secret: npm_token
+  - name: build
+    image: twentyninetech.jfrog.io/default-docker/node:18.7.0-alpine3.16
+    volumes:
+      - name: m2-cache
+        path: /root/.npm
     commands:
-      - echo "//npm.nasvigo.com/:_authToken=\"$${NPM_TOKEN}\"" > ~/.npmrc
-      - npm version --allow-same-version --no-git-tag-version ${DRONE_TAG}
-      - npm publish
-    when:
-      event:
-        - tag
+      - npm ci
+      - npm run build-lib
+
+      - name: deploy-snapshot
+        image: twentyninetech.jfrog.io/default-docker/node:18.7.0-alpine3.16
+        volumes:
+          - name: m2-cache
+            path: /root/.npm
+        commands:
+          - version=`node -p "require('./package.json').version"`
+          - npm version --no-git-tag-version $${version}-SNAPSHOT.${DRONE_BUILD_NUMBER}
+          - npm publish
+        when:
+          branch:
+            - main
+          event:
+            - push
+
+      - name: deploy-feature-snapshot
+        image: twentyninetech.jfrog.io/default-docker/node:18.7.0-alpine3.16
+        volumes:
+          - name: m2-cache
+            path: /root/.npm
+        commands:
+          - version=`node -p "require('./package.json').version"`
+          - npm version --no-git-tag-version $${version}-SNAPSHOT-${DRONE_BRANCH#feature/}.${DRONE_BUILD_NUMBER}
+          - npm publish
+        when:
+          branch:
+            - feature/*
+          event:
+            - push
+
+      - name: deploy-release
+        image: twentyninetech.jfrog.io/default-docker/node:18.7.0-alpine3.16
+        volumes:
+          - name: m2-cache
+            path: /root/.npm
+        commands:
+          - npm version --allow-same-version --no-git-tag-version ${CI_BUILD_TARGET}
+          - npm publish
+        when:
+          event:
+            - promote
+      - name: tag-release
+        image: docker:git
+        commands:
+          - git add .
+          - git commit -m "Release ${CI_BUILD_TARGET}"
+          - git tag ${CI_BUILD_TARGET}
+          - git push origin ${CI_BUILD_TARGET}
+        when:
+          event:
+            - promote
+
+volumes:
+  - name: npm-cache
+    host:
+      path: /var/lib/cache/.npm
+
 trigger:
   event:
     - push
-    - tag
+    - promote
+
+image_pull_secrets:
+  - jfrog-credentials

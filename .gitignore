@@ -4,6 +4,8 @@
 .*
 
 # You can whitelist files/folders with !, these will not be ignored.
+!.drone
+!.drone/**
 !.drone.yml
 !.gitignore
 !.eslintrc.js
