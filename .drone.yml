@@ -38,42 +38,42 @@ steps:
           event:
             - push
 
-      - name: deploy-feature-snapshot
-        image: twentyninetech.jfrog.io/default-docker/node:18.7.0-alpine3.16
-        volumes:
-          - name: m2-cache
-            path: /root/.npm
-        commands:
-          - version=`node -p "require('./package.json').version"`
-          - npm version --no-git-tag-version $${version}-SNAPSHOT-${DRONE_BRANCH#feature/}.${DRONE_BUILD_NUMBER}
-          - npm publish
-        when:
-          branch:
-            - feature/*
-          event:
-            - push
+  - name: deploy-feature-snapshot
+    image: twentyninetech.jfrog.io/default-docker/node:18.7.0-alpine3.16
+    volumes:
+      - name: m2-cache
+        path: /root/.npm
+    commands:
+      - version=`node -p "require('./package.json').version"`
+      - npm version --no-git-tag-version $${version}-SNAPSHOT-${DRONE_BRANCH#feature/}.${DRONE_BUILD_NUMBER}
+      - npm publish
+    when:
+      branch:
+        - feature/*
+      event:
+        - push
 
-      - name: deploy-release
-        image: twentyninetech.jfrog.io/default-docker/node:18.7.0-alpine3.16
-        volumes:
-          - name: m2-cache
-            path: /root/.npm
-        commands:
-          - npm version --allow-same-version --no-git-tag-version ${CI_BUILD_TARGET}
-          - npm publish
-        when:
-          event:
-            - promote
-      - name: tag-release
-        image: docker:git
-        commands:
-          - git add .
-          - git commit -m "Release ${CI_BUILD_TARGET}"
-          - git tag ${CI_BUILD_TARGET}
-          - git push origin ${CI_BUILD_TARGET}
-        when:
-          event:
-            - promote
+  - name: deploy-release
+    image: twentyninetech.jfrog.io/default-docker/node:18.7.0-alpine3.16
+    volumes:
+      - name: m2-cache
+        path: /root/.npm
+    commands:
+      - npm version --allow-same-version --no-git-tag-version ${CI_BUILD_TARGET}
+      - npm publish
+    when:
+      event:
+        - promote
+  - name: tag-release
+    image: docker:git
+    commands:
+      - git add .
+      - git commit -m "Release ${CI_BUILD_TARGET}"
+      - git tag ${CI_BUILD_TARGET}
+      - git push origin ${CI_BUILD_TARGET}
+    when:
+      event:
+        - promote
 
 volumes:
   - name: npm-cache
