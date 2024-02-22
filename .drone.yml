@@ -15,7 +15,7 @@ steps:
       - envsubst < .drone/.npmrc > .npmrc
 
   - name: build
-    image: twentyninetech.jfrog.io/default-docker/node:18.7.0-alpine3.16
+    image: twentyninetech.jfrog.io/default-docker/node:8.5.0-slim
     volumes:
       - name: m2-cache
         path: /root/.npm
@@ -24,7 +24,7 @@ steps:
       - npm run build-lib
 
   - name: deploy-snapshot
-    image: twentyninetech.jfrog.io/default-docker/node:18.7.0-alpine3.16
+    image: twentyninetech.jfrog.io/default-docker/node:8.5.0-slim
     volumes:
       - name: m2-cache
         path: /root/.npm
@@ -39,7 +39,7 @@ steps:
         - push
 
   - name: deploy-feature-snapshot
-    image: twentyninetech.jfrog.io/default-docker/node:18.7.0-alpine3.16
+    image: twentyninetech.jfrog.io/default-docker/node:8.5.0-slim
     volumes:
       - name: m2-cache
         path: /root/.npm
@@ -54,7 +54,7 @@ steps:
         - push
 
   - name: deploy-release
-    image: twentyninetech.jfrog.io/default-docker/node:18.7.0-alpine3.16
+    image: twentyninetech.jfrog.io/default-docker/node:8.5.0-slim
     volumes:
       - name: m2-cache
         path: /root/.npm
