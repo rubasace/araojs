@@ -30,26 +30,38 @@ function timing(host) {
 
 // Apply `change` (which returns the elements it made appear), then Invert and Play: each element
 // starts where `first` saw it and glides to its new place; elements that appeared fade in.
+// Every position is read before any animation starts: a started animation moves its element's
+// descendants at once, so reading after it would see them already displaced.
 export function flip(host, first, change) {
   for (const el of first.keys()) el.__phGlide?.cancel() // positions read from here on are final
   const appeared = change()
   // rects are in screen px, translations in canvas px: undo the deck's scale
   const scale = host.getBoundingClientRect().width / host.offsetWidth || 1
   const { duration, easing } = timing(host)
-  const moved = new Map() // animated element → its total shift, in screen px
+
+  // Read: total shift of every element that can move (`first` is in document order, so an
+  // ancestor is always decided before its descendants)
+  const moved = new Map() // element that will glide → its total shift, in screen px
+  const glides = []
   for (const [el, a] of first) {
     const b = a && box(el)
     if (!b) continue
     const shift = { x: a.left - b.left, y: a.top - b.top }
-    // an animated ancestor already carries this element: only the difference is left to animate
+    // the nearest gliding ancestor carries this element by its own total shift:
+    // only the difference is left to animate
     let x = shift.x, y = shift.y
     for (let p = el.parentElement; p && p !== host; p = p.parentElement) {
       const d = moved.get(p)
       if (d) { x -= d.x; y -= d.y; break }
     }
     if (Math.abs(x) < 0.5 && Math.abs(y) < 0.5) continue
-    if (getComputedStyle(el).display === 'inline') continue
+    if (getComputedStyle(el).display === 'inline') continue // inline boxes cannot be translated
     moved.set(el, shift)
+    glides.push([el, x, y])
+  }
+
+  // Write: start every glide
+  for (const [el, x, y] of glides) {
     el.__phGlide = el.animate(
       [{ translate: `${x / scale}px ${y / scale}px` }, { translate: '0 0' }],
       { duration, easing },
