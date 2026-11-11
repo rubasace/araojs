@@ -1,0 +1,5 @@
+@ComponentScan
+@Configuration
+class ComponentScanConfiguration {
+
+}

@@ -1,0 +1,181 @@
+<template lang="pug">
+.ph-viewport(ref="viewport" :data-theme="theme" :class="{ 'ph-nocursor': cursorHidden }")
+  .ph-canvas(:style="canvasStyle")
+    slot
+  Controls(
+    ref="controls"
+    :deck="api"
+    :visible="hud"
+    :theme="theme"
+    :themes="themes"
+    :fullscreen="fullscreen"
+    :titles="titles"
+    @theme="setTheme"
+    @fullscreen="toggleFullscreen"
+  )
+</template>
+
+<script setup>
+import { computed, onBeforeUnmount, onMounted, provide, readonly, ref, shallowReactive, watch } from 'vue'
+import { DECK } from './registry'
+import Controls from './Controls.vue'
+
+const props = defineProps({
+  width: { type: Number, default: 1920 },
+  height: { type: Number, default: 1080 },
+  themes: { type: Array, default: () => ['default'] },
+  // hide the mouse cursor after this many ms without moving it (0 = never)
+  hideCursorAfter: { type: Number, default: 5000 },
+})
+
+// ---- slides ------------------------------------------------------------
+const list = shallowReactive([])
+const index = ref(0)
+const step = ref(1)
+const current = computed(() => list[index.value])
+
+// public, read-only view for addons (useDeck)
+const api = {
+  index: readonly(index),
+  step: readonly(step),
+  total: computed(() => list.length),
+  steps: computed(() => current.value?.steps.value ?? 1),
+  // progress over every step of the deck, 0..1
+  progress: computed(() => {
+    const all = list.reduce((n, s) => n + s.steps.value, 0)
+    const done = list.slice(0, index.value).reduce((n, s) => n + s.steps.value, 0) + step.value
+    return all > 1 ? (done - 1) / (all - 1) : 1
+  }),
+  next, prev, go,
+}
+
+provide(DECK, {
+  index,
+  step,
+  api,
+  register(slide) {
+    list.push(slide)
+    return computed(() => list.findIndex((s) => s.id === slide.id))
+  },
+  unregister(id) {
+    const i = list.findIndex((s) => s.id === id)
+    if (i >= 0) list.splice(i, 1)
+  },
+})
+
+function go(i, s = 1) {
+  if (i < 0 || i >= list.length) return
+  index.value = i
+  step.value = Math.min(Math.max(1, s), list[i].steps.value)
+}
+function next() {
+  if (step.value < current.value.steps.value) step.value++
+  else go(index.value + 1, 1)
+}
+function prev() {
+  if (step.value > 1) step.value--
+  else if (index.value > 0) go(index.value - 1, list[index.value - 1].steps.value)
+}
+
+// ---- URL: #/slide/step (1-based) -----------------------------------------
+function readHash() {
+  const [, i, s] = location.hash.match(/^#\/(\d+)(?:\/(\d+))?/) || []
+  if (i) go(Number(i) - 1, Number(s || 1))
+}
+watch([index, step], () => history.replaceState(null, '', `#/${index.value + 1}/${step.value}`))
+
+// ---- theme: ?theme=name, or cycle with "t" -------------------------------
+const theme = ref(new URLSearchParams(location.search).get('theme') || props.themes[0])
+api.theme = readonly(theme) // addons/components can follow theme changes
+function setTheme(name) {
+  theme.value = name
+  const url = new URL(location.href)
+  url.searchParams.set('theme', theme.value)
+  history.replaceState(null, '', url)
+}
+function cycleTheme() {
+  const i = props.themes.indexOf(theme.value)
+  setTheme(props.themes[(i + 1) % props.themes.length])
+}
+
+// ---- fixed canvas, scaled to fit (letterboxed) ----------------------------
+const viewport = ref()
+const scale = ref(1)
+const canvasStyle = computed(() => ({
+  width: `${props.width}px`,
+  height: `${props.height}px`,
+  transform: `translate(-50%, -50%) scale(${scale.value})`,
+}))
+let ro
+function fit() {
+  const { clientWidth: w, clientHeight: h } = viewport.value
+  scale.value = Math.min(w / props.width, h / props.height)
+}
+
+// ---- keyboard + HUD -------------------------------------------------------
+// ---- controls ------------------------------------------------------------
+const controls = ref()
+const fullscreen = ref(false)
+function toggleFullscreen() {
+  document.fullscreenElement ? document.exitFullscreen() : viewport.value.requestFullscreen()
+}
+const onFullscreen = () => (fullscreen.value = !!document.fullscreenElement)
+// slide titles for the jump menu: Slide(title="…"), else its first heading
+const titles = computed(() => {
+  hud.value // re-read headings whenever the controls show up
+  return list.map((s) =>
+    s.title.value ||
+    viewport.value?.querySelector(`[data-ph-slide="${s.id}"]`)?.querySelector('h1, h2, h3')?.textContent.trim() ||
+    '')
+})
+
+const hud = ref(false)
+let hudTimer
+const cursorHidden = ref(false)
+let cursorTimer
+function poke() {
+  hud.value = true
+  clearTimeout(hudTimer)
+  hudTimer = setTimeout(() => (hud.value = false), 2500)
+}
+function onMouseMove() {
+  poke()
+  cursorHidden.value = false
+  clearTimeout(cursorTimer)
+  if (props.hideCursorAfter > 0) cursorTimer = setTimeout(() => (cursorHidden.value = true), props.hideCursorAfter)
+}
+function onKey(e) {
+  if (e.target.closest?.('input, textarea, [contenteditable]')) return
+  const k = e.key
+  if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(k)) next()
+  else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(k)) prev()
+  else if (k === 'Home') go(0)
+  else if (k === 'End') go(list.length - 1, list[list.length - 1].steps.value)
+  else if (k === 'f') toggleFullscreen()
+  else if (k === 't') cycleTheme()
+  else if (k === 'g') controls.value.toggleMenu()
+  else if (/^[0-9]$/.test(k)) controls.value.openMenu(k) // type a slide number to jump
+  else if (k === 'Escape') controls.value.closeMenu()
+  else return
+  e.preventDefault()
+  // the controls only show up on mouse movement, never on keyboard navigation
+}
+
+onMounted(() => {
+  ro = new ResizeObserver(fit)
+  ro.observe(viewport.value)
+  fit()
+  readHash()
+  window.addEventListener('keydown', onKey)
+  window.addEventListener('hashchange', readHash)
+  window.addEventListener('mousemove', onMouseMove)
+  document.addEventListener('fullscreenchange', onFullscreen)
+})
+onBeforeUnmount(() => {
+  ro?.disconnect()
+  window.removeEventListener('keydown', onKey)
+  window.removeEventListener('hashchange', readHash)
+  window.removeEventListener('mousemove', onMouseMove)
+  document.removeEventListener('fullscreenchange', onFullscreen)
+})
+</script>
