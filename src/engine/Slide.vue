@@ -53,6 +53,7 @@ provide(SLIDE, { step, registerStep })
 
 slides.set(id, {
   step,
+  active,
   elements,
   registerStep,
 })
