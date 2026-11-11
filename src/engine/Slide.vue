@@ -10,7 +10,7 @@ Transition(name="ph-slide")
 </template>
 
 <script setup>
-import { computed, inject, onBeforeUnmount, onMounted, onUpdated, provide, reactive, ref } from 'vue'
+import { computed, inject, onBeforeUnmount, onUpdated, provide, reactive, ref } from 'vue'
 import { DECK, SLIDE, slides } from './registry'
 import { sweep } from './step'
 
@@ -28,15 +28,13 @@ const counts = reactive(new Map())
 const steps = computed(() => Math.max(1, ...counts.keys()))
 
 const el = ref(null)
+// the deck places it by its position in the template, even when mounted after its neighbours
 const index = deck.register({ id, steps, title: computed(() => props.title), el })
 const active = computed(() => deck.index.value === index.value)
 // a slide already passed shows everything; one not reached yet shows step 1
 const step = computed(() =>
   active.value ? deck.step.value : deck.index.value > index.value ? steps.value : 1,
 )
-
-// take this slide's place in the template, even when mounted after its neighbours
-onMounted(deck.reorder)
 
 const elements = new Set()
 onUpdated(() => sweep(elements))

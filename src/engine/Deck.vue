@@ -1,6 +1,6 @@
 <template lang="pug">
 .ph-viewport(ref="viewport" :data-theme="theme" :class="{ 'ph-nocursor': cursorHidden }")
-  .ph-canvas(:style="canvasStyle")
+  .ph-canvas(ref="canvas" :style="canvasStyle")
     slot
   Controls(
     ref="controls"
@@ -16,7 +16,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, provide, readonly, ref, shallowReactive, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, provide, readonly, ref, shallowReactive, watch } from 'vue'
 import { DECK } from './registry'
 import Controls from './Controls.vue'
 
@@ -55,40 +55,81 @@ provide(DECK, {
   api,
   // slide = { id, steps, title, el }; el is a ref to its <section>
   register(slide) {
+    change()
     list.push(slide)
     return computed(() => list.findIndex((s) => s.id === slide.id))
   },
   unregister(id) {
     const i = list.findIndex((s) => s.id === id)
     if (i < 0) return
+    const tick = change()
+    // the slide on screen is going away: who takes its place is decided once the tick settles
+    if (i === index.value && !tick.vacancy) tick.vacancy = { slide: list[i], step: step.value }
     list.splice(i, 1)
-    // the slide on screen stays on screen; if it is the one removed, the next takes its place
     if (i < index.value) index.value--
-    else if (i === index.value) step.value = 1
     if (index.value >= list.length) index.value = Math.max(0, list.length - 1)
   },
-  reorder,
 })
 
 // Slide order is document order, not mount order: a slide mounted later (v-if, inserted by
-// HMR) or moved (keyed v-for) takes its place in the template. Slides call this when they
-// mount, the deck after each update; it runs once per tick. The slide on screen stays on screen.
-let reordering = false
-function reorder() {
-  if (reordering) return
-  reordering = true
-  nextTick(() => {
-    reordering = false
-    const placed = list.filter((s) => s.el.value?.isConnected)
-    placed.sort((a, b) => (a.el.value.compareDocumentPosition(b.el.value) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1))
-    const sorted = [...placed, ...list.filter((s) => !placed.includes(s))]
-    if (sorted.every((s, i) => s === list[i])) return
-    const shown = list[index.value]
-    list.splice(0, list.length, ...sorted)
-    if (shown) index.value = list.indexOf(shown)
-  })
+// HMR) or moved (keyed v-for, in the deck or in any component inside it) takes its place in
+// the template. Mounts, unmounts and moves of one tick are settled together once the DOM is
+// final; nothing else (a step, a re-render of the deck) reorders.
+let pending = null // { before: list at the start of the tick, vacancy: { slide, step } | null }
+function change() {
+  if (!pending) {
+    pending = { before: list.slice(), vacancy: null }
+    nextTick(settle)
+  }
+  return pending
 }
-onUpdated(reorder)
+function settle() {
+  const { before, vacancy } = pending
+  pending = null
+  const placed = list.filter((s) => s.el.value?.isConnected)
+  placed.sort((a, b) => (a.el.value.compareDocumentPosition(b.el.value) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1))
+  const sorted = [...placed, ...list.filter((s) => !placed.includes(s))]
+  if (vacancy) {
+    list.splice(0, list.length, ...sorted)
+    return fill(vacancy, before)
+  }
+  // the slide on screen stays on screen
+  if (sorted.every((s, i) => s === list[i])) return
+  const shown = list[index.value]
+  list.splice(0, list.length, ...sorted)
+  if (shown) index.value = list.indexOf(shown)
+}
+
+// The slide on screen went away this tick. A slide mounted in its place in the same tick
+// (re-keyed, v-if/v-else swapped, reloaded by HMR, every slide remounted) takes over at the
+// same step, clamped to its own total. Otherwise the next slide takes its place from step 1;
+// with no next slide, the previous one is shown complete, as if the audience stepped back.
+function fill({ slide, step: at }, before) {
+  const i = before.indexOf(slide)
+  if (i < 0) return go(index.value, 1) // mounted and gone within the same tick
+  const was = new Set(before)
+  const is = new Set(list)
+  // nearest slide before it that survived, and how many removed slides sat in between
+  let p = i - 1
+  while (p >= 0 && !is.has(before[p])) p--
+  const skipped = i - p - 1
+  // slides mounted this tick right after that survivor: the same gap, in the new order
+  const from = p >= 0 ? list.indexOf(before[p]) + 1 : 0
+  let to = from
+  while (to < list.length && !was.has(list[to])) to++
+  if (to > from) go(from + Math.min(skipped, to - from - 1), at)
+  else if (from < list.length) go(from, 1)
+  else if (list.length) go(list.length - 1, list[list.length - 1].steps.value)
+  else step.value = 1
+}
+
+// Moves that mount nothing (keyed v-for reordered) only show up in the DOM: watch the canvas
+// for slide sections being inserted. Changes inside a slide are skipped at once.
+const SLIDE_EL = '[data-ph-slide]'
+const insertsSlide = (r) => !r.target.closest?.(SLIDE_EL) &&
+  [...r.addedNodes].some((n) => n.nodeType === 1 && (n.matches(SLIDE_EL) || n.querySelector(SLIDE_EL)))
+const canvas = ref()
+let mo
 
 function go(i, s = 1) {
   if (i < 0 || i >= list.length) return
@@ -193,6 +234,8 @@ onMounted(() => {
   ro.observe(viewport.value)
   fit()
   readHash()
+  mo = new MutationObserver((records) => records.some(insertsSlide) && change())
+  mo.observe(canvas.value, { childList: true, subtree: true })
   window.addEventListener('keydown', onKey)
   window.addEventListener('hashchange', readHash)
   window.addEventListener('mousemove', onMouseMove)
@@ -200,6 +243,7 @@ onMounted(() => {
 })
 onBeforeUnmount(() => {
   ro?.disconnect()
+  mo?.disconnect()
   window.removeEventListener('keydown', onKey)
   window.removeEventListener('hashchange', readHash)
   window.removeEventListener('mousemove', onMouseMove)
