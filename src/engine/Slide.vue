@@ -4,6 +4,10 @@
        image-left | image-right   #image fills its side edge to edge; the default slot is the
                                   text side, padded like any slide
      ratio="2 1" sizes the two zones left to right, whichever holds the image (default "1 1").
+       Two entries, each a share (proportions: "2 1" = "0.5 0.25"), auto or a px size, as in
+       Cols (layout.js); an invalid ratio warns in development and the zones stay "1 1".
+     A zone keeps its width: content wider than it is clipped at its edge, never painted over
+     the other zone; heights do not clip.
      Title: put it first. A #title slot renders first in every layout, then the default slot.
      In split the default slot is the header above both zones (its heading, maybe a lead line);
      in image-* it is the text side, so the title tops the text column, never the image. -->
@@ -25,12 +29,19 @@ Transition(name="ph-slide")
           slot(name="left" :step="step")
         .ph-zone.ph-zone-right
           slot(name="right" :step="step")
-    template(v-else-if="image")
+    //- zones in visual order, left to right, so the DOM (and reading order) matches the screen
+    template(v-else-if="layout === 'image-left'")
       .ph-zone.ph-zone-image
         slot(name="image" :step="step")
       .ph-zone.ph-zone-text
         slot(name="title" :step="step")
         slot(:step="step")
+    template(v-else-if="layout === 'image-right'")
+      .ph-zone.ph-zone-text
+        slot(name="title" :step="step")
+        slot(:step="step")
+      .ph-zone.ph-zone-image
+        slot(name="image" :step="step")
     template(v-else)
       slot(name="title" :step="step")
       slot(:step="step")
@@ -40,18 +51,18 @@ Transition(name="ph-slide")
 import { computed, inject, onBeforeUnmount, onUpdated, provide, reactive, ref } from 'vue'
 import { DECK, SLIDE, slides } from './registry'
 import { sweep } from './step'
-import { tracks } from './layout'
+import { isRatio, tracks } from './layout'
 
 const props = defineProps({
   layout: { type: String, default: 'default' },
   // shown in the jump menu; defaults to the slide's first heading
   title: String,
   // zone sizes for split / image-left / image-right, left to right: "2 1", "72 28"
-  ratio: { type: String, default: '1 1' },
+  ratio: { type: String, default: '1 1', validator: (v) => isRatio(v, 2) },
 })
 
 const image = computed(() => props.layout === 'image-left' || props.layout === 'image-right')
-const zones = computed(() => ({ gridTemplateColumns: tracks(props.ratio, 0) }))
+const zones = computed(() => ({ gridTemplateColumns: tracks(isRatio(props.ratio, 2) ? props.ratio : '1 1', 0) }))
 
 const deck = inject(DECK)
 const id = `s${Math.random().toString(36).slice(2, 9)}`
