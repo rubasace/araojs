@@ -16,7 +16,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, provide, readonly, ref, shallowReactive, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, provide, readonly, ref, shallowReactive, watch } from 'vue'
 import { DECK } from './registry'
 import Controls from './Controls.vue'
 
@@ -53,15 +53,42 @@ provide(DECK, {
   index,
   step,
   api,
+  // slide = { id, steps, title, el }; el is a ref to its <section>
   register(slide) {
     list.push(slide)
     return computed(() => list.findIndex((s) => s.id === slide.id))
   },
   unregister(id) {
     const i = list.findIndex((s) => s.id === id)
-    if (i >= 0) list.splice(i, 1)
+    if (i < 0) return
+    list.splice(i, 1)
+    // the slide on screen stays on screen; if it is the one removed, the next takes its place
+    if (i < index.value) index.value--
+    else if (i === index.value) step.value = 1
+    if (index.value >= list.length) index.value = Math.max(0, list.length - 1)
   },
+  reorder,
 })
+
+// Slide order is document order, not mount order: a slide mounted later (v-if, inserted by
+// HMR) or moved (keyed v-for) takes its place in the template. Slides call this when they
+// mount, the deck after each update; it runs once per tick. The slide on screen stays on screen.
+let reordering = false
+function reorder() {
+  if (reordering) return
+  reordering = true
+  nextTick(() => {
+    reordering = false
+    const placed = list.filter((s) => s.el.value?.isConnected)
+    placed.sort((a, b) => (a.el.value.compareDocumentPosition(b.el.value) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1))
+    const sorted = [...placed, ...list.filter((s) => !placed.includes(s))]
+    if (sorted.every((s, i) => s === list[i])) return
+    const shown = list[index.value]
+    list.splice(0, list.length, ...sorted)
+    if (shown) index.value = list.indexOf(shown)
+  })
+}
+onUpdated(reorder)
 
 function go(i, s = 1) {
   if (i < 0 || i >= list.length) return
