@@ -31,37 +31,37 @@ Deck(:themes="['default', 'vigojug']")
     h1.fw-over Why do we need a framework?
 
   Slide(title="Production readiness (image)")
-    .fw-body
+    Center
       Placeholder(file="productionReadiness.png" h="100%" ratio="526 / 440")
 
   Slide
     h2 Communication
-    .fw-row
+    Cols(align="center" gap="sm")
       IconText(v-step="2" icon="serialization.svg" text="Serialization" size="8em")
       IconText(v-step="3" icon="error.png" text="Error Handling" size="8em")
 
   Slide
     h2 Recording
-    .fw-row
+    Cols(align="center" gap="sm")
       IconText(v-step="2" icon="metrics.png" text="Metrics" size="8em")
       IconText(v-step="3" icon="logging.svg" text="Logging" size="8em")
       IconText(v-step="4" icon="password.png" text="Obfuscation" size="8em")
 
   Slide
     h2 Traceability
-    .fw-row
+    Cols(align="center" gap="sm")
       IconText(v-step="2" icon="tracing.svg" text="Tracing" size="8em")
       IconText(v-step="3" icon="user.png" text="Session propagation" size="8em")
 
   Slide
     h2 Security
-    .fw-row
+    Cols(align="center" gap="sm")
       IconText(v-step="2" icon="evaluate.png" text="Dependencies" size="8em")
       IconText(v-step="3" icon="lock.png" text="Exposure" size="8em")
 
   Slide
     h2 Scale
-    .fw-row
+    Cols(align="center" gap="sm")
       IconText(v-step="2" icon="api.svg" text="150+" size="8em")
       IconText(v-step="3" icon="container.png" text="1000+" size="8em")
 
@@ -83,7 +83,7 @@ Deck(:themes="['default', 'vigojug']")
     Snippet(file="LegacyConfiguration.java" name="ApplicationConfiguration.java" :highlights='{"1": 2}')
 
   Slide(title="Reaction: grinning face")
-    .fw-body
+    Center
       IconText(icon="grinning-face.svg" size="12.5em")
 
   Slide
@@ -95,24 +95,24 @@ Deck(:themes="['default', 'vigojug']")
       IconText(v-step="5" side icon="trash.png" text="Useless knowledge for developers" size="3.5em" :upper="false")
 
   Slide(title="Reaction: grinning face (again)")
-    .fw-body
+    Center
       IconText(icon="grinning-face.svg" size="12.5em")
 
   Slide(title="Reaction: slightly smiling face")
-    .fw-body
+    Center
       IconText(icon="slightly-smiling-face.svg" size="12.5em")
 
   Slide(title="StackOverflow")
-    .fw-body.fw-stack
+    Center.fw-stack
       IconText(icon="stack-overflow.png" text="StackOverflow" size="10em" text-size="2.5em" :upper="false")
       Placeholder.fw-forbidden(v-step="2" file="forbidden.png" w="21em" h="21em" corner)
 
   Slide(title="Reaction: slightly smiling face (again)")
-    .fw-body
+    Center
       IconText(icon="slightly-smiling-face.svg" size="12.5em")
 
   Slide(title="Reaction: smiling face with tear")
-    .fw-body
+    Center
       IconText(icon="smiling-face-with-tear.svg" size="12.5em")
 
   //- ===== Current approach =====
@@ -138,7 +138,7 @@ Deck(:themes="['default', 'vigojug']")
         IconText(v-for="it in row" :key="it.text" :icon="it.icon" :text="it.text" size="4em" text-size="1.2em")
 
   Slide(title="Don't reinvent the wheel (image)")
-    .fw-body
+    Center
       Placeholder(file="caveman-wheel-cartoon.jpg" h="100%" ratio="800 / 572")
 
   //- one title per step, and each feature highlighted in the step of its category
@@ -162,7 +162,7 @@ Deck(:themes="['default', 'vigojug']")
 
   Slide
     h2 Out-Of-The-Box Features
-    .fw-row
+    Cols(align="center" gap="sm")
       IconText(icon="tracing.svg" text="Tracing")
       IconText(icon="evaluate.png" text="Dependencies")
 
@@ -287,14 +287,14 @@ Deck(:themes="['default', 'vigojug']")
 
   Slide
     h2 Missing Features
-    .fw-row
+    Cols(align="center" gap="sm")
       IconText(icon="logging.svg" text="Logging")
       IconText(icon="password.png" text="Obfuscation")
       IconText(icon="user.png" text="Session")
 
   Slide(title="Missing Features: Ingress / Egress")
     h2 Missing Features
-    .fw-row
+    Cols(align="center" gap="sm")
       IconText(v-step="2" icon="enter.png" text="Ingress")
       IconText(v-step="3" icon="exit.png" text="Egress")
 
@@ -371,7 +371,7 @@ Deck(:themes="['default', 'vigojug']")
 
   Slide
     h2 Configure Behaviour
-    .fw-row
+    Cols(align="center" gap="sm")
       IconText(v-step="2" icon="properties.png" text="High-level")
       IconText(v-step="3" icon="java.png" text="Explicit")
 
@@ -512,11 +512,13 @@ const mark = (step, category) => (step === 1 ? '' : step === category ? 'fw-hl' 
 </script>
 
 <style scoped>
-/* content area under the title, centring its content */
-.fw-body { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+/* the forbidden sign is placed over the StackOverflow icon */
 .fw-stack { position: relative; }
 
-/* old ".flex.center.even": items side by side, equal columns, centred */
+/* old ".flex.center.even": items side by side, equal columns, centred. Most icon rows use
+   Cols(align="center" gap="sm"); this stays where a label is wider than an equal column:
+   here the column grows to fit it (Cols keeps columns equal, so the label would wrap), and
+   for the rows of .fw-rows, which spreads them evenly (Rows makes equal rows). */
 .fw-row {
   flex: 1; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(max-content, 1fr);
   column-gap: .6em; align-items: center; justify-items: center;
