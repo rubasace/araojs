@@ -1,6 +1,14 @@
 /* Engine: structure only. Every visual decision is a token the theme supplies. */
 html, body, #app { margin: 0; height: 100%; }
 
+/* Engine defaults for tokens a theme may override (zero specificity: any theme rule wins) */
+:where(.ph-viewport) {
+  --ph-gap-sm: 24px;
+  --ph-gap-md: 48px;
+  --ph-gap-lg: 80px;
+  --ph-text-small: .75em;
+}
+
 .ph-viewport {
   position: fixed; inset: 0; overflow: hidden;
   background: var(--ph-letterbox, #000);
@@ -21,6 +29,34 @@ html, body, #app { margin: 0; height: 100%; }
   padding: var(--ph-pad, 96px 120px);
   display: flex; flex-direction: column;
 }
+
+/* zones: Slide(layout="split" | "image-left" | "image-right" ratio="…") */
+.ph-zones {
+  flex: 1 1 auto; min-height: 0;
+  display: grid; grid-template-rows: minmax(0, 1fr); gap: var(--ph-gap-lg);
+}
+.ph-zone { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.layout-image-left, .layout-image-right { display: grid; grid-template-rows: minmax(0, 1fr); padding: 0; }
+.layout-image-right > .ph-zone-image { order: 1; }
+.ph-zone-text { box-sizing: border-box; padding: var(--ph-pad, 96px 120px); }
+/* the image fills its zone edge to edge (a theme may inset it) */
+.ph-zone-image { position: relative; overflow: hidden; box-sizing: border-box; padding: var(--ph-image-inset, 0); }
+.ph-zone-image > * { flex: 1 1 0; min-height: 0; }
+.ph-zone-image > :is(img, video, picture, svg, canvas) { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* composition: Cols, Rows, Grid, Center (layout.js) fill the free space of their container */
+.ph-cols, .ph-rows, .ph-grid, .ph-center { box-sizing: border-box; flex: 1 1 auto; min-width: 0; min-height: 0; }
+.ph-cols, .ph-rows, .ph-grid { display: grid; gap: var(--ph-gap-md); }
+.ph-cols { grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+.ph-rows { grid-template-columns: minmax(0, 1fr); grid-auto-rows: 1fr; }
+.ph-grid { grid-auto-rows: 1fr; }
+.ph-center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+
+/* utility classes: an escape hatch for one-off tweaks, not a styling system */
+.ph-slide .muted { color: var(--ph-muted); }
+.ph-slide .center { text-align: center; }
+.ph-slide .upper { text-transform: uppercase; }
+.ph-slide .small { font-size: var(--ph-text-small); }
 
 /* steps */
 .ph-step-hidden { opacity: 0 !important; pointer-events: none; }
