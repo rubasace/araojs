@@ -1,0 +1,35 @@
+/* Engine: structure only. Every visual decision is a token the theme supplies. */
+html, body, #app { margin: 0; height: 100%; }
+
+.ph-viewport {
+  position: fixed; inset: 0; overflow: hidden;
+  background: var(--ph-letterbox, #000);
+}
+.ph-canvas {
+  position: absolute; top: 50%; left: 50%;
+  transform-origin: center center;
+  overflow: hidden;
+  background: var(--ph-bg);
+  color: var(--ph-fg);
+  font-family: var(--ph-font-sans);
+  font-size: var(--ph-text-base, 40px);
+  line-height: 1.35;
+}
+.ph-slide {
+  position: absolute; inset: 0;
+  box-sizing: border-box;
+  padding: var(--ph-pad, 96px 120px);
+  display: flex; flex-direction: column;
+}
+
+/* steps */
+.ph-step-hidden { opacity: 0 !important; pointer-events: none; }
+.ph-step-collapsed { display: none !important; }
+[data-ph-slide] * { transition: opacity var(--ph-step-duration, .35s) ease; }
+
+/* slide transition */
+.ph-slide-enter-active, .ph-slide-leave-active { transition: opacity .4s ease; }
+.ph-slide-enter-from, .ph-slide-leave-to { opacity: 0; }
+
+
+.ph-nocursor, .ph-nocursor * { cursor: none !important; }

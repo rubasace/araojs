@@ -1,0 +1,23 @@
+<project>
+    <groupId>com.company.framework</groupId>
+    <artifactId>framework-starter-web</artifactId>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.company.framework</groupId>
+            <artifactId>framework-autoconfiguration</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.company.framework</groupId>
+            <artifactId>framework-metrics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.company.framework</groupId>
+            <artifactId>framework-logging</artifactId>
+        </dependency>
+        ...
+    </dependencies>
+</project>
