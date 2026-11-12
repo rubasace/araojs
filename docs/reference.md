@@ -336,8 +336,10 @@ A code window: macOS-style title bar, Shiki syntax colours, line numbers, per-st
 | `size` | Number | theme's `--ph-code-size` | font size in px (`:size="36"`); still shrinks to fit |
 | `theme` | String | theme's `--ph-code-theme`, else `material-theme-darker` | a Shiki theme name for this snippet |
 
-**Frame and size.** Every snippet window has the same size and place (`--ph-code-width` 1520 x
-`--ph-code-height` 760 px, capped by the space available), code top-left like an editor. The font
+**Frame and size.** Every snippet window has the slide's shape (`--ph-code-aspect`, 16/9) and is as
+large as fits in the space it gets, up to `--ph-code-width` (1520 px): on a slide with a title that
+is about 1396 x 785, the same on every full-slide snippet. In a column it keeps the shape, smaller.
+Code sits top-left like an editor; `fit` makes the window hug the code instead. The font
 is the theme's standard `--ph-code-size` on every slide; a snippet that would not fit at that size
 shrinks to fit, never grows.
 
@@ -695,7 +697,7 @@ A theme can leave a layout without its default background:
 | `--ph-code-theme` | `material-theme-darker` | Shiki theme (`vigojug`: `github-light`) |
 | `--ph-code-size` | `44px` | standard code font size |
 | `--ph-code-width` | `1520px` | standard window width |
-| `--ph-code-height` | `760px` | standard window height |
+| `--ph-code-aspect` | `16 / 9` | window shape (width / height); the window is as large as fits with this shape |
 | `--ph-code-bg` | `#2b2b2b` | window background |
 | `--ph-code-bar` | `#383a40` | title bar |
 | `--ph-code-fg` | `#eeffff` | text before colours load |

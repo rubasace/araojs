@@ -1,8 +1,9 @@
 <!-- Code window: macOS-style chrome, syntax colours (Shiki), per-step line/word highlights.
      Source: file="App.java" (a file in the project's snippets folder, src/snippets by default;
      language from the extension, title from the file name) or code="…" inline.
-     Frame: every snippet window has the same size and position (--ph-code-width/--ph-code-height,
-     capped by the space available), with the code top-left like an editor; short snippets leave
+     Frame: every snippet window has the same shape as the slide (--ph-code-aspect, 16/9) and is as
+     large as fits in the space it gets, up to --ph-code-width (1520px): on every full-slide snippet
+     it has the same size and position. The code sits top-left like an editor; short snippets leave
      room below. "fit" makes the window hug its content instead (for small inline snippets).
      Size: the theme's --ph-code-size is the standard size for every snippet in the deck;
      a snippet that would not fit shrinks to fit, but never grows past the standard size.
@@ -237,14 +238,19 @@ const vars = computed(() => {
   --sn-hl: var(--ph-code-hl, var(--ph-accent));
   --sn-radius: var(--ph-code-radius, 22px);
   --sn-size-std: var(--sn-size, var(--ph-code-size, 44px));
+  /* window box: fixed shape, as large as fits (cq units resolve against this element: they are
+     substituted where used, in its children) */
+  --sn-aspect: var(--ph-code-aspect, 16 / 9);
+  --sn-w: min(100cqw, var(--ph-code-width, 1520px), 100cqh * (var(--sn-aspect)));
+  --sn-h: calc(var(--sn-w) / (var(--sn-aspect)));
   flex: 1; min-height: 0; align-self: stretch;
   container-type: size;
   display: flex; align-items: center; justify-content: center;
 }
 .ph-snippet-window {
-  /* standard frame: same size on every slide, never larger than the space available */
-  width: min(100%, var(--ph-code-width, 1520px));
-  height: min(100%, var(--ph-code-height, 760px));
+  /* standard frame: the slide's shape, as large as the space allows */
+  width: var(--sn-w);
+  height: var(--sn-h);
   display: flex; flex-direction: column; overflow: hidden;
   background: var(--sn-bg); color: var(--sn-fg);
   border-radius: var(--sn-radius);
@@ -265,6 +271,7 @@ const vars = computed(() => {
 .ph-snippet-lights .g { background: #28c840; }
 .ph-snippet-name { grid-column: 2; white-space: nowrap; }
 .ph-snippet-body { flex: 1; min-height: 0; padding: 36px 48px 40px 28px; overflow: hidden; }
+.ph-snippet.fit { --sn-w: min(100cqw, var(--ph-code-width, 1520px)); --sn-h: 100cqh; }
 .ph-snippet.fit .ph-snippet-window { width: auto; height: auto; max-width: 100%; max-height: 100%; }
 .ph-snippet-code {
   font-family: var(--ph-font-mono);
@@ -272,8 +279,8 @@ const vars = computed(() => {
   /* standard size, shrunk only if rows/columns would not fit the free space */
   font-size: min(
     var(--sn-size-std),
-    calc((min(100cqh, var(--ph-code-height, 760px)) - 156px) / (var(--sn-rows) * 1.5)),
-    calc((min(100cqw, var(--ph-code-width, 1520px)) - 76px) / (var(--sn-cols) * 0.61))
+    calc((var(--sn-h) - 156px) / (var(--sn-rows) * 1.5)),
+    calc((var(--sn-w) - 76px) / (var(--sn-cols) * 0.61))
   );
 }
 .ph-snippet-line {
