@@ -10,13 +10,14 @@ this: [reference.md](reference.md) is their API, [../AGENTS.md](../AGENTS.md) th
 | `state/` | what there is | the deck, its stages and its slides: reactive state, made by a `create…` and read by a `use…` (the pair shares a provide/inject key private to its file) |
 | `composables/` | effects | small internal composables, one per file, that tie the state to the browser: the URL, other windows, keys, touch, the mouse, fullscreen |
 | `core/` | the pure how | plain modules with no Vue component state: sync, timer, exporter, flip, image, icons |
-| `views/` | what Arao draws | the three views of a deck and their parts (the scaled canvas, the controls, the presenter's bar) |
+| `views/` | what Arao draws | the three views of a deck and their parts (the scaled canvas, the controls, the presenter's bar); `DeckSelector`, the list of decks `createDeckApp` shows when the URL names none |
 | `components/` | what deck authors write | `Deck`, `Slide`, `Img`, `Icon`, `Snippet`, `Notes`, the layout components (`layout.js`); `directives/` holds `v-step` and `v-step-from` |
 | `addons/` | drawn over every slide | `ProgressBar`, `SlideNumber` |
 | `styles/`, `themes/` | CSS | engine.css and layouts.css; the shipped themes |
 
 `index.js` is the only barrel (the public API); every other module imports the file it uses.
-`plugin.js` is the Vue plugin, `app.js` is `createDeckApp`.
+`plugin.js` is the Vue plugin, `app.js` is `createDeckApp`: it renders the deck `?deck=` names,
+or `views/DeckSelector.vue` (a plain page, outside every `Deck`) when there is no deck to open.
 
 ## Views
 

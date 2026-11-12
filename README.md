@@ -423,7 +423,7 @@ src/
   state/            the deck, its stages, its slides: createDeck/useDeck, createStage/useStage, createSlide/useSlide
   composables/      the effects (internal): useHashRoute, useDeckSync, usePresenterWindow, useKeyboard, useTouchNav, useMouseIdle, useFullscreen
   core/             plain modules: sync, timer, exporter, image, icons, flip
-  views/            what Arao draws: AudienceView, PresenterView, ExportView
+  views/            what Arao draws: AudienceView, PresenterView, ExportView; DeckSelector (createDeckApp's list of decks)
     parts/          Stage (the scaled canvas), Controls, PresenterBar
   components/       Deck, Slide, Img, Icon, Snippet, Notes, Cols/Rows/Grid/Center (layout.js)
   directives/       v-step and v-step-from (step.js)
