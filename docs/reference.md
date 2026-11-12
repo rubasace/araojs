@@ -729,7 +729,7 @@ transitions, no sync with other windows; `useDeck().role` is `'export'`.
 |---|---|
 | `export` | one page per step of every slide |
 | `per-slide` | one page per slide instead, each at its **last** step (everything revealed, last snippet highlight); `v-step.only` content of earlier steps is not on it |
-| `per-step` | one page per step: the default, accepted (`per-slide` wins if both are given) |
+| `per-step` | one page per step: the default, accepted and ignored (`per-step=0` does not make it per slide; only `per-slide` does, and wins if both are given) |
 | `notes` | after the page(s) of a slide with notes, a white page with its notes |
 | `theme=<name>` | must be one of the deck's `themes`, else an error |
 
@@ -743,15 +743,21 @@ exports that one. Builds the project once with its own Vite config to a temp fol
 prints each deck's `?export` with one headless Chromium, checks each page count, writes each PDF
 atomically. One page per step by default; `--per-slide` gives one per slide (`--per-step` is
 accepted, and is an error together with `--per-slide`). Default output
-`exports/<deck>[-<theme>][-slides][-notes].pdf` (until 0.3 the default was per slide and
+`exports/<deck>[-<theme>][-slides][-notes].pdf` (before 0.4 the default was per slide and
 `-steps` marked a per-step file; now `-slides` marks a per-slide one); an `--out` that is a
 folder (exists, or ends in `/`) gets that name inside. With several decks `--out` is always a
 folder, and a path ending in `.pdf` is an error. Output: one summary line per PDF (`<path>: <n>
 pages (<s> slides, <t> steps), <w>x<h> px, theme <name>`) and, with several decks, a total
-(`<n> of <m> decks exported, <p> pages[; failed: …]`). A deck that fails is reported and the
-others still export; the exit code is 1 if any failed. `--theme` with several decks: the decks
-that list it are printed in it, the others in their first theme (their summary line says so and
-their file name has no theme); with `--deck`, a theme the deck does not list is an error. Chromium:
+(`<n> of <m> decks exported, <p> pages[; failed: …]`). A build error stops the run; a deck that
+fails once the site is up (it does not render, throws before its pages are ready, crashes its
+page, cannot be printed or written) is reported and the others still export; the exit code is 1
+if any failed. The decks are the plugin's (the same `*.vue` the app lists: symlinks included,
+dotfiles not). Two decks never write the same file in one run: the second fails instead (names
+that differ only in case, which also open as one deck and are warned about; or `Alpha` with
+`--theme vigojug` and a deck `alpha-vigojug` in its first theme). `--theme` with several decks:
+the decks that list it are printed in it, then the others in their first theme (their summary
+line says so and their file name has no theme); a theme no deck lists is an error and nothing is
+written; with `--deck`, a theme the deck does not list is an error. Chromium:
 `npx playwright-core install chromium`, or `ARAO_CHROMIUM=/path/to/chrome`. Missing pictures
 print as placeholders and are listed.
 
@@ -773,7 +779,8 @@ div(:data-ar-busy="loading ? '' : undefined")
 
 A named value (Img uses its URL) is given up on once, for all later pages; an empty value is
 waited for on every page. When done, `window.__araoReady` is
-`{ pages, slides, steps, width, height, missing, stalled, theme }` or `{ error }`.
+`{ pages, slides, steps, width, height, missing, stalled, theme }` or `{ error }`; for a theme the
+deck does not list, `{ error, code: 'theme-not-listed', themes }`.
 
 Gotcha: pages are static DOM copies: canvas/WebGL drawings, video frames, iframes, shadow DOM and
 `url(#id)` references (ids repeat) are not printed faithfully.

@@ -392,10 +392,11 @@ npm run export -- --deck mytalk --theme vigojug --per-slide --notes --out talk.p
 The command builds the project (with its own Vite config) into a temporary folder, serves it,
 opens each deck at `?export` in headless Chromium and prints it, one deck after the other. By
 default every step is a page; with `--per-slide` each slide is one page showing its last step.
-It prints one summary line per PDF and, with several decks, a total; a deck that fails does not
-stop the others, and the exit code is 1 if any failed. With `--theme` and several decks, a deck
-that does not list that theme is printed in its first (its line says so, its file name has no
-theme). Pages are 1920x1080 px (1440x810 pt). `ARAO_CHROMIUM=/path/to/chrome` uses a browser
+It prints one summary line per PDF and, with several decks, a total. A build error stops the run;
+a deck that fails at runtime (does not render, throws, crashes) is reported and does not stop the
+others, and the exit code is 1 if any failed. With `--theme` and several decks, a deck that does
+not list that theme is printed in its first (its line says so, its file name has no theme); a
+theme no deck lists is an error. Pages are 1920x1080 px (1440x810 pt). `ARAO_CHROMIUM=/path/to/chrome` uses a browser
 you already have. Opening `?export` in a normal browser and printing to PDF gives the same pages.
 
 ## Documentation
@@ -465,8 +466,13 @@ playground's decks, images and snippets (and a second, tiny deck of its own), an
    `createDeckApp({ deck: 'second' })` opens that deck at `/` while `?deck=<other>` still wins;
    `createDeckApp({ deck: 'missing' })` shows the list with one `[arao]` warning;
 6. runs `<bin> export` with no `--deck` and checks one PDF per deck at its default name, each with
-   as many pages as steps (and as many steps as the walk counted), plus the total line; then
-   `<bin> export --deck <name> --per-slide`, whose PDF must have as many pages as slides.
+   as many pages (counted in the PDF itself) as steps, as its summary line says and as the walk
+   counted, plus the total line; then `<bin> export --deck <name> --per-slide`, whose PDF must
+   have as many pages as slides;
+7. runs the CLI's other cases on small decks folders of their own, into `--out <folder>`:
+   `--theme` over a deck that lists it and one that falls back (a symlinked deck, next to a dotfile
+   that must not count), a theme no deck lists (exit 1, nothing written), a deck that throws at
+   runtime (the others exported, exit 1), and decks that resolve to the same file (the second fails).
 
 The package name and the CLI's name come from `package.json`. CI runs it on every pull request and
 on every push to `main`. To run it locally:
