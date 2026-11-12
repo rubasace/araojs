@@ -5,7 +5,10 @@
      src/assets/icons/* into src/images (same file names, no subfolders). Until then each one
      shows as a dashed box with its name.
      Old background opacities were a black veil over the photo (0.6 = 60 % black); bg-opacity is
-     the photo's own opacity over the slide colour, so each value here is 1 - the old one. -->
+     the photo's own opacity over the slide colour, so each value here is 1 - the old one.
+     Speaker notes: the section times are my-slides' times.txt (55:00 in all, so each section
+     also says where in the talk it starts and ends); the two "presenter note" TODOs of
+     FrameworkTalk.vue are on the BeanPostProcessor slides. -->
 <template lang="pug">
 Deck(:themes="['default', 'vigojug']")
   ProgressBar(position="bottom")
@@ -16,6 +19,9 @@ Deck(:themes="['default', 'vigojug']")
     template(#background)
       Img.fw-title-bg(file="kelly-sikkema--BwtFJgaUho-unsplash.jpg" position="6em 0" opacity="0.8")
     TitleContent
+    Notes
+      p Intro: title, raised hands, about me.
+      p Section time (times.txt): 1:15 · from 0:00 to 1:15.
 
   //- FullTextSlide with only a background image and no text
   Slide(title="Raised hands (image)" bg="diverse-group-raised-hands.jpg" bg-opacity="0.9")
@@ -34,6 +40,9 @@ Deck(:themes="['default', 'vigojug']")
   //- ===== Why =====
   Slide(layout="section" bg="ana-municio-PbzntH58GLQ-unsplash.jpg" bg-opacity="0.4")
     h1 Why do we need a framework?
+    Notes
+      p Section time (times.txt): 3:00 · from 1:15 to 4:15.
+      p Next: the production readiness picture, then communication, recording, traceability, security, scale.
 
   Slide(title="Production readiness (image)")
     Img(file="productionReadiness.png")
@@ -72,6 +81,9 @@ Deck(:themes="['default', 'vigojug']")
   //- ===== Previous approach =====
   Slide(layout="section" bg="pexels-elle-hughes-1408632.jpg" bg-opacity="0.4")
     h1 Previous Approach
+    Notes
+      p Section time (times.txt): 3:20 · from 4:15 to 7:35.
+      p Next: manipulating controllers, services and extra beans; then the observed issues.
 
   Slide(title="Manipulate Controllers · ApplicationController.java")
     h2 Manipulate Controllers
@@ -121,6 +133,8 @@ Deck(:themes="['default', 'vigojug']")
   //- ===== Current approach =====
   Slide(layout="section" bg="pexels-pixabay-235990.jpg" bg-opacity="0.4")
     h1 Current Approach
+    Notes
+      p Section time (times.txt): 3:00 · from 7:35 to 10:35.
 
   Slide(title="Quote: Inversion of Control")
     Quote(author="Someone")
@@ -155,10 +169,19 @@ Deck(:themes="['default', 'vigojug']")
           :icon="it.icon" :text="it.text" size="4em" text-size="1.2em"
           :class="mark(step, it.category)"
         )
+    Notes(step="2")
+      p Out-of-the-box: Tracing, Dependencies.
+    Notes(step="3")
+      p Need tweaking: Serialization, Error, Metrics, Exposure.
+    Notes(step="4")
+      p Missing: Logging, Obfuscation, Session.
 
   //- ===== How to do it =====
   Slide(layout="section" bg="salty-justice-RsoqLSxscOg-unsplash.jpg" bg-opacity="0.4")
     h1 How to do it?
+    Notes
+      p Section time (times.txt): 24:10 · from 10:35 to 34:45.
+      p The longest section of the talk.
 
   Slide
     h2 Out-Of-The-Box Features
@@ -339,6 +362,8 @@ Deck(:themes="['default', 'vigojug']")
   Slide(title="Modify Clients · FrameworkRestTemplateCustomizer.java")
     h2 Modify Clients
     Snippet(file="FrameworkRestTemplateCustomizer.java" :highlights='{"4-8": 2}')
+    Notes(step="2")
+      p Every RestTemplate the application builds from RestTemplateBuilder gets these two interceptors: DebugInterceptor and LoggingInterceptor.
   Slide(title="Modify Clients · ApplicationServletService.java")
     h2 Modify Clients
     Snippet(file="ApplicationServletService.java" :highlights='{"6:final RestTemplateBuilder builder": 2, "7-8": 3}')
@@ -360,13 +385,24 @@ Deck(:themes="['default', 'vigojug']")
   Slide(title="Modify Any Bean · BeanPostProcessor.java")
     h2 Modify Any Bean
     Snippet(file="BeanPostProcessor.java" :highlights='{"4-7": 2, "10-13": 3}')
+    Notes
+      p To do (my-slides): a note on the initializers, from the Spring bean lifecycle diagram.
+    Notes(step="2")
+      p #[code postProcessBeforeInitialization]: before the bean's initializers (#[code afterPropertiesSet], init-method).
+    Notes(step="3")
+      p #[code postProcessAfterInitialization]: after them.
   Slide(title="Modify Any Bean · PubSubTemplatePostProcessor.java")
     h2 Modify Any Bean
     Snippet(file="PubSubTemplatePostProcessor.java" :highlights='{"5-10": 2}')
+    Notes
+      p To do (my-slides): the differences between BeanPostProcessors and Customizers.
+      p From these slides: a customizer reaches what its builder builds (RestTemplateBuilder, WebClient.Builder); a BeanPostProcessor sees every bean and may return another object, here a PubSubTemplateWrapper in place of the PubSubTemplate.
 
   //- ===== How to customize =====
   Slide(layout="section" bg="ekaterina-novitskaya-TU8bUiEr25c-unsplash.jpg" bg-opacity="0.2")
     h1 How to customize?
+    Notes
+      p Section time (times.txt): 10:15 · from 34:45 to 45:00.
 
   Slide
     h2 Configure Behaviour
@@ -447,6 +483,8 @@ Deck(:themes="['default', 'vigojug']")
   //- ===== Final touch =====
   Slide(layout="section" bg="pexels-shiva-smyth-1051449.jpg" bg-opacity="0.4")
     h1 Final touch
+    Notes
+      p Section time (times.txt): 1:30 · from 45:00 to 46:30.
 
   Slide(title="Quote: start.spring.io")
     Quote(author="Josh Long") Every good project starts at start.spring.io
@@ -459,6 +497,8 @@ Deck(:themes="['default', 'vigojug']")
   //- ===== Summary =====
   Slide(layout="section" bg="pexels-nandhu-kumar-312839.jpg" bg-opacity="0.4")
     h1 Summary
+    Notes
+      p Section time (times.txt): 1:30 · from 46:30 to 48:00.
 
   Slide
     h2 Summary
@@ -471,6 +511,8 @@ Deck(:themes="['default', 'vigojug']")
   //- ===== Closing =====
   Slide(layout="section" bg="pexels-michael-judkins-1113552.jpg" bg-opacity="0.25" bg-position="0 -14em")
     h1 Live Demo
+    Notes
+      p Section time (times.txt): 7:00 · from 48:00 to 55:00.
 
   Slide(layout="cover" title="Building a Framework on top of Spring Boot (credits)")
     template(#background)
