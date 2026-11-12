@@ -1,8 +1,10 @@
 /* Engine: structure only. Every visual decision is a token the theme supplies. */
 html, body, #app { margin: 0; height: 100%; }
 
-/* Engine defaults for tokens a theme may override (zero specificity: any theme rule wins) */
-:where(.ph-viewport) {
+/* Engine defaults for tokens a theme may override, declared wherever a theme is applied: the
+   audience's viewport (and the export book inside it) and each Stage of the presenter view carry
+   data-theme. Zero specificity: the theme's own [data-theme="x"] rule wins on the same element. */
+:where([data-theme]) {
   --ph-gap-sm: 24px;
   --ph-gap-md: 48px;
   --ph-gap-lg: 80px;

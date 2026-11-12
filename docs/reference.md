@@ -420,10 +420,6 @@ Timer:
 Gotchas: the presenter window mounts every slide twice (current + preview): side effects in
 slides and addons run twice there and element ids repeat. Use `useDeck().role` to skip them.
 
-Known issue: the engine fallbacks of `--ph-gap-sm|md|lg` and `--ph-text-small` are declared on
-the audience viewport only, so in the presenter view's slides `Cols`/`Rows`/`Grid` gaps, the
-zones' gap and `.small` lose them unless the theme sets those tokens itself.
-
 ---
 
 ## Export mode
