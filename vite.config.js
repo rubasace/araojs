@@ -60,7 +60,8 @@ export default defineConfig(({ command }) => command === 'build'
         copyPublicDir: false,
         minify: false, // a library: the project's build minifies it along with everything else
         lib: { entry: here('src/index.js'), formats: ['es'], fileName: 'index', cssFileName: CSS.replace(/\.css$/, '') },
-        rolldownOptions: { external: [/^vue(\/|$)/, /^shiki(\/|$)/, /^virtual:arao\//] },
+        // dependencies stay imports, resolved in the project: vue (a peer), VueUse, Shiki
+        rolldownOptions: { external: [/^vue(\/|$)/, /^@vueuse\//, /^shiki(\/|$)/, /^virtual:arao\//] },
       },
     }
   : {
