@@ -1,6 +1,6 @@
 <!-- Addon: slide number in a corner. -->
-<template lang="pug">
-.ph-slide-number {{ deck.index.value + 1 }} / {{ deck.total.value }}
+<template>
+  <div class="ph-slide-number">{{ deck.index.value + 1 }} / {{ deck.total.value }}</div>
 </template>
 
 <script setup>

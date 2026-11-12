@@ -1,29 +1,37 @@
 <!-- The presenter view's top bar: where the deck is, the talk's timer, the wall clock. It ticks on
      its own (four times a second), so the rest of the presenter view does not re-render with it. -->
-<template lang="pug">
-header.ph-p-bar
-  .ph-p-where
-    span.ph-p-count {{ deck.index.value + 1 }}#[span.ph-p-of  / {{ deck.total.value }}]
-    span.ph-p-title(:title="title") {{ title }}
-  .ph-p-timer(:class="[timer.state, tone]")
-    .ph-p-times
-      span.ph-p-elapsed(title="Tiempo transcurrido") {{ clock(spent) }}
-      span.ph-p-sub(v-if="sub") {{ sub }}
-    button.ph-p-btn(
-      @mousedown.prevent
-      @click="$emit('timer', toggle(timer, Date.now()))"
-      :title="timer.state === 'running' ? 'Pausar el tiempo' : timer.state === 'paused' ? 'Reanudar el tiempo' : 'Empezar el tiempo'"
-    )
-      svg(v-if="timer.state === 'running'" viewBox="0 0 24 24"): path(d="M9 6v12M15 6v12")
-      svg(v-else viewBox="0 0 24 24"): path.fill(d="M8 5.5v13l10.5-6.5z")
-    button.ph-p-btn(
-      @mousedown.prevent
-      @click="$emit('timer', IDLE)"
-      :disabled="timer.state === 'idle'"
-      title="Poner el tiempo a cero (vuelve a empezar al avanzar)"
-    )
-      svg(viewBox="0 0 24 24"): path(d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v4h4")
-  time.ph-p-clock(title="Hora") {{ wall }}
+<template>
+  <header class="ph-p-bar">
+    <div class="ph-p-where">
+      <span class="ph-p-count">{{ deck.index.value + 1 }}<span class="ph-p-of"> / {{ deck.total.value }}</span></span>
+      <span class="ph-p-title" :title="title">{{ title }}</span>
+    </div>
+    <div class="ph-p-timer" :class="[timer.state, tone]">
+      <div class="ph-p-times">
+        <span class="ph-p-elapsed" title="Tiempo transcurrido">{{ clock(spent) }}</span>
+        <span class="ph-p-sub" v-if="sub">{{ sub }}</span>
+      </div>
+      <button
+        class="ph-p-btn"
+        @mousedown.prevent
+        @click="$emit('timer', toggle(timer, Date.now()))"
+        :title="timer.state === 'running' ? 'Pausar el tiempo' : timer.state === 'paused' ? 'Reanudar el tiempo' : 'Empezar el tiempo'"
+      >
+        <svg v-if="timer.state === 'running'" viewBox="0 0 24 24"><path d="M9 6v12M15 6v12" /></svg>
+        <svg v-else viewBox="0 0 24 24"><path class="fill" d="M8 5.5v13l10.5-6.5z" /></svg>
+      </button>
+      <button
+        class="ph-p-btn"
+        @mousedown.prevent
+        @click="$emit('timer', IDLE)"
+        :disabled="timer.state === 'idle'"
+        title="Poner el tiempo a cero (vuelve a empezar al avanzar)"
+      >
+        <svg viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v4h4" /></svg>
+      </button>
+    </div>
+    <time class="ph-p-clock" title="Hora">{{ wall }}</time>
+  </header>
 </template>
 
 <script setup>

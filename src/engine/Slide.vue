@@ -55,45 +55,62 @@
      (--ph-slide-bg-* tokens, engine.css), and the bg-* props tune that one.
      Headings in the background or the footer are not the slide's title (the jump menu skips them).
      Speaker notes: Notes anywhere inside the slide (notes.js); only the presenter view shows them. -->
-<template lang="pug">
-//- export mode switches slides at once (no CSS transition): the book copies the slide on screen
-Transition(name="ph-slide" :css="!still")
-  section.ph-slide(
-    ref="el"
-    v-show="active"
-    :data-ph-slide="id"
-    :class="['layout-' + layout, { 'ph-footed': footed() && !flat }]"
-    :style="image ? zones : undefined"
-  )
-    .ph-slide-bg(aria-hidden="true")
-      Img(v-if="picture" v-bind="picture")
-      .ph-slide-bg-fill(v-else-if="kind || !renders($slots.background, { step })" :class="{ 'ph-slide-bg-theme': !kind }" :style="fill")
-      slot(name="background" :step="step")
-    template(v-if="layout === 'split'")
-      .ph-slide-head(v-if="$slots.title || $slots.default")
-        VNodes(:nodes="titled()")
-      .ph-zones(:style="zones")
-        .ph-zone.ph-zone-left
-          slot(name="left" :step="step")
-        .ph-zone.ph-zone-right
-          slot(name="right" :step="step")
-    //- zones in visual order, left to right, so the DOM (and reading order) matches the screen
-    template(v-else-if="layout === 'image-left'")
-      .ph-zone.ph-zone-image
-        slot(name="image" :step="step")
-      .ph-zone.ph-zone-text
-        VNodes(:nodes="titled()")
-    template(v-else-if="layout === 'image-right'")
-      .ph-zone.ph-zone-text
-        VNodes(:nodes="titled()")
-      .ph-zone.ph-zone-image
-        slot(name="image" :step="step")
-    template(v-else-if="flat")
-      slot(name="title" :step="step")
-      slot(:step="step")
-    VNodes(v-else :nodes="zoned()")
-    footer.ph-footer(v-if="footed()")
-      VNodes(:nodes="footerSlot()({ number: index + 1, total: deck.api.total.value })")
+<template>
+  <Transition name="ph-slide" :css="!still">
+    <!-- export mode switches slides at once (no CSS transition): the book copies the slide on screen -->
+    <section
+      class="ph-slide"
+      ref="el"
+      v-show="active"
+      :data-ph-slide="id"
+      :class="['layout-' + layout, { 'ph-footed': footed() && !flat }]"
+      :style="image ? zones : undefined"
+    >
+      <div class="ph-slide-bg" aria-hidden="true">
+        <Img v-if="picture" v-bind="picture" />
+        <div class="ph-slide-bg-fill" v-else-if="kind || !renders($slots.background, { step })" :class="{ 'ph-slide-bg-theme': !kind }" :style="fill"></div>
+        <slot name="background" :step="step" />
+      </div>
+      <template v-if="layout === 'split'">
+        <div class="ph-slide-head" v-if="$slots.title || $slots.default">
+          <VNodes :nodes="titled()" />
+        </div>
+        <div class="ph-zones" :style="zones">
+          <div class="ph-zone ph-zone-left">
+            <slot name="left" :step="step" />
+          </div>
+          <div class="ph-zone ph-zone-right">
+            <slot name="right" :step="step" />
+          </div>
+        </div>
+      </template>
+      <!-- zones in visual order, left to right, so the DOM (and reading order) matches the screen -->
+      <template v-else-if="layout === 'image-left'">
+        <div class="ph-zone ph-zone-image">
+          <slot name="image" :step="step" />
+        </div>
+        <div class="ph-zone ph-zone-text">
+          <VNodes :nodes="titled()" />
+        </div>
+      </template>
+      <template v-else-if="layout === 'image-right'">
+        <div class="ph-zone ph-zone-text">
+          <VNodes :nodes="titled()" />
+        </div>
+        <div class="ph-zone ph-zone-image">
+          <slot name="image" :step="step" />
+        </div>
+      </template>
+      <template v-else-if="flat">
+        <slot name="title" :step="step" />
+        <slot :step="step" />
+      </template>
+      <VNodes v-else :nodes="zoned()" />
+      <footer class="ph-footer" v-if="footed()">
+        <VNodes :nodes="footerSlot()({ number: index + 1, total: deck.api.total.value })" />
+      </footer>
+    </section>
+  </Transition>
 </template>
 
 <script setup>

@@ -3,36 +3,50 @@
      and a bar with the slide, the talk's timer and the wall clock. Its own dark look, whatever the
      deck's theme: only the slides wear the theme. The slides come in through the slots, each one
      a Stage (Deck.vue). -->
-<template lang="pug">
-.ph-presenter
-  PresenterBar(:deck="deck" :title="title" :timer="timer" :duration="duration" @timer="$emit('timer', $event)")
-  .ph-p-main
-    section.ph-p-current(aria-label="Diapositiva actual")
-      .ph-p-screen(:style="{ aspectRatio: ratio }")
-        slot(name="current")
-      .ph-p-controls
-        slot(name="controls")
-    .ph-p-side
-      section.ph-p-panel.ph-p-next(aria-label="Siguiente")
-        header.ph-p-label
-          span Siguiente
-          span.ph-p-detail {{ nextDetail }}
-        //- a copy of the deck: kept away from the pointer, the keyboard and screen readers
-        .ph-p-screen(:style="{ aspectRatio: ratio }" aria-hidden="true" inert)
-          slot(name="next")
-          .ph-p-end(v-if="next.end") Fin de la presentación
-      section.ph-p-panel.ph-p-notes(aria-label="Notas")
-        header.ph-p-label
-          span Notas
-          span.ph-p-detail(v-if="deck.steps.value > 1") Paso {{ deck.step.value }} de {{ deck.steps.value }}
-        .ph-p-notes-body(ref="body")
-          .ph-p-note(
-            v-for="n in shown" :key="n.id"
-            :class="{ fresh: n.step > 1 && n.step === deck.step.value }"
-            :data-step="n.step"
-          )
-            NoteBody(:note="n")
-          p.ph-p-empty(v-if="!shown.length") Sin notas en esta diapositiva
+<template>
+  <div class="ph-presenter">
+    <PresenterBar :deck="deck" :title="title" :timer="timer" :duration="duration" @timer="$emit('timer', $event)" />
+    <div class="ph-p-main">
+      <section class="ph-p-current" aria-label="Diapositiva actual">
+        <div class="ph-p-screen" :style="{ aspectRatio: ratio }">
+          <slot name="current" />
+        </div>
+        <div class="ph-p-controls">
+          <slot name="controls" />
+        </div>
+      </section>
+      <div class="ph-p-side">
+        <section class="ph-p-panel ph-p-next" aria-label="Siguiente">
+          <header class="ph-p-label">
+            <span>Siguiente</span>
+            <span class="ph-p-detail">{{ nextDetail }}</span>
+          </header>
+          <!-- a copy of the deck: kept away from the pointer, the keyboard and screen readers -->
+          <div class="ph-p-screen" :style="{ aspectRatio: ratio }" aria-hidden="true" inert>
+            <slot name="next" />
+            <div class="ph-p-end" v-if="next.end">Fin de la presentación</div>
+          </div>
+        </section>
+        <section class="ph-p-panel ph-p-notes" aria-label="Notas">
+          <header class="ph-p-label">
+            <span>Notas</span>
+            <span class="ph-p-detail" v-if="deck.steps.value > 1">Paso {{ deck.step.value }} de {{ deck.steps.value }}</span>
+          </header>
+          <div class="ph-p-notes-body" ref="body">
+            <div
+              class="ph-p-note"
+              v-for="n in shown" :key="n.id"
+              :class="{ fresh: n.step > 1 && n.step === deck.step.value }"
+              :data-step="n.step"
+            >
+              <NoteBody :note="n" />
+            </div>
+            <p class="ph-p-empty" v-if="!shown.length">Sin notas en esta diapositiva</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>

@@ -3,10 +3,12 @@
      The audience sees one Stage filling the window; the presenter view places two in boxes, so
      there every slide is mounted twice (side effects run twice, element ids repeat): components
      tell the copies apart with useDeck().role (stage.js). -->
-<template lang="pug">
-.ph-stage(ref="box" :data-theme="theme" :style="{ '--ph-scale': scale }")
-  .ph-canvas(ref="canvas" :style="canvasStyle")
-    slot
+<template>
+  <div class="ph-stage" ref="box" :data-theme="theme" :style="{ '--ph-scale': scale }">
+    <div class="ph-canvas" ref="canvas" :style="canvasStyle">
+      <slot />
+    </div>
+  </div>
 </template>
 
 <script setup>

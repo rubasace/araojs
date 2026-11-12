@@ -24,28 +24,31 @@
      wants ~3840 px wide (twice the size it shows at in canvas px); use WebP/AVIF/JPEG for photos.
      Until its picture has loaded (or failed) it carries data-ph-busy, set to its URL: the export
      waits for it, and for a URL that never answers only once (exporter.js). -->
-<template lang="pug">
-.ph-img(
-  :class="{ 'ph-img-missing': missing }"
-  :style="box"
-  :title="missing ? (alt ? `${alt} — ${name}` : name) : undefined"
-  :role="missing && alt ? 'img' : undefined"
-  :aria-label="missing && alt ? alt : undefined"
-  :data-ph-busy="missing || shown === url ? undefined : url"
-)
-  img(
-    v-if="!missing"
-    :src="url"
-    :alt="alt"
-    :style="picture"
-    draggable="false"
-    decoding="async"
-    @load="loaded"
-    @error="failed = url"
-  )
-  span.ph-img-name(v-else)
-    span.ph-img-alt(v-if="alt") {{ alt }}
-    span.ph-img-file {{ stem }}#[wbr]{{ ext }}
+<template>
+  <div
+    class="ph-img"
+    :class="{ 'ph-img-missing': missing }"
+    :style="box"
+    :title="missing ? (alt ? `${alt} — ${name}` : name) : undefined"
+    :role="missing && alt ? 'img' : undefined"
+    :aria-label="missing && alt ? alt : undefined"
+    :data-ph-busy="missing || shown === url ? undefined : url"
+  >
+    <img
+      v-if="!missing"
+      :src="url"
+      :alt="alt"
+      :style="picture"
+      draggable="false"
+      decoding="async"
+      @load="loaded"
+      @error="failed = url"
+    />
+    <span class="ph-img-name" v-else>
+      <span class="ph-img-alt" v-if="alt">{{ alt }}</span>
+      <span class="ph-img-file">{{ stem }}<wbr />{{ ext }}</span>
+    </span>
+  </div>
 </template>
 
 <script setup>
