@@ -61,10 +61,21 @@ Deck(:themes="['default', 'vigojug']" duration="15m")
   Slide(title="Pasos en componentes anidados")
     h2 Pasos dentro de componentes
     Cols
-      Card(title="Card A" :items="['Uno', 'Dos', 'Tres']" :from="2")
-      Card(title="Card B" :items="['Cuatro', 'Cinco']" :from="5")
+      Card(title="Card A" :items="['Uno', 'Dos', 'Tres']" v-step-from="2")
+      Card(title="Card B" :items="['Cuatro', 'Cinco']" v-step-from="5")
     Notes
-      p Card es un componente normal que no sabe nada del motor; aun así la slide sabe que tiene 6 pasos.
+      p Card numera sus pasos desde 1 y no sabe dónde está; v-step-from la coloca en el paso 2 o en el 5. La slide sabe que tiene 6 pasos.
+
+  Slide(title="Animaciones reutilizables")
+    h2 Animaciones reutilizables
+    Cols(ratio="2 3" align="center" gap="lg")
+      div
+        p Cada componente numera sus pasos desde 1.
+        p(v-step="2") v-step-from lo coloca en el paso que quieras.
+        p(v-step="3") Funciona igual con v-step y con useSlide().
+      Snippet(v-step-from="3" file="LoggingFilter.java" fit :highlights='{ "2:implements+++Filter": 2, "4-7": 3 }')
+    Notes
+      p El snippet tiene sus resaltados en los pasos 2 y 3; con v-step-from="3" salen en los pasos 4 y 5 de la slide.
 
   //- ---------------------------------------------------------------- code
   Slide(layout="section")
@@ -117,7 +128,7 @@ Deck(:themes="['default', 'vigojug']" duration="15m")
       Img(file="demo/landscape.svg" alt="Paisaje")
     h2 Imagen a un lado
     p La imagen llena su lado de borde a borde.
-    p(v-step="2") El texto se rellena como cualquier slide.
+    Snippet(v-step="2" file="showcase/image-right.pug" name="Showcase.vue" fit :size="30" :highlights='{ "1": 3, "2-3": 4 }')
     Notes
       p image-left e image-right; las imágenes se cargan por nombre desde src/images.
 
