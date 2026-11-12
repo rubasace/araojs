@@ -2,10 +2,10 @@
      controls under it; the next step as the audience will see it; the speaker notes of the slide;
      and a bar with the slide, the talk's timer and the wall clock. Its own dark look, whatever the
      deck's theme: only the slides wear the theme. The slides come in through the slots, each one
-     a Stage (Deck.vue). -->
+     a Stage (Deck.vue); the rest comes from its Deck (useDeckContext). -->
 <template>
   <div class="ph-presenter">
-    <PresenterBar :deck="deck" :title="title" :timer="timer" :duration="duration" @timer="$emit('timer', $event)" />
+    <PresenterBar />
     <div class="ph-p-main">
       <section class="ph-p-current" aria-label="Diapositiva actual">
         <div class="ph-p-screen" :style="{ aspectRatio: ratio }">
@@ -50,36 +50,39 @@
 </template>
 
 <script setup>
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useDeckContext } from '../../composables/useDeckContext'
 import PresenterBar from './PresenterBar.vue'
-import { NoteBody } from './notes'
+import { NoteBody } from '../Notes'
 
-const props = defineProps({
-  deck: { type: Object, required: true }, // the audience's stage api (useDeck)
-  title: String, // of the slide on screen
-  next: { type: Object, required: true }, // { index, step, end }: where one more press leads
-  notes: { type: Array, default: () => [] }, // the slide's Notes: { id, step, slots }
-  timer: { type: Object, required: true },
-  duration: Number, // ms, or none
+defineProps({
   ratio: { type: String, default: '16 / 9' }, // of the canvas
 })
-defineEmits(['timer'])
+// deck: the audience's stage api; next: { index, step, end }, where one more press leads;
+// notes: the slide's Notes, { id, step, slots }
+const { deck, next, notes } = useDeckContext()
+
+// the window says what it is, in its title (once: a remount after an edit does not add it again)
+const TITLE = 'Presentador · '
+onMounted(() => {
+  if (!document.title.startsWith(TITLE)) document.title = TITLE + document.title
+})
 
 // notes show from their step on, as v-step
-const shown = computed(() => props.notes.filter((n) => n.step <= props.deck.step.value))
+const shown = computed(() => notes.value.filter((n) => n.step <= deck.step.value))
 
 const nextDetail = computed(() => {
-  const { index, step, end } = props.next
+  const { index, step, end } = next.value
   if (end) return ''
-  if (index === props.deck.index.value) return `Paso ${step} de ${props.deck.steps.value}`
+  if (index === deck.index.value) return `Paso ${step} de ${deck.steps.value}`
   return `Diapositiva ${index + 1}`
 })
 
 // A new slide starts its notes from the top; a step brings the notes it starts into view. Only
 // the notes box scrolls (scrollIntoView would also scroll the page of a narrow window).
 const body = ref()
-watch(() => props.deck.index.value, () => body.value && (body.value.scrollTop = 0))
-watch(() => props.deck.step.value, async () => {
+watch(() => deck.index.value, () => body.value && (body.value.scrollTop = 0))
+watch(() => deck.step.value, async () => {
   await nextTick()
   const box = body.value
   const note = box?.querySelector('.ph-p-note.fresh')

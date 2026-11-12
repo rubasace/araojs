@@ -3,8 +3,8 @@
 //   (npm run export -- --deck framework, when the project's "export" script is "phoenyx export")
 // Run by bin/phoenyx.js: its options are what follows the command.
 // Builds the project into a temporary folder (vite build, with the project's own Vite config),
-// serves it on a free local port (vite preview), opens the deck in export mode (?export, the
-// engine's exporter.js) in headless Chromium and prints it: one page per slide, each slide as it
+// serves it on a free local port (vite preview), opens the deck in export mode (?export,
+// src/core/exporter.js) in headless Chromium and prints it: one page per slide, each slide as it
 // stands at its last step (or one page per step), every page the canvas size (1920x1080 px,
 // which a PDF measures as 1440x810 pt), text as text. Needs no dev server running.
 // The PDF is checked (one page per page of the deck) and put in place only once complete: an

@@ -1,5 +1,5 @@
 import { inject, onBeforeUnmount, shallowReactive, watchEffect } from 'vue'
-import { SLIDE } from './registry'
+import { SLIDE } from '../core/registry'
 
 // Speaker notes, placed anywhere inside a Slide. Never drawn on the slide: it takes no room, adds
 // no step and no title. The presenter view (?presenter, or "p") shows them, rendered as written.

@@ -41,7 +41,7 @@
 
 <script setup>
 import { computed, watchEffect } from 'vue'
-import { iconData, uniqueIds, warnMissing } from './icons'
+import { iconData, uniqueIds, warnMissing } from '../core/icons'
 
 const props = defineProps({
   name: { type: String, required: true }, // prefix:name

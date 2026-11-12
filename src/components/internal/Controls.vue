@@ -1,10 +1,12 @@
 <!-- Built-in deck controls: floating panel, shown on mouse move, hidden when idle.
-     docked: always shown, in the flow of the page (the presenter view places it under the slide). -->
+     docked: always shown, in the flow of the page (the presenter view places it under the slide).
+     What it shows and does comes from its Deck (useDeckContext). Deck opens and closes the jump
+     menu from the keyboard: openMenu(digits), toggleMenu(), closeMenu(). -->
 <template>
   <nav
     class="ph-controls"
     ref="root"
-    :class="{ visible: docked || visible || hovering || open, docked }"
+    :class="{ visible: docked || hud || hovering || open, docked }"
     @mouseenter="hovering = true"
     @mouseleave="hovering = false"
     aria-label="Controles de la presentación"
@@ -58,14 +60,14 @@
         <circle class="fill" cx="17" cy="10.5" r="1.3" />
       </svg>
     </button>
-    <button class="ph-btn" v-if="!docked" @mousedown.prevent @click="$emit('presenter')" title="Vista del presentador (p)">
+    <button class="ph-btn" v-if="!docked" @mousedown.prevent @click="openPresenter()" title="Vista del presentador (p)">
       <!-- a screen with notes under it -->
       <svg viewBox="0 0 24 24">
         <rect x="3" y="3.5" width="18" height="11" rx="2" />
         <path d="M7 18.5h10M9 21h6" />
       </svg>
     </button>
-    <button class="ph-btn" @mousedown.prevent @click="$emit('fullscreen')" :title="fullscreen ? 'Salir de pantalla completa (f)' : 'Pantalla completa (f)'">
+    <button class="ph-btn" @mousedown.prevent @click="toggleFullscreen()" :title="fullscreen ? 'Salir de pantalla completa (f)' : 'Pantalla completa (f)'">
       <svg v-if="!fullscreen" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg>
       <svg v-else viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" /></svg>
     </button>
@@ -119,24 +121,18 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useDeckContext } from '../../composables/useDeckContext'
 
-const props = defineProps({
-  deck: Object,
-  visible: Boolean,
-  theme: String,
-  themes: { type: Array, default: () => [] },
-  fullscreen: Boolean,
-  titles: { type: Array, default: () => [] },
+defineProps({
   docked: Boolean,
 })
-const emit = defineEmits(['theme', 'fullscreen', 'presenter'])
+const { deck, hud, titles, theme, themes, setTheme, fullscreen, toggleFullscreen, openPresenter } = useDeckContext()
 
 const root = ref()
 const hovering = ref(false)
 const open = ref(null) // null | 'slides' | 'themes'
-const atStart = computed(() => props.deck.index.value === 0 && props.deck.step.value === 1)
-const atEnd = computed(() =>
-  props.deck.index.value === props.deck.total.value - 1 && props.deck.step.value === props.deck.steps.value)
+const atStart = computed(() => deck.index.value === 0 && deck.step.value === 1)
+const atEnd = computed(() => deck.index.value === deck.total.value - 1 && deck.step.value === deck.steps.value)
 
 // ---- jump menu --------------------------------------------------------------
 const query = ref('')
@@ -146,7 +142,7 @@ const listEl = ref()
 // a number matches by slide number prefix; text matches the title
 const matches = computed(() => {
   const q = query.value.trim().toLowerCase()
-  const all = props.titles.map((t, i) => ({ i, t }))
+  const all = titles.value.map((t, i) => ({ i, t }))
   if (!q) return all
   if (/^\d+$/.test(q)) return all.filter((m) => String(m.i + 1).startsWith(q))
   return all.filter((m) => m.t.toLowerCase().includes(q))
@@ -162,18 +158,18 @@ async function openSlides(initial = '') {
   query.value = initial
   open.value = 'slides'
   await nextTick()
-  if (!initial) sel.value = Math.max(0, matches.value.findIndex((m) => m.i === props.deck.index.value))
+  if (!initial) sel.value = Math.max(0, matches.value.findIndex((m) => m.i === deck.index.value))
   search.value?.focus()
   listEl.value?.querySelector(initial ? '.sel' : '.current')?.scrollIntoView({ block: 'center' })
 }
 function jump(i) {
-  props.deck.go(i)
+  deck.go(i)
   close()
 }
 
 // ---- themes -----------------------------------------------------------------
 function pickTheme(t) {
-  emit('theme', t)
+  setTheme(t)
   close()
 }
 
