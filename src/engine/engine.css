@@ -152,8 +152,13 @@ html:has(.ph-export), html:has(.ph-export) body, html:has(.ph-export) #app { hei
 .ph-export, .ph-export *, .ph-export *::before, .ph-export *::after {
   transition: none !important; animation: none !important;
 }
+/* contain: size makes a page one piece for the printer (monolithic). Without it Chromium splits
+   at the page's bottom edge whatever is laid out across it, clipped or not, and draws the part
+   above as a box of its own (no bottom border or rounded bottom corners, percentages of its
+   height taken from that part): a ring placed with top: 50% and transform: translateY(-50%)
+   printed as an arch. The page has its size from its own width and height, so nothing moves. */
 .ph-page {
-  position: relative; overflow: hidden; box-sizing: border-box;
+  position: relative; overflow: hidden; box-sizing: border-box; contain: size;
   break-after: page; break-inside: avoid;
   print-color-adjust: exact; -webkit-print-color-adjust: exact;
 }
