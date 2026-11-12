@@ -26,8 +26,8 @@ Deck(:themes="['default', 'vigojug']" duration="10m")
   Slide(layout="two-cols")
     h2 Pasos en componentes anidados
     .cols
-      Card(title="Card A" :items="['Uno', 'Dos', 'Tres']" :from="2")
-      Card(title="Card B" :items="['Cuatro', 'Cinco']" :from="5")
+      Card(title="Card A" :items="['Uno', 'Dos', 'Tres']" v-step-from="2")
+      Card(title="Card B" :items="['Cuatro', 'Cinco']" v-step-from="5")
 
   Slide
     h2 v-step.only
@@ -60,7 +60,7 @@ Deck(:themes="['default', 'vigojug']" duration="10m")
       p(v-step="2") #[strong ratio="2 1"] reparte el ancho: dos tercios y un tercio.
       p(v-step="3") El título es lo que va en el slot por defecto.
     template(#right)
-      Card(title="#right" :items="['Pasos', 'en zonas']" :from="2")
+      Card(title="#right" :items="['Pasos', 'en zonas']" v-step-from="2")
 
   Slide(layout="image-left")
     template(#image)

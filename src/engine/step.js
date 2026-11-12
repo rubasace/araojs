@@ -1,4 +1,4 @@
-import { effect, stop } from 'vue'
+import { effect, ref, stop } from 'vue'
 import { slides } from './registry'
 import { flip, snapshot } from './flip'
 
@@ -7,8 +7,24 @@ import { flip, snapshot } from './flip'
 // .collapse         → while hidden it takes no space (default: it keeps its place);
 //                     when it appears or disappears, the elements around it glide (FLIP)
 // The element may live in any nested component: it finds its slide through the DOM.
+//
+// v-step-from="n" on any element or component shifts every v-step (and useSlide) inside it:
+// their numbers become relative, 1 = step n of the slide. Scopes nest and add up. This lets a
+// component number its own steps from 1 and be placed at any point of a slide:
+//   Card(v-step-from="5")   →   li(v-step="1") inside Card shows at step 5, v-step="2" at 6…
 const HIDDEN = 'ph-step-hidden'
 const COLLAPSED = 'ph-step-collapsed'
+
+// Sum of the v-step-from scopes between el (exclusive) and its slide.
+export function stepOffset(el, host = el?.closest?.('[data-ph-slide]')) {
+  let off = 0
+  for (let e = el?.parentElement; e && e !== host; e = e.parentElement) {
+    if (e.dataset.phStepFrom) off += Number(e.dataset.phStepFrom) - 1
+  }
+  return off
+}
+// bumped whenever a v-step-from scope changes, so useSlide() consumers re-read their offset
+export const scopesVersion = ref(0)
 
 function attach(el, binding) {
   const host = el.closest('[data-ph-slide]')
@@ -17,11 +33,11 @@ function attach(el, binding) {
     console.warn('[phoenyx] v-step used outside a <Slide>', el)
     return
   }
-  const n = Number(binding.value)
+  const n = Number(binding.value) + stepOffset(el, host)
   const only = !!binding.modifiers.only
   const cls = binding.modifiers.collapse ? COLLAPSED : HIDDEN
   const unregister = slide.registerStep(n)
-  const rec = { n, only, cls, host, slide }
+  const rec = { n, only, cls, host, slide, binding }
   let first = true
   const runner = effect(() => {
     const s = slide.step.value
@@ -85,7 +101,8 @@ const step = {
   updated(el, binding) {
     const cur = el.__phStep
     const cls = binding.modifiers.collapse ? COLLAPSED : HIDDEN
-    if (cur && cur.n === Number(binding.value) && cur.only === !!binding.modifiers.only && cur.cls === cls) return
+    const n = Number(binding.value) + stepOffset(el, cur?.host)
+    if (cur && cur.n === n && cur.only === !!binding.modifiers.only && cur.cls === cls) return
     detach(el)
     attach(el, binding)
   },
@@ -98,6 +115,32 @@ export function sweep(elements) {
   for (const el of [...elements]) {
     if (!el.__vnode?.dirs?.some((d) => d.dir === step)) detach(el)
   }
+}
+
+// v-step-from: marks the element as a step scope. Set in 'created' so that it is already there
+// when the v-steps inside it attach (their 'mounted' runs after the parent's 'created').
+function fromValue(binding) {
+  const n = Number(binding.value)
+  if (Number.isInteger(n) && n >= 1) return n
+  console.warn(`[phoenyx] v-step-from="${binding.value}" must be an integer ≥ 1; using 1`)
+  return 1
+}
+export const stepFrom = {
+  created(el, binding) {
+    el.dataset.phStepFrom = fromValue(binding)
+  },
+  updated(el, binding) {
+    const n = String(fromValue(binding))
+    if (el.dataset.phStepFrom === n) return
+    el.dataset.phStepFrom = n
+    for (const d of el.querySelectorAll('*')) {
+      if (d.__phStep) { const b = d.__phStep.binding; detach(d); attach(d, b) }
+    }
+    scopesVersion.value++
+  },
+  beforeUnmount(el) {
+    delete el.dataset.phStepFrom
+  },
 }
 
 export default step

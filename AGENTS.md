@@ -16,7 +16,7 @@ Operational guide for AI agents writing or editing slide decks in this repo. Ful
 - **A slide counts its own steps**: the largest `v-step` (or Snippet highlight step) inside it.
   Never declare a count.
 - Look comes from the theme (`--ph-*` tokens). Slides say *what*, themes say *how it looks*.
-- Globally available: `Deck Slide Img Snippet Notes Cols Rows Grid Center` and `v-step`. Addons are
+- Globally available: `Deck Slide Img Snippet Notes Cols Rows Grid Center`, `v-step` and `v-step-from`. Addons are
   imported in `<script setup>`.
 
 ## Rules
@@ -111,6 +111,10 @@ Slide
     li(v-step="4") Nothing to copy and paste
 ```
 Variants: `v-step.only="n"` (only at step n), `v-step.collapse="n"` (takes no space while hidden).
+
+Reusable steps: inside a component, number steps from 1 (`v-step="i + 1"`) and place it in the
+slide with `v-step-from`: `Card(v-step-from="5")` shows its step 1 at slide step 5. Works for
+`useSlide()` (and so Snippet highlights) too; scopes nest and add up.
 
 Code walkthrough with highlights per step (3 steps: plain, line 2, then words on lines 8-10):
 ```pug

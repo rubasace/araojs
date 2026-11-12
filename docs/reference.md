@@ -183,6 +183,37 @@ Slide
   p(v-step.only.collapse="4") Only at step 4 (takes no space).
 ```
 
+### v-step-from: relative steps for reusable components
+
+`v-step-from="n"` on any element or component makes every `v-step` and `useSlide()` inside it
+**relative**: their step 1 is step `n` of the slide. A component can number its own steps from 1
+and the deck decides where they land, so the same component (or the same "animation") is reused
+at any point of any slide.
+
+- Value: an integer ≥ 1 (anything else warns and counts as 1). `v-step-from="1"` changes nothing.
+- Scopes nest and add up: `v-step-from="3"` inside `v-step-from="2"` starts at step 4.
+- A `v-step` on the same element as `v-step-from` is **not** shifted by it (it places the element
+  itself, relative to the outer scopes); its descendants are.
+- `useSlide()` inside a scope: `step` is relative (it can be ≤ 0 before the scope starts) and
+  `requireSteps(n)` declares `n` relative steps. Snippet highlights follow, since they use it.
+- The slide's total is still the highest absolute step.
+
+```pug
+//- src/slides/Card.vue — knows nothing about where it sits
+.card
+  h3 {{ title }}
+  ul
+    li(v-for="(item, i) in items" v-step="i + 1") {{ item }}
+```
+```pug
+Slide
+  h2 Two cards, one after the other
+  Cols
+    Card(title="A" :items="['One', 'Two', 'Three']" v-step-from="2")   //- steps 2, 3, 4
+    Card(title="B" :items="['Four', 'Five']" v-step-from="5")          //- steps 5, 6
+  Snippet(file="App.java" v-step-from="7" :highlights='{ "3": 2 }')    //- highlight at step 8
+```
+
 ---
 
 ## Cols, Rows, Grid, Center

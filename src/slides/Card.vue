@@ -1,16 +1,16 @@
-<!-- An ordinary component: it knows nothing about decks; v-step works inside it anyway. -->
+<!-- An ordinary component: it numbers its steps from 1 and knows nothing about where it sits.
+     The deck places it with v-step-from:  Card(v-step-from="5")  → its first item shows at step 5. -->
 <template lang="pug">
 .card
   h3 {{ title }}
   ul
-    li(v-for="(item, i) in items" :key="item" v-step="from + i") {{ item }}
+    li(v-for="(item, i) in items" :key="item" v-step="i + 1") {{ item }}
 </template>
 
 <script setup>
 defineProps({
   title: String,
   items: { type: Array, default: () => [] },
-  from: { type: Number, default: 2 },
 })
 </script>
 
