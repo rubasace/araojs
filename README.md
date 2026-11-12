@@ -344,7 +344,7 @@ libraries through `LD_LIBRARY_PATH`, `FONTCONFIG_FILE`) is passed through to the
 ## Releasing
 
 Releases are automated with [release-please](https://github.com/googleapis/release-please) and
-npm trusted publishing (`.github/workflows/release.yml`):
+npm trusted publishing (`.github/workflows/release-please.yml`):
 
 1. Commit to `main` using [Conventional Commits](https://www.conventionalcommits.org/):
    `feat:` (minor while below 1.0), `fix:`, `perf:`, `refactor:` and `docs:` (patch), and `feat!:`
@@ -368,7 +368,7 @@ One-time setup by the owner:
   permissions" and tick "Allow GitHub Actions to create and approve pull requests".
 - **npm**: the package (published as `araojs`) has to exist on npmjs.com first. Then, under the
   package's Settings → Trusted publisher → GitHub Actions, set organization or user `rubasace`, repository
-  `phoenyxjs`, workflow filename `release.yml`, and leave the environment empty. Under
+  `araojs`, workflow filename `release-please.yml`, and leave the environment empty. Under
   "Allowed actions", allow `npm publish`: new trusted publishers allow only `npm stage publish`
   by default. Every field is case-sensitive. If you rename the package or the repository, update
   the trusted publisher and `repository.url` in `package.json` too: they have to match.
