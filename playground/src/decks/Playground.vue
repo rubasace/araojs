@@ -4,6 +4,9 @@
 Deck(:themes="['default', 'vigojug']")
   ProgressBar
   SlideNumber
+  //- on every slide but the cover and the sections (the last one asks for it)
+  template(#footer)
+    span Phoenyx · playground
 
   Slide(layout="cover" title="Playground")
     .bar
@@ -19,6 +22,11 @@ Deck(:themes="['default', 'vigojug']")
     Notes
       p Notes show in the presenter view.
 
+  Slide(align="start")
+    h2 Body from the top
+    p The body is centred by default; align="start" reads it from the top.
+    p.muted align="end" puts it at the bottom, over the footer.
+
   Slide(title="A snippet")
     h2 A snippet
     Snippet(file="Hello.java" :highlights='{ "4": 2, "5:println": 3 }')
@@ -27,7 +35,7 @@ Deck(:themes="['default', 'vigojug']")
     template(#image)
       Img(file="shapes.svg" alt="Shapes")
     h2 A picture
-    p It fills its side edge to edge.
+    p It fills its side edge to edge, down to the footer.
 
   Slide
     h2 Composition
@@ -40,13 +48,25 @@ Deck(:themes="['default', 'vigojug']")
         p.muted Second column
 
   Slide
+    h2 A table
+    table
+      thead
+        tr
+          th Zone
+          th What goes there
+      tbody
+        tr(v-for="(z, i) in zones" :key="z.name" v-step="i + 1")
+          td {{ z.name }}
+          td {{ z.what }}
+
+  Slide
     h2 #[Icon(name="lucide:shapes")] Icons
     Grid(cols="3" gap="lg")
       Center(v-for="(t, i) in tech" :key="t.icon" v-step="i + 1")
         Icon(:name="t.icon" size="120" :label="t.label")
         p {{ t.label }}
 
-  Slide(layout="section")
+  Slide(layout="section" :footer="true")
     h1 The end
 </template>
 
@@ -58,5 +78,11 @@ const tech = [
   { icon: 'simple-icons:vuedotjs', label: 'Vue' },
   { icon: 'simple-icons:vite', label: 'Vite' },
   { icon: 'lucide:rocket', label: 'Launch' },
+]
+
+const zones = [
+  { name: 'Header', what: 'The heading the slide starts with' },
+  { name: 'Body', what: 'Everything else, centred unless align says otherwise' },
+  { name: 'Footer', what: 'The deck’s #footer, on every slide but covers and sections' },
 ]
 </script>
