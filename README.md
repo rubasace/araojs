@@ -47,6 +47,9 @@ An unknown `?deck=` falls back to Demo without a warning.
 | `f` | fullscreen |
 | `p` | open (or bring forward) the presenter window |
 
+On a touch screen: tap the right edge → next, the left edge → previous, the middle → controls;
+swipe left/right also navigates.
+
 Keys with Ctrl, Cmd or Alt are left to the browser. Letter keys act in lowercase only: with Caps
 Lock on (or Shift held), `g` `t` `f` `p` do nothing. Moving the mouse shows the controls
 (first/prev/next/last, slide counter with step dots, jump menu, theme picker, presenter view,

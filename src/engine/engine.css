@@ -12,6 +12,9 @@ html, body, #app { margin: 0; height: 100%; }
 }
 
 .ph-viewport {
+  /* touch: we handle taps and horizontal swipes ourselves; keep pinch-zoom */
+  touch-action: pinch-zoom;
+  -webkit-tap-highlight-color: transparent;
   position: fixed; inset: 0; overflow: hidden;
   background: var(--ph-letterbox, #000);
 }
