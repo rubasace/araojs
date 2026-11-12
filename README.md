@@ -420,18 +420,21 @@ src/
   index.js          what 'araojs' exports (the only barrel: every other module imports a file)
   plugin.js         the Vue plugin: global components and directives, the engine's CSS
   app.js            createDeckApp
+  state/            the deck, its stages, its slides: createDeck/useDeck, createStage/useStage, createSlide/useSlide
+  composables/      the effects (internal): useHashRoute, useDeckSync, usePresenterWindow, useKeyboard, useTouchNav, useMouseIdle
+  core/             plain modules: sync, timer, exporter, image, icons, flip
+  views/            what Arao draws: AudienceView, PresenterView, ExportView
+    parts/          Stage (the scaled canvas), Controls, PresenterBar
   components/       Deck, Slide, Img, Icon, Snippet, Notes, Cols/Rows/Grid/Center (layout.js)
-    internal/       the deck's own UI: Stage (the scaled canvas), Controls, Presenter, PresenterBar
-  addons/           ProgressBar, SlideNumber: things drawn over every slide
-  composables/      useDeck, useSlide (public); the Deck's own pieces (useKeyboard, useIdle, useDeckSync…)
   directives/       v-step and v-step-from (step.js)
-  core/             plain modules: stage, sync, timer, exporter, image, icons, flip, registry
+  addons/           ProgressBar, SlideNumber: things drawn over every slide
   styles/           engine.css (structure), layouts.css (content and layouts)
   themes/           the shipped themes (default.css, vigojug.css)
 vite/               the Vite plugin (araojs/vite; icons.js resolves the icons)
 bin/                the arao command (arao export)
 playground/         a tiny slides project on the library's source, for developing it
 docs/reference.md   the full reference
+docs/architecture.md how the engine is built: folders, views, provide/inject, useDeck's face
 dist/               the build (npm run build): index.js, arao.css, themes/
 ```
 
