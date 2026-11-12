@@ -192,7 +192,7 @@ All slots receive `{ step }` (the slide's current step) as slot props.
 - `split` and `image-*` keep their own zones; the footer shows under them (their zones end where
   it begins), and their heading is the slide's title for the `--ar-title-*` tokens. `align` only
   places the body of `default` (and of layouts without zones of their own).
-- Content styles from `layouts.css`: `h1` is `--ar-title`; `h2` is 0.6x `--ar-title` in
+- Content styles from `Slide.vue`'s CSS: `h1` is `--ar-title`; `h2` is 0.6x `--ar-title` in
   `--ar-accent`; `p` has a bottom margin of 0.6em; lists and tables below.
 
 ### Zones: header, body, footer
@@ -1004,7 +1004,8 @@ export default defineConfig({
 A theme is a CSS rule `[data-theme="<name>"] { --ar-…: …; }` in a CSS file imported in
 `src/main.js` and listed in `Deck(:themes)`: `import 'araojs/themes/default.css'` for a shipped
 one, `src/themes/<name>.css` in the project for your own. Themes set tokens only; layouts read them
-(the engine's CSS: `layouts.css`, `engine.css`, component styles). Unset tokens use the fallback below. Rows marked
+(the engine's CSS: each component's styles, and `styles/base.css`). Unset tokens use the default below,
+declared in `styles/tokens.css` (or, where it depends on the context, at the rule that reads it). Rows marked
 **theme** have no engine fallback: every theme must set them (both shipped themes do).
 
 ### Colours and type

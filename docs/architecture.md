@@ -9,11 +9,11 @@ this: [reference.md](reference.md) is their API, [../AGENTS.md](../AGENTS.md) th
 |---|---|---|
 | `state/` | what there is | the deck, its stages and its slides: reactive state, made by a `create…` and read by a `use…` (the pair shares a provide/inject key private to its file) |
 | `composables/` | effects | small internal composables, one per file, that tie the state to the browser: the URL, other windows, keys, touch, the mouse, fullscreen |
-| `core/` | the pure how | plain modules with no Vue component state: sync, timer, exporter, flip, image, icons |
+| `core/` | the pure how | plain modules with no Vue component state: sync, timer, exporter, flip, image, icons, layout (the parsers of the layout props: ratio, gap, grid shape) |
 | `views/` | what Arao draws | the three views of a deck and their parts (the scaled canvas, the controls, the presenter's bar); `DeckSelector`, the list of decks `createDeckApp` shows when the URL names none |
-| `components/` | what deck authors write | `Deck`, `Slide`, `Img`, `Icon`, `Snippet`, `Notes`, the layout components (`layout.js`); `directives/` holds `v-step` and `v-step-from` |
+| `components/` | what deck authors write | `Deck`, `Slide`, `Img`, `Icon`, `Snippet`, `Notes`; `layout/` holds the layout components (`Cols`, `Rows`, `Grid`, `Center`), `directives/` holds `v-step` and `v-step-from` |
 | `addons/` | drawn over every slide | `ProgressBar`, `SlideNumber` |
-| `styles/`, `themes/` | CSS | engine.css and layouts.css; the shipped themes |
+| `styles/`, `themes/` | CSS | only what is global: `tokens.css` (every token and its default), `base.css` (the page, the viewport, the steps); the shipped themes. Everything else comes with its component ([CSS](#css)) |
 
 `index.js` is the only barrel (the public API); every other module imports the file it uses.
 `plugin.js` is the Vue plugin, `app.js` is `createDeckApp`: it renders the deck `?deck=` names,
@@ -92,3 +92,27 @@ cannot act. Every function of its face does nothing: `next`, `prev`, `go` (the s
 state/stage.js) and `setTheme`, `toggleFullscreen`, `openPresenter` (useDeck() swaps them for
 no-ops, state/deck.js). Its refs still read: its own position, the deck's theme, timer, duration
 and fullscreen.
+
+## CSS
+
+Every component carries its own CSS, in the `<style>` block of its `.vue` file: the layout
+components, `Img`, `Icon`, `Snippet`, `Slide` (its zones, its footer, the slide's content and the
+layouts: `layout-cover`, `layout-section`, `layout-image-left`… are Slide's classes), the addons,
+the views and their parts. Not scoped: a theme or a deck must be able to override any of it, so
+the selectors are the `ar-` classes at the specificity they always had (zero, with `:where()`,
+where a deck's own rule must win). `Notes` draws nothing and has none; the export's notes pages
+are `ExportView`'s.
+
+`styles/` keeps what no component owns: `tokens.css`, the tokens' defaults, declared with zero
+specificity wherever a theme is applied (`:where([data-theme])`), and the list of the tokens it
+cannot declare (no default, or one that depends on where it is read); and `base.css`, the page
+(`html`, `body`, `#app`), the viewport the audience and export views share, and the classes
+`v-step` sets.
+
+The library build concatenates it all into `dist/arao.css` in import order, and order decides
+between two rules of the same specificity on the same element. `plugin.js` imports in that order
+and its header says why: `tokens.css`; the views (through `Deck`); `Snippet` before `Slide` (a
+Snippet in an image zone takes the zone's `flex`); `Img` before `Slide`; `Slide` before `Icon`
+and the layout components (they keep their own `flex` in an image zone); `Img` before the layout
+components (their children clip `overflow-x`); `base.css` last (its step fade wins over Snippet's
+own transitions). `index.js` then adds the addons, and `app.js` the deck selector.

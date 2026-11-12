@@ -433,17 +433,18 @@ static build into `dist/` (every deck; pick one with `?deck=`) and `npm run expo
 ```
 src/
   index.js          what 'araojs' exports (the only barrel: every other module imports a file)
-  plugin.js         the Vue plugin: global components and directives, the engine's CSS
+  plugin.js         the Vue plugin: global components and directives, the global CSS (in CSS order)
   app.js            createDeckApp
   state/            the deck, its stages, its slides: createDeck/useDeck, createStage/useStage, createSlide/useSlide
   composables/      the effects (internal): useHashRoute, useDeckSync, usePresenterWindow, useKeyboard, useTouchNav, useMouseIdle, useFullscreen
-  core/             plain modules: sync, timer, exporter, image, icons, flip
+  core/             plain modules: sync, timer, exporter, image, icons, flip, layout (the layout props' parsers)
   views/            what Arao draws: AudienceView, PresenterView, ExportView; DeckSelector (createDeckApp's list of decks)
     parts/          Stage (the scaled canvas), Controls, PresenterBar
-  components/       Deck, Slide, Img, Icon, Snippet, Notes, Cols/Rows/Grid/Center (layout.js)
+  components/       Deck, Slide, Img, Icon, Snippet, Notes; layout/: Cols, Rows, Grid, Center
   directives/       v-step and v-step-from (step.js)
   addons/           ProgressBar, SlideNumber: things drawn over every slide
-  styles/           engine.css (structure), layouts.css (content and layouts)
+  styles/           only what is global: tokens.css (every token's default), base.css (page, viewport, steps);
+                    every component brings its own CSS in its .vue file
   themes/           the shipped themes (default.css, vigojug.css)
 vite/               the Vite plugin (araojs/vite; icons.js resolves the icons)
 bin/                the arao command (arao export)
