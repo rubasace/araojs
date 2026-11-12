@@ -1,33 +1,26 @@
-import BaseSlideContent from './components/BaseSlideContent'
-import CustomCodeBlock from './components/CustomCodeBlock'
-import FitText from './components/FitText'
-import ImagesPreloader from './components/ImagesPreloader'
-import Quote from './components/Quote'
-import SectionTitle from './components/SectionTitle'
-import Snippet from './components/Snippet'
-import TextWithIcon from './components/TextWithIcon'
-import TransparentBackground from './components/TransparentBackground'
-import BaseSlide from './slides/BaseSlide'
-import FullImageSlide from './slides/FullImageSlide'
-import FullSlide from './slides/FullSlide'
-import FullTextSlide from './slides/FullTextSlide'
-import SnippetSlide from './slides/SnippetSlide'
-import FrameworkPlugin from './plugins/FrameworkPlugin'
-
-export default {
-  BaseSlideContent,
-  CustomCodeBlock,
-  FitText,
-  ImagesPreloader,
-  Quote,
-  SectionTitle,
+// Phoenyx, the library: what a slides project imports from 'phoenyxjs'.
+//   createDeckApp()   the whole app: the engine installed, the deck picked from ?deck=<name>
+//   default export    the Vue plugin (app.use(Phoenyx)), for a project with its own app shell
+//   components, directives and composables, for code that wants them by name
+//   ProgressBar, SlideNumber: the addons, imported by the decks that use them
+// It needs the Vite plugin (phoenyxjs/vite): the engine reads the project's decks, snippets and
+// images through virtual modules only that plugin provides. Its CSS comes along with it.
+export {
+  default,
+  Center,
+  Cols,
+  Deck,
+  Grid,
+  Img,
+  Notes,
+  Rows,
+  Slide,
   Snippet,
-  TextWithIcon,
-  TransparentBackground,
-  BaseSlide,
-  FullImageSlide,
-  FullSlide,
-  FullTextSlide,
-  SnippetSlide,
-  FrameworkPlugin
-}
+  step,
+  stepFrom,
+  useDeck,
+  useSlide,
+} from './engine'
+export { default as ProgressBar } from './addons/ProgressBar.vue'
+export { default as SlideNumber } from './addons/SlideNumber.vue'
+export { createDeckApp } from './app'

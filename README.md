@@ -1,24 +1,262 @@
-# eaglejs-test
+# Phoenyx
 
-## Project setup
-```
-npm install
+A slide engine of its own for technical talks, built on **Vue 3 + Vite**, with slides written in **Pug**.
+
+- **One fixed canvas.** Every slide is drawn on a canvas of fixed size, 1920x1080 px by default
+  (`Deck(:width="…" :height="…")` sets another), and scaled to the window with a CSS transform.
+  What you see on your laptop is what the projector, the presenter view and the PDF show: same
+  line breaks, same sizes. All sizes inside a slide are canvas px.
+- **Themes are tokens only.** A theme is a block of `--ph-*` CSS variables (colours, fonts, sizes,
+  code colours). Same slides, different venue: only the theme changes.
+- **Declarative.** Layouts, composition pieces and props cover the usual arrangements, so a deck
+  needs little or no custom CSS. That also makes decks easy for AI agents to write (see
+  [AGENTS.md](AGENTS.md)).
+
+Phoenyx is a library (the `phoenyxjs` package: the engine, its components, addons, themes, a Vite
+plugin and the PDF export). Decks live in a **slides project** of their own that depends on it.
+
+> **Status:** not published to npm yet (the package name `phoenyxjs` is a placeholder). A project
+> uses it from a checkout: `"phoenyxjs": "file:../phoenyxjs"` (then `npm run build` here after each
+> change to the library), or from a tarball made with `npm pack`.
+
+## Quick start: a slides project
+
+```bash
+npm install phoenyxjs vue && npm install -D vite
 ```
 
-### Compiles and hot-reloads for development
-```
-npm run serve
+```js
+// vite.config.js
+import { defineConfig } from 'vite'
+import phoenyx from 'phoenyxjs/vite'
+
+export default defineConfig({ plugins: [phoenyx()] })
 ```
 
-### Compiles and minifies for production
-```
-npm run build
+```js
+// src/main.js
+import { createDeckApp } from 'phoenyxjs'
+import 'phoenyxjs/themes/default.css'
+import 'phoenyxjs/themes/vigojug.css'
+
+createDeckApp().mount('#app')
 ```
 
-### Lints and fixes files
-```
-npm run lint
+```html
+<!-- index.html -->
+<div id="app"></div>
+<script type="module" src="/src/main.js"></script>
 ```
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+```json
+"scripts": { "dev": "vite", "build": "vite build", "export": "phoenyx export" }
+```
+
+That is the whole setup:
+
+- `phoenyx()` is the only Vite plugin: it brings `@vitejs/plugin-vue` and Pug along (don't add
+  `vue()` too; Vue's options go in `phoenyx({ vue: { … } })`), and serves the project's folders:
+  decks in `src/decks`, code files in `src/snippets`, pictures in `src/images` (each one an option).
+- `createDeckApp()` creates the Vue app with the engine installed and renders the deck named by
+  `?deck=`. A project with its own app shell uses `createApp(MyApp).use(Phoenyx)` instead
+  (`import Phoenyx from 'phoenyxjs'`).
+- The engine's CSS comes with `'phoenyxjs'`; the themes the decks wear are imported one by one.
+
+Then `npm run dev` and open `http://localhost:5173/`:
+
+| URL | What it opens |
+|---|---|
+| `/?deck=mytalk` | the deck `src/decks/MyTalk.vue` (the name is case-insensitive) |
+| `/?deck=mytalk&theme=vigojug` | the same deck with another of its themes |
+| `/?deck=mytalk#/5/2` | slide 5, step 2 (the hash follows you as you move) |
+| `/?deck=mytalk&presenter` | the presenter view |
+| `/?deck=mytalk&export` | the deck as a book of pages, for printing |
+
+Without `?deck=`, or with a name that is no deck, the first deck by name opens, without a warning.
+
+### Keys
+
+| Key | Action |
+|---|---|
+| `→` `↓` `PageDown` `Space` `Enter` | next step (then next slide) |
+| `←` `↑` `PageUp` `Backspace` | previous step |
+| `Home` / `End` | first slide / last step of the last slide |
+| `g`, or a digit | jump menu (search by number or title; a digit pre-fills it) |
+| `Esc` | close the open panel (jump menu or theme picker) |
+| `t` | next theme of the deck |
+| `f` | fullscreen |
+| `p` | open (or bring forward) the presenter window |
+
+On a touch screen: tap the right edge → next, the left edge → previous, the middle → controls;
+swipe left/right also navigates.
+
+Keys with Ctrl, Cmd or Alt are left to the browser. Letter keys act in lowercase only: with Caps
+Lock on (or Shift held), `g` `t` `f` `p` do nothing. Moving the mouse shows the controls
+(first/prev/next/last, slide counter with step dots, jump menu, theme picker, presenter view,
+fullscreen); they never show on keyboard navigation and hide after 2.5 s without movement.
+
+## A minimal deck
+
+Create `src/decks/MyTalk.vue` and open `/?deck=mytalk`:
+
+```pug
+<template lang="pug">
+Deck(:themes="['default', 'vigojug']" duration="30m")
+  ProgressBar
+  SlideNumber
+
+  Slide(layout="cover")
+    .bar
+    h1 My talk
+    p.muted Jane Doe · Conf 2026
+
+  Slide
+    h2 Three things
+    ul
+      li First, from the start
+      li(v-step="2") Second, at step 2
+      li(v-step="3") Third, at step 3
+    Notes
+      p Speaker notes: only the presenter view shows them.
+
+  Slide(title="The code")
+    h2 The code
+    Snippet(file="DebugFilter.java" :highlights='{ "8-10": 2 }')
+
+  Slide(layout="section")
+    h1 Thanks!
+</template>
+
+<script setup>
+import { ProgressBar, SlideNumber } from 'phoenyxjs'
+</script>
+```
+
+`Deck`, `Slide`, `Img`, `Snippet`, `Notes`, `Cols`, `Rows`, `Grid`, `Center` and the `v-step`
+directive are registered globally. Addons (`ProgressBar`, `SlideNumber` from `'phoenyxjs'`, your
+own) are imported.
+
+## Folder layout
+
+A slides project:
+
+```
+package.json        depends on phoenyxjs; scripts dev, build, export
+vite.config.js      plugins: [phoenyx()]
+index.html          <div id="app"> and /src/main.js
+src/
+  main.js           createDeckApp().mount('#app'), after the theme imports
+  decks/            one .vue file per deck (?deck=<file name>)
+    <talk>/         components only that talk uses
+  slides/           components shared by several decks
+  snippets/         code files shown by Snippet(file="…"), by name (subfolders allowed)
+  images/           pictures used by Img(file="…") and Slide(bg="…"), by name (subfolders allowed)
+  themes/           the project's own themes, if any
+```
+
+A component written for one talk goes in `src/decks/<talk>/` and is imported only by that deck;
+one that several decks use goes in `src/slides/`. Neither is registered globally: the deck
+imports it (`import Card from '../slides/Card.vue'`). A new theme is a file in `src/themes/`,
+imported in `src/main.js`.
+
+This repository, the library:
+
+```
+src/
+  index.js          what 'phoenyxjs' exports
+  app.js            createDeckApp
+  engine/           the engine (Deck, Slide, v-step, layouts, Img, Notes, presenter, export, CSS)
+  components/       Snippet
+  addons/           ProgressBar, SlideNumber: things drawn over every slide
+  themes/           the shipped themes (default.css, vigojug.css)
+vite/index.js       the Vite plugin (phoenyxjs/vite)
+bin/                the phoenyx command (phoenyx export)
+playground/         a tiny slides project on the library's source, for developing it
+docs/reference.md   the full reference
+dist/               the build (npm run build): index.js, phoenyx.css, themes/
+```
+
+## Features
+
+- **Steps** — `v-step="n"` shows an element from step n; `.only` shows it only at step n;
+  `.collapse` makes it take no space while hidden (neighbours glide into place). A slide counts its
+  own steps.
+- **Layouts** — `Slide(layout=…)`: `default`, `cover`, `section`, `split` (two named zones),
+  `image-left` / `image-right` (an edge-to-edge picture beside the text), with `ratio`.
+- **Composition** — `Cols`, `Rows`, `Grid`, `Center`: boxes laid out by props (`ratio`, `gap`,
+  `align`, `cols`), no CSS needed.
+- **Code** — `Snippet`: a macOS-style window with Shiki colours, files by name, the same frame
+  and font size on every slide (shrinks only when the code would not fit), line and word highlights
+  per step.
+- **Pictures** — `Img(file=…)` from the images folder, with `fit`, `position`, `opacity`, `blur`,
+  `rounded`; a dashed placeholder with the file name when it is missing.
+- **Backgrounds** — `Slide(bg=…)` takes a picture, a URL, a colour or a gradient, tuned with
+  `bg-opacity`, `bg-position`, `bg-blur`, `bg-fit`; or a free `#background` slot. A theme may set
+  a default background.
+- **Speaker notes** — `Notes` inside a slide, optionally from a step on (`Notes(step="2")`).
+- **Presenter view** — current slide, next step, notes, timer with countdown, wall clock; windows
+  stay in step with each other.
+- **Themes** — token files switched live (`t`, the picker, `?theme=`).
+- **Addons** — components drawn over every slide (`useDeck()` tells them where the deck is).
+- **PDF export** — one page per slide or per step, text kept as text.
+- **Utility classes** — `.muted`, `.center`, `.upper`, `.small`, as an escape hatch.
+
+The complete reference, with every prop, slot, token and URL parameter, is in
+[docs/reference.md](docs/reference.md).
+
+## Presenter view
+
+Press `p` (or the controls' screen button, or open the URL with `&presenter`). A separate window
+shows the current slide with the controls under it, a preview of what the next press shows, the
+speaker notes of the slide (the ones that start at the current step are marked), the slide number
+and title, the timer and the wall clock.
+
+The timer starts with the first move in any window; it can be paused and reset, and it survives
+reloading the windows. With `Deck(duration="45m")` it also counts down: amber near the end, red
+when over. All windows of the same deck in the same browser follow each other (position, theme,
+timer). If the browser blocks the pop-up, a notice offers a link to open it by hand.
+
+The presenter UI is in Spanish.
+
+## Export to PDF
+
+In a slides project (`"export": "phoenyx export"` in its scripts; `npx phoenyx export …` works too):
+
+```bash
+npx playwright-core install chromium      # once: the Chromium that playwright-core drives
+npm run export -- --deck mytalk                       # exports/mytalk.pdf
+npm run export -- --deck mytalk --theme vigojug --per-step --notes --out talk.pdf
+```
+
+| Option | Meaning |
+|---|---|
+| `--deck <name>` | a deck of the decks folder, `src/decks` (default: the first by name) |
+| `--theme <name>` | one of the deck's themes (default its first) |
+| `--per-step` | one page per step instead of one per slide |
+| `--notes` | a page with the speaker notes after each slide that has them |
+| `--out <path>` | output file or folder (default `exports/<deck>[-<theme>][-steps][-notes].pdf`) |
+| `--url <url>` | print from a running server (e.g. `http://127.0.0.1:5173/`) instead of building |
+
+The command builds the project (with its own Vite config) into a temporary folder, serves it, opens `?export` in headless
+Chromium and prints. By default each slide is one page showing its last step. Pages are
+1920x1080 px (1440x810 pt). `PHOENYX_CHROMIUM=/path/to/chrome` uses a browser you already have.
+Opening `?export` in a normal browser and printing to PDF gives the same pages.
+
+## Scripts
+
+In a slides project:
+
+| Script | What it does |
+|---|---|
+| `npm run dev` | Vite dev server with hot reload |
+| `npm run build` | static build into `dist/` (every deck; pick one with `?deck=`) |
+| `npm run export` | PDF of a deck (above) |
+
+In this repository:
+
+| Script | What it does |
+|---|---|
+| `npm run build` | the library into `dist/`: `index.js` (ESM, imports its CSS), `phoenyx.css`, `themes/*.css`; also run by `npm pack` / `npm publish` |
+| `npm run dev` | the playground, on the library's source, on 127.0.0.1:5173 (`PHOENYX_PUBLIC_HOST` allows a tunnel host) |
+
+Node 20.19 or newer.

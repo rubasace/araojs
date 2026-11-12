@@ -1,0 +1,16 @@
+<!-- Addon: slide number in a corner. -->
+<template lang="pug">
+.ph-slide-number {{ deck.index.value + 1 }} / {{ deck.total.value }}
+</template>
+
+<script setup>
+import { useDeck } from '../engine'
+const deck = useDeck()
+</script>
+
+<style>
+.ph-slide-number {
+  position: absolute; right: 40px; bottom: 28px; z-index: 10;
+  font-size: 24px; color: var(--ph-muted); pointer-events: none;
+}
+</style>
