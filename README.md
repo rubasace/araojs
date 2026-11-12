@@ -446,8 +446,13 @@ playground's decks, images and snippets (and a second, tiny deck of its own), an
    `vite preview`, and walks each one with ArrowRight to its last step. Any console warning or
    error, any page error, or a deck with no slides fails the test;
 3. opens `/` under both servers: it must list every deck, each link must open its deck (the first
-   one followed with the keyboard), and an unknown `?deck=` must show the list with one warning;
-4. runs `<bin> export --deck <name>` for every deck and checks that the PDF exists and that the
+   one followed with the keyboard) and keep the page's other query parameters, and an unknown
+   `?deck=` must show the list with one warning;
+4. rewrites the project's `src/main.js` (and once its `vite.config.js`) for createDeckApp's
+   other cases, under the dev server: a project with one deck opens it at `/`;
+   `createDeckApp({ deck: 'second' })` opens that deck at `/` while `?deck=<other>` still wins;
+   `createDeckApp({ deck: 'missing' })` shows the list with one `[arao]` warning;
+5. runs `<bin> export --deck <name>` for every deck and checks that the PDF exists and that the
    summary line reports at least one page.
 
 The package name and the CLI's name come from `package.json`. CI runs it on every pull request and
