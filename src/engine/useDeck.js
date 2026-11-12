@@ -5,6 +5,12 @@ import { DECK } from './registry'
 // { index, step, total, steps, progress, theme } are refs; next/prev/go(i, step) navigate.
 // The presenter view draws the deck twice, the current slide and a preview of the next step:
 // in the preview, an addon reads the preview's position, and next/prev/go do nothing.
+// role (a plain string) says which drawing a component is in: 'audience' (the audience window),
+// 'presenter' (the presenter view's current slide) or 'preview' (its next step). Everything
+// mounts once per drawing, so a presenter window runs it twice: skip side effects (timers,
+// fetches, autoplay, sound) where they do not belong.
+//   const deck = useDeck()
+//   onMounted(() => deck.role === 'audience' && video.value.play())
 export function useDeck() {
   const deck = inject(DECK, null)
   if (!deck) throw new Error('[phoenyx] useDeck() must be used inside <Deck>')

@@ -1,6 +1,8 @@
 <!-- The fixed canvas (width x height px), scaled to fit the box it is placed in and centred in it.
      Everything in its slot belongs to `stage` (stage.js): slides register with it, addons read it.
-     The audience sees one Stage filling the window; the presenter view places two in boxes. -->
+     The audience sees one Stage filling the window; the presenter view places two in boxes, so
+     there every slide is mounted twice (side effects run twice, element ids repeat): components
+     tell the copies apart with useDeck().role (stage.js). -->
 <template lang="pug">
 .ph-stage(ref="box" :data-theme="theme" :style="{ '--ph-scale': scale }")
   .ph-canvas(ref="canvas" :style="canvasStyle")
