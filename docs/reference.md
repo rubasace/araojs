@@ -273,8 +273,10 @@ Behaviour and gotchas:
 - A missing file (or a URL that fails) shows a dashed box with the file name (and the alt, if
   any), and one grouped warning in development.
 - Every picture of the folder is fetched when the deck opens (all slides are in the page).
-  Downscale pictures to the size they show at (a full-slide picture needs ≤ 1920 px wide); prefer
-  JPEG or WebP for photos.
+  Text, code, CSS and SVG stay sharp at any screen size (the canvas is scaled with a transform and
+  re-rasterised), but photos are upscaled with it: for a 4K screen give a picture about twice its
+  size in canvas px (a full-slide background ≈ 3840 px wide). Prefer WebP/AVIF/JPEG to keep the
+  download small.
 - Only `png`, `jpg`, `jpeg`, `gif`, `webp`, `avif`, `svg` are taken from the folder.
 
 ```pug

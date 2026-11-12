@@ -19,8 +19,9 @@
      Names are case-sensitive, as on most servers: file="Team.jpg" is not team.jpg.
      Loading: every picture of the folder has its URL at hand from the start, so a slide never
      shows an empty box first; and every slide is in the page, so the browser fetches all the
-     deck's pictures when it opens. Downscale them to the size they show at (a full-slide picture
-     needs no more than 1920 px wide) and use JPEG or WebP for photos.
+     deck's pictures when it opens. Size them for the screen you present on: text and SVG stay sharp
+     at any scale, but a photo is upscaled with the canvas, so on a 4K screen a full-slide picture
+     wants ~3840 px wide (twice the size it shows at in canvas px); use WebP/AVIF/JPEG for photos.
      Until its picture has loaded (or failed) it carries data-ph-busy, set to its URL: the export
      waits for it, and for a URL that never answers only once (exporter.js). -->
 <template lang="pug">
