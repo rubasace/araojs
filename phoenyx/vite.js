@@ -12,9 +12,9 @@
 // as on most servers: file="Team.jpg" is not team.jpg.
 // Their URLs are eager: a slide renders its pictures at once, with no async hop, so a slide
 // never shows an empty box first. The cost: every slide is in the page from the start, so the
-// browser fetches every picture the deck uses when it opens. Downscale pictures to the size they
-// show at (the canvas is 1920x1080: a full-slide background needs no more than 1920 px wide) and
-// prefer JPEG or WebP for photos.
+// browser fetches every picture the deck uses when it opens. Size photos for the screen: text and
+// SVG stay sharp at any scale, but a photo is upscaled with the canvas, so for 4K a full-slide
+// background wants ~3840 px wide (twice its size in canvas px); prefer WebP/AVIF/JPEG for photos.
 import { existsSync } from 'node:fs'
 import { isAbsolute, relative, resolve, sep } from 'node:path'
 import { searchForWorkspaceRoot } from 'vite'
