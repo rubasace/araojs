@@ -400,6 +400,11 @@ Slide
 
 Built into `Deck`; nothing to add. A floating panel at the bottom centre of the audience window.
 
+- **Touch** (phones, tablets): tap the right quarter of the screen → next, the left quarter →
+  previous, the middle → show/hide the panel (it stays 4 s); swipe left/right → next/previous.
+  Links, buttons and inputs inside a slide keep their taps; add `data-ph-touch="ignore"` to any
+  other element that needs them. Pinch-zoom still works. Below 560 px wide the panel drops the
+  first/last buttons and the jump menu fits the screen.
 - **Shows on mouse movement only**, never on keyboard navigation; hides 2.5 s after the mouse
   stops (stays while hovered or while a menu is open). The cursor hides after `hideCursorAfter`.
 - Buttons: first, previous, slide counter (`3 / 18`, click = jump menu), step dots (one per step

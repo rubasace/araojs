@@ -8,7 +8,7 @@ nav.ph-controls(
   @mouseleave="hovering = false"
   aria-label="Controles de la presentación"
 )
-  button.ph-btn(@mousedown.prevent @click="deck.go(0)" :disabled="atStart" title="Primera (Inicio)")
+  button.ph-btn.ph-edge(@mousedown.prevent @click="deck.go(0)" :disabled="atStart" title="Primera (Inicio)")
     svg(viewBox="0 0 24 24"): path(d="M18 17l-5-5 5-5M11 17l-5-5 5-5")
   button.ph-btn(@mousedown.prevent @click="deck.prev()" :disabled="atStart" title="Anterior (←)")
     svg(viewBox="0 0 24 24"): path(d="M15 18l-6-6 6-6")
@@ -29,7 +29,7 @@ nav.ph-controls(
 
   button.ph-btn(@mousedown.prevent @click="deck.next()" :disabled="atEnd" title="Siguiente (→)")
     svg(viewBox="0 0 24 24"): path(d="M9 18l6-6-6-6")
-  button.ph-btn(@mousedown.prevent @click="deck.go(deck.total.value - 1, Infinity)" :disabled="atEnd" title="Última (Fin)")
+  button.ph-btn.ph-edge(@mousedown.prevent @click="deck.go(deck.total.value - 1, Infinity)" :disabled="atEnd" title="Última (Fin)")
     svg(viewBox="0 0 24 24"): path(d="M6 17l5-5-5-5M13 17l5-5-5-5")
 
   .ph-divider
@@ -253,7 +253,16 @@ defineExpose({
   border: 1px solid rgba(255, 255, 255, .16); border-radius: 16px;
   box-shadow: var(--c-glass-shadow);
 }
-.ph-slides { left: 50%; transform: translateX(-50%); width: 380px; }
+.ph-slides { left: 50%; transform: translateX(-50%); width: min(380px, calc(100vw - 24px)); }
+
+/* narrow screens (phones): smaller buttons, no first/last, panels fit the width */
+@media (max-width: 560px) {
+  .ph-controls { bottom: 20px; gap: 2px; padding: 6px; }
+  .ph-btn { width: 40px; height: 40px; }
+  .ph-btn.ph-edge { display: none; }
+  .ph-center { min-width: 64px; padding: 0 4px; }
+  .ph-divider { margin: 0 2px; }
+}
 .ph-themes { right: 0; min-width: 220px; }
 
 .ph-search {

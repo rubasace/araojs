@@ -7,6 +7,9 @@
      "p" brings an open presenter window forward instead of reloading it; if the browser blocks the
      new window, a notice above the controls links to the presenter view to open it by hand.
      The presenter view mounts every slide twice (current + preview): see useDeck().role.
+     touch (phones, tablets): tap the right quarter → next, the left quarter → previous, the middle
+     → show/hide the controls; swipe left/right → next/previous. Links, buttons and inputs inside a
+     slide keep their own taps (add data-ph-touch="ignore" to any other element that needs them).
      Every window of the same deck in the same browser stays in step (sync.js): moving in any of
      them moves the others, and so does a theme change; the last move wins. A window that opens
      takes the position of the ones already open (and their theme, unless its URL names one).
@@ -232,12 +235,41 @@ function poke() {
   clearTimeout(hudTimer)
   hudTimer = setTimeout(() => (hud.value = false), 2500)
 }
+let lastTouch = 0
 function onMouseMove() {
+  // browsers follow a tap with a compatibility mousemove: that one is not the mouse
+  if (performance.now() - lastTouch < 800) return
   poke()
   cursorHidden.value = false
   clearTimeout(cursorTimer)
   if (props.hideCursorAfter > 0) cursorTimer = setTimeout(() => (cursorHidden.value = true), props.hideCursorAfter)
 }
+// ---- touch: edge taps and swipes navigate, a tap in the middle toggles the controls ---------
+const TAP_MS = 500, TAP_MOVE = 12, SWIPE = 50
+let touch = null
+function onPointerDown(e) {
+  if (e.pointerType === 'mouse') return
+  lastTouch = performance.now()
+  touch = e.isPrimary ? { x: e.clientX, y: e.clientY, t: e.timeStamp, id: e.pointerId } : null
+}
+function onPointerUp(e) {
+  if (e.pointerType === 'mouse' || !touch || e.pointerId !== touch.id) return
+  lastTouch = performance.now()
+  const { x, y, t } = touch
+  touch = null
+  if (e.target.closest?.('.ph-controls, .ph-toast, a, button, input, select, textarea, label, [contenteditable], [data-ph-touch="ignore"]')) return
+  const dx = e.clientX - x, dy = e.clientY - y
+  if (Math.abs(dx) > SWIPE && Math.abs(dx) > Math.abs(dy) * 1.5) return dx < 0 ? main.next() : main.prev()
+  if (e.timeStamp - t > TAP_MS || Math.hypot(dx, dy) > TAP_MOVE) return
+  controls.value?.closeMenu()
+  const w = viewport.value?.clientWidth || innerWidth
+  if (e.clientX > w * 0.75) main.next()
+  else if (e.clientX < w * 0.25) main.prev()
+  else if (hud.value) { clearTimeout(hudTimer); hud.value = false }
+  else { hud.value = true; clearTimeout(hudTimer); hudTimer = setTimeout(() => (hud.value = false), 4000) }
+}
+const onPointerCancel = () => (touch = null)
+
 function onKey(e) {
   if (e.target.closest?.('input, textarea, [contenteditable]')) return
   // Ctrl/Cmd/Alt + key belongs to the browser (print, find, tabs, history); Shift is ours
@@ -296,7 +328,12 @@ onMounted(() => {
   if (presenter && !document.title.startsWith(PRESENTER_TITLE)) document.title = PRESENTER_TITLE + document.title
   window.addEventListener('keydown', onKey)
   window.addEventListener('hashchange', readHash)
-  if (!presenter) window.addEventListener('mousemove', onMouseMove)
+  if (!presenter) {
+    window.addEventListener('mousemove', onMouseMove)
+    viewport.value?.addEventListener('pointerdown', onPointerDown)
+    viewport.value?.addEventListener('pointerup', onPointerUp)
+    viewport.value?.addEventListener('pointercancel', onPointerCancel)
+  }
   document.addEventListener('fullscreenchange', onFullscreen)
 })
 onBeforeUnmount(() => {
@@ -307,6 +344,9 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKey)
   window.removeEventListener('hashchange', readHash)
   window.removeEventListener('mousemove', onMouseMove)
+  viewport.value?.removeEventListener('pointerdown', onPointerDown)
+  viewport.value?.removeEventListener('pointerup', onPointerUp)
+  viewport.value?.removeEventListener('pointercancel', onPointerCancel)
   document.removeEventListener('fullscreenchange', onFullscreen)
 })
 </script>
