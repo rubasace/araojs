@@ -1,5 +1,5 @@
-import { inject, onBeforeUnmount, shallowReactive, watchEffect } from 'vue'
-import { SLIDE } from '../core/registry'
+import { onBeforeUnmount, shallowReactive, watchEffect } from 'vue'
+import { useSlideNotes } from '../state/slide'
 
 // Speaker notes, placed anywhere inside a Slide. Never drawn on the slide: it takes no room, adds
 // no step and no title. The presenter view (?presenter, or "p") shows them, rendered as written.
@@ -26,15 +26,15 @@ export const Notes = {
     step: { type: [Number, String], default: 1, validator: isStep },
   },
   setup(props, { slots }) {
-    const slide = inject(SLIDE, null)
-    if (!slide) {
+    const addNote = useSlideNotes()
+    if (!addNote) {
       console.warn('[arao] Notes used outside a <Slide>: they show nowhere')
       return () => null
     }
     // the slots object, not its function: a re-render of the deck replaces the function in place
     const note = shallowReactive({ id: ++uid, step: 1, slots })
     watchEffect(() => (note.step = isStep(props.step) ? Number(props.step) : 1))
-    onBeforeUnmount(slide.addNote(note))
+    onBeforeUnmount(addNote(note))
     return () => null
   },
 }

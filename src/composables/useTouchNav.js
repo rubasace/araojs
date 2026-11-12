@@ -1,13 +1,15 @@
 import { toValue } from 'vue'
-import { useEventListener } from './useEventListener'
+import { useEventListener } from '@vueuse/core'
 
-// Internal. Touch (phones, tablets) on target moves the deck:
+// Internal. Touch (phones, tablets) and pen on target move the deck:
 //   useTouchNav(viewport, { next, prev, middle, tap })
 //   tap the right quarter → next(), the left quarter → prev(), the middle → middle()
 //   swipe left → next(), right → prev()
-//   tap() runs first on every tap, before what the tap does (Deck closes the jump menu)
+//   tap() runs first on every tap, before what the tap does (the audience view closes the jump menu)
 // The mouse is not touch. Links, buttons, inputs and the deck's own controls keep their taps, and
 // so does any element with data-ar-touch="ignore".
+// Taps and swipes are both read from pointer events (touch and pen), not from VueUse's useSwipe,
+// which listens to touch events only and would leave the pen without swipes.
 // target: an element, or a ref or getter of one; null listens to nothing.
 const TAP_MS = 500, TAP_MOVE = 12, SWIPE = 50
 const OWN_TAPS = '.ar-controls, .ar-toast, a, button, input, select, textarea, label, [contenteditable], [data-ar-touch="ignore"]'
@@ -24,6 +26,7 @@ export function useTouchNav(target, { next, prev, middle, tap }) {
     touch = null
     if (e.target.closest?.(OWN_TAPS)) return
     const dx = e.clientX - x, dy = e.clientY - y
+    // a swipe: mostly horizontal, and further than SWIPE px
     if (Math.abs(dx) > SWIPE && Math.abs(dx) > Math.abs(dy) * 1.5) return dx < 0 ? next() : prev()
     if (e.timeStamp - t > TAP_MS || Math.hypot(dx, dy) > TAP_MOVE) return
     tap?.()

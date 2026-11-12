@@ -1,18 +1,26 @@
 <!-- The presenter view (Deck in a window opened with ?presenter): the current slide, large, with the
      controls under it; the next step as the audience will see it; the speaker notes of the slide;
      and a bar with the slide, the talk's timer and the wall clock. Its own dark look, whatever the
-     deck's theme: only the slides wear the theme. The slides come in through the slots, each one
-     a Stage (Deck.vue); the rest comes from its Deck (useDeckContext). -->
+     deck's theme: only the slides wear the theme.
+     The deck's slides (its default slot) are drawn twice, each copy a Stage: the deck's stage, and
+     its preview one step ahead. A second copy of every slide: each slide and addon mounts again
+     there, so its side effects run twice in this window and its element ids repeat (useDeck().role
+     is 'preview' in that copy, 'presenter' in the current one).
+     Where the deck is comes from useDeck(); deck (state/deck.js) brings the internals: the stages,
+     where one more press leads, the notes, the titles and the timer's setter. The presenter window
+     listens to no mouse or touch of its own: only its controls and the keys (Deck.vue) move it. -->
 <template>
   <div class="ar-presenter">
-    <PresenterBar />
+    <PresenterBar :title="title" :duration="deck.duration.value" :set-timer="deck.setTimer" />
     <div class="ar-p-main">
       <section class="ar-p-current" aria-label="Diapositiva actual">
         <div class="ar-p-screen" :style="{ aspectRatio: ratio }">
-          <slot name="current" />
+          <Stage :stage="deck.stage" :width="width" :height="height" :theme="theme">
+            <slot />
+          </Stage>
         </div>
         <div class="ar-p-controls">
-          <slot name="controls" />
+          <Controls ref="controls" docked :titles="titles" />
         </div>
       </section>
       <div class="ar-p-side">
@@ -23,20 +31,22 @@
           </header>
           <!-- a copy of the deck: kept away from the pointer, the keyboard and screen readers -->
           <div class="ar-p-screen" :style="{ aspectRatio: ratio }" aria-hidden="true" inert>
-            <slot name="next" />
+            <Stage :stage="deck.preview" :width="width" :height="height" :theme="theme">
+              <slot />
+            </Stage>
             <div class="ar-p-end" v-if="next.end">Fin de la presentación</div>
           </div>
         </section>
         <section class="ar-p-panel ar-p-notes" aria-label="Notas">
           <header class="ar-p-label">
             <span>Notas</span>
-            <span class="ar-p-detail" v-if="deck.steps.value > 1">Paso {{ deck.step.value }} de {{ deck.steps.value }}</span>
+            <span class="ar-p-detail" v-if="steps > 1">Paso {{ step }} de {{ steps }}</span>
           </header>
           <div class="ar-p-notes-body" ref="body">
             <div
               class="ar-p-note"
               v-for="n in shown" :key="n.id"
-              :class="{ fresh: n.step > 1 && n.step === deck.step.value }"
+              :class="{ fresh: n.step > 1 && n.step === step }"
               :data-step="n.step"
             >
               <NoteBody :note="n" />
@@ -51,16 +61,36 @@
 
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import { useDeckContext } from '../../composables/useDeckContext'
-import PresenterBar from './PresenterBar.vue'
-import { NoteBody } from '../Notes'
+import { useDeck } from '../state/deck'
+import { NoteBody } from '../components/Notes'
+import Controls from './parts/Controls.vue'
+import PresenterBar from './parts/PresenterBar.vue'
+import Stage from './parts/Stage.vue'
 
-defineProps({
-  ratio: { type: String, default: '16 / 9' }, // of the canvas
+const props = defineProps({
+  deck: { type: Object, required: true }, // createDeck()
+  width: { type: Number, required: true }, // of the canvas
+  height: { type: Number, required: true },
 })
-// deck: the audience's stage api; next: { index, step, end }, where one more press leads;
-// notes: the slide's Notes, { id, step, slots }
-const { deck, next, notes } = useDeckContext()
+const { index, step, steps, theme } = useDeck()
+const ratio = computed(() => `${props.width} / ${props.height}`)
+// next: { index, step, end }, where one more press leads; notes: the slide's Notes, { id, step, slots }
+const { next, notes } = props.deck
+
+// every slide's title, for the jump menu, re-read on every move; the title of the slide on screen
+const titles = computed(() => {
+  index.value
+  return props.deck.titles()
+})
+const title = computed(() => titles.value[index.value] || '')
+
+// the keys open and close the controls' jump menu (Deck.vue)
+const controls = ref()
+defineExpose({
+  openMenu: (digits) => controls.value.openMenu(digits),
+  toggleMenu: () => controls.value.toggleMenu(),
+  closeMenu: () => controls.value.closeMenu(),
+})
 
 // the window says what it is, in its title (once: a remount after an edit does not add it again)
 const TITLE = 'Presentador · '
@@ -69,20 +99,20 @@ onMounted(() => {
 })
 
 // notes show from their step on, as v-step
-const shown = computed(() => notes.value.filter((n) => n.step <= deck.step.value))
+const shown = computed(() => notes.value.filter((n) => n.step <= step.value))
 
 const nextDetail = computed(() => {
-  const { index, step, end } = next.value
+  const { index: at, step: s, end } = next.value
   if (end) return ''
-  if (index === deck.index.value) return `Paso ${step} de ${deck.steps.value}`
-  return `Diapositiva ${index + 1}`
+  if (at === index.value) return `Paso ${s} de ${steps.value}`
+  return `Diapositiva ${at + 1}`
 })
 
 // A new slide starts its notes from the top; a step brings the notes it starts into view. Only
 // the notes box scrolls (scrollIntoView would also scroll the page of a narrow window).
 const body = ref()
-watch(() => deck.index.value, () => body.value && (body.value.scrollTop = 0))
-watch(() => deck.step.value, async () => {
+watch(() => index.value, () => body.value && (body.value.scrollTop = 0))
+watch(() => step.value, async () => {
   await nextTick()
   const box = body.value
   const note = box?.querySelector('.ar-p-note.fresh')

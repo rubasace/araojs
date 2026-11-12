@@ -1,4 +1,4 @@
-import { useEventListener } from './useEventListener'
+import { onKeyStroke } from '@vueuse/core'
 
 // Internal. The deck's keys, on the window:
 //   → ↓ PageDown Space Enter   next        ← ↑ PageUp Backspace   prev
@@ -14,13 +14,14 @@ const KEYS = new Map(Object.entries({
   ArrowLeft: 'prev', ArrowUp: 'prev', PageUp: 'prev', Backspace: 'prev',
   Home: 'first', End: 'last', f: 'fullscreen', t: 'theme', p: 'presenter', g: 'menu', Escape: 'close',
 }))
+const DIGITS = [...'0123456789']
 
 export function useKeyboard(actions) {
-  useEventListener(window, 'keydown', (e) => {
+  onKeyStroke([...KEYS.keys(), ...DIGITS], (e) => {
     if (e.target.closest?.('input, textarea, [contenteditable]')) return
     if (e.ctrlKey || e.metaKey || e.altKey) return
     if ((e.key === ' ' || e.key === 'Enter') && e.target.closest?.('button')) return
-    const digit = /^[0-9]$/.test(e.key)
+    const digit = DIGITS.includes(e.key)
     const action = digit ? actions.jump : actions[KEYS.get(e.key)]
     if (!action) return
     digit ? action(e.key) : action()

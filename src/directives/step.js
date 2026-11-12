@@ -1,5 +1,4 @@
 import { effect, ref, stop } from 'vue'
-import { slides } from '../core/registry'
 import { flip, snapshot } from '../core/flip'
 
 // v-step="n"       → visible from step n of its slide on
@@ -14,6 +13,15 @@ import { flip, snapshot } from '../core/flip'
 //   Card(v-step-from="5")   →   li(v-step="1") inside Card shows at step 5, v-step="2" at 6…
 const HIDDEN = 'ar-step-hidden'
 const COLLAPSED = 'ar-step-collapsed'
+
+// Slides by id, so v-step can find the slide that contains it from the DOM (its section carries
+// data-ar-slide="<id>"). Each slide adds itself (state/slide.js):
+//   const remove = addSlide(id, { step, active, still, elements, registerStep })
+const slides = new Map()
+export function addSlide(id, slide) {
+  slides.set(id, slide)
+  return () => slides.delete(id)
+}
 
 // Sum of the v-step-from scopes between el (exclusive) and its slide.
 export function stepOffset(el, host = el?.closest?.('[data-ar-slide]')) {

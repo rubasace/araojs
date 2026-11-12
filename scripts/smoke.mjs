@@ -20,11 +20,14 @@
 //   4. the deck selector, under both servers: / lists every deck, each link (the first followed
 //      with the keyboard) opens its deck, the links keep the page's other query parameters, and an
 //      unknown ?deck= shows the list with one warning
-//   5. createDeckApp's other cases, under the dev server, on the same install (src/main.js, and
+//   5. useDeck()'s face, under the dev server, on the second deck: frozen, its refs read-only all
+//      the way down, setTheme refuses a name the deck has not (one [arao] warning), and in the
+//      presenter view's preview no function acts
+//   6. createDeckApp's other cases, under the dev server, on the same install (src/main.js, and
 //      vite.config.js for the first, rewritten for each and then put back): a project with one deck
 //      opens it at /; createDeckApp({ deck: 'second' }) opens that deck at / and ?deck=<other>
 //      still wins; createDeckApp({ deck: 'missing' }) shows the list with one [arao] warning
-//   6. <bin> export --deck <name>      the PDF must exist and its summary line report pages > 0
+//   7. <bin> export --deck <name>      the PDF must exist and its summary line report pages > 0
 // The package name and the CLI's name are read from package.json: nothing here names them.
 //
 // Environment:
@@ -49,16 +52,23 @@ const BIN = typeof lib.bin === 'string' ? PKG.replace(/^@[^/]+\//, '') : Object.
 if (!BIN) throw new Error('package.json has no "bin"')
 const CONTENT = ['decks', 'images', 'snippets'] // from the playground's src/
 // a deck of the smoke project only: with the playground's, the project has several. MARK, its
-// heading, tells it from the others once open.
+// heading, tells it from the others once open. Faces keeps every useDeck() it is handed (one per
+// drawing of the deck) in window.__faces, for the face check.
 const MARK = 'A second deck'
 const SECOND = ['Second.vue', `<template lang="pug">
-Deck(:themes="['default']")
+Deck(:themes="['default', 'vigojug']")
+  Faces
   Slide(layout="cover" title="Second")
     h1 ${MARK}
   Slide
     h2 Picked from the list
     p(v-step="2") Every deck of the project is a link on /.
 </template>
+
+<script setup>
+import { useDeck } from '${PKG}'
+const Faces = { setup: () => ((window.__faces ??= []).push(useDeck()), () => null) }
+</script>
 `]
 
 const log = (msg) => console.log(`\n[smoke] ${msg}`)
@@ -287,6 +297,58 @@ try {
     for (const c of complaints) fail(`${mode} selector: ${c}`)
   }
 
+  // useDeck()'s face, on the second deck (window.__faces): every write through it is refused
+  // (Vue's own warnings about them are expected; any other warning, error or page error fails),
+  // setTheme of a name the deck has not gives one [arao] warning and changes nothing, and the
+  // preview's functions do nothing (no move, no theme, no fullscreen, no window)
+  async function face(base) {
+    const context = await browser.newContext({ viewport: { width: 1920, height: 1080 } })
+    const page = await context.newPage()
+    const complaints = []
+    const arao = []
+    page.on('console', (m) => {
+      if (!['warning', 'error'].includes(m.type())) return
+      if (m.type() === 'warning' && m.text().startsWith('[arao]')) arao.push(m.text())
+      else if (!/failed: (target|computed value) is readonly/.test(m.text())) complaints.push(`console ${m.type()}: ${m.text()}`)
+    })
+    page.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
+    context.on('page', () => complaints.push('the preview opened a window'))
+    const open = async (query) => {
+      await page.goto(new URL(`?deck=${second}${query}`, base).href)
+      await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
+      await pause(300)
+    }
+    try {
+      await open('')
+      const audience = await page.evaluate(() => {
+        const d = window.__faces[0]
+        const was = JSON.stringify([d.theme.value, d.themes.value, d.timer.value])
+        const writes = [() => (d.go = null), () => d.themes.value.push('x'), () => (d.timer.value.state = 'x'), () => (d.theme.value = 'x')]
+        for (const write of writes) try { write() } catch {}
+        d.setTheme('no-such-theme')
+        return { frozen: Object.isFrozen(d), go: typeof d.go, same: was === JSON.stringify([d.theme.value, d.themes.value, d.timer.value]) }
+      })
+      if (!audience.frozen || audience.go !== 'function') complaints.push('the face is not frozen')
+      if (!audience.same) complaints.push('a write through the face changed the deck')
+      if (arao.length !== 1 || !arao[0].includes('no-such-theme')) complaints.push(`setTheme of an unknown name: ${arao.length} [arao] warnings, not 1`)
+      await open('&presenter')
+      const preview = await page.evaluate(() => {
+        const d = window.__faces.find((f) => f.role === 'preview')
+        const was = location.href + d.theme.value
+        d.go(1), d.next(), d.setTheme(d.themes.value[1]), d.toggleFullscreen(), d.openPresenter()
+        return { frozen: Object.isFrozen(d), same: was === location.href + d.theme.value && !document.fullscreenElement }
+      })
+      await pause(300)
+      if (!preview.frozen) complaints.push(`the preview's face is not frozen`)
+      if (!preview.same) complaints.push(`a function of the preview's face acted`)
+      console.log(`  dev useDeck() face: ${complaints.length ? 'problems below' : 'frozen, read-only, inert in the preview'}`)
+    } finally {
+      await context.close()
+    }
+    for (const c of complaints) fail(`dev useDeck() face: ${c}`)
+  }
+
+  const second = basename(SECOND[0], '.vue').toLowerCase()
   for (const mode of ['dev', 'preview']) {
     log(`walking the decks under vite ${mode}`)
     const base = await serve(mode)
@@ -301,6 +363,7 @@ try {
       }
       for (const deck of decks) await walk(base, deck, mode)
       await selector(base, mode)
+      if (mode === 'dev') await face(base)
     } finally {
       await stop()
     }
@@ -310,7 +373,6 @@ try {
   // started on them (Vue's warnings only exist in dev, and no build is needed), and put back.
   // Each visit opens a path and expects a deck (`deck`: the second one or another) or the list
   // (`missing`: the name its notice and its one [arao] warning must give).
-  const second = basename(SECOND[0], '.vue').toLowerCase()
   const other = decks.find((d) => d.toLowerCase() !== second)
   const solo = 'src/solo' // a decks folder holding the second deck alone
   const asIs = { 'src/main.js': files['src/main.js'], 'vite.config.js': files['vite.config.js'] }

@@ -1,5 +1,5 @@
 import { onMounted, watch } from 'vue'
-import { useEventListener } from './useEventListener'
+import { useEventListener } from '@vueuse/core'
 
 // Internal. The URL's hash is where the deck stands: #/slide/step, both 1-based.
 //   useHashRoute(stage)

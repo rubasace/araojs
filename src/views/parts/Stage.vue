@@ -1,8 +1,8 @@
 <!-- The fixed canvas (width x height px), scaled to fit the box it is placed in and centred in it.
-     Everything in its slot belongs to `stage` (stage.js): slides register with it, addons read it.
-     The audience sees one Stage filling the window; the presenter view places two in boxes, so
-     there every slide is mounted twice (side effects run twice, element ids repeat): components
-     tell the copies apart with useDeck().role (stage.js). -->
+     Everything in its slot belongs to `stage` (state/stage.js): slides register with it, and
+     useDeck() inside it reads its position. The audience sees one Stage filling the window; the
+     presenter view places two in boxes, so there every slide is mounted twice (side effects run
+     twice, element ids repeat): components tell the copies apart with useDeck().role. -->
 <template>
   <div class="ar-stage" ref="box" :data-theme="theme" :style="{ '--ar-scale': scale }">
     <div class="ar-canvas" ref="canvas" :style="canvasStyle">
@@ -12,8 +12,8 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, provide, ref } from 'vue'
-import { DECK } from '../../core/registry'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { provideStage } from '../../state/stage'
 
 const props = defineProps({
   stage: { type: Object, required: true },
@@ -23,7 +23,7 @@ const props = defineProps({
   theme: String,
 })
 
-provide(DECK, props.stage.context)
+provideStage(props.stage)
 
 // ---- fixed canvas, scaled to fit (letterboxed) ----------------------------
 const box = ref()

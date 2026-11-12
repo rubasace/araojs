@@ -105,9 +105,10 @@ export default function arao(options = {}) {
         resolve: { dedupe: ['vue'] },
         optimizeDeps: {
           // the engine imports the virtual modules below, which only this plugin resolves: it is
-          // served as it is, not prebundled; what it imports from npm (vue, shiki) is prebundled
+          // served as it is, not prebundled; what it imports from npm (vue, shiki, @vueuse/core)
+          // is prebundled
           exclude: [PACKAGE],
-          include: ['vue', `${PACKAGE} > shiki`],
+          include: ['vue', `${PACKAGE} > shiki`, `${PACKAGE} > @vueuse/core`],
         },
       }
       const extra = outside()

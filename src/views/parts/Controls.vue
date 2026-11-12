@@ -1,12 +1,14 @@
 <!-- Built-in deck controls: floating panel, shown on mouse move, hidden when idle.
      docked: always shown, in the flow of the page (the presenter view places it under the slide).
-     What it shows and does comes from its Deck (useDeckContext). Deck opens and closes the jump
+     shown: the floating panel is shown (the audience view: the mouse moved, a tap in the middle).
+     titles: every slide's title, for the jump menu.
+     Where the deck is and what it does come from useDeck(). The view opens and closes the jump
      menu from the keyboard: openMenu(digits), toggleMenu(), closeMenu(). -->
 <template>
   <nav
     class="ar-controls"
     ref="root"
-    :class="{ visible: docked || hud || hovering || open, docked }"
+    :class="{ visible: docked || shown || hovering || open, docked }"
     @mouseenter="hovering = true"
     @mouseleave="hovering = false"
     aria-label="Controles de la presentación"
@@ -121,12 +123,15 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useDeckContext } from '../../composables/useDeckContext'
+import { useDeck } from '../../state/deck'
 
-defineProps({
+const props = defineProps({
   docked: Boolean,
+  shown: Boolean,
+  titles: { type: Array, default: () => [] },
 })
-const { deck, hud, titles, theme, themes, setTheme, fullscreen, toggleFullscreen, openPresenter } = useDeckContext()
+const deck = useDeck()
+const { theme, themes, setTheme, fullscreen, toggleFullscreen, openPresenter } = deck
 
 const root = ref()
 const hovering = ref(false)
@@ -142,7 +147,7 @@ const listEl = ref()
 // a number matches by slide number prefix; text matches the title
 const matches = computed(() => {
   const q = query.value.trim().toLowerCase()
-  const all = titles.value.map((t, i) => ({ i, t }))
+  const all = props.titles.map((t, i) => ({ i, t }))
   if (!q) return all
   if (/^\d+$/.test(q)) return all.filter((m) => String(m.i + 1).startsWith(q))
   return all.filter((m) => m.t.toLowerCase().includes(q))

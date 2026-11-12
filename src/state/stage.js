@@ -1,27 +1,44 @@
-import { computed, nextTick, readonly, ref, shallowReactive } from 'vue'
+import { computed, inject, nextTick, provide, readonly, ref, shallowReactive } from 'vue'
 
-// A stage is one rendering of the deck's slides and where it stands: the slides register with
-// it, it orders them and moves between them. The audience window has one. The presenter view
+// Internal. A stage is one rendering of the deck's slides and where it stands: the slides register
+// with it, it orders them and moves between them. The audience window has one. The presenter view
 // renders the deck twice, each copy with its own stage: the current slide, and a preview that
-// follows it one step ahead.
-//   createStage({ onMove })         navigable: next / prev / go / last move it, and onMove() is
-//                                   called after each of those that changed the position (keys,
-//                                   controls, addons, the URL); the stage's own adjustments
-//                                   (slides reordered, the slide on screen removed) are not
-//                                   moves; place(i, s) sets the position without being one
-//   createStage({ follow })         follower: follow() → { index, step } is where it stands;
-//                                   it cannot be moved by itself
-//   role: 'audience' (default)      which rendering this is, for components (useDeck().role):
-//         | 'presenter' | 'preview' the audience window, the presenter view's current slide, or
-//         | 'export'                its preview of the next step; or the deck being printed
-//                                   (?export, exporter.js: walked page by page, copied into a book)
-// What the slides see is stage.context (provided by Stage.vue); what addons see is stage.api.
+// follows it one step ahead. The deck makes its stages (state/deck.js); the Stage part that draws
+// one (views/parts/Stage.vue) makes it the stage of everything inside it:
+//   const stage = createStage({ onMove })   navigable: next / prev / go / last move it, and onMove()
+//                                           is called after each of those that changed the position
+//                                           (keys, controls, addons, the URL); the stage's own
+//                                           adjustments (slides reordered, the slide on screen
+//                                           removed) are not moves; place(i, s) sets the position
+//                                           without being one
+//   createStage({ follow })                 follower: follow() → { index, step } is where it stands;
+//                                           it cannot be moved by itself
+//   role: 'audience' (default)              which rendering this is, for components (useDeck().role):
+//         | 'presenter' | 'preview'         the audience window, the presenter view's current slide,
+//         | 'export'                        or its preview of the next step; or the deck being printed
+//                                           (?export, core/exporter.js: walked page by page, copied
+//                                           into a book)
+//   provideStage(stage)                     in the Stage part: what it draws belongs to this stage
+//   useStage()                              the stage the caller is drawn in, or null outside every
+//                                           Stage (the views' own UI: controls, presenter bar)
+// Slides register with the stage they are drawn in (state/slide.js); what useDeck() reads of it is
+// stage.view, merged into the deck's public face (state/deck.js).
 //
 // Caveat: a presenter window mounts every slide twice, and keeps both mounted. Whatever a slide
 // or an addon does when it mounts or while it is on screen happens twice there: timers, fetches,
 // media that autoplays (sound from two places), and every element id appears twice (an SVG
 // gradient, an anchor). A component that should not do that outside the audience's own window
 // checks useDeck().role.
+const KEY = Symbol('arao-stage')
+
+export function provideStage(stage) {
+  provide(KEY, stage)
+}
+
+export function useStage() {
+  return inject(KEY, null)
+}
+
 export function createStage({ follow, onMove, role = 'audience' } = {}) {
   const list = shallowReactive([])
   // a follower's position is read from follow(); writes to it (reorder, vacancy) are dropped
@@ -35,8 +52,8 @@ export function createStage({ follow, onMove, role = 'audience' } = {}) {
     fn(...args)
     if (index.value !== i || step.value !== s) onMove?.()
   }
-  // public, read-only view for addons (useDeck)
-  const api = {
+  // this stage's part of useDeck(): read-only position, and the moves (none on a follower)
+  const view = {
     role,
     index: readonly(index),
     step: readonly(step),
@@ -53,26 +70,21 @@ export function createStage({ follow, onMove, role = 'audience' } = {}) {
     go: follow ? noop : move(go),
   }
 
-  const context = {
-    index,
-    step,
-    api,
-    // slide = { id, steps, title, el, notes }; el is a ref to its <section>
-    register(slide) {
-      change()
-      list.push(slide)
-      return computed(() => list.findIndex((s) => s.id === slide.id))
-    },
-    unregister(id) {
-      const i = list.findIndex((s) => s.id === id)
-      if (i < 0) return
-      const tick = change()
-      // the slide on screen is going away: who takes its place is decided once the tick settles
-      if (i === index.value && !tick.vacancy) tick.vacancy = { slide: list[i], step: step.value }
-      list.splice(i, 1)
-      if (i < index.value) index.value--
-      if (index.value >= list.length) index.value = Math.max(0, list.length - 1)
-    },
+  // slide = { id, steps, title, el, notes }; el is a ref to its <section>
+  function register(slide) {
+    change()
+    list.push(slide)
+    return computed(() => list.findIndex((s) => s.id === slide.id))
+  }
+  function unregister(id) {
+    const i = list.findIndex((s) => s.id === id)
+    if (i < 0) return
+    const tick = change()
+    // the slide on screen is going away: who takes its place is decided once the tick settles
+    if (i === index.value && !tick.vacancy) tick.vacancy = { slide: list[i], step: step.value }
+    list.splice(i, 1)
+    if (i < index.value) index.value--
+    if (index.value >= list.length) index.value = Math.max(0, list.length - 1)
   }
 
   // Slide order is document order, not mount order: a slide mounted later (v-if, inserted by
@@ -144,7 +156,10 @@ export function createStage({ follow, onMove, role = 'audience' } = {}) {
     if (list.length) go(list.length - 1, list[list.length - 1].steps.value)
   }
 
-  return { list, index, step, current, api, context, change, place: go, go: move(go), next: move(next), prev: move(prev), last: move(last) }
+  return {
+    role, list, index, step, current, view, register, unregister, change,
+    place: go, go: view.go, next: view.next, prev: view.prev, last: follow ? noop : move(last),
+  }
 }
 
 // A slide's title, for the jump menu, the presenter view and the notes pages: Slide(title="…"),

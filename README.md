@@ -420,18 +420,21 @@ src/
   index.js          what 'araojs' exports (the only barrel: every other module imports a file)
   plugin.js         the Vue plugin: global components and directives, the engine's CSS
   app.js            createDeckApp
+  state/            the deck, its stages, its slides: createDeck/useDeck, createStage/useStage, createSlide/useSlide
+  composables/      the effects (internal): useHashRoute, useDeckSync, usePresenterWindow, useKeyboard, useTouchNav, useMouseIdle, useFullscreen
+  core/             plain modules: sync, timer, exporter, image, icons, flip
+  views/            what Arao draws: AudienceView, PresenterView, ExportView; DeckSelector (createDeckApp's list of decks)
+    parts/          Stage (the scaled canvas), Controls, PresenterBar
   components/       Deck, Slide, Img, Icon, Snippet, Notes, Cols/Rows/Grid/Center (layout.js)
-    internal/       the deck's own UI: Stage (the scaled canvas), Controls, Presenter, PresenterBar
-  addons/           ProgressBar, SlideNumber: things drawn over every slide
-  composables/      useDeck, useSlide (public); the Deck's own pieces (useKeyboard, useIdle, useDeckSync…)
   directives/       v-step and v-step-from (step.js)
-  core/             plain modules: stage, sync, timer, exporter, image, icons, flip, registry
+  addons/           ProgressBar, SlideNumber: things drawn over every slide
   styles/           engine.css (structure), layouts.css (content and layouts)
   themes/           the shipped themes (default.css, vigojug.css)
 vite/               the Vite plugin (araojs/vite; icons.js resolves the icons)
 bin/                the arao command (arao export)
 playground/         a tiny slides project on the library's source, for developing it
 docs/reference.md   the full reference
+docs/architecture.md how the engine is built: folders, views, provide/inject, useDeck's face
 dist/               the build (npm run build): index.js, arao.css, themes/
 ```
 
@@ -448,11 +451,14 @@ playground's decks, images and snippets (and a second, tiny deck of its own), an
 3. opens `/` under both servers: it must list every deck, each link must open its deck (the first
    one followed with the keyboard) and keep the page's other query parameters, and an unknown
    `?deck=` must show the list with one warning;
-4. rewrites the project's `src/main.js` (and once its `vite.config.js`) for createDeckApp's
+4. checks `useDeck()` on the second deck, under the dev server: the object is frozen, writes
+   through its refs change nothing, `setTheme` of a name the deck has not gives one `[arao]`
+   warning, and in the presenter view's preview no function acts;
+5. rewrites the project's `src/main.js` (and once its `vite.config.js`) for createDeckApp's
    other cases, under the dev server: a project with one deck opens it at `/`;
    `createDeckApp({ deck: 'second' })` opens that deck at `/` while `?deck=<other>` still wins;
    `createDeckApp({ deck: 'missing' })` shows the list with one `[arao]` warning;
-5. runs `<bin> export --deck <name>` for every deck and checks that the PDF exists and that the
+6. runs `<bin> export --deck <name>` for every deck and checks that the PDF exists and that the
    summary line reports at least one page.
 
 The package name and the CLI's name come from `package.json`. CI runs it on every pull request and

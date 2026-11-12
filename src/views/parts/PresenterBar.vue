@@ -1,5 +1,8 @@
 <!-- The presenter view's top bar: where the deck is, the talk's timer, the wall clock. It ticks on
-     its own (four times a second), so the rest of the presenter view does not re-render with it. -->
+     its own (four times a second), so the rest of the presenter view does not re-render with it.
+     Where the deck is and the timer come from useDeck(); the presenter view passes the rest:
+     title (of the slide on screen), duration (the talk's length in ms, or null) and setTimer(t),
+     which replaces the timer (play/pause, reset). -->
 <template>
   <header class="ar-p-bar">
     <div class="ar-p-where">
@@ -37,10 +40,15 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { IDLE, clock, elapsed, phase, toggle } from '../../core/timer'
-import { useDeckContext } from '../../composables/useDeckContext'
+import { useDeck } from '../../state/deck'
 
-// title: of the slide on screen; duration: the talk's length in ms, or null
-const { deck, title, timer, setTimer, duration } = useDeckContext()
+const props = defineProps({
+  title: { type: String, default: '' },
+  duration: { type: Number, default: null },
+  setTimer: { type: Function, required: true },
+})
+const deck = useDeck()
+const { timer } = deck
 
 const now = ref(Date.now())
 let tick
@@ -51,8 +59,8 @@ watch(timer, () => (now.value = Date.now()))
 
 // whole seconds, as shown: the time left is what the shown time leaves (45:00 = 44:59 + 0:01)
 const spent = computed(() => Math.floor(elapsed(timer.value, now.value) / 1000) * 1000)
-const left = computed(() => (duration.value ? duration.value - spent.value : null))
-const tone = computed(() => (duration.value ? phase(left.value, duration.value) : 'ok'))
+const left = computed(() => (props.duration ? props.duration - spent.value : null))
+const tone = computed(() => (props.duration ? phase(left.value, props.duration) : 'ok'))
 const sub = computed(() => {
   const state = { idle: 'empieza al avanzar', paused: 'en pausa' }[timer.value.state]
   const rest = left.value == null ? '' : left.value >= 0 ? `quedan ${clock(left.value)}` : `${clock(left.value)} de más`

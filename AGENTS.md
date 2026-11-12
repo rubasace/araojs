@@ -333,6 +333,7 @@ Slide
 ## Where to look
 
 - Every prop, slot, token, key and URL parameter: [docs/reference.md](docs/reference.md).
+- How the engine is built (only for a change to Arao itself): [docs/architecture.md](docs/architecture.md).
 - Working examples: the project's own decks; `playground/` in the Arao repository, a tiny
   project set up like any other.
 - Themes: the shipped ones in `node_modules/araojs/dist/themes/*.css`, the project's in

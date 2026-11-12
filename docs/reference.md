@@ -22,6 +22,8 @@ Contents: [Setup](#setup) · [Deck](#deck) · [Slide](#slide) ([zones](#zones-he
 [useSlide()](#useslide) · [Addons](#addons) · [Vite plugin](#vite-plugin) ·
 [Theme tokens](#theme-tokens) · [URL parameters](#url-parameters)
 
+How the engine itself is built (folders, views, provide/inject channels): [architecture.md](architecture.md).
+
 ---
 
 ## Setup
@@ -813,11 +815,20 @@ const deck = useDeck()
 | `steps` | computed, Number | steps of the current slide |
 | `progress` | computed, 0..1 | position over every step of the deck |
 | `theme` | readonly ref, String | current theme name |
+| `themes` | readonly ref, Array of strings | the deck's `themes` |
+| `fullscreen` | readonly ref, Boolean | the window is fullscreen (whatever element is: `f` then leaves it) |
+| `timer` | readonly ref, Object | the talk's timer: `{ state: 'idle' \| 'running' \| 'paused', acc, since }` (ms counted before `since`, and when it last started running) |
 | `next()`, `prev()` | functions | move one step |
 | `go(i, step = 1)` | function | go to slide `i` (0-based) at `step` (clamped; `Infinity` = last step); out-of-range `i` is ignored |
+| `setTheme(name)` | function | wear another of the deck's `themes` (written in the URL, followed by the other windows); any other name warns and is ignored |
+| `toggleFullscreen()` | function | enter or leave fullscreen (as `f`) |
+| `openPresenter()` | function | open the presenter window, or bring it forward (as `p`) |
 | `role` | String (not a ref) | which rendering this is: `'audience'` (the audience window), `'presenter'` (presenter view, current slide), `'preview'` (presenter view, next-step preview), `'export'` (?export) |
 
-In the `'preview'` copy, `next`/`prev`/`go` do nothing and the refs read the preview's position.
+In the `'preview'` copy the refs read the preview's position and no function does anything
+(`next`, `prev`, `go`, `setTheme`, `toggleFullscreen`, `openPresenter`): the preview is a copy, it
+cannot act. The object is frozen and its refs read-only, all the way down (`themes.value`,
+`timer.value`): change things through the functions.
 
 ```js
 onMounted(() => deck.role === 'audience' && video.value.play())
@@ -934,8 +945,8 @@ export default defineConfig({
   `virtual:arao/icons` exports `icons` (`prefix:name` → `{ body, width, height }`, only the icons
   the source uses, plus the `icons` option).
 - It also keeps `araojs` out of Vite's dependency prebundling (it imports those virtual
-  modules), prebundles what it imports (`vue`, `shiki`), and dedupes `vue`, so a linked copy of
-  the library (`npm link`, `file:`) uses the project's Vue.
+  modules), prebundles what it imports (`vue`, `shiki`, `@vueuse/core`), and dedupes `vue`, so a
+  linked copy of the library (`npm link`, `file:`) uses the project's Vue.
 
 ---
 
