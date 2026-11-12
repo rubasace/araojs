@@ -1,4 +1,4 @@
-import { h } from 'vue'
+import { Comment, Fragment, Text, cloneVNode, h } from 'vue'
 
 // Composition pieces: boxes laid out by props, so the usual arrangements need no custom CSS.
 // Each one fills the free space of its container (the rest of the slide under its title, a
@@ -6,6 +6,8 @@ import { h } from 'vue'
 //   Cols(ratio="1 2" gap="md" align="center")   columns, left to right
 //   Rows(ratio="auto 1" gap="md")               rows, top to bottom
 //   Grid(cols="4" gap="md")                     equal cells, filled in order row by row
+//   Grid(ratio="2:1")                           columns and rows chosen from the number of children
+//                                               to keep that shape; the last row is centred
 //   Center                                      its content centred both ways (text too)
 // ratio: one entry per track, separated by spaces (or commas). Each entry is one of
 //          a positive number   a share of the free space; shares are proportions, so "1 2",
@@ -20,6 +22,10 @@ import { h } from 'vue'
 //        px, em or rem ("12px", "1.5em"). Default md; an invalid gap warns and keeps md.
 // align (Cols): start | center | end | stretch, vertical placement in each column. Default stretch.
 // cols (Grid): a whole number of columns. Default 3.
+// ratio (Grid): the grid's shape, columns : rows ("2:1", "3/2", "1.5"). With n children it uses
+//        rows = round(√(n / ratio)) (at least 1) and columns = ⌈n / rows⌉: 2:1 puts 6 children in
+//        3 + 3, 5 in 3 + 2, 8 in 4 + 4, 3 in one row. An incomplete last row is centred under the
+//        others. Overrides cols. Not the same as the track ratio of Cols/Rows ("2 1").
 // Overflow: widths hold, heights grow. A child is never wider than its track (its column, its
 //        cell) and what is wider inside it is clipped at the track's edge, so it never paints over
 //        its neighbour (wrap the text, shrink the code). Rows grow to fit their content (Rows,
@@ -98,12 +104,55 @@ export const Rows = piece('Rows', { ratio, gap }, (p) => ({
   gap: gapValue(p.gap),
 }))
 
-export const Grid = piece('Grid', {
-  cols: { type: [String, Number], default: 3, validator: (v) => Number.isInteger(Number(v)) && Number(v) >= 1 },
-  gap,
-}, (p) => ({
-  gridTemplateColumns: `repeat(${Math.max(1, Math.floor(Number(p.cols)) || 1)}, minmax(0, 1fr))`,
-  gap: gapValue(p.gap),
-}))
+// Grid ratio: "2:1" | "2/1" | "1.5" | 2 → columns per row (a positive number); null when invalid
+export const shapeValue = (v) => {
+  if (v == null || v === '') return null
+  const m = String(v).trim().match(/^(\d*\.?\d+)\s*(?:[:/]\s*(\d*\.?\d+))?$/)
+  const n = m ? Number(m[1]) / (m[2] ? Number(m[2]) : 1) : NaN
+  return Number.isFinite(n) && n > 0 ? n : null
+}
+// n children in a grid of shape `shape` (columns / rows) → { cols, rows }
+export const gridShape = (n, shape) => {
+  const rows = Math.max(1, Math.round(Math.sqrt(n / shape)))
+  const cols = Math.max(1, Math.ceil(n / rows))
+  return { cols, rows: Math.ceil(n / cols) }
+}
+// the element children a slot renders (v-for fragments flattened; v-if comments, blank text out)
+const elements = (nodes = []) => nodes.flatMap((n) =>
+  n.type === Fragment ? elements(n.children)
+    : n.type === Comment || (n.type === Text && !String(n.children).trim()) ? [] : [n])
+
+export const Grid = {
+  name: 'Grid',
+  props: {
+    cols: { type: [String, Number], default: 3, validator: (v) => Number.isInteger(Number(v)) && Number(v) >= 1 },
+    ratio: { type: [String, Number], validator: (v) => shapeValue(v) !== null },
+    gap,
+  },
+  setup(p, { slots }) {
+    return () => {
+      const children = elements(slots.default?.())
+      const shape = shapeValue(p.ratio)
+      if (!shape) {
+        return h('div', { class: 'ph-grid', style: {
+          gridTemplateColumns: `repeat(${Math.max(1, Math.floor(Number(p.cols)) || 1)}, minmax(0, 1fr))`,
+          gap: gapValue(p.gap),
+        } }, children)
+      }
+      // shaped: every cell spans two half-columns, so an incomplete last row can start half a
+      // cell in per missing cell and sit centred under the full rows
+      const n = children.length
+      const { cols } = gridShape(n || 1, shape)
+      const last = n % cols
+      const firstOfLast = last ? n - last : -1
+      return h('div', { class: 'ph-grid ph-grid-shaped', style: {
+        gridTemplateColumns: `repeat(${cols * 2}, minmax(0, 1fr))`,
+        gap: gapValue(p.gap),
+      } }, children.map((c, i) => cloneVNode(c, {
+        style: { gridColumn: i === firstOfLast ? `${cols - last + 1} / span 2` : 'span 2' },
+      })))
+    }
+  },
+}
 
 export const Center = piece('Center', {}, () => undefined)

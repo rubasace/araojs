@@ -225,7 +225,7 @@ the title, a zone, a cell of another piece) and takes `v-step` like any element.
 |---|---|---|
 | `Cols` | `ratio`, `gap`, `align` | one equal column per child, `gap="md"`, `align="stretch"` |
 | `Rows` | `ratio`, `gap` | equal rows, one per child, `gap="md"` |
-| `Grid` | `cols`, `gap` | `cols="3"`, equal cells filled row by row, `gap="md"` |
+| `Grid` | `cols`, `ratio`, `gap` | `cols="3"`, equal cells filled row by row, `gap="md"`; with `ratio` the columns come from the number of children |
 | `Center` | none | content centred both ways, text centred too |
 
 - `ratio` (String): one entry per track, separated by spaces or commas. Each entry is a positive
@@ -236,6 +236,14 @@ the title, a zone, a cell of another piece) and takes `v-step` like any element.
   of px (`12`), or a length in `px`, `em`, `rem` (`"1.5em"`). Invalid → warning, `md`.
 - `align` (`Cols` only): `start` | `center` | `end` | `stretch`, vertical placement in each column.
 - `cols` (`Grid` only): a whole number ≥ 1.
+- `ratio` (`Grid` only): the grid's **shape**, columns : rows — `"2:1"`, `"3/2"`, `"1.5"` (not the
+  track ratio of Cols/Rows). With n children: rows = round(√(n / ratio)), at least 1, and
+  columns = ⌈n / rows⌉. For 2:1: 3 → one row of 3, 5 → 3 + 2, 6 → 3 + 3, 7 → 4 + 3, 8 → 4 + 4. An
+  incomplete last row is **centred** under the full ones. It overrides `cols`; invalid values warn.
+  ```pug
+  Grid(ratio="2:1" gap="sm")
+    .card(v-for="(item, i) in items" v-step="i + 1") {{ item }}
+  ```
 - Overflow: widths hold, heights grow. A child is never wider than its track; what is wider
   inside it is clipped at the track edge. Rows grow to fit their content, so a piece that does not
   fit overflows its container at the bottom.
