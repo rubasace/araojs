@@ -8,8 +8,9 @@ Operational guide for AI agents writing or editing slide decks in this repo. Ful
 - A deck is one file, `src/decks/<Name>.vue`, opened at `/?deck=<name>` (case-insensitive).
 - Structure: `Deck` → `Slide` → content. Addons (`ProgressBar`, `SlideNumber`) sit inside `Deck`,
   outside slides. Slide order = template order.
-- The canvas is a fixed **1920x1080 px** and is scaled as a whole. Every size you write is canvas
-  px; it renders identically on any screen and in the PDF.
+- The canvas has a fixed size, **1920x1080 px** by default (`Deck(:width="…" :height="…")` sets
+  another), and is scaled as a whole. Every size you write is canvas px; it renders identically on
+  any screen and in the PDF.
 - **Steps are absolute numbers per slide.** `v-step="3"` means "from step 3 of this slide", not
   "after the previous element". Step 1 is what shows when the slide arrives.
 - **A slide counts its own steps**: the largest `v-step` (or Snippet highlight step) inside it.
@@ -31,7 +32,9 @@ Do:
   `Img(file="team.jpg")` / `Slide(bg="team.jpg")` from `src/images/` (subfolders ok, case-sensitive).
 - Write sizes, if any, in canvas px (`gap="24"`, `:size="36"`, `width: 320px`).
 - Put speaker notes in `Notes` inside the slide.
-- Put talk-specific components under `src/decks/<talk>/`.
+- Put components only one talk uses under `src/decks/<talk>/`, and components several decks share
+  (like `Card`) under `src/slides/`. Neither is global: the deck imports them in `<script setup>`
+  (`import Card from '../slides/Card.vue'`).
 
 Don't:
 - Don't write ad-hoc layout CSS (flex/grid wrappers, margins to position things) when a layout,
@@ -39,11 +42,30 @@ Don't:
 - Don't hard-code colours or fonts in a deck. Style through tokens:
   `color: var(--ph-accent)`, `background: color-mix(in srgb, var(--ph-fg) 8%, var(--ph-bg))`.
   Venue-specific looks are a new theme, not edits to slides.
-- Don't use `vw`, `vh`, `%` font sizes or media queries inside slides: the canvas never changes size.
+- Don't use `vw`, `vh`, `%` font sizes or media queries inside slides: the canvas keeps its size
+  whatever the window; only its scale changes.
 - Don't put a highlight at step 1 (`{ "4": 1 }`): step 1 always shows the code plain.
 - Don't expect Snippet highlights to accumulate: each step shows only its own rules.
 - Don't use `v-step` inside `Notes` (not supported) or outside a `Slide` (warns).
 - Don't edit `src/engine/` to make one deck look right.
+
+## Gotchas
+
+- **Pug: a plain attribute is a string; a `:`-bound one is JavaScript.** Numbers, booleans, arrays
+  and objects need the colon: `:size="36"`, `:line-numbers="false"`, `:themes="['default']"`,
+  `:highlights='{ "2-3": 2 }'` (JSON in single quotes). Without it, `size="36"` is the string
+  `"36"` and `line-numbers="false"` the string `"false"`: Vue warns and the line numbers stay.
+  Props that take text, or a number written as text, are plain: `gap="sm"`, `ratio="2 1"`,
+  `cols="3"`, `file="App.java"`, `bg-opacity="0.25"`, `Notes(step="2")`.
+- **`Img` has no size of its own.** It fills the box its container gives it (the space under the
+  title, a column, a cell, a zone, `Center`) and fits the picture inside; in a plain block it is as
+  wide as the block. For a fixed size, give it a class with both sizes:
+  `.avatar { flex: none; width: 320px; height: 320px; }`.
+- **A new theme** is `src/themes/<name>.css` holding one `[data-theme="<name>"] { --ph-…: …; }`
+  block, imported in `src/main.js` and listed in `Deck(:themes)`. If the file is not imported or
+  the selector does not match the name, the slides render unstyled and nothing warns.
+- **Headings inside `#background` are ignored for the slide's title** (jump menu, presenter,
+  notes pages). Put the heading in the content, or use `Slide(title="…")`.
 
 ## Skeleton
 
@@ -163,8 +185,11 @@ Slide
 1. `npm run dev` and open `http://127.0.0.1:5173/?deck=<name>`; walk it with `→`. Check
    `#/<slide>/<step>` in the URL and the step dots (move the mouse to show the controls).
 2. Headless check (Playwright / `playwright-core`), at a 1920x1080 viewport:
-   - collect `console` messages of type `warning`/`error` and `pageerror`: expect none (Phoenyx
-     warns with a `[phoenyx]` prefix on bad props, missing files, `v-step` outside a slide);
+   - collect `console` messages of type `warning`/`error` and `pageerror`: expect none. They come
+     in two kinds: Vue's own, `[Vue warn]: Invalid prop: …`, when a prop fails its type or its
+     validator (`gap="huge"`, `size="36"` without the colon, `fit="fill"`); and Phoenyx's, prefixed
+     `[phoenyx]`, on missing files, values it cannot use (`bg`, `duration`), `v-step` or `Notes`
+     outside a slide;
    - count `.ph-slide` elements; press `ArrowRight` until the hash stops changing and record the
      highest step per slide: compare with what you meant;
    - for overflow, compare the visible slide's `scrollHeight`/`scrollWidth` with its

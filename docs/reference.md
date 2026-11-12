@@ -295,8 +295,8 @@ A code window: macOS-style title bar, Shiki syntax colours, line numbers, per-st
 |---|---|---|---|
 | `file` | String | — | path inside the snippets folder (`src/snippets` by default) |
 | `code` | String | — | inline code, instead of `file` (wins if both are given) |
-| `lang` | String | from the file extension | any Shiki language; unknown → plain text. Mapped extensions: `yml`→yaml, `kt`/`kts`→kotlin, `sh`→bash, `md`→markdown, `py`→python, `rb`→ruby, `rs`→rust, `ts`→typescript, `js`→javascript, `h`→c, `hpp`→cpp, `cs`→csharp, `txt`→text, `factories`→properties |
-| `name` | String | the file name | the title bar text |
+| `lang` | String | from the extension of `file`; plain text with no `file` (inline `code`) | any Shiki language; unknown → plain text. Mapped extensions: `yml`→yaml, `kt`/`kts`→kotlin, `sh`→bash, `md`→markdown, `py`→python, `rb`→ruby, `rs`→rust, `ts`→typescript, `js`→javascript, `h`→c, `hpp`→cpp, `cs`→csharp, `txt`→text, `factories`→properties |
+| `name` | String | the last path segment of `file` (`legacy/App.java` → `App.java`); empty with no `file` | the title bar text |
 | `highlights` | Object | `{}` | `{ "<lines>[:<word>+++<word>]": <step> }`, see below |
 | `line-numbers` | Boolean | `true` | `:line-numbers="false"` hides them |
 | `fit` | Boolean | `false` | the window hugs the code instead of the standard frame (small inline snippets) |
@@ -378,6 +378,9 @@ Built into `Deck`; nothing to add. A floating panel at the bottom centre of the 
 - **Theme picker**: the deck's `themes`, each with a swatch from its tokens.
 - Keys (in any window of the deck): see the table below. Ctrl/Cmd/Alt combinations, and keys
   typed into inputs, are ignored. `Space`/`Enter` on a focused button press the button.
+- Letter keys are case-sensitive: only lowercase `g`, `t`, `f`, `p` act. With Caps Lock on, or
+  with Shift held, they type `G`, `T`, `F`, `P` and do nothing. Shift does not stop the
+  navigation keys: `Shift`+`→` still moves.
 
 | Key | Action |
 |---|---|
@@ -386,7 +389,7 @@ Built into `Deck`; nothing to add. A floating panel at the bottom centre of the 
 | `Home` / `End` | first slide / last step of the last slide |
 | `g` | toggle the jump menu |
 | `0`–`9` | open the jump menu pre-filled with that digit |
-| `Esc` | close the jump menu |
+| `Esc` | close the open panel (jump menu or theme picker) |
 | `t` | next theme |
 | `f` | fullscreen |
 | `p` | open or bring forward the presenter window (not in the presenter itself) |
@@ -442,6 +445,14 @@ page count, writes atomically. Default output `exports/<deck>[-<theme>][-steps][
 `--out` that is a folder (exists, or ends in `/`) gets that name inside. Chromium:
 `npx playwright-core install chromium`, or `PHOENYX_CHROMIUM=/path/to/chrome`. Missing pictures
 print as placeholders and are listed.
+
+- `--url <url>`: no build and no server of its own; prints from the server already running at
+  that URL (`npm run dev`: `http://127.0.0.1:5173/`). The export query (`?deck=…&export…`)
+  replaces the URL's own query and hash; its path is kept. The `--deck` name is still checked
+  against this checkout's `src/decks` before anything opens, so the server must serve the same
+  decks.
+- `-h`, `--help`: prints the usage and exits. An unknown option prints the error and the usage,
+  and exits with code 1.
 
 **Late content**: the export waits for elements with the attribute `data-ph-busy` inside the slide
 (or in addons) before copying each page, up to 15 s. Snippet and Img set it while loading. A
@@ -623,7 +634,7 @@ imported in `src/main.js` and listed in `Deck(:themes)`. Themes set tokens only;
 |---|---|---|
 | `--ph-pad` | `96px 120px` | slide padding (and the text side of `image-*`) |
 | `--ph-radius` | `16px` (theme) | corner radius (`Img rounded`, placeholders) |
-| `--ph-gap-sm` / `-md` / `-lg` | `24px` / `48px` / `80px` | `gap="sm|md|lg"`; `md` is the default gap of `Cols`/`Rows`/`Grid`; `lg` between zones |
+| `--ph-gap-sm` / `-md` / `-lg` | `24px` / `48px` / `80px` | `gap="sm\|md\|lg"`; `md` is the default gap of `Cols`/`Rows`/`Grid`; `lg` between zones |
 | `--ph-image-inset` | `0` | padding around the picture in an `image-*` zone |
 
 ### Background, steps, addons
@@ -677,7 +688,7 @@ Set by the engine, read-only: `--ph-scale` (the stage's current scale factor; `1
 | `deck` | `?deck=framework` | the deck file in `src/decks` (case-insensitive); unknown → Demo, silently |
 | `theme` | `&theme=vigojug` | the theme; also keeps this window's theme when it joins other windows |
 | `presenter` | `&presenter` | the presenter view |
-| `export` | `&export` | export mode (wins over `presenter`); `export=0|false|no|off` = off |
+| `export` | `&export` | export mode (wins over `presenter`); `export=0\|false\|no\|off` = off |
 | `per-step` | `&export&per-step` | export: one page per step |
 | `notes` | `&export&notes` | export: notes pages |
 | hash | `#/12/3` | slide 12, step 3 (1-based); kept up to date while presenting |
