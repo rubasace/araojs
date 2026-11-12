@@ -27,7 +27,7 @@ header.ph-p-bar
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { IDLE, clock, elapsed, phase, toggle } from './timer'
 
 const props = defineProps({
@@ -42,6 +42,8 @@ const now = ref(Date.now())
 let tick
 onMounted(() => (tick = setInterval(() => (now.value = Date.now()), 250)))
 onBeforeUnmount(() => clearInterval(tick))
+// a timer that starts or resumes now is read against now, not against the last tick
+watch(() => props.timer, () => (now.value = Date.now()))
 
 // whole seconds, as shown: the time left is what the shown time leaves (45:00 = 44:59 + 0:01)
 const spent = computed(() => Math.floor(elapsed(props.timer, now.value) / 1000) * 1000)

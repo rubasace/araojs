@@ -4,11 +4,15 @@
        presenter view   ?presenter, or "p" / the controls' button (opens it in a new window):
                         the current slide, a preview of the next step, the speaker notes (Notes),
                         a wall clock and the talk's timer (Presenter.vue)
+     "p" brings an open presenter window forward instead of reloading it; if the browser blocks the
+     new window, a notice above the controls links to the presenter view to open it by hand.
+     The presenter view mounts every slide twice (current + preview): see useDeck().role.
      Every window of the same deck in the same browser stays in step (sync.js): moving in any of
      them moves the others, and so does a theme change; the last move wins. A window that opens
      takes the position of the ones already open (and their theme, unless its URL names one).
-     duration="45m" (also "1h30m", "90" minutes) is the talk's length: the presenter view counts
-     down to it. The timer starts with the first move of the deck, in any window. -->
+     duration="45m" is the talk's length (formats: timer.js parseDuration): the presenter view
+     counts down to it. The timer starts with the first move of the deck, in any window, and
+     survives reloading the windows (not closing them). -->
 <template lang="pug">
 .ph-viewport(v-if="!presenter" ref="viewport" :data-theme="theme" :class="{ 'ph-nocursor': cursorHidden }")
   Stage(:stage="main" :width="width" :height="height")
@@ -25,6 +29,11 @@
     @fullscreen="toggleFullscreen"
     @presenter="openPresenter"
   )
+  //- the browser blocked the presenter window: the same URL as a link, which it does not block
+  Transition(name="ph-toast")
+    .ph-toast(v-if="blocked" role="status")
+      span El navegador ha bloqueado la ventana del presentador.
+      a(:href="blocked" :target="presenterName" :title="blocked" @click="blocked = null") Abrirla aquí
 Presenter(
   v-else
   :deck="main.api"
@@ -39,6 +48,9 @@ Presenter(
   template(#current)
     Stage(:stage="main" :width="width" :height="height" :theme="theme")
       slot
+  //- A second copy of every slide, one step ahead: each slide and addon mounts again here, so
+  //- its side effects run twice in this window and its element ids repeat (useDeck().role is
+  //- 'preview' in this copy, 'presenter' in the one above).
   template(#next)
     Stage(:stage="preview" :width="width" :height="height" :theme="theme")
       slot
@@ -71,8 +83,9 @@ const props = defineProps({
   themes: { type: Array, default: () => ['default'] },
   // hide the mouse cursor after this many ms without moving it (0 = never)
   hideCursorAfter: { type: Number, default: 5000 },
-  // the talk's length, for the presenter view's countdown: "45m", "1h30m", "90" (minutes)
-  duration: { type: [String, Number], validator: (v) => parseDuration(v) != null },
+  // the talk's length, for the presenter view's countdown: 90 or "90" (minutes), "45m", "1h30m",
+  // "1h30", "90s", "45:00" (m:ss), "1:30:00" (h:mm:ss). Anything else warns and counts nothing.
+  duration: [String, Number],
 })
 
 const query = new URLSearchParams(location.search)
@@ -81,9 +94,9 @@ const presenter = query.has('presenter')
 // ---- slides ------------------------------------------------------------
 // The audience's stage; the presenter view adds a second rendering of the deck that stands one
 // step ahead of it, for the "next" preview.
-const main = createStage({ onMove: moved })
+const main = createStage({ onMove: moved, role: presenter ? 'presenter' : 'audience' })
 const next = computed(() => ahead(main))
-const preview = presenter ? createStage({ follow: () => next.value }) : null
+const preview = presenter ? createStage({ follow: () => next.value, role: 'preview' }) : null
 
 // ---- URL: #/slide/step (1-based) -----------------------------------------
 function readHash() {
@@ -111,6 +124,11 @@ function cycleTheme() {
 const timer = shallowRef(IDLE)
 const setTimer = (t) => (timer.value = t)
 const durationMs = computed(() => parseDuration(props.duration))
+watch(() => props.duration, (v) => {
+  if (v != null && String(v).trim() && durationMs.value == null) {
+    console.warn(`[phoenyx] Deck duration="${v}" is not a length (90, "45m", "1h30", "45:00"…): the presenter view shows no countdown`)
+  }
+}, { immediate: true })
 
 // ---- windows in step -------------------------------------------------------
 // Started once the URL has placed the deck: that position is this window's own, not a move.
@@ -123,7 +141,8 @@ function startSync() {
   })
   // a window whose URL names a theme keeps it when it opens; later changes still reach it
   sync.register('theme', { get: () => theme.value, set: setTheme, adopt: !query.has('theme') })
-  sync.register('timer', { get: () => timer.value, set: setTimer })
+  // kept through a reload of every window (sessionStorage), not past closing them
+  sync.register('timer', { get: () => timer.value, set: setTimer, keep: true })
   sync.hello()
 }
 // A move made here (keys, controls, an addon, the URL; not a position received, nor the deck
@@ -141,15 +160,31 @@ watch(timer, () => sync?.publish('timer'))
 // ---- presenter view ---------------------------------------------------------
 // notes of the slide on screen
 const notes = computed(() => main.current.value?.notes ?? [])
-let presenterWindow = null
+const presenterName = `phoenyx-presenter ${deckKey(location)}`
+// the notice that the browser blocked the window: the URL to open by hand while it shows
+const blocked = ref(null)
+let blockedTimer
 function openPresenter() {
-  if (presenterWindow && !presenterWindow.closed) return presenterWindow.focus()
   const params = new URLSearchParams(location.search)
   params.delete('presenter')
   const q = params.toString()
-  const url = `${location.pathname}?${q ? q + '&' : ''}presenter${location.hash}`
-  // a window of its own (not a tab), to drag to the speaker's screen
-  presenterWindow = window.open(url, `phoenyx-presenter ${deckKey(location)}`, 'popup,width=1280,height=800')
+  const url = new URL(`${location.pathname}?${q ? q + '&' : ''}presenter${location.hash}`, location.href).href
+  // A window of its own (not a tab), to drag to the speaker's screen, found by its name: one
+  // already open (even by this page before a reload) is only brought forward, keeping its scroll;
+  // a new one opens blank and is sent to the presenter view.
+  const w = window.open('', presenterName, 'popup,width=1280,height=800')
+  if (!w) {
+    console.warn(`[phoenyx] The browser blocked the presenter window: allow pop-ups for this site, or open ${url}`)
+    blocked.value = url
+    clearTimeout(blockedTimer)
+    blockedTimer = setTimeout(() => (blocked.value = null), 10000)
+    return
+  }
+  blocked.value = null
+  let blank = false
+  try { blank = w.location.href === 'about:blank' } catch {} // a page of another site: leave it be
+  if (blank) w.location.replace(url)
+  w.focus()
 }
 
 // ---- controls ------------------------------------------------------------
@@ -185,6 +220,8 @@ function onMouseMove() {
 }
 function onKey(e) {
   if (e.target.closest?.('input, textarea, [contenteditable]')) return
+  // Ctrl/Cmd/Alt + key belongs to the browser (print, find, tabs, history); Shift is ours
+  if (e.ctrlKey || e.metaKey || e.altKey) return
   // a button with the focus (the presenter view's) keeps Space and Enter for itself
   if ((e.key === ' ' || e.key === 'Enter') && e.target.closest?.('button')) return
   const k = e.key
@@ -217,9 +254,24 @@ onBeforeUnmount(() => {
   sync?.close()
   clearTimeout(hudTimer)
   clearTimeout(cursorTimer)
+  clearTimeout(blockedTimer)
   window.removeEventListener('keydown', onKey)
   window.removeEventListener('hashchange', readHash)
   window.removeEventListener('mousemove', onMouseMove)
   document.removeEventListener('fullscreenchange', onFullscreen)
 })
 </script>
+
+<style>
+/* a notice above the controls (the presenter window was blocked); window px, not canvas px */
+.ph-toast {
+  position: absolute; left: 50%; bottom: 128px; z-index: 101; transform: translateX(-50%);
+  display: flex; align-items: baseline; gap: 14px; max-width: calc(100% - 32px); box-sizing: border-box;
+  padding: 12px 16px; border: 1px solid rgba(255, 255, 255, .16); border-radius: 12px;
+  background: #1c1c22; box-shadow: 0 12px 32px rgba(0, 0, 0, .35);
+  color: rgba(255, 255, 255, .94); font: 15px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.ph-toast a { color: #8ab4ff; font-weight: 600; white-space: nowrap; }
+.ph-toast-enter-active, .ph-toast-leave-active { transition: opacity .2s, translate .2s; }
+.ph-toast-enter-from, .ph-toast-leave-to { opacity: 0; translate: 0 6px; }
+</style>

@@ -11,8 +11,17 @@ import { computed, nextTick, readonly, ref, shallowReactive } from 'vue'
 //                                   moves; place(i, s) sets the position without being one
 //   createStage({ follow })         follower: follow() → { index, step } is where it stands;
 //                                   it cannot be moved by itself
+//   role: 'audience' (default)      which rendering this is, for components (useDeck().role):
+//         | 'presenter' | 'preview' the audience window, the presenter view's current slide, or
+//                                   its preview of the next step
 // What the slides see is stage.context (provided by Stage.vue); what addons see is stage.api.
-export function createStage({ follow, onMove } = {}) {
+//
+// Caveat: a presenter window mounts every slide twice, and keeps both mounted. Whatever a slide
+// or an addon does when it mounts or while it is on screen happens twice there: timers, fetches,
+// media that autoplays (sound from two places), and every element id appears twice (an SVG
+// gradient, an anchor). A component that should not do that outside the audience's own window
+// checks useDeck().role.
+export function createStage({ follow, onMove, role = 'audience' } = {}) {
   const list = shallowReactive([])
   // a follower's position is read from follow(); writes to it (reorder, vacancy) are dropped
   const index = follow ? computed({ get: () => follow().index, set() {} }) : ref(0)
@@ -27,6 +36,7 @@ export function createStage({ follow, onMove } = {}) {
   }
   // public, read-only view for addons (useDeck)
   const api = {
+    role,
     index: readonly(index),
     step: readonly(step),
     total: computed(() => list.length),
