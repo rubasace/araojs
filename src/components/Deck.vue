@@ -77,15 +77,15 @@
 <script setup>
 // Deck wires the pieces together; each concern is a composable (src/composables/).
 import { computed, provide, ref, toRef, useSlots } from 'vue'
+import { useFullscreen } from '@vueuse/core'
 import { ahead, createStage, titleOf } from '../core/stage'
 import { exportOptions } from '../core/exporter'
 import { FOOTER } from '../core/registry'
 import { provideDeckContext } from '../composables/useDeckContext'
 import { useDeckSync } from '../composables/useDeckSync'
 import { useExport } from '../composables/useExport'
-import { useFullscreen } from '../composables/useFullscreen'
 import { useHashRoute } from '../composables/useHashRoute'
-import { useIdle } from '../composables/useIdle'
+import { useMouseIdle } from '../composables/useMouseIdle'
 import { useKeyboard } from '../composables/useKeyboard'
 import { usePresenterWindow } from '../composables/usePresenterWindow'
 import { useTheme } from '../composables/useTheme'
@@ -133,16 +133,16 @@ const { timer, setTimer, duration, startTimer } = useTimer(() => props.duration)
 
 const viewport = ref()
 const controls = ref()
-const { fullscreen, toggle: toggleFullscreen } = useFullscreen(viewport)
+const { isFullscreen: fullscreen, toggle: toggleFullscreen } = useFullscreen(viewport)
 const { open: openPresenter, name: presenterName, blocked, dismiss } = usePresenterWindow()
 
 // ---- the audience's window: the mouse shows the controls for 2.5 s (a tap in the middle, for 4 s)
 // and hides the cursor after hideCursorAfter; keys never show them. The presenter view and the
 // export listen to neither.
 const pointer = presenter || exporting ? null : viewport
-const controlsIdle = useIdle(pointer, 2500, { idle: true })
+const controlsIdle = useMouseIdle(pointer, 2500, { idle: true })
 const hud = computed(() => !controlsIdle.idle.value)
-const { idle: cursorHidden } = useIdle(pointer, () => props.hideCursorAfter)
+const { idle: cursorHidden } = useMouseIdle(pointer, () => props.hideCursorAfter)
 if (pointer) {
   useTouchNav(pointer, {
     next: main.next,
