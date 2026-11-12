@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build, pack and smoke-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Pack
+        id: pack
+        run: |
+          npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP"
+          echo "tarball=$(ls "$RUNNER_TEMP"/*.tgz)" >> "$GITHUB_OUTPUT"
+
+      # the Chromium of the playwright-core version the library depends on
+      - name: Install Chromium
+        run: npx playwright-core install --with-deps chromium
+
+      - name: Smoke test (packaged consumer)
+        run: node scripts/smoke.mjs "${{ steps.pack.outputs.tarball }}"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: package
+          path: ${{ steps.pack.outputs.tarball }}
+          if-no-files-found: error
