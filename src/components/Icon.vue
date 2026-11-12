@@ -73,7 +73,7 @@ const body = computed(() => uniqueIds(icon.value?.body ?? ''))
 /* missing icon: an empty dashed box of the same size, so nothing around it moves */
 .ar-icon-missing {
   box-sizing: border-box;
-  border: max(1px, .06em) dashed color-mix(in srgb, var(--ar-placeholder, currentColor) 45%, transparent);
+  border: max(1px, .06em) dashed color-mix(in srgb, var(--ar-placeholder) 45%, transparent);
   border-radius: .15em;
 }
 </style>

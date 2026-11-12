@@ -10,10 +10,10 @@ html, body, #app { margin: 0; height: 100%; }
   touch-action: pinch-zoom;
   -webkit-tap-highlight-color: transparent;
   position: fixed; inset: 0; overflow: hidden;
-  background: var(--ar-letterbox, #000);
+  background: var(--ar-letterbox);
 }
 
 /* steps (v-step, v-step-from: directives/step.js) */
 .ar-step-hidden { opacity: 0 !important; pointer-events: none; }
 .ar-step-collapsed { display: none !important; }
-[data-ar-slide] * { transition: opacity var(--ar-step-duration, .35s) ease; }
+[data-ar-slide] * { transition: opacity var(--ar-step-duration) ease; }

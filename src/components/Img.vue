@@ -130,14 +130,14 @@ const picture = computed(() => ({
 /* missing file: a dashed box (colour from --ar-placeholder, default the text colour) with its name */
 .ar-img-missing {
   display: flex; align-items: center; justify-content: center;
-  border: 3px dashed color-mix(in srgb, var(--ar-placeholder, currentColor) 40%, transparent);
+  border: 3px dashed color-mix(in srgb, var(--ar-placeholder) 40%, transparent);
   border-radius: var(--ar-radius);
-  background: color-mix(in srgb, var(--ar-placeholder, currentColor) 5%, transparent);
+  background: color-mix(in srgb, var(--ar-placeholder) 5%, transparent);
 }
 .ar-img-name {
   padding: 8px 12px;
-  font: calc(var(--ar-text-base, 40px) * .5) / 1.2 var(--ar-font-mono, monospace);
-  color: color-mix(in srgb, var(--ar-placeholder, currentColor) 85%, transparent);
+  font: calc(var(--ar-text-base) * .5) / 1.2 var(--ar-font-mono, monospace);
+  color: color-mix(in srgb, var(--ar-placeholder) 85%, transparent);
   text-align: center; text-transform: none; font-weight: normal;
   overflow-wrap: anywhere;
 }

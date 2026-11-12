@@ -70,7 +70,7 @@ onBeforeUnmount(() => {
   background: var(--ar-bg);
   color: var(--ar-fg);
   font-family: var(--ar-font-sans);
-  font-size: var(--ar-text-base, 40px);
+  font-size: var(--ar-text-base);
   line-height: 1.35;
 }
 </style>

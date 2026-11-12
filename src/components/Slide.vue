@@ -286,7 +286,7 @@ const footed = () => !!footerSlot() && (props.footer ?? !flat.value)
 .ar-slide {
   position: absolute; inset: 0;
   box-sizing: border-box;
-  padding: var(--ar-pad, 96px 120px);
+  padding: var(--ar-pad);
   display: flex; flex-direction: column;
   isolation: isolate; /* its own stacking context: the background layer stays inside it */
 }
@@ -301,7 +301,7 @@ const footed = () => !!footerSlot() && (props.footer ?? !flat.value)
 /* each child of the layer (the bg, every element of #background) covers the whole slide,
    stacked in order: an Img, then an overlay above it */
 .ar-slide-bg > * { position: absolute; inset: 0; }
-/* the theme's default background, on slides with none of their own (tokens, all optional):
+/* the theme's default background, on slides with none of their own (tokens, tokens.css):
      --ar-slide-bg-image      a CSS background-image: a gradient, or url(…) relative to the theme
                               file, url(../images/venue.jpg), which Vite resolves (default none)
      --ar-slide-bg-position   where it sits, as CSS background-position (default center)
@@ -309,8 +309,8 @@ const footed = () => !!footerSlot() && (props.footer ?? !flat.value)
    It is drawn to cover the slide. A theme can leave a layout out:
      [data-theme="x"] .layout-section { --ar-slide-bg-image: none; } */
 .ar-slide-bg-theme {
-  background: var(--ar-slide-bg-image, none) var(--ar-slide-bg-position, center) / cover no-repeat;
-  opacity: var(--ar-slide-bg-opacity, 1);
+  background: var(--ar-slide-bg-image) var(--ar-slide-bg-position) / cover no-repeat;
+  opacity: var(--ar-slide-bg-opacity);
 }
 
 /* Zones (default layout): the header (its title), the body, the footer.
@@ -341,7 +341,7 @@ const footed = () => !!footerSlot() && (props.footer ?? !flat.value)
 .ar-footer {
   position: absolute; left: 0; right: 0; bottom: 0;
   box-sizing: border-box; height: var(--ar-footer-height);
-  padding: var(--ar-pad, 96px 120px); padding-top: 0; padding-bottom: 0;
+  padding: var(--ar-pad); padding-top: 0; padding-bottom: 0;
   display: flex; align-items: center; justify-content: var(--ar-footer-align); gap: var(--ar-gap-sm);
   font-size: var(--ar-footer-size); line-height: 1.2; color: var(--ar-footer-color);
   white-space: nowrap;
@@ -358,9 +358,9 @@ const footed = () => !!footerSlot() && (props.footer ?? !flat.value)
 /* a zone keeps its width: what is wider is clipped at its edge, never painted over the other zone */
 .ar-zone { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow-x: clip; }
 .layout-image-left, .layout-image-right { display: grid; grid-template-rows: minmax(0, 1fr); padding: 0; }
-.ar-zone-text { box-sizing: border-box; padding: var(--ar-pad, 96px 120px); }
+.ar-zone-text { box-sizing: border-box; padding: var(--ar-pad); }
 /* the image fills its zone edge to edge (a theme may inset it) */
-.ar-zone-image { position: relative; overflow: hidden; box-sizing: border-box; padding: var(--ar-image-inset, 0); }
+.ar-zone-image { position: relative; overflow: hidden; box-sizing: border-box; padding: var(--ar-image-inset); }
 .ar-zone-image > * { flex: 1 1 0; min-height: 0; }
 .ar-zone-image > :is(img, video, picture, svg, canvas) { display: block; width: 100%; height: 100%; object-fit: cover; }
 
@@ -417,16 +417,16 @@ const footed = () => !!footerSlot() && (props.footer ?? !flat.value)
      --ar-table-stripe      background of every other body row (default none) */
 :where(.ar-slide table) { width: 100%; border-collapse: collapse; }
 :where(.ar-slide :is(th, td)) {
-  padding: var(--ar-table-pad, .4em .8em);
+  padding: var(--ar-table-pad);
   text-align: start;
   border-bottom: var(--ar-table-border, 2px solid color-mix(in srgb, var(--ar-fg) 15%, transparent));
 }
 :where(.ar-slide th) {
-  background: var(--ar-table-head-bg, none);
+  background: var(--ar-table-head-bg);
   color: var(--ar-table-head-color, var(--ar-muted));
   font-weight: 600;
 }
-:where(.ar-slide tbody tr:nth-child(even)) { background: var(--ar-table-stripe, none); }
+:where(.ar-slide tbody tr:nth-child(even)) { background: var(--ar-table-stripe); }
 
 /* the footer's own paragraphs, if any, sit on its line */
 .ar-footer p { margin: 0; }

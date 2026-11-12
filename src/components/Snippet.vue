@@ -238,18 +238,18 @@ const vars = computed(() => {
 
 <style>
 .ar-snippet {
-  /* code window palette: tokens with defaults (dark editor, like a real Mac window) */
-  --sn-bg: var(--ar-code-bg, #2b2b2b);
-  --sn-bar: var(--ar-code-bar, #383a40);
-  --sn-fg: var(--ar-code-fg, #eeffff);
-  --sn-muted: var(--ar-code-muted, #8a8f98);
+  /* code window palette: tokens (defaults in tokens.css: a dark editor, like a real Mac window) */
+  --sn-bg: var(--ar-code-bg);
+  --sn-bar: var(--ar-code-bar);
+  --sn-fg: var(--ar-code-fg);
+  --sn-muted: var(--ar-code-muted);
   --sn-hl: var(--ar-code-hl, var(--ar-accent));
-  --sn-radius: var(--ar-code-radius, 22px);
-  --sn-size-std: var(--sn-size, var(--ar-code-size, 44px));
+  --sn-radius: var(--ar-code-radius);
+  --sn-size-std: var(--sn-size, var(--ar-code-size));
   /* window box: fixed shape, as large as fits (cq units resolve against this element: they are
      substituted where used, in its children) */
-  --sn-aspect: var(--ar-code-aspect, 16 / 9);
-  --sn-w: min(100cqw, var(--ar-code-width, 1520px), 100cqh * (var(--sn-aspect)));
+  --sn-aspect: var(--ar-code-aspect);
+  --sn-w: min(100cqw, var(--ar-code-width), 100cqh * (var(--sn-aspect)));
   --sn-h: calc(var(--sn-w) / (var(--sn-aspect)));
   flex: 1; min-height: 0; align-self: stretch;
   container-type: size;
@@ -270,7 +270,7 @@ const vars = computed(() => {
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
   background: var(--sn-bar);
   font: 400 34px/1 var(--ar-font-sans);
-  color: var(--ar-code-title, rgba(255, 255, 255, .92));
+  color: var(--ar-code-title);
 }
 .ar-snippet-lights { display: flex; gap: 18px; }
 .ar-snippet-lights i { width: 24px; height: 24px; border-radius: 50%; }
@@ -279,7 +279,7 @@ const vars = computed(() => {
 .ar-snippet-lights .g { background: #28c840; }
 .ar-snippet-name { grid-column: 2; white-space: nowrap; }
 .ar-snippet-body { flex: 1; min-height: 0; padding: 36px 48px 40px 28px; overflow: hidden; }
-.ar-snippet.fit { --sn-w: min(100cqw, var(--ar-code-width, 1520px)); --sn-h: 100cqh; }
+.ar-snippet.fit { --sn-w: min(100cqw, var(--ar-code-width)); --sn-h: 100cqh; }
 .ar-snippet.fit .ar-snippet-window { width: auto; height: auto; max-width: 100%; max-height: 100%; }
 .ar-snippet-code {
   font-family: var(--ar-font-mono);
