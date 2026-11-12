@@ -8,6 +8,7 @@ import { nextTick } from 'vue'
 //   ?export&per-step    one page per step of every slide
 //   &notes              after the page(s) of a slide with speaker notes, a page with its notes
 //   &theme=name         as anywhere (a name that is not one of the deck's themes is an error)
+// A flag set to 0, false, no or off is not set: ?export=0 is the deck as usual.
 // No controls, no keyboard, no cursor hiding, no transitions or animations, and the window
 // joins no other window of the deck (sync.js). Components can tell: useDeck().role is 'export'.
 //
@@ -17,20 +18,28 @@ import { nextTick } from 'vue'
 // pixels drawn by script (canvas, WebGL), video frames, iframes, shadow DOM, and references by
 // element id (an SVG gradient url(#id): ids repeat in the book, the first one wins).
 //
-// Ready: window.__phoenyxReady = { pages, slides, steps, width, height, missing } once every page
-// is in the book with its fonts and pictures loaded (missing: names of pictures shown as
-// placeholders); { error } if the export cannot be made.
+// Ready: window.__phoenyxReady = { pages, slides, steps, width, height, missing, stalled } once
+// every page is in the book with its fonts and pictures loaded; { error } if the export cannot be
+// made. missing: names of pictures shown as placeholders (they failed). stalled: what was still
+// on its way when printed (it neither loaded nor failed in time), printed as it stood.
 // Content that arrives late marks itself with the attribute data-ph-busy while it does (Snippet
 // until its colours are in, Img until its picture has loaded or failed); a page is copied once
 // its slide and the addons have none left. Any component may do the same:
 //   div(:data-ph-busy="loading ? '' : undefined")
-// A page still busy after BUSY_MS is copied as it is, with a warning.
+// A page still busy after BUSY_MS is copied as it is, with a warning. The attribute may name what
+// it waits for (Img: its picture's URL): what one page gave up on, no later page waits for again,
+// and it is reported in stalled. Unnamed (''), every page waits for it in full.
 
 const BUSY_MS = 15000
+// a picture of the finished book still on its way after this long is let go (and is stalled)
+const PICTURE_MS = 5000
 const SLIDE = '[data-ph-slide]'
 
+// a flag of the URL: there, and not 0/false/no/off
+const flag = (query, name) => query.has(name) && !/^(0|false|no|off)$/i.test(query.get(name))
+
 export function exportOptions(query) {
-  return query.has('export') ? { perStep: query.has('per-step'), notes: query.has('notes') } : null
+  return flag(query, 'export') ? { perStep: flag(query, 'per-step'), notes: flag(query, 'notes') } : null
 }
 
 export function reportReady(value) {
@@ -39,23 +48,24 @@ export function reportReady(value) {
 
 const pause = (ms) => new Promise((r) => setTimeout(r, ms))
 
-// whatever is busy on this page: inside its slide, or outside every slide (an addon)
-function busy(canvas, id) {
-  for (const el of canvas.querySelectorAll('[data-ph-busy]')) {
+// what this page still waits for: the busy elements inside its slide or outside every slide (an
+// addon), less those named in `stalled` (given up on already)
+function waiting(canvas, id, stalled) {
+  return [...canvas.querySelectorAll('[data-ph-busy]')].filter((el) => {
     const host = el.closest(SLIDE)
-    if (!host || host.dataset.phSlide === id) return true
-  }
-  return false
+    return (!host || host.dataset.phSlide === id) && !stalled.has(el.dataset.phBusy)
+  })
 }
-async function settle(canvas, id) {
+// [] once nothing is busy; what still is, after BUSY_MS
+async function settle(canvas, id, stalled) {
   const end = performance.now() + BUSY_MS
   for (;;) {
     // the render, then whatever it set off for later (watchers, nextTick callbacks), then theirs
     await nextTick()
     await pause(0)
     await nextTick()
-    if (!busy(canvas, id)) return true
-    if (performance.now() > end) return false
+    const left = waiting(canvas, id, stalled)
+    if (!left.length || performance.now() > end) return left
     await pause(16)
   }
 }
@@ -86,16 +96,24 @@ function page(width, height, cls, ...children) {
 
 // The book's pictures, loaded and decoded before it is printed: every img (a copy is a new
 // element, even if its file is cached) and every CSS background (only fetched when shown).
-async function pictures(book) {
+// One that fails prints as the browser draws it. One in `stalled` is not waited for, and one
+// still on its way after PICTURE_MS joins it, by its URL.
+async function pictures(book, stalled) {
   const urls = new Set()
   for (const el of book.querySelectorAll('*')) {
     const bg = getComputedStyle(el).backgroundImage
     if (bg !== 'none') for (const [, u] of bg.matchAll(/url\("(.+?)"\)/g)) urls.add(u)
   }
-  const load = (img) => img.decode().catch(() => {}) // one that fails prints as the browser draws it
+  const load = async (img, url) => {
+    const late = pause(PICTURE_MS).then(() => false)
+    const done = await Promise.race([img.decode().then(() => true, () => true), late])
+    if (!done && !img.complete) stalled.add(url) // not slow to decode: not even there yet
+  }
+  const fresh = (url) => !stalled.has(url)
+  const src = (img) => img.getAttribute('src')
   await Promise.all([
-    ...[...book.querySelectorAll('img')].map(load),
-    ...[...urls].map((u) => Object.assign(new Image(), { src: u })).map(load),
+    ...[...book.querySelectorAll('img')].filter((img) => fresh(src(img))).map((img) => load(img, src(img))),
+    ...[...urls].filter(fresh).map((u) => load(Object.assign(new Image(), { src: u }), u)),
   ])
 }
 
@@ -113,14 +131,20 @@ export async function buildBook({ stage, canvas, book, notes, title, perStep, wi
   await document.fonts.ready
   let pages = 0
   let steps = 0
+  const stalled = new Set() // what a page gave up on, by the name in its data-ph-busy
   for (let i = 0; i < stage.list.length; i++) {
     const total = stage.list[i].steps.value
     steps += total
     for (let s = perStep ? 1 : total; s <= total; s++) {
       stage.place(i, s)
       const slide = stage.list[i].el.value
-      if (!(await settle(canvas, slide.dataset.phSlide)))
-        console.warn(`[phoenyx] export: slide ${i + 1}, step ${s} still loading after ${BUSY_MS / 1000} s: printed as it is`)
+      const left = await settle(canvas, slide.dataset.phSlide, stalled)
+      if (left.length) {
+        const names = [...new Set(left.map((el) => el.dataset.phBusy).filter(Boolean))]
+        for (const n of names) stalled.add(n)
+        const what = names.length ? ` (${names.join(', ')}: not waited for again)` : ''
+        console.warn(`[phoenyx] export: slide ${i + 1}, step ${s} still loading after ${BUSY_MS / 1000} s${what}: printed as it is`)
+      }
       await document.fonts.ready
       book.append(page(width, height, 'ph-page', copyCanvas(canvas, slide)))
       pages++
@@ -135,8 +159,8 @@ export async function buildBook({ stage, canvas, book, notes, title, perStep, wi
       pages++
     }
   }
-  await pictures(book)
+  await pictures(book, stalled)
   await document.fonts.ready
   const missing = [...new Set([...book.querySelectorAll('.ph-img-missing .ph-img-file')].map((el) => el.textContent))]
-  return { pages, slides: stage.list.length, steps, width, height, missing }
+  return { pages, slides: stage.list.length, steps, width, height, missing, stalled: [...stalled] }
 }

@@ -153,7 +153,8 @@ html:has(.ph-export), html:has(.ph-export) body, html:has(.ph-export) #app { hei
   print-color-adjust: exact; -webkit-print-color-adjust: exact;
 }
 .ph-page:last-child { break-after: auto; }
-/* the canvas copy fills its page, unscaled */
+/* the canvas copy fills its page, unscaled (and says so, to whatever sizes itself by the scale) */
+.ph-book { --ph-scale: 1; }
 .ph-page > .ph-canvas { top: 0; left: 0; transform: none !important; }
 /* a page of speaker notes (&notes): plain, for paper, whatever the theme */
 .ph-notes-page {
