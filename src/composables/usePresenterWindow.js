@@ -1,7 +1,8 @@
 import { onBeforeUnmount, readonly, ref } from 'vue'
 import { deckKey } from '../core/sync'
 
-// Internal. Opens the presenter view (this URL with ?presenter) from the audience's window.
+// Internal. Opens the presenter view (this URL with ?presenter: /talk → /talk?presenter, the
+// hash kept) from the audience's window.
 //   const { open, name, blocked, dismiss } = usePresenterWindow()
 // A window of its own (not a tab), to drag to the speaker's screen, found by its name (one per
 // deck): one already open, even by this page before a reload, is only brought forward, keeping

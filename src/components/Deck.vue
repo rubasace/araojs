@@ -27,11 +27,16 @@
        template(#footer="{ number, total }")
          span ACME · Conf 2026
          span {{ number }} / {{ total }}
+     Thumbnail: inside something that called provideThumbnail() (state/deck.js), the deck is its
+     cover, small and still (views/ThumbnailView.vue): useDeck().role is 'thumbnail' there.
      The deck's state is state/deck.js (createDeck); this component only wires it to the view the
-     window shows (views/: AudienceView, PresenterView or ExportView) and to the keys, which every
-     view but the export's listens to. -->
+     window shows (views/: AudienceView, PresenterView, ExportView or ThumbnailView) and to the
+     keys, which the audience and presenter views listen to. -->
 <template>
-  <ExportView v-if="deck.mode === 'export'" :deck="deck" :width="width" :height="height">
+  <ThumbnailView v-if="deck.mode === 'thumbnail'" :deck="deck" :width="width" :height="height">
+    <slot />
+  </ThumbnailView>
+  <ExportView v-else-if="deck.mode === 'export'" :deck="deck" :width="width" :height="height">
     <slot />
   </ExportView>
   <PresenterView v-else-if="deck.mode === 'presenter'" ref="view" :deck="deck" :width="width" :height="height">
@@ -50,6 +55,7 @@ import { useKeyboard } from '../composables/useKeyboard'
 import AudienceView from '../views/AudienceView.vue'
 import ExportView from '../views/ExportView.vue'
 import PresenterView from '../views/PresenterView.vue'
+import ThumbnailView from '../views/ThumbnailView.vue'
 
 const props = defineProps({
   width: { type: Number, default: 1920 },
@@ -69,9 +75,9 @@ provideFooter(() => slots.footer)
 
 const deck = createDeck(props)
 
-// the keys, in every view but the export's; the view opens and closes the jump menu
+// the keys, in the audience and presenter views; the view opens and closes the jump menu
 const view = ref()
-if (deck.mode !== 'export') {
+if (deck.mode === 'audience' || deck.mode === 'presenter') {
   const { stage } = deck
   useKeyboard({
     next: stage.next,

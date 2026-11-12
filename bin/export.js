@@ -4,8 +4,9 @@
 // Run by bin/arao.js: its options are what follows the command.
 // Without --deck it exports every deck of the project, one PDF each, one after the other; with
 // --deck, that one. Builds the project once into a temporary folder (vite build, with the
-// project's own Vite config), serves it on a free local port (vite preview), and opens each deck
-// in export mode (?export, src/core/exporter.js) in one headless Chromium and prints it: one page
+// project's own Vite config), serves it on a free local port (vite preview, under the project's
+// base), and opens each deck at its path in export mode (/<deck>?export, src/core/exporter.js) in
+// one headless Chromium and prints it: one page
 // per step of every slide (or, --per-slide, one page per slide, each slide as it stands at its
 // last step), every page the canvas size (1920x1080 px, which a PDF measures as 1440x810 pt),
 // text as text. Needs no dev server running.
@@ -44,8 +45,9 @@ const HELP = `Usage: arao export [options]     (in a project: npm run export -- 
   --out <path>    where to write it (default: exports/<deck>[-<theme>][-slides][-notes].pdf);
                   a folder (one that exists, or a path ending in /) gets that default name in it.
                   With several decks it is always a folder: a path ending in .pdf is an error
-  --url <url>     print from a server already running (npm run dev: http://127.0.0.1:5173/)
-                  instead of building the site
+  --url <url>     print from a server already running instead of building the site: the
+                  site's URL, its base (npm run dev: http://127.0.0.1:5173/; under a base,
+                  http://127.0.0.1:5173/talks/); each deck opens at <url><deck>
   -h, --help      this help
 
 Run it in the slides project: its folder is the current directory, its decks folder the one its
@@ -92,6 +94,7 @@ if (args.help) {
   process.exit(0)
 }
 if (args['per-slide'] && args['per-step']) usage('--per-slide and --per-step are each other\'s opposite: give one')
+if (args.url != null && !URL.canParse(args.url)) usage(`--url ${args.url} is not a URL (http://127.0.0.1:5173/)`)
 const perSlide = args['per-slide']
 
 // The project's Vite, the one its config is written for (a peer dependency of this package).
@@ -127,8 +130,8 @@ if (args.deck != null) {
   }
 }
 const several = decks.length > 1
-// ?deck= is case-insensitive, and so are the file names: such decks open as one, and only the
-// first gets its file
+// a deck's path is case-insensitive, and so are the file names: such decks open as one, and only
+// the first gets its file
 const byName = new Map()
 for (const d of decks) byName.set(d.toLowerCase(), [...(byName.get(d.toLowerCase()) ?? []), d])
 const sameName = [...byName.values()].filter((g) => g.length > 1)
@@ -160,12 +163,19 @@ try {
   process.exit(1)
 }
 
-// the deck's query: export mode, per step unless --per-slide
-const searchOf = (deck, theme) => {
-  const query = new URLSearchParams({ deck: deck.toLowerCase() })
-  if (theme) query.set('theme', theme)
-  const flags = ['export', perSlide && 'per-slide', args.notes && 'notes'].filter(Boolean)
-  return `${query}&${flags.join('&')}`
+// the deck's URL on the site at site (its base, ending in /): its path, export mode, per step
+// unless --per-slide
+const urlOf = (site, deck, theme) => {
+  const flags = [theme && `theme=${encodeURIComponent(theme)}`, 'export', perSlide && 'per-slide', args.notes && 'notes'].filter(Boolean)
+  return new URL(`${encodeURIComponent(deck.toLowerCase())}?${flags.join('&')}`, site).href
+}
+// a site's URL as its base: no query or hash, a path ending in /
+const siteOf = (url) => {
+  const u = new URL(url)
+  u.search = ''
+  u.hash = ''
+  if (!u.pathname.endsWith('/')) u.pathname += '/'
+  return u.href
 }
 
 // ---- what has to go, however the export ends ------------------------------------------
@@ -206,11 +216,11 @@ for (const [signal, code] of [['SIGINT', 130], ['SIGTERM', 143], ['SIGHUP', 129]
 const CRASHED = 'the page crashed (its renderer died: out of memory?)'
 const why = (e, timedOut) => (/crash/i.test(e?.message ?? '') ? CRASHED : e?.name === 'TimeoutError' ? timedOut : String(e?.message ?? e).split('\n')[0])
 
-// renders one deck at base in a page of its own; resolves to what the deck reported, and the PDF
-// (none when the deck reported an error). Until the deck is ready, an error the page throws fails
-// it at once, and so does a crash, at any point.
+// renders one deck of the site at base in a page of its own; resolves to what the deck reported,
+// and the PDF (none when the deck reported an error). Until the deck is ready, an error the page
+// throws fails it at once, and so does a crash, at any point.
 async function render(base, deck, theme) {
-  const url = new URL(`?${searchOf(deck, theme)}`, base).href
+  const url = urlOf(base, deck, theme)
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 })
   let ready = null
   let stop
@@ -319,13 +329,16 @@ try {
   }
 
   // a build error stops the run: no deck could be printed
-  let base = args.url
-  if (!base) {
+  let base
+  if (args.url) base = siteOf(args.url)
+  else {
     tmp = await mkdtemp(join(tmpdir(), 'arao-export-'))
     console.log('Building…')
     await build({ root, logLevel: 'error', build: { outDir: tmp, emptyOutDir: true } })
     server = await preview({ root, logLevel: 'error', build: { outDir: tmp }, preview: { host: '127.0.0.1', port: 0, strictPort: true, open: false } })
-    base = `http://127.0.0.1:${server.httpServer.address().port}/`
+    // where vite preview serves the site: under the project's base (/, or /talks/)
+    const at = server.resolvedUrls?.local?.[0]
+    base = siteOf(at ?? `http://127.0.0.1:${server.httpServer.address().port}/`)
   }
 
   // one deck, reported and not thrown if it fails: the next one goes on

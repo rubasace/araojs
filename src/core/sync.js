@@ -90,8 +90,9 @@ export function createSync(key) {
   }
 }
 
-// The channel of a deck: same page and same query, apart from the parameters that only say how
-// this window shows it (presenter, theme). ?deck=demo and ?deck=framework do not talk.
+// The channel of a deck: same path and same query, apart from the parameters that only say how
+// this window shows it (presenter, theme). /demo and /demo?presenter talk; /demo and /framework
+// do not. The path is taken as it is: /Demo and /demo are two channels.
 export function deckKey(location) {
   const params = new URLSearchParams(location.search)
   params.delete('presenter')

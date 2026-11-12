@@ -5,7 +5,7 @@
 // Vue's options go in arao({ vue: { … } }). Do not add vue() as well: the plugin would run twice.
 //
 // It exposes three project folders as virtual modules, so slides name files and need no imports:
-//   decks     ?deck=talk                  default src/decks      (each .vue file directly in it)
+//   decks     /talk                       default src/decks      (each .vue file directly in it)
 //   snippets  <Snippet file="App.java">   default src/snippets   (source text, loaded lazily)
 //   images    <Img file="team.jpg">       default src/images     (URLs; subfolders allowed)
 //   arao({ decks: 'src/decks', snippets: 'src/snippets', images: 'src/images' })
@@ -13,8 +13,13 @@
 // ("../shared/images") works the same: the dev server is allowed to serve it (server.fs.allow)
 // and watches it. A folder that was set but does not exist is reported when Vite starts.
 //
-// Decks: one lazily loaded chunk each; createDeckApp() picks one from ?deck=<file name>. The export
-// CLI (arao export) asks this plugin for them (api.decks()), so both see the same decks.
+// Decks: one lazily loaded chunk each; createDeckApp() picks one from the URL's path, /<file name>
+// (after the base). The export CLI (arao export) asks this plugin for them (api.decks()), so both
+// see the same decks.
+// A deck's path is the app's page at another URL: the dev server and vite preview answer it with
+// index.html (Vite's SPA fallback). A static host answers it with 404.html where it has nothing
+// else (GitHub Pages, and most hosts can be told to): the build writes index.html again as
+// 404.html, next to it, unless the project's public folder has a 404.html of its own.
 //
 // Images: only pictures are taken (png, jpg, jpeg, gif, webp, avif, svg, in any case); anything
 // else in the folder (notes, sources, .psd) stays out of the build. Names are case-sensitive,
@@ -78,6 +83,8 @@ export default function arao(options = {}) {
     folders[name] = f.trim()
   }
   let root = process.cwd()
+  let publicDir = ''
+  let ssr = false
   const dir = (name) => resolve(root, folders[name])
   const isOutside = (d) => {
     const r = relative(root, d)
@@ -140,6 +147,8 @@ export default function arao(options = {}) {
     configResolved(config) {
       root = config.root
       logger = config.logger
+      publicDir = config.publicDir
+      ssr = !!config.build.ssr
       if (config.plugins.filter((p) => p.name === 'vite:vue').length > 1)
         throw new Error('[arao] @vitejs/plugin-vue is in the config twice: arao() already includes it. Remove vue() from plugins; its options go in arao({ vue: { … } })')
       for (const name of Object.keys(modules)) {
@@ -161,6 +170,16 @@ export default function arao(options = {}) {
       if (this.environment.name !== 'client' || !(await icons.update(type, file, read))) return
       const mod = this.environment.moduleGraph.getModuleById(resolved('icons'))
       return mod ? [mod, ...changed.filter((m) => m !== mod)] : undefined
+    },
+    // the build: index.html again as 404.html (see the top), once Vite has put the page in the bundle
+    generateBundle: {
+      order: 'post',
+      handler(_, bundle) {
+        if (ssr || (this.environment && this.environment.name !== 'client')) return
+        const page = bundle['index.html']
+        if (page?.type !== 'asset' || bundle['404.html'] || (publicDir && existsSync(join(publicDir, '404.html')))) return
+        this.emitFile({ type: 'asset', fileName: '404.html', source: page.source })
+      },
     },
     load(id) {
       if (id === resolved('icons')) return icons.load()

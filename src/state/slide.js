@@ -6,7 +6,9 @@ import { useStage } from './stage'
 //   const slide = createSlide({ el, title })   in Slide.vue: el, a ref to its <section>; title, a
 //                                              ref of its title prop. Registers it with its stage
 //                                              (which orders it by its place in the template) and
-//                                              provides it to what is inside it
+//                                              provides it to what is inside it. drawn: whether
+//                                              Slide draws its content (not in a thumbnail, but
+//                                              for the cover)
 //   useSlide()                                 public: for components inside a Slide (below)
 //   useSlideNotes()                            Notes: adds a note to the slide it is in
 //   provideFooter(() => slots.footer)          in Deck: its #footer slot, for every slide to draw
@@ -21,8 +23,8 @@ export function provideFooter(get) {
 
 export function createSlide({ el, title }) {
   const stage = useStage()
-  // export mode (core/exporter.js): no slide transition, no glide of collapsed steps
-  const still = stage.role === 'export'
+  // export mode (core/exporter.js) and thumbnails: no slide transition, no glide of collapsed steps
+  const still = stage.role === 'export' || stage.role === 'thumbnail'
   const id = `s${Math.random().toString(36).slice(2, 9)}`
 
   // step numbers registered by v-step anywhere inside this slide (with multiplicity)
@@ -34,6 +36,9 @@ export function createSlide({ el, title }) {
   // the stage places it by its position in the template, even when mounted after its neighbours
   const index = stage.register({ id, steps, title, el, notes })
   const active = computed(() => stage.index.value === index.value)
+  // whether its content is drawn: always, but in a thumbnail (only the cover shows there, so only
+  // the cover mounts what is in it: its pictures, snippets and components)
+  const drawn = computed(() => stage.role !== 'thumbnail' || active.value)
   // a slide already passed shows everything; one not reached yet shows step 1
   const step = computed(() =>
     active.value ? stage.step.value : stage.index.value > index.value ? steps.value : 1,
@@ -68,7 +73,7 @@ export function createSlide({ el, title }) {
 
   // the Deck's #footer slot as it is now, or undefined (the slots object is updated in place)
   const footer = inject(FOOTER, () => undefined)
-  return { id, index, active, step, still, total: stage.view.total, footer }
+  return { id, index, active, drawn, step, still, total: stage.view.total, footer }
 }
 
 // For components inside a <Slide> that change *within* the slide (highlight, dim, count…)

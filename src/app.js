@@ -1,13 +1,17 @@
 // The app of a slides project, in one call:
 //   import { createDeckApp } from 'araojs'
 //   createDeckApp().mount('#app')
-// It installs the engine and renders one deck, picked from ?deck=<name>: the name of a .vue file
-// directly in the project's decks folder (src/decks by default; the Vite plugin's `decks` option),
-// case-insensitive. The deck's code loads on its own: one chunk per deck.
-// Without ?deck=, it opens the project's only deck; with several, it lists them (DeckSelector),
-// each a link to ?deck=<name>. createDeckApp({ deck: 'talk' }) names the deck to open instead of
-// the list. A name that is no deck (in the URL or in `deck`) warns and shows the list: it never
-// opens another deck in its place.
+// It installs the engine and renders one deck, picked from the URL's path: /<name>, the name of a
+// .vue file directly in the project's decks folder (src/decks by default; the Vite plugin's
+// `decks` option), case-insensitive, right after the app's base (Vite's `base`: /talks/<name>
+// when the site is served under /talks/). The deck's code loads on its own: one chunk per deck.
+// / (the base itself) lists the decks (DeckSelector): a card per deck, with its cover drawn in
+// it, each a link to /<name>. A project with one deck opens it at / instead, unless
+// createDeckApp({ deckList: 'always' }). A name that is no deck warns and shows the list, with a
+// notice: it never opens another deck in its place.
+// The URL is put in its one form, without a reload (history.replaceState), keeping the query and
+// the hash: the old ?deck=<name> becomes /<name>, and a deck's path is written as the list writes
+// it (/Talk/ → /talk), so every window of a deck has the same path (core/sync.js keys on it).
 // A project with its own app shell installs the engine instead: createApp(MyApp).use(Arao).
 import { createApp, defineAsyncComponent, h } from 'vue'
 import { decks, decksDir } from 'virtual:arao/decks'
@@ -15,59 +19,89 @@ import Arao from './plugin'
 import DeckSelector from './views/DeckSelector.vue'
 
 // file names without ".vue", case-insensitive and in the reader's alphabetical order (the order of
-// the list), code-point order between names that differ only in case. ?deck= cannot tell those
+// the list), code-point order between names that differ only in case. A path cannot tell those
 // apart: the first one is kept, and the dev server says so.
 const byName = (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }) || (a < b ? -1 : a > b ? 1 : 0)
 const names = []
 for (const name of Object.keys(decks).map((f) => f.slice(0, -'.vue'.length)).sort(byName)) {
   const kept = names.find((n) => n.toLowerCase() === name.toLowerCase())
   if (!kept) names.push(name)
-  else if (import.meta.env.DEV) console.warn(`[arao] decks "${kept}" and "${name}" differ only in case: ?deck= cannot tell them apart (${decksDir}/${kept}.vue opens)`)
+  else if (import.meta.env.DEV) console.warn(`[arao] decks "${kept}" and "${name}" differ only in case: their path cannot tell them apart (${decksDir}/${kept}.vue opens)`)
 }
 const find = (wanted) => names.find((n) => n.toLowerCase() === wanted.toLowerCase())
 
-// the title the list shows for a deck: its file name in words ("my-talk" → "My talk", "MyTalk" → "My Talk")
+// the title the list shows for a deck until its cover tells: its file name in words
+// ("my-talk" → "My talk", "MyTalk" → "My Talk")
 const humanise = (name) => {
   const words = name.replace(/([a-z\d])([A-Z])/g, '$1 $2').replace(/[-_\s]+/g, ' ').trim()
   return words.charAt(0).toUpperCase() + words.slice(1)
 }
 
-// the `deck` option out of createDeckApp's argument, which is { deck } or nothing. A bare string is
-// taken for the name it obviously is, with a warning; anything else that is no object is ignored.
-function deckOption(options) {
-  if (options == null) return undefined
-  if (typeof options === 'object' && !Array.isArray(options)) return options.deck
-  const shape = `createDeckApp() takes an options object, createDeckApp({ deck: 'talk' })`
-  if (typeof options === 'string') {
-    console.warn(`[arao] ${shape}: got the string ${JSON.stringify(options)}, read as { deck: ${JSON.stringify(options)} }`)
-    return options
+// The app's base, as a path ending in "/": Vite's base (/ or /talks/). A relative base (./) is
+// the folder of the page, so there the deck must be the last segment of the path.
+const baseOf = () => new URL(import.meta.env.BASE_URL, location.href).pathname
+// a deck's path: its name as the list writes it
+const pathOf = (base, name) => base + encodeURIComponent(name.toLowerCase())
+const decode = (s) => {
+  try {
+    return decodeURIComponent(s)
+  } catch {
+    return s
   }
-  console.warn(`[arao] ${shape}: got ${Array.isArray(options) ? 'an array' : typeof options}, ignored`)
-  return undefined
+}
+// this URL at another path, with its query (but ?deck=) and its hash; a flag stays a flag
+function moveTo(path) {
+  const query = [...new URLSearchParams(location.search)]
+    .filter(([key]) => key !== 'deck')
+    .map(([key, value]) => encodeURIComponent(key) + (value ? `=${encodeURIComponent(value)}` : ''))
+  history.replaceState(history.state, '', path + (query.length ? `?${query.join('&')}` : '') + location.hash)
 }
 
 // what to render: { name } of a deck, or {} for the list ({ missing } names one that is no deck)
-function pick(option) {
-  const asked = new URLSearchParams(location.search).get('deck')?.trim()
-  const preset = typeof option === 'string' ? option.trim() : ''
-  if (option != null && !preset) console.warn(`[arao] createDeckApp({ deck }) takes the name of a deck, got ${JSON.stringify(option)}`)
-  const wanted = asked || preset
-  if (wanted) {
+function pick(base, deckList) {
+  const asked = new URLSearchParams(location.search).get('deck')
+  if (asked != null) moveTo(asked.trim() ? base + encodeURIComponent(asked.trim()) : base)
+  // the first segment after the base; index.html is the base itself
+  const rest = location.pathname.startsWith(base) ? location.pathname.slice(base.length) : ''
+  const wanted = decode(rest.split('/')[0]).trim()
+  if (wanted && wanted !== 'index.html') {
     const name = find(wanted)
-    if (name) return { name }
-    const source = asked ? '?deck=' : 'createDeckApp({ deck })'
-    console.warn(`[arao] ${source}: no deck "${wanted}" in ${decksDir} (there are: ${names.join(', ') || 'none'})`)
+    if (name) {
+      if (location.pathname !== pathOf(base, name)) moveTo(pathOf(base, name))
+      return { name }
+    }
+    console.warn(`[arao] no deck "${wanted}" in ${decksDir} (there are: ${names.join(', ') || 'none'})`)
     return { missing: wanted }
   }
-  if (names.length === 1) return { name: names[0] }
-  if (!names.length) console.warn(`[arao] no decks in ${decksDir}: each .vue file directly in it is a deck (?deck=<file name>)`)
+  if (names.length === 1 && deckList === 'auto') return { name: names[0] }
+  if (!names.length) console.warn(`[arao] no decks in ${decksDir}: each .vue file directly in it is a deck (/<file name>)`)
   return {}
 }
 
+// createDeckApp's options, { deckList } or nothing; anything else warns and is ignored
+const DECK_LIST = ['auto', 'always']
+function readOptions(options) {
+  const shape = `createDeckApp() takes an options object, createDeckApp({ deckList: 'always' })`
+  if (options == null) return { deckList: 'auto' }
+  if (typeof options !== 'object' || Array.isArray(options)) {
+    console.warn(`[arao] ${shape}: got ${Array.isArray(options) ? 'an array' : typeof options === 'string' ? JSON.stringify(options) : typeof options}, ignored`)
+    return { deckList: 'auto' }
+  }
+  for (const key of Object.keys(options)) {
+    if (key !== 'deckList') console.warn(`[arao] createDeckApp(): no option "${key}" (its options: deckList); ignored`)
+  }
+  const { deckList = 'auto' } = options
+  if (DECK_LIST.includes(deckList)) return { deckList }
+  console.warn(`[arao] createDeckApp({ deckList }) is 'auto' (one deck opens at /) or 'always' (/ always lists), got ${JSON.stringify(deckList)}: 'auto'`)
+  return { deckList: 'auto' }
+}
+
 export function createDeckApp(options) {
-  const { name, missing } = pick(deckOption(options))
+  const { deckList } = readOptions(options)
+  const base = baseOf()
+  const { name, missing } = pick(base, deckList)
   const deck = name && defineAsyncComponent(decks[`${name}.vue`])
-  const list = names.map((n) => ({ name: n.toLowerCase(), title: humanise(n) }))
+  const list = names.map((n) => ({ name: n.toLowerCase(), title: humanise(n), href: pathOf(base, n), load: decks[`${n}.vue`] }))
   const render = deck ? () => h(deck) : () => h(DeckSelector, { decks: list, missing, dir: decksDir })
   return createApp({ name: 'AraoDeckApp', render }).use(Arao)
 }

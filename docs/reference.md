@@ -20,7 +20,7 @@ Contents: [Setup](#setup) · [Deck](#deck) · [Slide](#slide) ([zones](#zones-he
 [Img](#img) · [Icon](#icon) · [Snippet](#snippet) · [Notes](#notes) · [Controls](#controls) ·
 [Presenter view](#presenter-view) · [Export mode](#export-mode) · [useDeck()](#usedeck) ·
 [useSlide()](#useslide) · [Addons](#addons) · [Vite plugin](#vite-plugin) ·
-[Theme tokens](#theme-tokens) · [URL parameters](#url-parameters)
+[Theme tokens](#theme-tokens) · [URLs](#urls) · [Hosting](#hosting)
 
 How the engine itself is built (folders, views, provide/inject channels): [architecture.md](architecture.md).
 
@@ -54,16 +54,26 @@ createDeckApp().mount('#app')
 ```
 
 - `arao()` is the only plugin: it includes `@vitejs/plugin-vue` and Pug ([Vite plugin](#vite-plugin)).
-- `createDeckApp()` creates the Vue app with the engine installed and renders the deck named by
-  `?deck=` ([URL parameters](#url-parameters)). Without `?deck=` it opens the project's only deck
-  or, with several, lists them: a page of links, one per deck in alphabetical order (its file name
-  in words, and its `?deck=`), in the `default` theme's tokens. Each link keeps the page's other
-  query parameters, not its hash: on `/?presenter&theme=vigojug` they lead to
-  `?deck=<name>&presenter&theme=vigojug`. `createDeckApp({ deck: 'talk' })` names the deck to
-  open instead of the list (`?deck=` still wins); a name that is no deck warns in the console and
-  shows the list, with a notice. Two deck files whose names differ only in case (`Talk.vue`,
-  `talk.vue`) are one deck to `?deck=`: the first in code-point order (`Talk`) is kept, with a
+- `createDeckApp(options?)` creates the Vue app with the engine installed and renders the deck
+  the URL's path names, `/<name>` ([URLs](#urls)). At `/` it lists the decks: a card per deck,
+  in alphabetical order, with the deck's cover (its first slide at step 1, in its first theme)
+  drawn live and small in it, its title and its path. The title is the cover's first heading once
+  the cover is drawn (else its `Slide(title)`), and until then the file name in words. A cover is
+  drawn when its card nears the viewport, and is a picture: nothing in it reacts, nothing plays,
+  it touches neither the URL nor other windows (`useDeck().role` is `'thumbnail'` there; only
+  the cover slide draws its content, but code a deck runs when it mounts runs there too). The
+  page has its own dark look, like the presenter view. Each card is a link that keeps the page's
+  query, not its hash: on `/?presenter&theme=vigojug` they lead to
+  `/<name>?presenter&theme=vigojug`. A path that names no deck warns in the console and shows
+  the list, with a notice. Two deck files whose names differ only in case (`Talk.vue`,
+  `talk.vue`) are one deck to the path: the first in code-point order (`Talk`) is kept, with a
   warning in the dev server.
+
+  | Option | Default | Meaning |
+  |---|---|---|
+  | `deckList` | `'auto'` | `'auto'`: a project with one deck opens it at `/`, with several `/` lists them. `'always'`: `/` lists the decks even when there is one |
+
+  Any other option, or a value that is none of these, warns in the console and is ignored.
 - The engine's CSS (structure, layouts, controls) comes with `'araojs'`; themes are imported
   one by one: `araojs/themes/<name>.css` for the shipped ones (`default`, `vigojug`), your own
   from `src/themes/` ([Theme tokens](#theme-tokens)).
@@ -697,7 +707,7 @@ UI labels are in Spanish.
 
 ## Presenter view
 
-Opened with `p`, the controls' screen button, or `&presenter` in the URL. A separate pop-up
+Opened with `p`, the controls' screen button, or `?presenter` in the deck's URL (`/talk?presenter`). A separate pop-up
 window (named per deck: pressing `p` again brings it forward instead of reloading it). If the
 browser blocks it, a notice above the controls links to it.
 
@@ -749,8 +759,8 @@ slides and addons run twice there and element ids repeat. Use `useDeck().role` t
 
 ## Export mode
 
-`?export` renders the deck as a book of pages for printing: no controls, no keyboard, no
-transitions, no sync with other windows; `useDeck().role` is `'export'`.
+`?export` on a deck's URL (`/talk?export`) renders the deck as a book of pages for printing: no
+controls, no keyboard, no transitions, no sync with other windows; `useDeck().role` is `'export'`.
 
 | Parameter | Effect |
 |---|---|
@@ -765,9 +775,9 @@ A flag set to `0`, `false`, `no` or `off` counts as unset. Every page is exactly
 **CLI**: `arao export [--deck <name>] [--theme <name>] [--per-slide | --per-step] [--notes] [--out <path>] [--url <url>]`,
 run in the slides project (its folder is the current directory); with `"export": "arao export"`
 in its scripts, `npm run export -- …`. Without `--deck`, **every deck** of the decks folder, one
-PDF each, in name order (the CLI does not read `createDeckApp({ deck })`); `--deck <name>`
-exports that one. Builds the project once with its own Vite config to a temp folder, serves it,
-prints each deck's `?export` with one headless Chromium, checks each page count, writes each PDF
+PDF each, in name order; `--deck <name>` exports that one. Builds the project once with its own
+Vite config to a temp folder, serves it with `vite preview` (under the config's `base`), prints
+each deck's `/<deck>?export` with one headless Chromium, checks each page count, writes each PDF
 atomically. One page per step by default; `--per-slide` gives one per slide (`--per-step` is
 accepted, and is an error together with `--per-slide`). Default output
 `exports/<deck>[-<theme>][-slides][-notes].pdf` (before 0.4 the default was per slide and
@@ -789,8 +799,9 @@ written; with `--deck`, a theme the deck does not list is an error. Chromium:
 print as placeholders and are listed.
 
 - `--url <url>`: no build and no server of its own; prints from the server already running at
-  that URL (`npm run dev`: `http://127.0.0.1:5173/`). The export query (`?deck=…&export…`)
-  replaces the URL's own query and hash; its path is kept. The decks (the `--deck` name, or every
+  that URL, the site's base (`npm run dev`: `http://127.0.0.1:5173/`; under a base,
+  `http://127.0.0.1:5173/talks/`). Each deck opens at `<url><deck>?export…`: the URL's own
+  query and hash are dropped, and its path is taken as a folder (`/talks` is `/talks/`). The decks (the `--deck` name, or every
   deck) are still read from the project's decks folder before anything opens, so the server must
   serve the same decks.
 - `-h`, `--help`: prints the usage and exits. An unknown option prints the error and the usage,
@@ -870,7 +881,7 @@ const deck = useDeck()
 | `setTheme(name)` | function | wear another of the deck's `themes` (written in the URL, followed by the other windows); any other name warns and is ignored |
 | `toggleFullscreen()` | function | enter or leave fullscreen (as `f`) |
 | `openPresenter()` | function | open the presenter window, or bring it forward (as `p`) |
-| `role` | String (not a ref) | which rendering this is: `'audience'` (the audience window), `'presenter'` (presenter view, current slide), `'preview'` (presenter view, next-step preview), `'export'` (?export) |
+| `role` | String (not a ref) | which rendering this is: `'audience'` (the audience window), `'presenter'` (presenter view, current slide), `'preview'` (presenter view, next-step preview), `'export'` (?export), `'thumbnail'` (the deck's cover in the list of decks at `/`: its actions do nothing, as the preview's) |
 
 In the `'preview'` copy the refs read the preview's position and no function does anything
 (`next`, `prev`, `go`, `setTheme`, `toggleFullscreen`, `openPresenter`): the preview is a copy, it
@@ -976,7 +987,7 @@ export default defineConfig({
 
 | Option | Default | Used by | Contents |
 |---|---|---|---|
-| `decks` | `'src/decks'` | `createDeckApp()`, `arao export` | the `.vue` files directly in it (not in subfolders), one lazily loaded chunk each |
+| `decks` | `'src/decks'` | `createDeckApp()`, `arao export` | the `.vue` files directly in it (not in subfolders), one lazily loaded chunk each, each opened at `/<file name>` |
 | `snippets` | `'src/snippets'` | `Snippet(file)` | every file, as raw text, loaded lazily |
 | `images` | `'src/images'` | `Img(file)`, `Slide(bg)` | `png jpg jpeg gif webp avif svg` (any case), as URLs, eager |
 | `icons` | `[]` | `Icon` | names (`'lucide:sun'`) built in even when the source does not spell them out (built at runtime); one that is in no installed set is reported when the module is built |
@@ -1128,15 +1139,46 @@ Set by the engine, read-only: `--ar-scale` (the stage's current scale factor; `1
 
 ---
 
-## URL parameters
+## URLs
 
-| Parameter | Example | Effect |
+A deck is a path; how it shows is the query; where it stands is the hash:
+`/framework?presenter#/12/3`.
+
+| Part | Example | Effect |
 |---|---|---|
-| `deck` | `?deck=framework` | the deck file in the decks folder (`src/decks`; case-insensitive). None → the deck `createDeckApp({ deck })` names, or the project's only deck, or else the list of decks; unknown → the list, with a notice and a console warning. The list's links keep the other parameters (`theme`, `presenter`, `export`…) |
-| `theme` | `&theme=vigojug` | the theme; also keeps this window's theme when it joins other windows |
-| `presenter` | `&presenter` | the presenter view |
-| `export` | `&export` | export mode (wins over `presenter`); `export=0\|false\|no\|off` = off |
-| `per-slide` | `&export&per-slide` | export: one page per slide, each at its last step (default: one per step) |
-| `per-step` | `&export&per-step` | export: one page per step (the default) |
-| `notes` | `&export&notes` | export: notes pages |
+| path | `/framework` | the deck file in the decks folder (`src/decks/Framework.vue`; case-insensitive), the first path segment after the app's base. `/` (the base) → the list of decks, or the project's only deck (`createDeckApp`'s `deckList`); a name that is no deck → the list, with a notice and a console warning. The list's links keep the page's query (`theme`, `presenter`, `export`…) |
+| `theme` | `?theme=vigojug` | the theme; also keeps this window's theme when it joins other windows |
+| `presenter` | `?presenter` | the presenter view |
+| `export` | `?export` | export mode (wins over `presenter`); `export=0\|false\|no\|off` = off |
+| `per-slide` | `?export&per-slide` | export: one page per slide, each at its last step (default: one per step) |
+| `per-step` | `?export&per-step` | export: one page per step (the default) |
+| `notes` | `?export&notes` | export: notes pages |
 | hash | `#/12/3` | slide 12, step 3 (1-based); kept up to date while presenting |
+
+- The address bar always shows a deck's path in one form, without reloading: `/Framework/` and
+  `/framework/anything` become `/framework`, the query and the hash kept. Every window of a deck
+  (audience, presenter) then has the same path, which is what keeps them in step (and keeps two
+  decks apart).
+- `?deck=framework`, the URL of Arao before 0.4, still opens the deck: the address bar turns it
+  into `/framework`, keeping the rest of the query and the hash (`/?deck=framework&theme=x#/3` →
+  `/framework?theme=x#/3`).
+- Under a base (Vite's `base: '/talks/'`) every path is under it: `/talks/` is the list,
+  `/talks/framework` the deck. With a relative base (`base: './'`) the base is the page's folder,
+  so the deck must be the last segment of the path (`…/framework`, no trailing slash).
+- `index.html` as the first segment is the base itself (the list).
+
+## Hosting
+
+A deck's path is the app's own page under another URL: whatever serves the site must answer
+`/framework` with `index.html`.
+
+- `npm run dev` and `vite preview` do (Vite's SPA fallback), under any `base`.
+- `vite build` writes `dist/404.html`, a copy of `dist/index.html` (from the `arao()` plugin):
+  GitHub Pages, and every static host that serves `404.html` for a path it has no file for,
+  answer a deck's path with the app, which opens the deck (with HTTP status 404, which browsers
+  ignore and crawlers do not). A `404.html` of the project's own in `public/` is kept instead.
+- Elsewhere, have the server fall back to `index.html` (nginx: `try_files $uri $uri/ /index.html;`;
+  Netlify: `/* /index.html 200` in `_redirects`).
+- Under a sub-path, build with that `base` (GitHub Pages of `user/talks`: `base: '/talks/'`).
+- A deck cannot be named like a file or folder at the site's root (`assets`, a file of
+  `public/`): the server answers that path with the file.

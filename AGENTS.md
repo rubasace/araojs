@@ -7,9 +7,12 @@ Overview: [README.md](README.md).
 
 ## Mental model
 
-- A deck is one file, `src/decks/<Name>.vue`, opened at `/?deck=<name>` (case-insensitive). `/`
-  alone lists the project's decks (with only one, it opens it); `createDeckApp({ deck: 'talk' })`
-  in `src/main.js` opens that deck at `/` instead (`?deck=` still wins).
+- A deck is one file, `src/decks/<Name>.vue`, opened at `/<name>` (case-insensitive); how it
+  shows is the query (`/<name>?presenter`, `?theme=vigojug`, `?export`), where it stands the
+  hash (`#/5/2`). `/` alone lists the project's decks, each with its cover drawn in a card (with
+  only one, it opens it; `createDeckApp({ deckList: 'always' })` lists it anyway). The old
+  `/?deck=<name>` still works and turns into `/<name>`. Under a Vite `base` (`/talks/`) every
+  path is under it.
 - **Templates are Pug or HTML.** `<template lang="pug">` is the recommended form (shorter; every
   recipe here uses it). A plain HTML `<template>` works the same: same components, props, slots
   and directives; each file picks its own. Translate a recipe tag by tag: `Slide(layout="cover")`
@@ -39,7 +42,7 @@ package.json       depends on araojs; scripts dev (vite), build (vite build), ex
 vite.config.js     plugins: [arao()], from 'araojs/vite' (Vue, Pug and the folders below)
 index.html         <div id="app"> and /src/main.js
 src/main.js        createDeckApp().mount('#app'), after the theme imports
-src/decks/         one .vue file per deck (?deck=<file name>)
+src/decks/         one .vue file per deck (/<file name>)
 src/decks/<talk>/  components only that talk uses
 src/slides/        components several decks share
 src/snippets/      code files, by name, for Snippet(file="…")
@@ -118,6 +121,10 @@ Don't:
   the selector does not match the name, the slides render unstyled and nothing warns.
 - **Headings inside `#background` are ignored for the slide's title** (jump menu, presenter,
   notes pages). Put the heading in the content, or use `Slide(title="…")`.
+- **The list of decks (`/`) draws each deck's cover.** Its card is titled by the cover's first
+  heading (the `h1`), so give the cover the talk's name as its heading. A deck's code that runs
+  when it mounts runs there too: anything that plays or fetches checks `useDeck().role`
+  (`'thumbnail'` in the list; `onMounted(() => deck.role === 'audience' && video.value.play())`).
 - **The body is centred, but what fills stays full height.** `Img`, `Snippet`, an element with
   `flex: 1`, `Grid` (its rows are `1fr`) and pieces holding any of those fill the body as before;
   `Cols` of plain content shrinks to its content and is centred (`Cols(align="stretch")` keeps
@@ -313,14 +320,15 @@ Slide
 
 ## Verify a deck
 
-1. `npm run dev` and open `http://127.0.0.1:5173/?deck=<name>`; walk it with `→`. Check
-   `#/<slide>/<step>` in the URL and the step dots (move the mouse to show the controls).
+1. `npm run dev` and open `http://127.0.0.1:5173/<name>`; walk it with `→`. Check
+   `#/<slide>/<step>` in the URL and the step dots (move the mouse to show the controls). Open
+   `http://127.0.0.1:5173/` too: the deck's card shows its cover, titled by its heading.
 2. Headless check (Playwright / `playwright-core`), at a 1920x1080 viewport:
    - collect `console` messages of type `warning`/`error` and `pageerror`: expect none. They come
      in two kinds: Vue's own, `[Vue warn]: Invalid prop: …`, when a prop fails its type or its
      validator (`gap="huge"`, `size="36"` without the colon, `fit="fill"`); and Arao's, prefixed
      `[arao]`, on missing files or icons, values it cannot use (`bg`, `duration`), `v-step` or
-     `Notes` outside a slide, a `?deck=` that is no deck;
+     `Notes` outside a slide, a path that names no deck;
    - count `.ar-slide` elements; press `ArrowRight` until the hash stops changing and record the
      highest step per slide: compare with what you meant;
    - for overflow, compare the visible slide's `scrollHeight`/`scrollWidth` with its
@@ -333,7 +341,7 @@ Slide
 
 ## Where to look
 
-- Every prop, slot, token, key and URL parameter: [docs/reference.md](docs/reference.md).
+- Every prop, slot, token, key and URL (and hosting a build under a path): [docs/reference.md](docs/reference.md).
 - How the engine is built (only for a change to Arao itself): [docs/architecture.md](docs/architecture.md).
 - Working examples: the project's own decks; `playground/` in the Arao repository, a tiny
   project set up like any other.
