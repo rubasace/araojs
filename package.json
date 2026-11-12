@@ -4,11 +4,11 @@
   "description": "A slide engine for technical talks: Vue 3 + Vite, slides in Pug, one fixed canvas, themes as tokens, PDF export",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rubasace/phoenyxjs.git"
+    "url": "git+https://github.com/rubasace/araojs.git"
   },
-  "homepage": "https://github.com/rubasace/phoenyxjs#readme",
+  "homepage": "https://github.com/rubasace/araojs#readme",
   "bugs": {
-    "url": "https://github.com/rubasace/phoenyxjs/issues"
+    "url": "https://github.com/rubasace/araojs/issues"
   },
   "type": "module",
   "engines": {
