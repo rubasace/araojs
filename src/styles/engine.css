@@ -164,7 +164,7 @@ html, body, #app { margin: 0; height: 100%; }
   border-radius: .15em;
 }
 
-/* composition: Cols, Rows, Grid, Center (layout.js) fill the free space of their container */
+/* composition: Cols, Rows, Grid, Center (components/layout/) fill the free space of their container */
 .ar-cols, .ar-rows, .ar-grid, .ar-center { box-sizing: border-box; flex: 1 1 auto; min-width: 0; min-height: 0; }
 .ar-cols, .ar-rows, .ar-grid { display: grid; gap: var(--ar-gap-md); }
 .ar-cols { grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
