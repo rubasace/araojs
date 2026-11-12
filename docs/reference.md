@@ -53,7 +53,15 @@ createDeckApp().mount('#app')
 
 - `arao()` is the only plugin: it includes `@vitejs/plugin-vue` and Pug ([Vite plugin](#vite-plugin)).
 - `createDeckApp()` creates the Vue app with the engine installed and renders the deck named by
-  `?deck=` ([URL parameters](#url-parameters)).
+  `?deck=` ([URL parameters](#url-parameters)). Without `?deck=` it opens the project's only deck
+  or, with several, lists them: a page of links, one per deck in alphabetical order (its file name
+  in words, and its `?deck=`), in the `default` theme's tokens. Each link keeps the page's other
+  query parameters, not its hash: on `/?presenter&theme=vigojug` they lead to
+  `?deck=<name>&presenter&theme=vigojug`. `createDeckApp({ deck: 'talk' })` names the deck to
+  open instead of the list (`?deck=` still wins); a name that is no deck warns in the console and
+  shows the list, with a notice. Two deck files whose names differ only in case (`Talk.vue`,
+  `talk.vue`) are one deck to `?deck=`: the first in code-point order (`Talk`) is kept, with a
+  warning in the dev server.
 - The engine's CSS (structure, layouts, controls) comes with `'araojs'`; themes are imported
   one by one: `araojs/themes/<name>.css` for the shipped ones (`default`, `vigojug`), your own
   from `src/themes/` ([Theme tokens](#theme-tokens)).
@@ -726,8 +734,8 @@ A flag set to `0`, `false`, `no` or `off` counts as unset. Every page is exactly
 
 **CLI**: `arao export [--deck <name>] [--theme <name>] [--per-step] [--notes] [--out <path>] [--url <url>]`,
 run in the slides project (its folder is the current directory); with `"export": "arao export"`
-in its scripts, `npm run export -- …`. Without `--deck`, the first deck by name (as the app picks
-it). Builds the project with its own Vite config to a temp folder, serves it, prints `?export` with headless Chromium, checks the
+in its scripts, `npm run export -- …`. Without `--deck`, the first deck by name (the CLI does
+not read `createDeckApp({ deck })`). Builds the project with its own Vite config to a temp folder, serves it, prints `?export` with headless Chromium, checks the
 page count, writes atomically. Default output `exports/<deck>[-<theme>][-steps][-notes].pdf`; an
 `--out` that is a folder (exists, or ends in `/`) gets that name inside. Chromium:
 `npx playwright-core install chromium`, or `ARAO_CHROMIUM=/path/to/chrome`. Missing pictures
@@ -1063,7 +1071,7 @@ Set by the engine, read-only: `--ar-scale` (the stage's current scale factor; `1
 
 | Parameter | Example | Effect |
 |---|---|---|
-| `deck` | `?deck=framework` | the deck file in the decks folder (`src/decks`; case-insensitive); none or unknown → the first deck by name, silently |
+| `deck` | `?deck=framework` | the deck file in the decks folder (`src/decks`; case-insensitive). None → the deck `createDeckApp({ deck })` names, or the project's only deck, or else the list of decks; unknown → the list, with a notice and a console warning. The list's links keep the other parameters (`theme`, `presenter`, `export`…) |
 | `theme` | `&theme=vigojug` | the theme; also keeps this window's theme when it joins other windows |
 | `presenter` | `&presenter` | the presenter view |
 | `export` | `&export` | export mode (wins over `presenter`); `export=0\|false\|no\|off` = off |

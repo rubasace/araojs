@@ -86,8 +86,8 @@ if (!decksDir) {
   process.exit(1)
 }
 const decksWhere = relative(root, decksDir) || decksDir
-// the app falls back to its first deck on a name it does not know: check the name here; with no
-// name, the first deck by name, as the app picks it
+// the app lists the decks on a name it does not know: check the name here, before the build; with
+// no name, the first deck by name (the app's own default, createDeckApp({ deck }), is not seen here)
 const decks = (await readdir(decksDir, { withFileTypes: true }).catch(() => []))
   .filter((f) => f.isFile() && f.name.endsWith('.vue')).map((f) => f.name.slice(0, -4)).sort()
 const deck = args.deck == null ? decks[0] : decks.find((d) => d.toLowerCase() === args.deck.toLowerCase())

@@ -111,7 +111,8 @@ That is the whole setup:
   `src/decks`, code files in `src/snippets`, pictures in `src/images`, each one an option) and
   builds in the icons the source names.
 - `createDeckApp()` creates the Vue app with the engine installed and renders the deck named by
-  `?deck=`. A project with its own app shell uses `createApp(MyApp).use(Arao)` instead
+  `?deck=` (`createDeckApp({ deck: 'mytalk' })`: the deck to open when the URL names none). A
+  project with its own app shell uses `createApp(MyApp).use(Arao)` instead
   (`import Arao from 'araojs'`).
 - The engine's CSS comes with `'araojs'`; the themes the decks wear are imported one by one.
 
@@ -197,13 +198,14 @@ Then `npm run dev` and open `http://localhost:5173/`:
 
 | URL | What it opens |
 |---|---|
+| `/` | the list of the project's decks, a link to each (a project with one deck opens it) |
 | `/?deck=mytalk` | the deck `src/decks/MyTalk.vue` (the name is case-insensitive) |
 | `/?deck=mytalk&theme=vigojug` | the same deck with another of its themes |
 | `/?deck=mytalk#/5/2` | slide 5, step 2 (the hash follows you as you move) |
 | `/?deck=mytalk&presenter` | the presenter view |
 | `/?deck=mytalk&export` | the deck as a book of pages, for printing |
 
-Without `?deck=`, or with a name that is no deck, the first deck by name opens, without a warning.
+A name that is no deck shows the list too, with a notice (and a warning in the console).
 
 ### Project layout
 
@@ -437,13 +439,20 @@ dist/               the build (npm run build): index.js, arao.css, themes/
 
 `scripts/smoke.mjs` checks the package the way a user gets it. It packs the library (or takes the
 tarball it is given), installs it into a new slides project in a temporary folder with the
-playground's decks, images and snippets, and then:
+playground's decks, images and snippets (and a second, tiny deck of its own), and then:
 
 1. runs `vite build`;
 2. opens every deck under the dev server (Vue's own warnings only show up in dev) and under
    `vite preview`, and walks each one with ArrowRight to its last step. Any console warning or
    error, any page error, or a deck with no slides fails the test;
-3. runs `<bin> export --deck <name>` for every deck and checks that the PDF exists and that the
+3. opens `/` under both servers: it must list every deck, each link must open its deck (the first
+   one followed with the keyboard) and keep the page's other query parameters, and an unknown
+   `?deck=` must show the list with one warning;
+4. rewrites the project's `src/main.js` (and once its `vite.config.js`) for createDeckApp's
+   other cases, under the dev server: a project with one deck opens it at `/`;
+   `createDeckApp({ deck: 'second' })` opens that deck at `/` while `?deck=<other>` still wins;
+   `createDeckApp({ deck: 'missing' })` shows the list with one `[arao]` warning;
+5. runs `<bin> export --deck <name>` for every deck and checks that the PDF exists and that the
    summary line reports at least one page.
 
 The package name and the CLI's name come from `package.json`. CI runs it on every pull request and

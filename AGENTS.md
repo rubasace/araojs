@@ -7,7 +7,9 @@ Overview: [README.md](README.md).
 
 ## Mental model
 
-- A deck is one file, `src/decks/<Name>.vue`, opened at `/?deck=<name>` (case-insensitive).
+- A deck is one file, `src/decks/<Name>.vue`, opened at `/?deck=<name>` (case-insensitive). `/`
+  alone lists the project's decks (with only one, it opens it); `createDeckApp({ deck: 'talk' })`
+  in `src/main.js` opens that deck at `/` instead (`?deck=` still wins).
 - **Templates are Pug or HTML.** `<template lang="pug">` is the recommended form (shorter; every
   recipe here uses it). A plain HTML `<template>` works the same: same components, props, slots
   and directives; each file picks its own. Translate a recipe tag by tag: `Slide(layout="cover")`
@@ -318,7 +320,7 @@ Slide
      in two kinds: Vue's own, `[Vue warn]: Invalid prop: …`, when a prop fails its type or its
      validator (`gap="huge"`, `size="36"` without the colon, `fit="fill"`); and Arao's, prefixed
      `[arao]`, on missing files or icons, values it cannot use (`bg`, `duration`), `v-step` or
-     `Notes` outside a slide;
+     `Notes` outside a slide, a `?deck=` that is no deck;
    - count `.ar-slide` elements; press `ArrowRight` until the hash stops changing and record the
      highest step per slide: compare with what you meant;
    - for overflow, compare the visible slide's `scrollHeight`/`scrollWidth` with its

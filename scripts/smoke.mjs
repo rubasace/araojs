@@ -8,15 +8,23 @@
 // Without a tarball it packs one itself (npm pack, which builds the library first).
 // The project is made in a temporary folder outside the repository: package.json depending on the
 // tarball (vite and vue at the versions of the library's devDependencies), vite.config.js with the
-// arao() plugin, index.html, src/main.js with the default and vigojug themes, and the
-// playground's decks, images and snippets as content. Then, in order:
+// arao() plugin, index.html, src/main.js with the default and vigojug themes, the playground's
+// decks, images and snippets as content, and a second, tiny deck of its own (so that the project
+// has several and / lists them). Then, in order:
 //   1. npm install
 //   2. vite build                      must pass
 //   3. every deck of src/decks, under the dev server (Vue's own warnings only exist in dev) and
 //      under vite preview (the production build): opened at ?deck=<name>, walked with ArrowRight
 //      until the hash stops changing; any console warning/error or page error fails, and so does
 //      a deck with no slides
-//   4. <bin> export --deck <name>      the PDF must exist and its summary line report pages > 0
+//   4. the deck selector, under both servers: / lists every deck, each link (the first followed
+//      with the keyboard) opens its deck, the links keep the page's other query parameters, and an
+//      unknown ?deck= shows the list with one warning
+//   5. createDeckApp's other cases, under the dev server, on the same install (src/main.js, and
+//      vite.config.js for the first, rewritten for each and then put back): a project with one deck
+//      opens it at /; createDeckApp({ deck: 'second' }) opens that deck at / and ?deck=<other>
+//      still wins; createDeckApp({ deck: 'missing' }) shows the list with one [arao] warning
+//   6. <bin> export --deck <name>      the PDF must exist and its summary line report pages > 0
 // The package name and the CLI's name are read from package.json: nothing here names them.
 //
 // Environment:
@@ -40,6 +48,18 @@ const PKG = lib.name
 const BIN = typeof lib.bin === 'string' ? PKG.replace(/^@[^/]+\//, '') : Object.keys(lib.bin ?? {})[0]
 if (!BIN) throw new Error('package.json has no "bin"')
 const CONTENT = ['decks', 'images', 'snippets'] // from the playground's src/
+// a deck of the smoke project only: with the playground's, the project has several. MARK, its
+// heading, tells it from the others once open.
+const MARK = 'A second deck'
+const SECOND = ['Second.vue', `<template lang="pug">
+Deck(:themes="['default']")
+  Slide(layout="cover" title="Second")
+    h1 ${MARK}
+  Slide
+    h2 Picked from the list
+    p(v-step="2") Every deck of the project is a link on /.
+</template>
+`]
 
 const log = (msg) => console.log(`\n[smoke] ${msg}`)
 const pause = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -117,8 +137,10 @@ try {
     const from = join(repo, 'playground', 'src', dir)
     if (await stat(from).catch(() => null)) await cp(from, join(project, 'src', dir), { recursive: true })
   }
+  await mkdir(join(project, 'src', 'decks'), { recursive: true })
+  await writeFile(join(project, 'src', 'decks', SECOND[0]), SECOND[1])
   const decks = (await readdir(join(project, 'src', 'decks'))).filter((f) => f.endsWith('.vue')).map((f) => basename(f, '.vue'))
-  if (!decks.length) throw new Error('the playground has no decks to test')
+  if (decks.length < 2) throw new Error('the project needs two decks or more to test the selector')
   log(`decks: ${decks.join(', ')}`)
 
   log('npm install')
@@ -196,6 +218,75 @@ try {
     for (const c of complaints) fail(`${mode} ?deck=${deck}: ${c}`)
   }
 
+  // the deck selector: / lists every deck and each link opens its deck; on /?<query> each link
+  // keeps the query (not the hash); an unknown ?deck= shows the list too, with a warning naming it
+  // (the only console message expected here)
+  async function selector(base, mode) {
+    const context = await browser.newContext({ viewport: { width: 1920, height: 1080 } })
+    const page = await context.newPage()
+    const complaints = []
+    let expected = null // the one warning the page may give
+    page.on('console', (m) => {
+      if (!['warning', 'error'].includes(m.type())) return
+      if (expected && m.type() === 'warning' && m.text().includes(expected)) return void (expected = null)
+      complaints.push(`console ${m.type()}: ${m.text()}`)
+    })
+    page.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
+    const links = page.locator('.ar-decks a[href^="?deck="]')
+    const listed = async (where) => {
+      await links.first().waitFor({ timeout: 30_000 }).catch(() => {})
+      const hrefs = await links.evaluateAll((as) => as.map((a) => a.getAttribute('href')))
+      const want = decks.map((d) => `?deck=${encodeURIComponent(d.toLowerCase())}`).sort()
+      if (JSON.stringify([...hrefs].sort()) !== JSON.stringify(want))
+        complaints.push(`${where}: the list links to ${hrefs.join(', ') || 'nothing'}, not to ${want.join(', ')}`)
+      return hrefs
+    }
+    // follows a link of the list; the deck must open at its ?deck=
+    const opens = async (href, how) => {
+      await page.waitForURL((u) => u.search === href, { timeout: 30_000 }).catch(() => {})
+      const slides = await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 }).then(() => true, () => false)
+      const at = await page.evaluate(() => location.search)
+      if (at !== href || !slides) complaints.push(`${how} ${href}: landed on ${at || '/'}${slides ? '' : ', with no slides'}`)
+    }
+    try {
+      await page.goto(base)
+      const hrefs = await listed('/')
+      console.log(`  ${mode} /: ${hrefs.length} decks listed (${hrefs.join(' ')})`)
+      for (const [i, href] of hrefs.entries()) {
+        if (i) await page.goto(base)
+        await links.first().waitFor({ timeout: 30_000 }).catch(() => {})
+        if (i === 0) {
+          // the keyboard alone: Tab reaches the first link, Enter follows it
+          await page.keyboard.press('Tab')
+          const focused = await page.evaluate(() => document.activeElement?.getAttribute('href'))
+          if (focused !== href) complaints.push(`Tab focuses ${focused ?? 'nothing'}, not the first link (${href})`)
+          await page.keyboard.press('Enter')
+          await opens(href, 'Enter on')
+        } else {
+          await page.locator(`.ar-decks a[href="${href}"]`).click()
+          await opens(href, 'a click on')
+        }
+      }
+      const query = 'theme=vigojug&presenter'
+      await page.goto(new URL(`?${query}#/2/1`, base).href)
+      await links.first().waitFor({ timeout: 30_000 }).catch(() => {})
+      const carried = await links.evaluateAll((as) => as.map((a) => a.getAttribute('href')))
+      const meant = hrefs.map((h) => `${h}&${query}`)
+      if (JSON.stringify(carried) !== JSON.stringify(meant))
+        complaints.push(`/?${query}#/2/1: the list links to ${carried.join(', ') || 'nothing'}, not to ${meant.join(', ')}`)
+      expected = '"no-such-deck"'
+      await page.goto(new URL('?deck=no-such-deck', base).href)
+      await listed('?deck=no-such-deck')
+      const notice = (await page.locator('.ar-decks [role="alert"]').textContent({ timeout: 5_000 }).catch(() => null)) ?? ''
+      if (!notice.includes('no-such-deck')) complaints.push('?deck=no-such-deck: no notice naming it above the list')
+      await pause(300)
+      if (expected) complaints.push('?deck=no-such-deck: no console warning naming it')
+    } finally {
+      await context.close()
+    }
+    for (const c of complaints) fail(`${mode} selector: ${c}`)
+  }
+
   for (const mode of ['dev', 'preview']) {
     log(`walking the decks under vite ${mode}`)
     const base = await serve(mode)
@@ -209,9 +300,81 @@ try {
         await warm.close()
       }
       for (const deck of decks) await walk(base, deck, mode)
+      await selector(base, mode)
     } finally {
       await stop()
     }
+  }
+
+  // createDeckApp's other cases: the project's own files rewritten for each one, the dev server
+  // started on them (Vue's warnings only exist in dev, and no build is needed), and put back.
+  // Each visit opens a path and expects a deck (`deck`: the second one or another) or the list
+  // (`missing`: the name its notice and its one [arao] warning must give).
+  const second = basename(SECOND[0], '.vue').toLowerCase()
+  const other = decks.find((d) => d.toLowerCase() !== second)
+  const solo = 'src/solo' // a decks folder holding the second deck alone
+  const asIs = { 'src/main.js': files['src/main.js'], 'vite.config.js': files['vite.config.js'] }
+  const withDeck = (name) => asIs['src/main.js'].replace('createDeckApp()', `createDeckApp({ deck: '${name}' })`)
+  const variants = [
+    { name: 'one deck', files: { 'vite.config.js': asIs['vite.config.js'].replace('arao()', `arao({ decks: '${solo}' })`) },
+      visits: [{ path: '', deck: 'second' }] },
+    { name: `createDeckApp({ deck: '${second}' })`, files: { 'src/main.js': withDeck(second) },
+      visits: [{ path: '', deck: 'second' }, { path: `?deck=${encodeURIComponent(other)}`, deck: 'other' }] },
+    { name: `createDeckApp({ deck: 'missing' })`, files: { 'src/main.js': withDeck('missing') },
+      visits: [{ path: '', missing: 'missing' }] },
+  ]
+
+  async function visit(base, variant, { path, deck, missing }) {
+    const context = await browser.newContext({ viewport: { width: 1920, height: 1080 } })
+    const page = await context.newPage()
+    const complaints = []
+    let expected = missing && `"${missing}"` // the one warning the page may give
+    page.on('console', (m) => {
+      if (!['warning', 'error'].includes(m.type())) return
+      if (expected && m.type() === 'warning' && m.text().startsWith('[arao]') && m.text().includes(expected)) return void (expected = null)
+      complaints.push(`console ${m.type()}: ${m.text()}`)
+    })
+    page.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
+    try {
+      await page.goto(new URL(path, base).href)
+      if (deck) {
+        const slides = await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 }).then(() => true, () => false)
+        const isSecond = (await page.locator('.ar-slide h1', { hasText: MARK }).count()) > 0
+        if (!slides) complaints.push('no deck opened')
+        else if (isSecond !== (deck === 'second')) complaints.push(`opened ${isSecond ? 'the second deck' : 'another deck'}, not ${deck === 'second' ? 'the second' : other}`)
+      } else {
+        const links = page.locator('.ar-decks a[href^="?deck="]')
+        await links.first().waitFor({ timeout: 30_000 }).catch(() => {})
+        const hrefs = await links.evaluateAll((as) => as.map((a) => a.getAttribute('href')))
+        if (hrefs.length !== decks.length) complaints.push(`the list has ${hrefs.length} links, not ${decks.length}`)
+        const notice = (await page.locator('.ar-decks [role="alert"]').textContent({ timeout: 5_000 }).catch(() => null)) ?? ''
+        if (!notice.includes(missing)) complaints.push(`no notice naming "${missing}" above the list`)
+      }
+      await pause(300) // late warnings
+      if (expected) complaints.push(`no [arao] console warning naming ${expected}`)
+      console.log(`  dev ${variant.name}, /${path}: ${deck ? `the ${deck === 'second' ? 'second' : 'other'} deck` : 'the list'}${complaints.length ? ' (problems below)' : ''}`)
+    } finally {
+      await context.close()
+    }
+    for (const c of complaints) fail(`dev ${variant.name}, /${path}: ${c}`)
+  }
+
+  log(`createDeckApp's other cases under vite dev`)
+  await mkdir(join(project, solo), { recursive: true })
+  await writeFile(join(project, solo, SECOND[0]), SECOND[1])
+  try {
+    for (const variant of variants) {
+      for (const [name, text] of Object.entries({ ...asIs, ...variant.files })) await writeFile(join(project, name), text)
+      const base = await serve('dev')
+      try {
+        for (const v of variant.visits) await visit(base, variant, v)
+      } finally {
+        await stop()
+      }
+    }
+  } finally {
+    for (const [name, text] of Object.entries(asIs)) await writeFile(join(project, name), text)
+    await rm(join(project, solo), { recursive: true, force: true })
   }
 
   for (const deck of decks) {
@@ -239,4 +402,4 @@ if (problems.length) {
   console.error(`\n[smoke] ${problems.length} problem(s):\n${problems.map((p) => `  - ${p}`).join('\n')}`)
   process.exit(1)
 }
-console.log(`\n[smoke] OK: ${PKG} installs, builds, runs its decks clean and exports them`)
+console.log(`\n[smoke] OK: ${PKG} installs, builds, runs its decks clean, lists them and exports them`)
