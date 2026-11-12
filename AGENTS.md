@@ -162,7 +162,8 @@ Slide
       h3 Clients
       p.muted RestTemplate, WebClient
 ```
-Uneven: `Cols(ratio="2 1")`. Grid of cards: `Grid(cols="3" gap="sm")`. Centre something: `Center`.
+Uneven: `Cols(ratio="2 1")`. Grid of cards: `Grid(cols="3" gap="sm")`, or let the count decide:
+`Grid(ratio="2:1")` (columns : rows; 5 cards → 3 + 2, last row centred). Centre something: `Center`.
 
 Background image with opacity:
 ```pug

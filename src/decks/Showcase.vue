@@ -142,6 +142,13 @@ Deck(:themes="['default', 'vigojug']" duration="15m")
     Notes
       p image-left e image-right; las imágenes se cargan por nombre desde src/images.
 
+  Slide(title="Grid con forma")
+    h2 Grid con forma: ratio="2:1"
+    Grid(ratio="2:1" gap="md")
+      .box(v-for="(t, i) in ['Logging', 'Metrics', 'Tracing', 'Clients', 'Errors']" :key="t" v-step="i + 1") {{ t }}
+    Notes
+      p Las columnas salen del número de elementos: 5 con forma 2:1 son 3 arriba y 2 centrados abajo.
+
   Slide(title="Cols, Grid, Center")
     h2 Piezas para componer
     Rows(ratio="auto 1" gap="md")
