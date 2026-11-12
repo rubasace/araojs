@@ -629,6 +629,35 @@ waited for on every page. When done, `window.__phoenyxReady` is
 Gotcha: pages are static DOM copies: canvas/WebGL drawings, video frames, iframes, shadow DOM and
 `url(#id)` references (ids repeat) are not printed faithfully.
 
+**Printing** (Chromium's print path; the deck on screen is untouched). The book works around what
+Chromium prints differently from what it shows:
+
+- A page prints in one piece (`contain: size` on `.ph-page`). Otherwise Chromium splits whatever is
+  laid out across the bottom edge of a page that has a page after it, clipped or not, and prints the
+  part above the break as a box of its own: no bottom border, no rounded bottom corners, percentages
+  of its height taken from that part. A ring placed with `top: 50%; transform: translateY(-50%)`
+  (its box, before the transform, reaches past the bottom) printed as an arch on every page but the
+  last.
+- Blurred `box-shadow`s (outer and inset) are drawn on a canvas and painted as the element's
+  `border-image`, outset over the shadow: Chromium prints a blurred shadow as a soft mask of the
+  graphics state, which macOS Preview and Quick Look ignore, drawing the shadow's whole box as a
+  solid square of its colour (pdf.js, PDFium/Chrome and MuPDF draw it right). A picture with
+  transparency every reader draws. Same place, transforms, opacity and clipping as the shadow; a
+  visible solid border is drawn into the picture too. Left as Chromium prints them: elements with a
+  `border-image` of their own, a border that is not `solid` in one colour, a `filter`, and inline or
+  table-part boxes.
+- Pictures with a `filter` of blur and colour functions (`Img(blur)`, `Slide(bg-blur)` on a picture)
+  are drawn with that filter on a canvas, fitted by `object-fit`/`object-position`, and printed
+  unfiltered: Chromium blurs only what is inside the clip, so the soft edge of the blur showed inside
+  the box (a dark frame around a blurred background). Left as Chromium prints them: pictures from
+  another origin without CORS (a canvas cannot read them), `drop-shadow()` and `url()` filters.
+
+Known limitation: a **blurred `text-shadow`** still prints as a soft mask, so macOS Preview and Quick
+Look draw a solid box of the shadow's colour behind the text. Use a `text-shadow` without blur, or
+`filter: drop-shadow(0 8px 20px …)` on the element instead of the `text-shadow`: Chromium prints a
+filtered element as a picture with transparency, which every reader draws (its text is then part of
+that picture, not selectable).
+
 ---
 
 ## useDeck()
