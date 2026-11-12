@@ -1,7 +1,9 @@
 # AGENTS.md — writing decks with Phoenyx
 
-Operational guide for AI agents writing or editing slide decks in this repo. Full API:
-[docs/reference.md](docs/reference.md). Overview: [README.md](README.md).
+Operational guide for AI agents writing or editing slide decks in a slides project that uses
+Phoenyx (the `phoenyxjs` package). In such a project this file is
+`node_modules/phoenyxjs/AGENTS.md`, next to the full API, [docs/reference.md](docs/reference.md).
+Overview: [README.md](README.md).
 
 ## Mental model
 
@@ -16,8 +18,26 @@ Operational guide for AI agents writing or editing slide decks in this repo. Ful
 - **A slide counts its own steps**: the largest `v-step` (or Snippet highlight step) inside it.
   Never declare a count.
 - Look comes from the theme (`--ph-*` tokens). Slides say *what*, themes say *how it looks*.
-- Globally available: `Deck Slide Img Snippet Notes Cols Rows Grid Center`, `v-step` and `v-step-from`. Addons are
-  imported in `<script setup>`.
+- Globally available: `Deck Slide Img Snippet Notes Cols Rows Grid Center`, `v-step` and `v-step-from`. Addons
+  (`ProgressBar`, `SlideNumber`) and composables (`useDeck`, `useSlide`) are imported from
+  `'phoenyxjs'` in `<script setup>`.
+
+## The project
+
+```
+package.json       depends on phoenyxjs; scripts dev (vite), build (vite build), export (phoenyx export)
+vite.config.js     plugins: [phoenyx()], from 'phoenyxjs/vite' (Vue, Pug and the folders below)
+index.html         <div id="app"> and /src/main.js
+src/main.js        createDeckApp().mount('#app'), after the theme imports
+src/decks/         one .vue file per deck (?deck=<file name>)
+src/decks/<talk>/  components only that talk uses
+src/slides/        components several decks share
+src/snippets/      code files, by name, for Snippet(file="…")
+src/images/        pictures, by name, for Img(file="…") and Slide(bg="…")
+src/themes/        the project's own themes, if any
+```
+
+The engine is the library: nothing of it is copied into the project.
 
 ## Rules
 
@@ -47,7 +67,8 @@ Don't:
 - Don't put a highlight at step 1 (`{ "4": 1 }`): step 1 always shows the code plain.
 - Don't expect Snippet highlights to accumulate: each step shows only its own rules.
 - Don't use `v-step` inside `Notes` (not supported) or outside a `Slide` (warns).
-- Don't edit `src/engine/` to make one deck look right.
+- Don't edit the library (`node_modules/phoenyxjs`) to make one deck look right: an engine change
+  is a change to Phoenyx, made in its own repository.
 
 ## Gotchas
 
@@ -62,7 +83,8 @@ Don't:
   wide as the block. For a fixed size, give it a class with both sizes:
   `.avatar { flex: none; width: 320px; height: 320px; }`.
 - **A new theme** is `src/themes/<name>.css` holding one `[data-theme="<name>"] { --ph-…: …; }`
-  block, imported in `src/main.js` and listed in `Deck(:themes)`. If the file is not imported or
+  block, imported in `src/main.js` and listed in `Deck(:themes)`. The shipped themes are imported
+  the same way, from the package: `import 'phoenyxjs/themes/vigojug.css'`. If the file is not imported or
   the selector does not match the name, the slides render unstyled and nothing warns.
 - **Headings inside `#background` are ignored for the slide's title** (jump menu, presenter,
   notes pages). Put the heading in the content, or use `Slide(title="…")`.
@@ -79,8 +101,7 @@ Deck(:themes="['default', 'vigojug']" duration="30m")
 </template>
 
 <script setup>
-import ProgressBar from '../addons/ProgressBar.vue'
-import SlideNumber from '../addons/SlideNumber.vue'
+import { ProgressBar, SlideNumber } from 'phoenyxjs'
 </script>
 ```
 
@@ -202,11 +223,12 @@ Slide
    - screenshot a few `#/<slide>/<step>` and look at them.
 3. `npm run export -- --deck <name>` (once: `npx playwright-core install chromium`) and read the
    summary line: pages, slides, steps, missing pictures.
-4. `npx vite build` must pass.
+4. `npm run build` must pass.
 
 ## Where to look
 
 - Every prop, slot, token, key and URL parameter: [docs/reference.md](docs/reference.md).
-- Working examples: `src/decks/Demo.vue` (one slide per feature), `src/decks/Framework.vue` (a
-  real 122-slide talk; its pictures are not in the repo, so they show as placeholders).
-- Themes: `src/themes/*.css`.
+- Working examples: the project's own decks; `playground/` in the Phoenyx repository, a tiny
+  project set up like any other.
+- Themes: the shipped ones in `node_modules/phoenyxjs/dist/themes/*.css`, the project's in
+  `src/themes/*.css`.

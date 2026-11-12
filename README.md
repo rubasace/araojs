@@ -12,27 +12,67 @@ A slide engine of its own for technical talks, built on **Vue 3 + Vite**, with s
   needs little or no custom CSS. That also makes decks easy for AI agents to write (see
   [AGENTS.md](AGENTS.md)).
 
-> **Status:** v2 is in progress on the `v2-engine` branch. Phoenyx is not published as a package
-> yet: decks live inside this repository, under `src/decks/`. How to package it is still an open
-> decision.
+Phoenyx is a library (the `phoenyxjs` package: the engine, its components, addons, themes, a Vite
+plugin and the PDF export). Decks live in a **slides project** of their own that depends on it.
 
-## Quick start
+> **Status:** not published to npm yet (the package name `phoenyxjs` is a placeholder). A project
+> uses it from a checkout: `"phoenyxjs": "file:../phoenyxjs"` (then `npm run build` here after each
+> change to the library), or from a tarball made with `npm pack`.
+
+## Quick start: a slides project
 
 ```bash
-npm install
-npm run dev          # http://127.0.0.1:5173/
+npm install phoenyxjs vue && npm install -D vite
 ```
+
+```js
+// vite.config.js
+import { defineConfig } from 'vite'
+import phoenyx from 'phoenyxjs/vite'
+
+export default defineConfig({ plugins: [phoenyx()] })
+```
+
+```js
+// src/main.js
+import { createDeckApp } from 'phoenyxjs'
+import 'phoenyxjs/themes/default.css'
+import 'phoenyxjs/themes/vigojug.css'
+
+createDeckApp().mount('#app')
+```
+
+```html
+<!-- index.html -->
+<div id="app"></div>
+<script type="module" src="/src/main.js"></script>
+```
+
+```json
+"scripts": { "dev": "vite", "build": "vite build", "export": "phoenyx export" }
+```
+
+That is the whole setup:
+
+- `phoenyx()` is the only Vite plugin: it brings `@vitejs/plugin-vue` and Pug along (don't add
+  `vue()` too; Vue's options go in `phoenyx({ vue: { … } })`), and serves the project's folders:
+  decks in `src/decks`, code files in `src/snippets`, pictures in `src/images` (each one an option).
+- `createDeckApp()` creates the Vue app with the engine installed and renders the deck named by
+  `?deck=`. A project with its own app shell uses `createApp(MyApp).use(Phoenyx)` instead
+  (`import Phoenyx from 'phoenyxjs'`).
+- The engine's CSS comes with `'phoenyxjs'`; the themes the decks wear are imported one by one.
+
+Then `npm run dev` and open `http://localhost:5173/`:
 
 | URL | What it opens |
 |---|---|
-| `/?deck=demo` | the deck `src/decks/Demo.vue` (the default; the name is case-insensitive) |
-| `/?deck=framework` | `src/decks/Framework.vue` (a 122-slide real talk) |
-| `/?deck=demo&theme=vigojug` | the same deck with another of its themes |
-| `/?deck=demo#/5/2` | slide 5, step 2 (the hash follows you as you move) |
-| `/?deck=demo&presenter` | the presenter view |
-| `/?deck=demo&export` | the deck as a book of pages, for printing |
+| `/?deck=mytalk` | the deck `src/decks/MyTalk.vue` (the name is case-insensitive) |
+| `/?deck=mytalk&theme=vigojug` | the same deck with another of its themes |
+| `/?deck=mytalk#/5/2` | slide 5, step 2 (the hash follows you as you move) |
+| `/?deck=mytalk&presenter` | the presenter view |
+| `/?deck=mytalk&export` | the deck as a book of pages, for printing |
 
-An unknown `?deck=` falls back to Demo without a warning.
+Without `?deck=`, or with a name that is no deck, the first deck by name opens, without a warning.
 
 ### Keys
 
@@ -88,37 +128,53 @@ Deck(:themes="['default', 'vigojug']" duration="30m")
 </template>
 
 <script setup>
-import ProgressBar from '../addons/ProgressBar.vue'
-import SlideNumber from '../addons/SlideNumber.vue'
+import { ProgressBar, SlideNumber } from 'phoenyxjs'
 </script>
 ```
 
 `Deck`, `Slide`, `Img`, `Snippet`, `Notes`, `Cols`, `Rows`, `Grid`, `Center` and the `v-step`
-directive are registered globally. Addons (`ProgressBar`, `SlideNumber`, your own) are imported.
+directive are registered globally. Addons (`ProgressBar`, `SlideNumber` from `'phoenyxjs'`, your
+own) are imported.
 
 ## Folder layout
 
+A slides project:
+
 ```
+package.json        depends on phoenyxjs; scripts dev, build, export
+vite.config.js      plugins: [phoenyx()]
+index.html          <div id="app"> and /src/main.js
 src/
-  main.js           creates the app: installs the engine, imports layouts.css and every theme
-  App.vue           picks the deck from ?deck=<name> among the .vue files directly in decks/
+  main.js           createDeckApp().mount('#app'), after the theme imports
   decks/            one .vue file per deck (?deck=<file name>)
-    <talk>/         components only that talk uses (decks/framework/: Quote, Social…)
-  slides/           components shared by several decks (Card, used by the demo)
+    <talk>/         components only that talk uses
+  slides/           components shared by several decks
   snippets/         code files shown by Snippet(file="…"), by name (subfolders allowed)
   images/           pictures used by Img(file="…") and Slide(bg="…"), by name (subfolders allowed)
-  themes/           theme token files (default.css, vigojug.css) and layouts.css
-  addons/           ProgressBar, SlideNumber: things drawn over every slide
-  engine/           the engine (Deck, Slide, v-step, layouts, Img, Notes, presenter, export)
-  components/       Snippet
-phoenyx/vite.js     the Vite plugin (snippets and images folders)
-scripts/export.mjs  npm run export (PDF)
+  themes/           the project's own themes, if any
 ```
 
 A component written for one talk goes in `src/decks/<talk>/` and is imported only by that deck;
 one that several decks use goes in `src/slides/`. Neither is registered globally: the deck
 imports it (`import Card from '../slides/Card.vue'`). A new theme is a file in `src/themes/`,
 imported in `src/main.js`.
+
+This repository, the library:
+
+```
+src/
+  index.js          what 'phoenyxjs' exports
+  app.js            createDeckApp
+  engine/           the engine (Deck, Slide, v-step, layouts, Img, Notes, presenter, export, CSS)
+  components/       Snippet
+  addons/           ProgressBar, SlideNumber: things drawn over every slide
+  themes/           the shipped themes (default.css, vigojug.css)
+vite/index.js       the Vite plugin (phoenyxjs/vite)
+bin/                the phoenyx command (phoenyx export)
+playground/         a tiny slides project on the library's source, for developing it
+docs/reference.md   the full reference
+dist/               the build (npm run build): index.js, phoenyx.css, themes/
+```
 
 ## Features
 
@@ -164,32 +220,43 @@ The presenter UI is in Spanish.
 
 ## Export to PDF
 
+In a slides project (`"export": "phoenyx export"` in its scripts; `npx phoenyx export …` works too):
+
 ```bash
 npx playwright-core install chromium      # once: the Chromium that playwright-core drives
-npm run export -- --deck framework                     # exports/framework.pdf
-npm run export -- --deck demo --theme vigojug --per-step --notes --out talk.pdf
+npm run export -- --deck mytalk                       # exports/mytalk.pdf
+npm run export -- --deck mytalk --theme vigojug --per-step --notes --out talk.pdf
 ```
 
 | Option | Meaning |
 |---|---|
-| `--deck <name>` | a deck of `src/decks` (default `demo`) |
+| `--deck <name>` | a deck of the decks folder, `src/decks` (default: the first by name) |
 | `--theme <name>` | one of the deck's themes (default its first) |
 | `--per-step` | one page per step instead of one per slide |
 | `--notes` | a page with the speaker notes after each slide that has them |
 | `--out <path>` | output file or folder (default `exports/<deck>[-<theme>][-steps][-notes].pdf`) |
 | `--url <url>` | print from a running server (e.g. `http://127.0.0.1:5173/`) instead of building |
 
-The script builds the site into a temporary folder, serves it, opens `?export` in headless
+The command builds the project (with its own Vite config) into a temporary folder, serves it, opens `?export` in headless
 Chromium and prints. By default each slide is one page showing its last step. Pages are
 1920x1080 px (1440x810 pt). `PHOENYX_CHROMIUM=/path/to/chrome` uses a browser you already have.
 Opening `?export` in a normal browser and printing to PDF gives the same pages.
 
 ## Scripts
 
+In a slides project:
+
 | Script | What it does |
 |---|---|
-| `npm run dev` | Vite dev server with hot reload on 127.0.0.1:5173 (`PHOENYX_PUBLIC_HOST` allows a tunnel host) |
+| `npm run dev` | Vite dev server with hot reload |
 | `npm run build` | static build into `dist/` (every deck; pick one with `?deck=`) |
 | `npm run export` | PDF of a deck (above) |
+
+In this repository:
+
+| Script | What it does |
+|---|---|
+| `npm run build` | the library into `dist/`: `index.js` (ESM, imports its CSS), `phoenyx.css`, `themes/*.css`; also run by `npm pack` / `npm publish` |
+| `npm run dev` | the playground, on the library's source, on 127.0.0.1:5173 (`PHOENYX_PUBLIC_HOST` allows a tunnel host) |
 
 Node 20.19 or newer.
