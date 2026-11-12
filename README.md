@@ -7,7 +7,8 @@ A slide engine of its own for technical talks, built on **Vue 3 + Vite**, with s
   What you see on your laptop is what the projector, the presenter view and the PDF show: same
   line breaks, same sizes. All sizes inside a slide are canvas px.
 - **Themes are tokens only.** A theme is a block of `--ph-*` CSS variables (colours, fonts, sizes,
-  code colours). Same slides, different venue: only the theme changes.
+  title, body placement, footer, tables, code colours). Same slides, different venue: only the
+  theme changes.
 - **Declarative.** Layouts, composition pieces and props cover the usual arrangements, so a deck
   needs little or no custom CSS. That also makes decks easy for AI agents to write (see
   [AGENTS.md](AGENTS.md)).
@@ -184,6 +185,13 @@ dist/               the build (npm run build): index.js, phoenyx.css, themes/
   own steps.
 - **Layouts** — `Slide(layout=…)`: `default`, `cover`, `section`, `split` (two named zones),
   `image-left` / `image-right` (an edge-to-edge picture beside the text), with `ratio`.
+- **Slide zones** — a content slide is a header (the heading it starts with, no template needed),
+  a body (centred vertically by default; `Slide(align="start|center|end")` or the theme's
+  `--ph-body-align`) and a footer.
+- **Footer** — `Deck`'s `#footer` slot on every slide (real text in the theme's fonts, with the
+  slide number if wanted), hidden on covers and sections, in the presenter view and the PDF.
+- **Tables and lists** — plain `table` and lists styled by the theme (`--ph-table-*`,
+  `--ph-list-gap`); title colour, size, alignment and gap are tokens too (`--ph-title-*`).
 - **Composition** — `Cols`, `Rows`, `Grid`, `Center`: boxes laid out by props (`ratio`, `gap`,
   `align`, `cols`), no CSS needed.
 - **Code** — `Snippet`: a macOS-style window with Shiki colours, files by name, the same frame

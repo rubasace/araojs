@@ -21,6 +21,8 @@ import { Comment, Fragment, Text, cloneVNode, h } from 'vue'
 // gap:   sm | md | lg (theme tokens --ph-gap-sm|md|lg), a number of px (12) or a length in
 //        px, em or rem ("12px", "1.5em"). Default md; an invalid gap warns and keeps md.
 // align (Cols): start | center | end | stretch, vertical placement in each column. Default stretch.
+//        In a centred (or end-aligned) slide body the row is only as tall as its content and sits
+//        centred (Slide.vue); align="stretch", written out, keeps it full height there too.
 // cols (Grid): a whole number of columns. Default 3.
 // ratio (Grid): the grid's shape, columns : rows ("2:1", "3/2", "1.5"). With n children it uses
 //        rows = round(√(n / ratio)) (at least 1) and columns = ⌈n / rows⌉: 2:1 puts 6 children in
@@ -96,6 +98,8 @@ export const Cols = piece('Cols', {
     gridAutoFlow: columns ? 'row' : undefined,
     gap: gapValue(p.gap),
     alignItems: p.align,
+    // an explicit stretch keeps the columns full height in a centred body (engine.css)
+    alignContent: p.align === 'stretch' ? 'stretch' : undefined,
   }
 })
 

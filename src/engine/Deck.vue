@@ -17,7 +17,13 @@
      counts down to it. The timer starts with the first move of the deck, in any window, and
      survives reloading the windows (not closing them).
      Export: ?export prints the deck, one page per slide (&per-step: per step; &notes: a page of
-     notes after each slide that has them): exporter.js, and npm run export for the PDF. -->
+     notes after each slide that has them): exporter.js, and npm run export for the PDF.
+     Footer: the #footer slot is drawn at the bottom of every slide except covers and sections
+     (each Slide draws it, so it fades, prints and shows in the presenter view with its slide);
+     its slot props are { number, total }, the slide's number (1-based) and the slide count:
+       template(#footer="{ number, total }")
+         span ACME · Conf 2026
+         span {{ number }} / {{ total }} -->
 <template lang="pug">
 .ph-viewport(
   v-if="!presenter"
@@ -87,12 +93,13 @@ Presenter(
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, readonly, ref, shallowRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, provide, readonly, ref, shallowRef, useSlots, watch } from 'vue'
 import { ahead, createStage } from './stage'
 import { createSync, deckKey } from './sync'
 import { IDLE, parseDuration, start } from './timer'
 import { buildBook, exportOptions, reportReady } from './exporter'
 import { NoteBody } from './notes'
+import { FOOTER } from './registry'
 import Controls from './Controls.vue'
 import Presenter from './Presenter.vue'
 import Stage from './Stage.vue'
@@ -107,6 +114,10 @@ const props = defineProps({
   // "1h30", "90s", "45:00" (m:ss), "1:30:00" (h:mm:ss). Anything else warns and counts nothing.
   duration: [String, Number],
 })
+
+// the #footer slot, read when each slide renders (the slots object is updated in place)
+const slots = useSlots()
+provide(FOOTER, () => slots.footer)
 
 const query = new URLSearchParams(location.search)
 // ?export wins over ?presenter: the window prints the deck, nothing else
@@ -217,8 +228,9 @@ function toggleFullscreen() {
   document.fullscreenElement ? document.exitFullscreen() : (viewport.value ?? document.documentElement).requestFullscreen()
 }
 const onFullscreen = () => (fullscreen.value = !!document.fullscreenElement)
-// slide titles for the jump menu: Slide(title="…"), else its first heading outside the background
-const HEADING = ':is(h1, h2, h3):not(.ph-slide-bg *)'
+// slide titles for the jump menu: Slide(title="…"), else its first heading outside the
+// background and the footer
+const HEADING = ':is(h1, h2, h3):not(.ph-slide-bg *, .ph-footer *)'
 const titleOf = (s) => s.title.value || s.el.value?.querySelector(HEADING)?.textContent.trim() || ''
 const titles = computed(() => {
   // re-read headings whenever the controls show up (the presenter view shows the title: on every move)
