@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "export": "node scripts/export.mjs"
   },
   "dependencies": {
     "shiki": "^4.6.0",
@@ -13,6 +14,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.10",
+    "playwright-core": "~1.64.0",
     "pug": "^3.0.4",
     "vite": "^8.3.8"
   }
