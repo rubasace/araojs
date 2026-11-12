@@ -3,6 +3,58 @@
 .ph-slide h2 { font-size: calc(var(--ph-title) * .6); margin: 0 0 .6em; color: var(--ph-accent); }
 .ph-slide p { margin: 0 0 .6em; }
 
+/* The slide's title (.ph-title, Slide.vue): the heading of the header, of split's header, of the
+   text side of image-*. Without the tokens it looks as any h1/h2 does:
+     --ph-title-size    its font size (default: an h2 is 0.6x --ph-title, an h1 --ph-title)
+     --ph-title-color   its colour (default: an h2 in the accent, an h1 in the text colour)
+     --ph-title-align   start | center | end (default: as the slide's text)
+     --ph-title-gap     the space under it, before the body (default .6em of an h2, .4em of an h1;
+                        em is the title's size, as for any margin of it)
+   Same specificity as the rules above, after them: a deck's own h2 rule still wins. */
+.ph-slide h1:where(.ph-title) {
+  font-size: var(--ph-title-size, var(--ph-title));
+  color: var(--ph-title-color, currentColor);
+  text-align: var(--ph-title-align, match-parent);
+  margin-bottom: var(--ph-title-gap, .4em);
+}
+.ph-slide h2:where(.ph-title) {
+  font-size: var(--ph-title-size, calc(var(--ph-title) * .6));
+  color: var(--ph-title-color, var(--ph-accent));
+  text-align: var(--ph-title-align, match-parent);
+  margin-bottom: var(--ph-title-gap, .6em);
+}
+/* in a header band (--ph-header-height) the gap goes under the band, so the title sits centred in
+   it; its default is the same length as above (em of the title, computed from the size tokens) */
+.ph-header-band > .ph-title { margin-bottom: 0; }
+.ph-header-band { margin-bottom: var(--ph-title-gap, 0px); }
+.ph-header-band.ph-header-h1 { margin-bottom: var(--ph-title-gap, calc(var(--ph-title-size, var(--ph-title)) * .4)); }
+.ph-header-band.ph-header-h2 { margin-bottom: var(--ph-title-gap, calc(var(--ph-title-size, calc(var(--ph-title) * .6)) * .6)); }
+
+/* lists: --ph-list-gap between items (default 0). Zero specificity: a deck's li rule wins. */
+:where(.ph-slide li + li) { margin-top: var(--ph-list-gap); }
+
+/* tables: a plain default, full width, all of it from tokens (zero specificity: a deck's table rules win)
+     --ph-table-pad         cell padding (default .4em .8em)
+     --ph-table-border      the line under every row (default 2px, the text colour at 15 %)
+     --ph-table-head-bg     header cells' background (default none)
+     --ph-table-head-color  header cells' text (default --ph-muted)
+     --ph-table-stripe      background of every other body row (default none) */
+:where(.ph-slide table) { width: 100%; border-collapse: collapse; }
+:where(.ph-slide :is(th, td)) {
+  padding: var(--ph-table-pad, .4em .8em);
+  text-align: start;
+  border-bottom: var(--ph-table-border, 2px solid color-mix(in srgb, var(--ph-fg) 15%, transparent));
+}
+:where(.ph-slide th) {
+  background: var(--ph-table-head-bg, none);
+  color: var(--ph-table-head-color, var(--ph-muted));
+  font-weight: 600;
+}
+:where(.ph-slide tbody tr:nth-child(even)) { background: var(--ph-table-stripe, none); }
+
+/* the footer's own paragraphs, if any, sit on its line */
+.ph-footer p { margin: 0; }
+
 .layout-cover { justify-content: center; }
 .layout-cover h1 { font-size: calc(var(--ph-title) * 1.25); }
 .layout-cover .bar { width: 160px; height: 10px; background: var(--ph-accent); border-radius: 5px; margin: 0 0 48px; }

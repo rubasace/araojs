@@ -17,6 +17,9 @@ Overview: [README.md](README.md).
   "after the previous element". Step 1 is what shows when the slide arrives.
 - **A slide counts its own steps**: the largest `v-step` (or Snippet highlight step) inside it.
   Never declare a count.
+- **A content slide has three zones**: the header (the `h1`/`h2` the slide starts with), the body
+  (everything else, **centred vertically by default**) and the deck's footer (`Deck`'s `#footer`
+  slot, on every slide but covers and sections). No template needed for the title.
 - Look comes from the theme (`--ph-*` tokens). Slides say *what*, themes say *how it looks*.
 - Globally available: `Deck Slide Img Icon Snippet Notes Cols Rows Grid Center`, `v-step` and `v-step-from`. Addons
   (`ProgressBar`, `SlideNumber`) and composables (`useDeck`, `useSlide`) are imported from
@@ -45,8 +48,16 @@ Do:
 - Use a `layout` (`cover`, `section`, `split`, `image-left`, `image-right`) or a composition
   component (`Cols`, `Rows`, `Grid`, `Center`) and their props (`ratio`, `gap`, `align`, `cols`)
   for arrangement.
-- Give every content slide a heading (`h2`), or `Slide(title="…")` when it has none: it names the
-  slide in the jump menu, presenter view and notes pages.
+- Start every content slide with its heading (`h2`), or give it `Slide(title="…")` when it has
+  none: the first heading is the slide's header and names the slide in the jump menu, presenter
+  view and notes pages. Something before it (a kicker line) makes it body: use `template(#title)`
+  for a header with more than a heading.
+- Let the body be centred (the default) or say where: `Slide(align="start")` for a long list or
+  anything read from the top, `align="end"`; a theme changes the default with `--ph-body-align`.
+- Put what goes on every slide (event, company, slide number) in `Deck`'s `template(#footer)`,
+  with `{ number, total }` for the slide number; `Slide(:footer="false")` hides it on one slide,
+  `:footer="true"` shows it on a cover or a section.
+- Write tables as plain `table` / `thead` / `tbody`: the theme styles them (`--ph-table-*`).
 - One idea per slide. Reveal with steps instead of cramming.
 - Name files, never import them: `Snippet(file="App.java")` from `src/snippets/`,
   `Img(file="team.jpg")` / `Slide(bg="team.jpg")` from `src/images/` (subfolders ok, case-sensitive).
@@ -62,7 +73,10 @@ Do:
 
 Don't:
 - Don't write ad-hoc layout CSS (flex/grid wrappers, margins to position things) when a layout,
-  piece or prop does it.
+  piece or prop does it. In particular, no `margin: auto` or selectors on `.ph-slide > …` to
+  centre a body (`align` does it) and no footer drawn in a background image or an addon
+  (`#footer` does it). Title colour, size, gap, list spacing and table look are tokens
+  (`--ph-title-*`, `--ph-list-gap`, `--ph-table-*`), set in the theme.
 - Don't hard-code colours or fonts in a deck. Style through tokens:
   `color: var(--ph-accent)`, `background: color-mix(in srgb, var(--ph-fg) 8%, var(--ph-bg))`.
   Venue-specific looks are a new theme, not edits to slides.
@@ -97,6 +111,14 @@ Don't:
   the selector does not match the name, the slides render unstyled and nothing warns.
 - **Headings inside `#background` are ignored for the slide's title** (jump menu, presenter,
   notes pages). Put the heading in the content, or use `Slide(title="…")`.
+- **The body is centred, but what fills stays full height.** `Img`, `Snippet`, an element with
+  `flex: 1`, `Grid` (its rows are `1fr`) and pieces holding any of those fill the body as before;
+  `Cols` of plain content shrinks to its content and is centred (`Cols(align="stretch")` keeps
+  full-height columns). `.collapse` steps re-centre the body as they come and go: use plain
+  `v-step` (keeps its space) when the rest must not move.
+- **The footer takes the bottom margin.** On slides that show it, the body ends where the footer
+  band begins (88 px from the bottom by default). `cover` and `section` hide it unless
+  `:footer="true"`. With a footer, prefer `{{ number }} / {{ total }}` inside it to `SlideNumber`.
 
 ## Skeleton
 
@@ -225,6 +247,48 @@ Slide
     p Start with the story of the first customer.
   Notes(step="2")
     p Tiers: say why there are exactly three.
+```
+
+Body placement (centred by default; the heading always stays on top):
+```pug
+Slide
+  h2 One idea
+  p.lead Centred under the title, no CSS.
+
+Slide(align="start")
+  h2 A long list
+  ul
+    li Read from the top…
+```
+
+Footer on every slide, with the slide number:
+```pug
+Deck(:themes="['default']")
+  template(#footer="{ number, total }")
+    span ACME · DevConf 2026
+    span {{ number }} / {{ total }}
+
+  Slide(layout="cover" :footer="true")
+    h1 Shown on this cover too
+  Slide(:footer="false")
+    h2 Not on this one
+```
+A theme moves and colours it with tokens: `--ph-footer-align: flex-end`, `--ph-footer-color`,
+`--ph-footer-size`, `--ph-footer-height`.
+
+Table (styled by the theme's `--ph-table-*` tokens):
+```pug
+Slide
+  h2 Pace
+  table
+    thead
+      tr
+        th Period
+        th Merged
+    tbody
+      tr(v-for="(r, i) in rows" :key="r.period" v-step="i + 1")
+        td {{ r.period }}
+        td {{ r.merged }}
 ```
 
 ## Verify a deck
