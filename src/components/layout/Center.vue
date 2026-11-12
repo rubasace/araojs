@@ -11,3 +11,11 @@
 <script setup>
 defineOptions({ name: 'Center' })
 </script>
+
+<style>
+/* fills the free space of its container, its content in a centred column */
+.ar-center {
+  box-sizing: border-box; flex: 1 1 auto; min-width: 0; min-height: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+}
+</style>

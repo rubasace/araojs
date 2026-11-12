@@ -59,3 +59,16 @@ export default {
   },
 }
 </script>
+
+<style>
+/* fills the free space of its container; its columns come from cols or ratio (inline) */
+.ar-grid {
+  box-sizing: border-box; flex: 1 1 auto; min-width: 0; min-height: 0;
+  display: grid; gap: var(--ar-gap-md);
+  grid-auto-rows: 1fr;
+}
+/* widths hold, heights grow: a child is never wider than its cell and what is wider inside it is
+   clipped at the cell's edge (the y axis stays visible). Zero specificity: a child's own rule
+   wins. */
+:where(.ar-grid) > * { max-width: 100%; overflow-x: clip; }
+</style>

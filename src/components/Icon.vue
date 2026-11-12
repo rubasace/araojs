@@ -65,3 +65,15 @@ const box = computed(() => {
 // the same icon twice in the page must not share ids (gradients, masks): each drawing gets its own
 const body = computed(() => uniqueIds(icon.value?.body ?? ''))
 </script>
+
+<style>
+/* inline SVG sized by its width/height attributes (1em tall unless size says otherwise), sitting
+   on the text's baseline like a glyph; never squeezed in a flex row */
+.ar-icon { display: inline-block; flex: none; vertical-align: -.125em; }
+/* missing icon: an empty dashed box of the same size, so nothing around it moves */
+.ar-icon-missing {
+  box-sizing: border-box;
+  border: max(1px, .06em) dashed color-mix(in srgb, var(--ar-placeholder, currentColor) 45%, transparent);
+  border-radius: .15em;
+}
+</style>

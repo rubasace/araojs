@@ -41,8 +41,21 @@ const style = computed(() => {
     gridAutoFlow: columns ? 'row' : undefined,
     gap: gapValue(props.gap),
     alignItems: props.align,
-    // an explicit stretch keeps the columns full height in a centred body (engine.css)
+    // an explicit stretch keeps the columns full height in a centred body (Slide.vue)
     alignContent: props.align === 'stretch' ? 'stretch' : undefined,
   }
 })
 </script>
+
+<style>
+/* fills the free space of its container; one column per child unless ratio says otherwise */
+.ar-cols {
+  box-sizing: border-box; flex: 1 1 auto; min-width: 0; min-height: 0;
+  display: grid; gap: var(--ar-gap-md);
+  grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
+}
+/* widths hold, heights grow: a child is never wider than its column and what is wider inside it
+   is clipped at the column's edge (the y axis stays visible). Zero specificity: a child's own
+   rule wins. */
+:where(.ar-cols) > * { max-width: 100%; overflow-x: clip; }
+</style>

@@ -19,7 +19,7 @@ import { nextTick } from 'vue'
 // pixels drawn by script (canvas, WebGL), video frames, iframes, shadow DOM, and references by
 // element id (an SVG gradient url(#id): ids repeat in the book, the first one wins).
 // What Chromium prints differently from what it shows, and the book works around:
-//   - a page is one piece (engine.css, .ar-page): otherwise content whose box reaches past the
+//   - a page is one piece (.ar-page, ExportView.vue): otherwise content whose box reaches past the
 //     bottom of its page, even clipped or moved back up by a transform, is split there and the
 //     part above the break is drawn as a box of its own;
 //   - blurred box-shadows are redrawn as pictures (printableShadows below): Chromium prints them

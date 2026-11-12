@@ -33,3 +33,15 @@ const style = computed(() => ({
   gap: gapValue(props.gap),
 }))
 </script>
+
+<style>
+/* fills the free space of its container; equal rows unless ratio says otherwise */
+.ar-rows {
+  box-sizing: border-box; flex: 1 1 auto; min-width: 0; min-height: 0;
+  display: grid; gap: var(--ar-gap-md);
+  grid-template-columns: minmax(0, 1fr); grid-auto-rows: 1fr;
+}
+/* widths hold, heights grow: a child is never wider than the piece and what is wider inside it
+   is clipped at its edge (the y axis stays visible). Zero specificity: a child's own rule wins. */
+:where(.ar-rows) > * { max-width: 100%; overflow-x: clip; }
+</style>

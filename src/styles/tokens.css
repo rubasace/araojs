@@ -1,0 +1,17 @@
+/* Tokens: the engine's defaults for tokens a theme may override, declared wherever a theme is
+   applied: the audience's viewport (and the export book inside it) and each Stage of the presenter
+   view carry data-theme. Zero specificity: the theme's own [data-theme="x"] rule wins on the same
+   element. */
+:where([data-theme]) {
+  --ar-gap-sm: 24px;
+  --ar-gap-md: 48px;
+  --ar-gap-lg: 80px;
+  --ar-text-small: .75em;
+  /* slide zones (Slide.vue): where the body sits, and the deck's footer band */
+  --ar-body-align: center;
+  --ar-footer-height: 88px;
+  --ar-footer-size: 24px;
+  --ar-footer-color: var(--ar-muted);
+  --ar-footer-align: space-between;
+  --ar-list-gap: 0;
+}

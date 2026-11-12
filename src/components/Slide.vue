@@ -17,10 +17,10 @@
      align="start|center|end" places the body vertically; without it, the theme's --ar-body-align
      decides (center unless the theme says otherwise; read from the slide's computed style). In a
      centred or end-aligned body, Cols/Rows/Grid placed directly in it centre their rows too
-     (engine.css). What fills the body (Img, Snippet, an element with flex: 1, the 1fr rows of
+     (below). What fills the body (Img, Snippet, an element with flex: 1, the 1fr rows of
      Grid and Rows) still fills it, exactly as in a start-aligned body.
      The title in every layout (the header's heading, the split header's, the text side's in
-     image-*) carries .ar-title and follows the --ar-title-* tokens (layouts.css).
+     image-*) carries .ar-title and follows the --ar-title-* tokens (below).
      Footer: the Deck's #footer slot, drawn at the bottom of every slide (.ar-footer, a band
      --ar-footer-height tall) except on cover and section. :footer="false" hides it on a slide,
      :footer="true" shows it on a cover or a section. Its slot props are { number, total }: this
@@ -52,7 +52,7 @@
          .tint
      With both, the bg goes first and the slot above it. With neither (a slot that renders nothing
      counts as none), the slide shows the theme's default background, if the theme sets one
-     (--ar-slide-bg-* tokens, engine.css), and the bg-* props tune that one.
+     (--ar-slide-bg-* tokens, below), and the bg-* props tune that one.
      Headings in the background or the footer are not the slide's title (the jump menu skips them).
      Speaker notes: Notes anywhere inside the slide (notes.js); only the presenter view shows them. -->
 <template>
@@ -278,3 +278,167 @@ const align = computed(() => props.align || themeAlign.value)
 // The deck's #footer slot (Deck.vue provides it), shown on this slide or not
 const footed = () => !!footerSlot() && (props.footer ?? !flat.value)
 </script>
+
+<style>
+/* The slide: the canvas's size, padded (the safe margin), its content in a column. Its layout is
+   a class, layout-<name>: the rules for cover, section, split, image-left, image-right and the
+   legacy two-cols are below; any other name is the default layout, a class for the theme. */
+.ar-slide {
+  position: absolute; inset: 0;
+  box-sizing: border-box;
+  padding: var(--ar-pad, 96px 120px);
+  display: flex; flex-direction: column;
+  isolation: isolate; /* its own stacking context: the background layer stays inside it */
+}
+
+/* Layers, bottom to top: the background (.ar-slide-bg), the content, then the addons (z-index 10,
+   outside the slides). The background is Slide(bg="…"), the #background slot, or else the
+   theme's default; it never catches the pointer, so it never gets in the way of the content. */
+.ar-slide-bg {
+  position: absolute; inset: 0; z-index: -1;
+  overflow: hidden; pointer-events: none; user-select: none;
+}
+/* each child of the layer (the bg, every element of #background) covers the whole slide,
+   stacked in order: an Img, then an overlay above it */
+.ar-slide-bg > * { position: absolute; inset: 0; }
+/* the theme's default background, on slides with none of their own (tokens, all optional):
+     --ar-slide-bg-image      a CSS background-image: a gradient, or url(…) relative to the theme
+                              file, url(../images/venue.jpg), which Vite resolves (default none)
+     --ar-slide-bg-position   where it sits, as CSS background-position (default center)
+     --ar-slide-bg-opacity    0..1 (default 1)
+   It is drawn to cover the slide. A theme can leave a layout out:
+     [data-theme="x"] .layout-section { --ar-slide-bg-image: none; } */
+.ar-slide-bg-theme {
+  background: var(--ar-slide-bg-image, none) var(--ar-slide-bg-position, center) / cover no-repeat;
+  opacity: var(--ar-slide-bg-opacity, 1);
+}
+
+/* Zones (default layout): the header (its title), the body, the footer.
+   The header is as tall as its title, whose margin (--ar-title-gap, below) separates it from the
+   body. When the theme sets --ar-header-height, the header is a band at least that tall with the
+   title centred in it, and the gap goes under the band (.ar-header-band, below). */
+.ar-header { flex: none; display: flex; flex-direction: column; }
+.ar-header-band { min-height: var(--ar-header-height); justify-content: center; box-sizing: border-box; }
+/* the body fills the rest: a column like the slide itself, so pieces and flex: 1 fill it */
+.ar-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+/* centred / end-aligned (Slide align, --ar-body-align): what does not fill the body moves; what
+   does not fit overflows at the bottom, as in a start-aligned body (safe). Pieces placed directly
+   in it still fill it, but their auto rows shrink to their content and move with it (1fr rows,
+   as Grid's, still fill), unless they hold something that needs the full height: a Snippet, an
+   Img or another piece (those keep the rows as tall as the body, as in a start-aligned body).
+   Margins count as part of the content (a full-height body stays exactly as when start-aligned). */
+.ar-body-center { justify-content: safe center; }
+.ar-body-end { justify-content: safe flex-end; }
+.ar-body-center > :is(.ar-cols, .ar-rows, .ar-grid):not(:has(.ar-snippet, .ar-img, .ar-cols, .ar-rows, .ar-grid, .ar-center)) { align-content: safe center; }
+.ar-body-end > :is(.ar-cols, .ar-rows, .ar-grid):not(:has(.ar-snippet, .ar-img, .ar-cols, .ar-rows, .ar-grid, .ar-center)) { align-content: safe end; }
+
+/* The deck's footer (Deck #footer): a band --ar-footer-height tall at the bottom of the slide, with
+   the slide's side padding, its children in a row (--ar-footer-align: space-between puts one at
+   the start, two at both ends). On slides with zones it takes the place of the bottom padding, so
+   the content ends where it begins; on cover and section (only when asked for) it sits over the
+   bottom padding. On a section it takes the section's text colour unless the theme sets
+   --ar-footer-color for .layout-section. */
+.ar-footer {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  box-sizing: border-box; height: var(--ar-footer-height);
+  padding: var(--ar-pad, 96px 120px); padding-top: 0; padding-bottom: 0;
+  display: flex; align-items: center; justify-content: var(--ar-footer-align); gap: var(--ar-gap-sm);
+  font-size: var(--ar-footer-size); line-height: 1.2; color: var(--ar-footer-color);
+  white-space: nowrap;
+}
+.ar-slide.ar-footed { padding-bottom: var(--ar-footer-height); }
+.ar-footed > .ar-zone-text { padding-bottom: 0; }
+:where(.layout-section) { --ar-footer-color: currentColor; }
+
+/* zones: Slide(layout="split" | "image-left" | "image-right" ratio="…") */
+.ar-zones {
+  flex: 1 1 auto; min-height: 0;
+  display: grid; grid-template-rows: minmax(0, 1fr); gap: var(--ar-gap-lg);
+}
+/* a zone keeps its width: what is wider is clipped at its edge, never painted over the other zone */
+.ar-zone { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow-x: clip; }
+.layout-image-left, .layout-image-right { display: grid; grid-template-rows: minmax(0, 1fr); padding: 0; }
+.ar-zone-text { box-sizing: border-box; padding: var(--ar-pad, 96px 120px); }
+/* the image fills its zone edge to edge (a theme may inset it) */
+.ar-zone-image { position: relative; overflow: hidden; box-sizing: border-box; padding: var(--ar-image-inset, 0); }
+.ar-zone-image > * { flex: 1 1 0; min-height: 0; }
+.ar-zone-image > :is(img, video, picture, svg, canvas) { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* utility classes: an escape hatch for one-off tweaks, not a styling system */
+.ar-slide .muted { color: var(--ar-muted); }
+.ar-slide .center { text-align: center; }
+.ar-slide .upper { text-transform: uppercase; }
+.ar-slide .small { font-size: var(--ar-text-small); }
+
+/* slide transition */
+.ar-slide-enter-active, .ar-slide-leave-active { transition: opacity .4s ease; }
+.ar-slide-enter-from, .ar-slide-leave-to { opacity: 0; }
+
+/* Content, styled only through tokens */
+.ar-slide h1 { font-size: var(--ar-title); line-height: 1.05; margin: 0 0 .4em; }
+.ar-slide h2 { font-size: calc(var(--ar-title) * .6); margin: 0 0 .6em; color: var(--ar-accent); }
+.ar-slide p { margin: 0 0 .6em; }
+
+/* The slide's title (.ar-title): the heading of the header, of split's header, of the text side
+   of image-*. Without the tokens it looks as any h1/h2 does:
+     --ar-title-size    its font size (default: an h2 is 0.6x --ar-title, an h1 --ar-title)
+     --ar-title-color   its colour (default: an h2 in the accent, an h1 in the text colour)
+     --ar-title-align   start | center | end (default: as the slide's text)
+     --ar-title-gap     the space under it, before the body (default .6em of an h2, .4em of an h1;
+                        em is the title's size, as for any margin of it)
+   Same specificity as the rules above, after them: a deck's own h2 rule still wins. */
+.ar-slide h1:where(.ar-title) {
+  font-size: var(--ar-title-size, var(--ar-title));
+  color: var(--ar-title-color, currentColor);
+  text-align: var(--ar-title-align, match-parent);
+  margin-bottom: var(--ar-title-gap, .4em);
+}
+.ar-slide h2:where(.ar-title) {
+  font-size: var(--ar-title-size, calc(var(--ar-title) * .6));
+  color: var(--ar-title-color, var(--ar-accent));
+  text-align: var(--ar-title-align, match-parent);
+  margin-bottom: var(--ar-title-gap, .6em);
+}
+/* in a header band (--ar-header-height) the gap goes under the band, so the title sits centred in
+   it; its default is the same length as above (em of the title, computed from the size tokens) */
+.ar-header-band > .ar-title { margin-bottom: 0; }
+.ar-header-band { margin-bottom: var(--ar-title-gap, 0px); }
+.ar-header-band.ar-header-h1 { margin-bottom: var(--ar-title-gap, calc(var(--ar-title-size, var(--ar-title)) * .4)); }
+.ar-header-band.ar-header-h2 { margin-bottom: var(--ar-title-gap, calc(var(--ar-title-size, calc(var(--ar-title) * .6)) * .6)); }
+
+/* lists: --ar-list-gap between items (default 0). Zero specificity: a deck's li rule wins. */
+:where(.ar-slide li + li) { margin-top: var(--ar-list-gap); }
+
+/* tables: a plain default, full width, all of it from tokens (zero specificity: a deck's table rules win)
+     --ar-table-pad         cell padding (default .4em .8em)
+     --ar-table-border      the line under every row (default 2px, the text colour at 15 %)
+     --ar-table-head-bg     header cells' background (default none)
+     --ar-table-head-color  header cells' text (default --ar-muted)
+     --ar-table-stripe      background of every other body row (default none) */
+:where(.ar-slide table) { width: 100%; border-collapse: collapse; }
+:where(.ar-slide :is(th, td)) {
+  padding: var(--ar-table-pad, .4em .8em);
+  text-align: start;
+  border-bottom: var(--ar-table-border, 2px solid color-mix(in srgb, var(--ar-fg) 15%, transparent));
+}
+:where(.ar-slide th) {
+  background: var(--ar-table-head-bg, none);
+  color: var(--ar-table-head-color, var(--ar-muted));
+  font-weight: 600;
+}
+:where(.ar-slide tbody tr:nth-child(even)) { background: var(--ar-table-stripe, none); }
+
+/* the footer's own paragraphs, if any, sit on its line */
+.ar-footer p { margin: 0; }
+
+/* layouts */
+.layout-cover { justify-content: center; }
+.layout-cover h1 { font-size: calc(var(--ar-title) * 1.25); }
+.layout-cover .bar { width: 160px; height: 10px; background: var(--ar-accent); border-radius: 5px; margin: 0 0 48px; }
+
+.layout-section { justify-content: center; align-items: center; text-align: center;
+  background: var(--ar-accent); color: var(--ar-accent-fg); }
+.layout-section h1 { font-size: calc(var(--ar-title) * 1.4); }
+
+.layout-two-cols .cols { display: grid; grid-template-columns: 1fr 1fr; gap: var(--ar-gap-lg); flex: 1; }
+</style>
