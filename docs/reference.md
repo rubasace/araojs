@@ -5,7 +5,7 @@ canvas px (the canvas is 1920x1080 unless `Deck` says otherwise). Examples are P
 deck's `<template lang="pug">`. Paths like `src/decks` are the slides project's, with the
 plugin's default folders.
 
-Globally registered: `Deck`, `Slide`, `Img`, `Snippet`, `Notes`, `Cols`, `Rows`, `Grid`,
+Globally registered: `Deck`, `Slide`, `Img`, `Icon`, `Snippet`, `Notes`, `Cols`, `Rows`, `Grid`,
 `Center`, and the directives `v-step` and `v-step-from`. Imported by hand from `'phoenyxjs'`:
 the addons (`ProgressBar`, `SlideNumber`) and the composables (`useDeck`, `useSlide`).
 
@@ -15,7 +15,7 @@ written as JSON in single quotes: `:highlights='{ "2-3": 2 }'`.
 
 Contents: [Setup](#setup) · [Deck](#deck) · [Slide](#slide) · [v-step](#v-step) ·
 [Cols, Rows, Grid, Center](#cols-rows-grid-center) · [Utility classes](#utility-classes) ·
-[Img](#img) · [Snippet](#snippet) · [Notes](#notes) · [Controls](#controls) ·
+[Img](#img) · [Icon](#icon) · [Snippet](#snippet) · [Notes](#notes) · [Controls](#controls) ·
 [Presenter view](#presenter-view) · [Export mode](#export-mode) · [useDeck()](#usedeck) ·
 [useSlide()](#useslide) · [Addons](#addons) · [Vite plugin](#vite-plugin) ·
 [Theme tokens](#theme-tokens) · [URL parameters](#url-parameters)
@@ -371,6 +371,73 @@ Cols
 
 ---
 
+## Icon
+
+An icon of an [Iconify](https://icon-sets.iconify.design/) set, drawn inline as SVG. Icons are
+resolved when the project is built or served: nothing is fetched when presenting, and they are
+vectors in the PDF.
+
+| Prop | Type | Default | Notes |
+|---|---|---|---|
+| `name` | String | — (required) | `prefix:name`: `lucide:rocket`, `simple-icons:vuedotjs` |
+| `size` | Number or String | `1em` tall | px, the icon's height: `size="64"` (plain is fine) or `:size="64"`. The width follows the icon's shape (square for Lucide and Simple Icons) |
+| `label` | String | — | what the icon says: `role="img"` and `aria-label`; without it the icon is decorative (`aria-hidden`) |
+
+```pug
+h2 #[Icon(name="lucide:rocket")] Launch
+p #[Icon.hot(name="lucide:flame")] The hot path
+Icon(name="simple-icons:kubernetes" size="120" label="Kubernetes")
+Grid(cols="4" gap="md")
+  Icon(v-for="it in items" :key="it.icon" :name="it.icon" size="96")
+```
+
+(`.hot { color: var(--ph-accent); }` in the deck's `<style scoped>`; `items` lists the names in the
+deck's script: `[{ icon: 'lucide:gauge' }, …]`.)
+
+**Sets.** `lucide` (UI icons, [lucide.dev](https://lucide.dev)) and `simple-icons` (logos of
+technologies and brands, [simpleicons.org](https://simpleicons.org)) come with the library. Any
+other Iconify set works once the slides project installs its package,
+`npm install -D @iconify-json/<prefix>` (`@iconify-json/mdi`, `@iconify-json/logos`, …: the prefix is
+the one in the set's address on icon-sets.iconify.design). A set installed in the project wins over
+the library's copy of the same set, so a project can pin another version of Lucide.
+
+**How icons get in.** The Vite plugin reads the project's source (`src/` and the decks folder;
+`.vue .pug .js .ts .jsx .tsx .mjs .cjs` files; not the snippets and images folders) for words of the
+form `prefix:name` that are icons of an installed set, and builds only those into the app, through
+the module `virtual:phoenyx/icons`. A static `name="…"` is found, and so are names written in data
+(`{ icon: 'lucide:rocket' }`) and bound with `:name`. During development, a name written in a
+saved file shows at once, without a restart; a set installed while the dev server runs is found at
+the next save of a file that uses it.
+- **Limitation:** a name put together at runtime (`` :name="`lucide:${kind}`" ``, a value from a
+  fetch) is not in the source, so it is not built in. Write the full names somewhere in the source
+  (a list of them is enough), or force them with the plugin option
+  `phoenyx({ icons: ['lucide:sun', 'lucide:moon'] })` ([Vite plugin](#vite-plugin)).
+- A word that looks like a name but is no icon (`localhost:5173`, `a:hover`) is ignored; a real
+  name in a comment or in text is built in too (it only costs its few hundred bytes).
+
+**Look.** The colour is `currentColor`: the icon takes the colour of the text, and is styled like
+text (`color: var(--ph-accent)`). Multicolour sets keep their own colours. It is `1em` tall by
+default, so it follows the font size where it sits (in a heading it is as tall as the heading's
+text; a class with `font-size` resizes it); `size` sets px. It sits on the text's baseline like a
+glyph and never shrinks in a flex row. Width and height are SVG attributes, so a CSS rule with
+`width`/`height` wins over them. Classes: `.ph-icon` (the `svg`), `.ph-icon-missing`.
+
+**Missing icon.** A name that is not in the build (its set is not installed, a typo, a name built
+at runtime) shows an empty dashed box of the same size, so nothing around it moves, and one warning
+per name in development: `[phoenyx] Icon "foo:bar" not found: …`, which says to install
+`@iconify-json/foo` or to check the name.
+
+**Licences.** Icons are others' work, under their own licences: check a set's licence on
+icon-sets.iconify.design before using it in a talk you publish.
+- Lucide: ISC (free to use; nothing to show on the slides).
+- Simple Icons: CC0 for the drawings, but the logos are trademarks of their owners. Use them to
+  refer to the technology or the brand, not as decoration or to suggest endorsement. Some brands
+  are left out at their owner's request (Java: `simple-icons:openjdk` is the closest).
+- Some sets require attribution, such as Font Awesome Free (CC BY 4.0): credit them, on a closing
+  slide for instance.
+
+---
+
 ## Snippet
 
 A code window: macOS-style title bar, Shiki syntax colours, line numbers, per-step highlights.
@@ -673,7 +740,7 @@ onBeforeUnmount(() => clearInterval(timer))
 `phoenyx()` from `phoenyxjs/vite` is all a slides project puts in its Vite config. It includes
 `@vitejs/plugin-vue` (do not add `vue()` as well: Vite stops with an error) with Pug for the
 templates (no need to install `pug`), and exposes three project folders as virtual modules, so
-slides name files and need no imports.
+slides name files and need no imports. It also resolves the [icons](#icon) the source uses.
 
 ```js
 // vite.config.js
@@ -688,6 +755,7 @@ export default defineConfig({
 | `decks` | `'src/decks'` | `createDeckApp()`, `phoenyx export` | the `.vue` files directly in it (not in subfolders), one lazily loaded chunk each |
 | `snippets` | `'src/snippets'` | `Snippet(file)` | every file, as raw text, loaded lazily |
 | `images` | `'src/images'` | `Img(file)`, `Slide(bg)` | `png jpg jpeg gif webp avif svg` (any case), as URLs, eager |
+| `icons` | `[]` | `Icon` | names (`'lucide:sun'`) built in even when the source does not spell them out (built at runtime); one that is in no installed set is reported when the module is built |
 | `vue` | `{}` | — | options for `@vitejs/plugin-vue`, passed through |
 
 - A folder is relative to the Vite root, or absolute. One outside the root (`../shared/images`)
@@ -698,7 +766,9 @@ export default defineConfig({
 - Adding or removing a picture during development updates the slides in place.
 - Modules: `virtual:phoenyx/decks` exports `decks` (file name → loader) and `decksDir`;
   `virtual:phoenyx/snippets` exports `snippets` (path → loader) and `snippetsDir`;
-  `virtual:phoenyx/images` exports `images` (path → URL) and `imagesDir`.
+  `virtual:phoenyx/images` exports `images` (path → URL) and `imagesDir`;
+  `virtual:phoenyx/icons` exports `icons` (`prefix:name` → `{ body, width, height }`, only the icons
+  the source uses, plus the `icons` option).
 - It also keeps `phoenyxjs` out of Vite's dependency prebundling (it imports those virtual
   modules), prebundles what it imports (`vue`, `shiki`), and dedupes `vue`, so a linked copy of
   the library (`npm link`, `file:`) uses the project's Vue.

@@ -24,11 +24,17 @@
 // browser fetches every picture the deck uses when it opens. Size photos for the screen: text and
 // SVG stay sharp at any scale, but a photo is upscaled with the canvas, so for 4K a full-slide
 // background wants ~3840 px wide (twice its size in canvas px); prefer WebP/AVIF/JPEG for photos.
+//
+// Icons: <Icon name="lucide:rocket"> draws an icon of an installed Iconify set (@iconify-json/<prefix>),
+// resolved here, at build time: the source is read for the names it uses and only those go into
+// virtual:phoenyx/icons (icons.js). phoenyx({ icons: ['lucide:rocket'] }) adds names the source
+// does not spell out (built at runtime).
 import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { isAbsolute, relative, resolve, sep } from 'node:path'
 import vue from '@vitejs/plugin-vue'
 import { searchForWorkspaceRoot } from 'vite'
+import { createIcons, forced } from './icons.js'
 
 const require = createRequire(import.meta.url)
 // the package's own name, so that renaming it on publish needs no change here
@@ -48,7 +54,7 @@ const modules = {
 const escapeGlob = (s) => s.replace(/[()[\]{}*?!+@|\\]/g, '\\$&')
 
 export default function phoenyx(options = {}) {
-  const { vue: vueOptions = {}, ...rest } = options
+  const { vue: vueOptions = {}, icons: iconsOption, ...rest } = options
   const folders = {}
   for (const name of Object.keys(modules)) {
     const f = rest[name] ?? DEFAULTS[name]
@@ -63,6 +69,17 @@ export default function phoenyx(options = {}) {
   }
   const outside = () => Object.keys(modules).map(dir).filter(isOutside)
   const resolved = (name) => `\0virtual:phoenyx/${name}`
+
+  // icons used in the source: src/ and the decks folder, but not the snippets and images folders
+  // (their files are content, not source)
+  let logger = console
+  const icons = createIcons({
+    root: () => root,
+    sources: () => [resolve(root, 'src'), dir('decks')],
+    skip: () => [dir('snippets'), dir('images')],
+    force: forced(iconsOption),
+    warn: (msg) => logger.warn(msg),
+  })
 
   // Pug for the project's templates comes from this package: the project does not install it, and
   // it is found even where @vue/compiler-sfc cannot see this package's dependencies (a linked
@@ -101,6 +118,7 @@ export default function phoenyx(options = {}) {
     },
     configResolved(config) {
       root = config.root
+      logger = config.logger
       if (config.plugins.filter((p) => p.name === 'vite:vue').length > 1)
         throw new Error('[phoenyx] @vitejs/plugin-vue is in the config twice: phoenyx() already includes it. Remove vue() from plugins; its options go in phoenyx({ vue: { … } })')
       for (const name of Object.keys(modules)) {
@@ -114,9 +132,17 @@ export default function phoenyx(options = {}) {
     },
     resolveId(id) {
       const name = id.startsWith('virtual:phoenyx/') && id.slice('virtual:phoenyx/'.length)
-      return name in modules ? resolved(name) : null
+      return name in modules || name === 'icons' ? resolved(name) : null
+    },
+    // a saved file that uses an icon the module lacks: the module goes first in the same update,
+    // so its new data is in place when the file's own update renders the Icon
+    async hotUpdate({ type, file, read, modules: changed }) {
+      if (this.environment.name !== 'client' || !(await icons.update(type, file, read))) return
+      const mod = this.environment.moduleGraph.getModuleById(resolved('icons'))
+      return mod ? [mod, ...changed.filter((m) => m !== mod)] : undefined
     },
     load(id) {
+      if (id === resolved('icons')) return icons.load()
       const name = Object.keys(modules).find((n) => id === resolved(n))
       if (!name) return null
       // globs starting with "/" are relative to the root ("/../shared" leaves it); Vite keys

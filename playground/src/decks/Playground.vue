@@ -39,10 +39,24 @@ Deck(:themes="['default', 'vigojug']")
         h3 Two
         p.muted Second column
 
+  Slide
+    h2 #[Icon(name="lucide:shapes")] Icons
+    Grid(cols="3" gap="lg")
+      Center(v-for="(t, i) in tech" :key="t.icon" v-step="i + 1")
+        Icon(:name="t.icon" size="120" :label="t.label")
+        p {{ t.label }}
+
   Slide(layout="section")
     h1 The end
 </template>
 
 <script setup>
 import { ProgressBar, SlideNumber } from 'phoenyxjs'
+
+// written out here, so the Vite plugin finds and builds in these icons
+const tech = [
+  { icon: 'simple-icons:vuedotjs', label: 'Vue' },
+  { icon: 'simple-icons:vite', label: 'Vite' },
+  { icon: 'lucide:rocket', label: 'Launch' },
+]
 </script>

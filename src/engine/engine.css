@@ -110,6 +110,16 @@ html, body, #app { margin: 0; height: 100%; }
    corners belong to the addons) */
 .ph-slide-bg > .ph-img-missing { inset: 24px; width: auto; height: auto; align-items: flex-start; justify-content: flex-end; }
 
+/* Icon: inline SVG sized by its width/height attributes (1em tall unless size says otherwise),
+   sitting on the text's baseline like a glyph; never squeezed in a flex row */
+.ph-icon { display: inline-block; flex: none; vertical-align: -.125em; }
+/* missing icon: an empty dashed box of the same size, so nothing around it moves */
+.ph-icon-missing {
+  box-sizing: border-box;
+  border: max(1px, .06em) dashed color-mix(in srgb, var(--ph-placeholder, currentColor) 45%, transparent);
+  border-radius: .15em;
+}
+
 /* composition: Cols, Rows, Grid, Center (layout.js) fill the free space of their container */
 .ph-cols, .ph-rows, .ph-grid, .ph-center { box-sizing: border-box; flex: 1 1 auto; min-width: 0; min-height: 0; }
 .ph-cols, .ph-rows, .ph-grid { display: grid; gap: var(--ph-gap-md); }
