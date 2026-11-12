@@ -1,6 +1,11 @@
 <!-- "Building a Framework on top of Spring Boot", ported from my-slides (eagle.js) as a PoC.
-     Same slide order, texts and step reveals; images and icons are placeholders.
-     Old "step > n" (eagle.js) becomes v-step="n + 1"; steps start at 1 in both. -->
+     Same slide order, texts and step reveals. Old "step > n" (eagle.js) becomes v-step="n + 1";
+     steps start at 1 in both.
+     Pictures and icons are not in the repo: copy my-slides' src/assets/images/* and
+     src/assets/icons/* into src/images (same file names, no subfolders). Until then each one
+     shows as a dashed box with its name.
+     Old background opacities were a black veil over the photo (0.6 = 60 % black); bg-opacity is
+     the photo's own opacity over the slide colour, so each value here is 1 - the old one. -->
 <template lang="pug">
 Deck(:themes="['default', 'vigojug']")
   ProgressBar(position="bottom")
@@ -8,31 +13,30 @@ Deck(:themes="['default', 'vigojug']")
 
   //- ===== Opening =====
   Slide(layout="cover")
+    template(#background)
+      Img.fw-title-bg(file="kelly-sikkema--BwtFJgaUho-unsplash.jpg" position="6em 0" opacity="0.8")
     TitleContent
 
   //- FullTextSlide with only a background image and no text
-  Slide(title="Raised hands (image)")
-    Placeholder(file="diverse-group-raised-hands.jpg" fill)
+  Slide(title="Raised hands (image)" bg="diverse-group-raised-hands.jpg" bg-opacity="0.9")
 
   Slide(title="About me")
     .fw-about
       .fw-about-panel
-      Placeholder.fw-about-pic(file="profilePic.jpg" w="16em" h="16em" round)
+      Img.fw-about-pic(file="profilePic.jpg" rounded="full")
       .fw-about-info
         p.fw-about-name Rubén Pahíno Verdugo
         p.fw-about-role Tech Lead @Travix International
         .fw-about-social
-          p #[Placeholder(file="linkedin.svg" h="1em" inline)] rubenpahino
-          p #[Placeholder(file="github.svg" h="1em" inline)] rubasace
+          Social(icon="linkedin.svg") rubenpahino
+          Social(icon="github.svg") rubasace
 
   //- ===== Why =====
-  Slide(layout="section")
-    Placeholder(file="ana-municio-PbzntH58GLQ-unsplash.jpg" fill)
-    h1.fw-over Why do we need a framework?
+  Slide(layout="section" bg="ana-municio-PbzntH58GLQ-unsplash.jpg" bg-opacity="0.4")
+    h1 Why do we need a framework?
 
   Slide(title="Production readiness (image)")
-    Center
-      Placeholder(file="productionReadiness.png" h="100%" ratio="526 / 440")
+    Img(file="productionReadiness.png")
 
   Slide
     h2 Communication
@@ -66,9 +70,8 @@ Deck(:themes="['default', 'vigojug']")
       IconText(v-step="3" icon="container.png" text="1000+" size="8em")
 
   //- ===== Previous approach =====
-  Slide(layout="section")
-    Placeholder(file="pexels-elle-hughes-1408632.jpg" fill)
-    h1.fw-over Previous Approach
+  Slide(layout="section" bg="pexels-elle-hughes-1408632.jpg" bg-opacity="0.4")
+    h1 Previous Approach
 
   Slide(title="Manipulate Controllers · ApplicationController.java")
     h2 Manipulate Controllers
@@ -105,7 +108,7 @@ Deck(:themes="['default', 'vigojug']")
   Slide(title="StackOverflow")
     Center.fw-stack
       IconText(icon="stack-overflow.png" text="StackOverflow" size="10em" text-size="2.5em" :upper="false")
-      Placeholder.fw-forbidden(v-step="2" file="forbidden.png" w="21em" h="21em" corner)
+      Img.fw-forbidden(v-step="2" file="forbidden.png")
 
   Slide(title="Reaction: slightly smiling face (again)")
     Center
@@ -116,9 +119,8 @@ Deck(:themes="['default', 'vigojug']")
       IconText(icon="smiling-face-with-tear.svg" size="12.5em")
 
   //- ===== Current approach =====
-  Slide(layout="section")
-    Placeholder(file="pexels-pixabay-235990.jpg" fill)
-    h1.fw-over Current Approach
+  Slide(layout="section" bg="pexels-pixabay-235990.jpg" bg-opacity="0.4")
+    h1 Current Approach
 
   Slide(title="Quote: Inversion of Control")
     Quote(author="Someone")
@@ -138,8 +140,7 @@ Deck(:themes="['default', 'vigojug']")
         IconText(v-for="it in row" :key="it.text" :icon="it.icon" :text="it.text" size="4em" text-size="1.2em")
 
   Slide(title="Don't reinvent the wheel (image)")
-    Center
-      Placeholder(file="caveman-wheel-cartoon.jpg" h="100%" ratio="800 / 572")
+    Img(file="caveman-wheel-cartoon.jpg")
 
   //- one title per step, and each feature highlighted in the step of its category
   Slide(title="Production Readiness → categories" v-slot="{ step }")
@@ -156,9 +157,8 @@ Deck(:themes="['default', 'vigojug']")
         )
 
   //- ===== How to do it =====
-  Slide(layout="section")
-    Placeholder(file="salty-justice-RsoqLSxscOg-unsplash.jpg" fill)
-    h1.fw-over How to do it?
+  Slide(layout="section" bg="salty-justice-RsoqLSxscOg-unsplash.jpg" bg-opacity="0.4")
+    h1 How to do it?
 
   Slide
     h2 Out-Of-The-Box Features
@@ -365,9 +365,8 @@ Deck(:themes="['default', 'vigojug']")
     Snippet(file="PubSubTemplatePostProcessor.java" :highlights='{"5-10": 2}')
 
   //- ===== How to customize =====
-  Slide(layout="section")
-    Placeholder(file="ekaterina-novitskaya-TU8bUiEr25c-unsplash.jpg" fill)
-    h1.fw-over How to customize?
+  Slide(layout="section" bg="ekaterina-novitskaya-TU8bUiEr25c-unsplash.jpg" bg-opacity="0.2")
+    h1 How to customize?
 
   Slide
     h2 Configure Behaviour
@@ -446,9 +445,8 @@ Deck(:themes="['default', 'vigojug']")
     Snippet(file="SensibleOrderAutoConfiguration.java" name="MetricsAutoConfiguration.java" :highlights='{"4": 2}')
 
   //- ===== Final touch =====
-  Slide(layout="section")
-    Placeholder(file="pexels-shiva-smyth-1051449.jpg" fill)
-    h1.fw-over Final touch
+  Slide(layout="section" bg="pexels-shiva-smyth-1051449.jpg" bg-opacity="0.4")
+    h1 Final touch
 
   Slide(title="Quote: start.spring.io")
     Quote(author="Josh Long") Every good project starts at start.spring.io
@@ -456,13 +454,11 @@ Deck(:themes="['default', 'vigojug']")
   Slide(title="Quote: start.dev.travix.com")
     Quote(author="Travix Devs") Every good project starts at start.dev.travix.com
 
-  Slide(title="Initializr (image)")
-    Placeholder(file="initializr.png" fill)
+  Slide(title="Initializr (image)" bg="initializr.png")
 
   //- ===== Summary =====
-  Slide(layout="section")
-    Placeholder(file="pexels-nandhu-kumar-312839.jpg" fill)
-    h1.fw-over Summary
+  Slide(layout="section" bg="pexels-nandhu-kumar-312839.jpg" bg-opacity="0.4")
+    h1 Summary
 
   Slide
     h2 Summary
@@ -473,20 +469,21 @@ Deck(:themes="['default', 'vigojug']")
       p(v-step="6") We extend with custom behaviour as a last resort
 
   //- ===== Closing =====
-  Slide(layout="section")
-    Placeholder(file="pexels-michael-judkins-1113552.jpg" fill)
-    h1.fw-over Live Demo
+  Slide(layout="section" bg="pexels-michael-judkins-1113552.jpg" bg-opacity="0.25" bg-position="0 -14em")
+    h1 Live Demo
 
   Slide(layout="cover" title="Building a Framework on top of Spring Boot (credits)")
+    template(#background)
+      Img.fw-title-bg(file="kelly-sikkema--BwtFJgaUho-unsplash.jpg" position="6em 0" opacity="0.47")
     TitleContent(credits)
 </template>
 
 <script setup>
 import ProgressBar from '../addons/ProgressBar.vue'
 import SlideNumber from '../addons/SlideNumber.vue'
-import Placeholder from './framework/Placeholder.vue'
 import IconText from './framework/IconText.vue'
 import Quote from './framework/Quote.vue'
+import Social from './framework/Social.vue'
 import TitleContent from './framework/TitleContent.vue'
 
 // Production-readiness features; `category` is the step of the categories slide that
@@ -512,6 +509,9 @@ const mark = (step, category) => (step === 1 ? '' : step === category ? 'fw-hl' 
 </script>
 
 <style scoped>
+/* the title photo is clipped to a diagonal band on the right */
+.fw-title-bg { clip-path: polygon(66% 0, 100% 0, 100% 100%, 33% 100%); }
+
 /* the forbidden sign is placed over the StackOverflow icon */
 .fw-stack { position: relative; }
 
@@ -529,9 +529,6 @@ const mark = (step, category) => (step === 1 ? '' : step === category ? 'fw-hl' 
 .fw-dim { opacity: .15; }
 .fw-hl { color: var(--ph-accent); }
 
-/* text above a full-bleed placeholder */
-.fw-over { position: relative; z-index: 1; }
-
 /* old FullTextSlide: a centred, bold, uppercase statement */
 .fw-statement {
   margin: auto 0 !important; /* centred vertically inside the slide's flex column */
@@ -546,7 +543,8 @@ const mark = (step, category) => (step === 1 ? '' : step === category ? 'fw-hl' 
 }
 .fw-issues > :nth-child(even) { margin-top: 2.2rem; }
 
-.fw-forbidden { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); }
+.fw-forbidden { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: 21em; height: 21em; max-width: 100%; max-height: 100%; }
+.fw-forbidden.ph-img-missing { align-items: flex-start; justify-content: flex-end; }
 
 .fw-summary { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; font-size: 1.5em; }
 .fw-summary p { margin: 0; }
@@ -554,7 +552,9 @@ const mark = (step, category) => (step === 1 ? '' : step === category ? 'fw-hl' 
 /* About me: page split at 72%, accent panel on the right, round picture on the seam */
 .fw-about { flex: 1; display: flex; align-items: center; }
 .fw-about-panel { position: absolute; top: 0; right: 0; bottom: 0; width: 28%; background: var(--ph-accent); }
-.fw-about-pic { position: absolute; left: calc(72% - 8em); top: calc(50% - 8em); z-index: 1; background: var(--ph-bg); }
+.fw-about-pic { position: absolute; left: calc(72% - 8em); top: calc(50% - 8em); z-index: 1; width: 16em; height: 16em; background: var(--ph-bg); }
+/* the old crop: the whole photo (contained), moved 5 % right and zoomed 1.65× on the face */
+.fw-about-pic :deep(img) { transform: translate(5%, -.5%) scale(1.65); }
 .fw-about-info { position: relative; width: calc(72% - 8em - 160px); display: flex; flex-direction: column; }
 .fw-about-name { font-size: 2.1em; font-weight: 700; text-align: center; margin-bottom: .3em !important; }
 .fw-about-role { font-size: 1.3em; color: var(--ph-muted); text-align: center; }
