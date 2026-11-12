@@ -60,7 +60,7 @@ in directives/step.js).
 | `useDeckSync(stage, …)` | every window of the deck in step through core/sync.js: position, theme, timer |
 | `usePresenterWindow()` | opens the presenter window or brings it forward; `blocked` when the browser blocks it |
 | `useKeyboard(actions)` | the deck's keys on the window (VueUse `onKeyStroke`) |
-| `useTouchNav(el, …)` | taps (edges, middle) from pointer events, swipes from VueUse `useSwipe` |
+| `useTouchNav(el, …)` | taps (edges, middle) and swipes, from pointer events: touch and pen (VueUse's `useSwipe` reads touch events only, so the pen would lose its swipes) |
 | `useMouseIdle(el, ms)` | whether the mouse has been still over the element; ignores a tap's echo mousemove, `wake(ms)` for a time of its own (VueUse's `useIdle` has neither) |
 
 VueUse (`@vueuse/core`, a dependency, external in the build) also gives `useEventListener` and
