@@ -13,7 +13,8 @@ import { computed, nextTick, readonly, ref, shallowReactive } from 'vue'
 //                                   it cannot be moved by itself
 //   role: 'audience' (default)      which rendering this is, for components (useDeck().role):
 //         | 'presenter' | 'preview' the audience window, the presenter view's current slide, or
-//                                   its preview of the next step
+//         | 'export'                its preview of the next step; or the deck being printed
+//                                   (?export, exporter.js: walked page by page, copied into a book)
 // What the slides see is stage.context (provided by Stage.vue); what addons see is stage.api.
 //
 // Caveat: a presenter window mounts every slide twice, and keeps both mounted. Whatever a slide

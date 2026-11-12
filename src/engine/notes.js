@@ -15,6 +15,7 @@ import { SLIDE } from './registry'
 // A slide may have several; they show in the order they were mounted (the order they are written,
 // unless a v-if brings one in later: it goes last).
 // The content is markup, not part of the slide: v-step and useSlide() do not work inside it.
+// Elsewhere (the presenter view, the export's notes pages) NoteBody(:note="n") renders one.
 const isStep = (v) => Number.isInteger(Number(v)) && Number(v) >= 1
 let uid = 0
 
@@ -37,3 +38,7 @@ export const Notes = {
     return () => null
   },
 }
+
+// A note's content is its slot, rendered wherever it is shown, far from the slide it was written in.
+export const NoteBody = (p) => p.note.slots.default?.()
+NoteBody.props = ['note']

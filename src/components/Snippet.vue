@@ -9,9 +9,10 @@
        Snippet(file="App.java" :highlights='{"2-3": 2, "5:@Bean": 3}')
        Snippet(file="legacy/App.java" name="ApplicationConfiguration.java" lang="java")
      highlights: { lineSpec[:word+++word]: step }  e.g. "4", "4-7", "1,10-14", "2:implements Filter"
-     Step 1 shows the code plain; at step n the rules for n highlight their lines/words and dim the rest. -->
+     Step 1 shows the code plain; at step n the rules for n highlight their lines/words and dim the rest.
+     Until its file and colours are in it carries data-ph-busy: the export waits for it. -->
 <template lang="pug">
-.ph-snippet(ref="root" :style="vars" :class="{ fit }")
+.ph-snippet(ref="root" :style="vars" :class="{ fit }" :data-ph-busy="busy ? '' : undefined")
   .ph-snippet-window
     .ph-snippet-header
       .ph-snippet-lights
@@ -79,9 +80,11 @@ const language = computed(() => {
 const title = computed(() => props.name ?? props.file?.split('/').pop() ?? '')
 
 const fileCode = ref('')
+const loadingFile = ref(false)
 let loading = 0
 watchEffect(async () => {
   const mine = ++loading
+  loadingFile.value = false
   if (!props.file) return
   const load = snippets[props.file]
   if (!load) {
@@ -89,8 +92,13 @@ watchEffect(async () => {
     fileCode.value = `// missing snippet: ${props.file}`
     return
   }
-  const text = await load()
-  if (mine === loading) fileCode.value = text
+  loadingFile.value = true
+  try {
+    const text = await load()
+    if (mine === loading) fileCode.value = text
+  } finally {
+    if (mine === loading) loadingFile.value = false
+  }
 })
 const source = computed(() => props.code ?? fileCode.value)
 const lines = computed(() => source.value.replace(/\s+$/, '').split(/\r?\n/))
@@ -100,15 +108,18 @@ const lines = computed(() => source.value.replace(/\s+$/, '').split(/\r?\n/))
 const root = ref()
 const deckTheme = inject(DECK, null)?.api.theme
 const tokenTheme = ref(null)
+const themeRead = ref(false)
 async function readTokenTheme() {
   await nextTick()
   if (root.value) tokenTheme.value = getComputedStyle(root.value).getPropertyValue('--ph-code-theme').trim().replace(/^["']|["']$/g, '') || null
+  themeRead.value = true
 }
 onMounted(readTokenTheme)
 if (deckTheme) watch(deckTheme, readTokenTheme)
 const shikiTheme = computed(() => props.theme || tokenTheme.value || 'material-theme-darker')
 
 const colored = shallowRef(null)
+const highlighting = ref(false)
 let run = 0 // only the latest tokenization may land (an older, slower one must not overwrite it)
 watchEffect(async () => {
   const code = lines.value.join('\n')
@@ -116,14 +127,19 @@ watchEffect(async () => {
   const theme = shikiTheme.value
   const mine = ++run
   colored.value = null
+  highlighting.value = true
   try {
     const tokens = await tokenize(code, lang, theme)
     if (mine === run) colored.value = tokens
   } catch (e) {
     console.warn(`[phoenyx] Snippet: cannot highlight "${language.value}"`, e)
     if (mine === run) colored.value = null
+  } finally {
+    if (mine === run) highlighting.value = false
   }
 })
+// still arriving: the file, the deck theme's code theme, or the colours
+const busy = computed(() => loadingFile.value || !themeRead.value || highlighting.value)
 
 // ---- steps ---------------------------------------------------------------------------
 function parseLines(spec) {

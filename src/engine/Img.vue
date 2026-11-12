@@ -20,7 +20,8 @@
      Loading: every picture of the folder has its URL at hand from the start, so a slide never
      shows an empty box first; and every slide is in the page, so the browser fetches all the
      deck's pictures when it opens. Downscale them to the size they show at (a full-slide picture
-     needs no more than 1920 px wide) and use JPEG or WebP for photos. -->
+     needs no more than 1920 px wide) and use JPEG or WebP for photos.
+     Until its picture has loaded (or failed) it carries data-ph-busy: the export waits for it. -->
 <template lang="pug">
 .ph-img(
   :class="{ 'ph-img-missing': missing }"
@@ -28,6 +29,7 @@
   :title="missing ? (alt ? `${alt} — ${name}` : name) : undefined"
   :role="missing && alt ? 'img' : undefined"
   :aria-label="missing && alt ? alt : undefined"
+  :data-ph-busy="missing || shown === url ? undefined : ''"
 )
   img(
     v-if="!missing"
@@ -79,7 +81,9 @@ watchEffect(() => {
 
 // the picture's own shape, once known: what sizes it where nothing else does (a plain block)
 const ratio = ref(null)
+const shown = ref(null) // the URL that has loaded
 function loaded(e) {
+  shown.value = url.value
   const { naturalWidth: w, naturalHeight: h } = e.target
   ratio.value = w > 0 && h > 0 ? w / h : null
 }

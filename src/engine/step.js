@@ -43,7 +43,8 @@ function attach(el, binding) {
 
 // Collapsed steps change layout, so their toggles are batched per slide: First is read before
 // the first toggle of a step change, the toggles are applied together a microtask later, then
-// everything glides from First to its new place. Slides not on screen (or arriving) just switch.
+// everything glides from First to its new place. Slides not on screen (or arriving) just switch,
+// and so does every slide with reduced motion or in export mode (slide.still).
 const batches = new Map() // slide element → Map(el → { rec, hidden })
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 
@@ -53,7 +54,7 @@ function collapse(el, rec, hidden) {
   if ((batch?.get(el)?.hidden ?? el.classList.contains(COLLAPSED)) === hidden) return
   if (!batch) {
     // style.display is still the old render here: was this slide already on screen?
-    if (!slide.active.value || host.style.display === 'none' || still()) return el.classList.toggle(COLLAPSED, hidden)
+    if (!slide.active.value || host.style.display === 'none' || still() || slide.still) return el.classList.toggle(COLLAPSED, hidden)
     const roots = [...slide.elements].filter((e) => e.__phStep?.cls === COLLAPSED)
     const first = snapshot(host, roots)
     batch = new Map()

@@ -33,7 +33,8 @@
      Headings in the background are not the slide's title (the jump menu skips them).
      Speaker notes: Notes anywhere inside the slide (notes.js); only the presenter view shows them. -->
 <template lang="pug">
-Transition(name="ph-slide")
+//- export mode switches slides at once (no CSS transition): the book copies the slide on screen
+Transition(name="ph-slide" :css="!still")
   section.ph-slide(
     ref="el"
     v-show="active"
@@ -133,6 +134,8 @@ const image = computed(() => props.layout === 'image-left' || props.layout === '
 const zones = computed(() => ({ gridTemplateColumns: tracks(isRatio(props.ratio, 2) ? props.ratio : '1 1', 0) }))
 
 const deck = inject(DECK)
+// export mode (exporter.js): no slide transition, no glide of collapsed steps
+const still = deck.api.role === 'export'
 const id = `s${Math.random().toString(36).slice(2, 9)}`
 
 // step numbers registered by v-step anywhere inside this slide (with multiplicity)
@@ -173,6 +176,7 @@ provide(SLIDE, { step, registerStep, addNote })
 slides.set(id, {
   step,
   active,
+  still,
   elements,
   registerStep,
 })

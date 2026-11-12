@@ -134,3 +134,44 @@ html, body, #app { margin: 0; height: 100%; }
 
 
 .ph-nocursor, .ph-nocursor * { cursor: none !important; }
+
+/* Export mode (?export, exporter.js): a book of pages, each exactly the canvas size (inline
+   width/height; @page gets the same size), in document order, for printing. */
+html:has(.ph-export), html:has(.ph-export) body, html:has(.ph-export) #app { height: auto; }
+.ph-viewport.ph-export { position: static; overflow: visible; background: none; }
+/* the deck itself, walked while the book fills: on screen until the book is done, never printed */
+.ph-export > .ph-stage { position: fixed; }
+.ph-export-done > .ph-stage, .ph-export-notes { display: none; }
+@media print { .ph-export > .ph-stage { display: none; } }
+/* every page as it stands: nothing moves, nothing fades */
+.ph-export, .ph-export *, .ph-export *::before, .ph-export *::after {
+  transition: none !important; animation: none !important;
+}
+.ph-page {
+  position: relative; overflow: hidden; box-sizing: border-box;
+  break-after: page; break-inside: avoid;
+  print-color-adjust: exact; -webkit-print-color-adjust: exact;
+}
+.ph-page:last-child { break-after: auto; }
+/* the canvas copy fills its page, unscaled */
+.ph-page > .ph-canvas { top: 0; left: 0; transform: none !important; }
+/* a page of speaker notes (&notes): plain, for paper, whatever the theme */
+.ph-notes-page {
+  padding: 96px 120px; background: #fff; color: #1c1c22;
+  font: 34px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.ph-notes-head {
+  margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #d4d4da;
+  font-size: 28px; font-weight: 600; color: #5c5c66;
+}
+.ph-notes-body .ph-note { margin-bottom: 28px; }
+.ph-notes-body .ph-note > :first-child { margin-top: 0; }
+.ph-notes-body .ph-note[data-step]:not([data-step="1"])::before {
+  content: "Desde el paso " attr(data-step); display: block; margin-bottom: 6px;
+  font-size: 24px; font-weight: 600; color: #8a5a00;
+}
+/* on screen (?export opened in a browser), the pages one under the other */
+@media screen {
+  .ph-viewport.ph-export { background: #2a2a2e; }
+  .ph-book { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; padding: 24px; }
+}
