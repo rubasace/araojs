@@ -1,7 +1,7 @@
-// phoenyx export: PDF of a whole deck, run in a slides project (the current directory):
-//   phoenyx export --deck framework [--theme vigojug] [--per-step] [--notes] [--out talk.pdf]
-//   (npm run export -- --deck framework, when the project's "export" script is "phoenyx export")
-// Run by bin/phoenyx.js: its options are what follows the command.
+// arao export: PDF of a whole deck, run in a slides project (the current directory):
+//   arao export --deck framework [--theme vigojug] [--per-step] [--notes] [--out talk.pdf]
+//   (npm run export -- --deck framework, when the project's "export" script is "arao export")
+// Run by bin/arao.js: its options are what follows the command.
 // Builds the project into a temporary folder (vite build, with the project's own Vite config),
 // serves it on a free local port (vite preview), opens the deck in export mode (?export,
 // src/core/exporter.js) in headless Chromium and prints it: one page per slide, each slide as it
@@ -14,14 +14,14 @@
 //
 // Chromium is the one Playwright downloads for its version of playwright-core:
 //   npx playwright-core install chromium
-// or any Chrome/Chromium already installed, named by PHOENYX_CHROMIUM=/path/to/chrome.
+// or any Chrome/Chromium already installed, named by ARAO_CHROMIUM=/path/to/chrome.
 import { access, mkdir, mkdtemp, readdir, rename, stat, writeFile } from 'node:fs/promises'
 import { constants, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, relative, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 
-const HELP = `Usage: phoenyx export [options]     (in a project: npm run export -- [options])
+const HELP = `Usage: arao export [options]     (in a project: npm run export -- [options])
 
   --deck <name>   a deck of the project's decks folder (default: the first by name)
   --theme <name>  one of the deck's themes (default: its first)
@@ -34,10 +34,10 @@ const HELP = `Usage: phoenyx export [options]     (in a project: npm run export 
   -h, --help      this help
 
 Run it in the slides project: its folder is the current directory, its decks folder the one its
-Vite config gives the phoenyx() plugin (src/decks by default).
+Vite config gives the arao() plugin (src/decks by default).
 A slide's page shows it at its last step: everything revealed, the last highlight of its
 snippets. What only shows at an earlier step (v-step.only) is in --per-step.
-Chromium: npx playwright-core install chromium, or PHOENYX_CHROMIUM=/path/to/chrome.`
+Chromium: npx playwright-core install chromium, or ARAO_CHROMIUM=/path/to/chrome.`
 
 const root = process.cwd()
 // an error of the export itself (its message is all there is to say), not a bug of this script
@@ -71,18 +71,18 @@ if (args.help) {
 }
 
 // The project's Vite, the one its config is written for (a peer dependency of this package).
-// Its config says where the decks are: the phoenyx() plugin's decks folder.
+// Its config says where the decks are: the arao() plugin's decks folder.
 const { build, preview, resolveConfig } = await import('vite')
 let decksDir
 try {
   const config = await resolveConfig({ root, logLevel: 'error' }, 'build')
-  decksDir = config.plugins.find((p) => p.name === 'phoenyx')?.api?.folders().decks
+  decksDir = config.plugins.find((p) => p.name === 'arao')?.api?.folders().decks
 } catch (e) {
   console.error(`export: cannot load the Vite config of ${root}: ${e.message}`)
   process.exit(1)
 }
 if (!decksDir) {
-  console.error(`export: the Vite config of ${root} has no phoenyx() plugin: is this a slides project?`)
+  console.error(`export: the Vite config of ${root} has no arao() plugin: is this a slides project?`)
   process.exit(1)
 }
 const decksWhere = relative(root, decksDir) || decksDir
@@ -157,7 +157,7 @@ try {
   const { chromium } = await import('playwright-core')
   try {
     browser = await chromium.launch({
-      executablePath: process.env.PHOENYX_CHROMIUM || undefined,
+      executablePath: process.env.ARAO_CHROMIUM || undefined,
       // the signals are this script's: it closes the browser itself, along with the rest
       handleSIGINT: false,
       handleSIGTERM: false,
@@ -167,7 +167,7 @@ try {
     // the browser's own stderr says why it did not start; Playwright's first line rarely does
     const lines = e.message.split('\n')
     const cause = lines.find((l) => l.includes('[err]'))?.replace(/^.*?\[err\]\s*/, '') ?? lines[0]
-    const hint = /doesn't exist/.test(e.message) ? 'install it with "npx playwright-core install chromium", or set PHOENYX_CHROMIUM to a Chrome/Chromium'
+    const hint = /doesn't exist/.test(e.message) ? 'install it with "npx playwright-core install chromium", or set ARAO_CHROMIUM to a Chrome/Chromium'
       : /shared librar/.test(e.message) ? 'system libraries are missing ("npx playwright-core install-deps chromium" installs them)'
       : 'see below'
     fail(`cannot start Chromium: ${hint}.\n${cause}`)
@@ -175,7 +175,7 @@ try {
 
   let base = args.url
   if (!base) {
-    tmp = await mkdtemp(join(tmpdir(), 'phoenyx-export-'))
+    tmp = await mkdtemp(join(tmpdir(), 'arao-export-'))
     console.log('Building…')
     await build({ root, logLevel: 'error', build: { outDir: tmp, emptyOutDir: true } })
     server = await preview({ root, logLevel: 'error', build: { outDir: tmp }, preview: { host: '127.0.0.1', port: 0, strictPort: true, open: false } })
@@ -196,9 +196,9 @@ try {
   // not until "load": a picture that never answers would hold it; the deck says when it is ready
   await page.goto(url, { waitUntil: 'domcontentloaded' }).catch((e) => fail(`cannot open ${url}: ${e.message.split('\n')[0]}`))
   // a deck that does not even mount fails here, not after the long wait
-  await page.waitForSelector('.ph-slide', { state: 'attached', timeout: 60_000 })
+  await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 60_000 })
     .catch(() => fail(`the deck did not render at ${url}${errors.length ? `: ${errors[0]}` : ''}`))
-  const ready = await page.waitForFunction(() => window.__phoenyxReady, null, { timeout: 10 * 60_000, polling: 200 })
+  const ready = await page.waitForFunction(() => window.__araoReady, null, { timeout: 10 * 60_000, polling: 200 })
     .then((h) => h.jsonValue(), () => fail('the deck did not finish its pages in 10 minutes'))
   if (ready.error) fail(ready.error)
   const stalled = ready.stalled ?? []

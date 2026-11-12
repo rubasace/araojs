@@ -1,7 +1,7 @@
 {
-  "name": "phoenyxjs",
+  "name": "araojs",
   "version": "0.3.0",
-  "description": "A slide engine for technical talks: Vue 3 + Vite, slides in Pug, one fixed canvas, themes as tokens, PDF export",
+  "description": "A slide engine for technical talks: Vue 3 + Vite, one fixed canvas, themes as tokens, PDF export",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rubasace/araojs.git"
@@ -17,12 +17,12 @@
   "exports": {
     ".": "./dist/index.js",
     "./vite": "./vite/index.js",
-    "./style.css": "./dist/phoenyx.css",
+    "./style.css": "./dist/arao.css",
     "./themes/*": "./dist/themes/*",
     "./package.json": "./package.json"
   },
   "bin": {
-    "phoenyx": "./bin/phoenyx.js"
+    "arao": "./bin/arao.js"
   },
   "files": [
     "dist",

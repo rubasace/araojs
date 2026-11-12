@@ -4,8 +4,8 @@
      there every slide is mounted twice (side effects run twice, element ids repeat): components
      tell the copies apart with useDeck().role (stage.js). -->
 <template>
-  <div class="ph-stage" ref="box" :data-theme="theme" :style="{ '--ph-scale': scale }">
-    <div class="ph-canvas" ref="canvas" :style="canvasStyle">
+  <div class="ar-stage" ref="box" :data-theme="theme" :style="{ '--ar-scale': scale }">
+    <div class="ar-canvas" ref="canvas" :style="canvasStyle">
       <slot />
     </div>
   </div>
@@ -40,7 +40,7 @@ function fit() {
 
 // Moves that mount nothing (keyed v-for reordered) only show up in the DOM: watch the canvas
 // for slide sections being inserted. Changes inside a slide are skipped at once.
-const SLIDE_EL = '[data-ph-slide]'
+const SLIDE_EL = '[data-ar-slide]'
 const insertsSlide = (r) => !r.target.closest?.(SLIDE_EL) &&
   [...r.addedNodes].some((n) => n.nodeType === 1 && (n.matches(SLIDE_EL) || n.querySelector(SLIDE_EL)))
 const canvas = ref()

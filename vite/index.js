@@ -1,20 +1,20 @@
-// Vite plugin for Phoenyx: everything a slides project needs in its vite.config.js.
-//   import phoenyx from 'phoenyxjs/vite'
-//   export default defineConfig({ plugins: [phoenyx()] })
+// Vite plugin for Arao: everything a slides project needs in its vite.config.js.
+//   import arao from 'araojs/vite'
+//   export default defineConfig({ plugins: [arao()] })
 // It brings @vitejs/plugin-vue along (with Pug for the templates), so the project adds neither;
-// Vue's options go in phoenyx({ vue: { … } }). Do not add vue() as well: the plugin would run twice.
+// Vue's options go in arao({ vue: { … } }). Do not add vue() as well: the plugin would run twice.
 //
 // It exposes three project folders as virtual modules, so slides name files and need no imports:
 //   decks     ?deck=talk                  default src/decks      (each .vue file directly in it)
 //   snippets  <Snippet file="App.java">   default src/snippets   (source text, loaded lazily)
 //   images    <Img file="team.jpg">       default src/images     (URLs; subfolders allowed)
-//   phoenyx({ decks: 'src/decks', snippets: 'src/snippets', images: 'src/images' })
+//   arao({ decks: 'src/decks', snippets: 'src/snippets', images: 'src/images' })
 // A folder is a path relative to the Vite root, or an absolute path. One outside the root
 // ("../shared/images") works the same: the dev server is allowed to serve it (server.fs.allow)
 // and watches it. A folder that was set but does not exist is reported when Vite starts.
 //
 // Decks: one lazily loaded chunk each; createDeckApp() picks one from ?deck=<file name>, and the
-// export CLI (phoenyx export) looks for decks in the same folder.
+// export CLI (arao export) looks for decks in the same folder.
 //
 // Images: only pictures are taken (png, jpg, jpeg, gif, webp, avif, svg, in any case); anything
 // else in the folder (notes, sources, .psd) stays out of the build. Names are case-sensitive,
@@ -27,7 +27,7 @@
 //
 // Icons: <Icon name="lucide:rocket"> draws an icon of an installed Iconify set (@iconify-json/<prefix>),
 // resolved here, at build time: the source is read for the names it uses and only those go into
-// virtual:phoenyx/icons (icons.js). phoenyx({ icons: ['lucide:rocket'] }) adds names the source
+// virtual:arao/icons (icons.js). arao({ icons: ['lucide:rocket'] }) adds names the source
 // does not spell out (built at runtime).
 import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
@@ -53,12 +53,12 @@ const modules = {
 // glob syntax in a folder's name is literal: "talk (draft)", "[2024]"
 const escapeGlob = (s) => s.replace(/[()[\]{}*?!+@|\\]/g, '\\$&')
 
-export default function phoenyx(options = {}) {
+export default function arao(options = {}) {
   const { vue: vueOptions = {}, icons: iconsOption, ...rest } = options
   const folders = {}
   for (const name of Object.keys(modules)) {
     const f = rest[name] ?? DEFAULTS[name]
-    if (typeof f !== 'string' || !f.trim()) throw new Error(`[phoenyx] the ${name} folder must be a path, got ${JSON.stringify(f)}`)
+    if (typeof f !== 'string' || !f.trim()) throw new Error(`[arao] the ${name} folder must be a path, got ${JSON.stringify(f)}`)
     folders[name] = f.trim()
   }
   let root = process.cwd()
@@ -68,7 +68,7 @@ export default function phoenyx(options = {}) {
     return r === '..' || r.startsWith('..' + sep) || isAbsolute(r)
   }
   const outside = () => Object.keys(modules).map(dir).filter(isOutside)
-  const resolved = (name) => `\0virtual:phoenyx/${name}`
+  const resolved = (name) => `\0virtual:arao/${name}`
 
   // icons used in the source: src/ and the decks folder, but not the snippets and images folders
   // (their files are content, not source)
@@ -95,7 +95,7 @@ export default function phoenyx(options = {}) {
   }
 
   const plugin = {
-    name: 'phoenyx',
+    name: 'arao',
     // for tools that run the project's Vite config (the export CLI): the folders, resolved
     api: { folders: () => Object.fromEntries(Object.keys(modules).map((n) => [n, dir(n)])) },
     config(user) {
@@ -120,10 +120,10 @@ export default function phoenyx(options = {}) {
       root = config.root
       logger = config.logger
       if (config.plugins.filter((p) => p.name === 'vite:vue').length > 1)
-        throw new Error('[phoenyx] @vitejs/plugin-vue is in the config twice: phoenyx() already includes it. Remove vue() from plugins; its options go in phoenyx({ vue: { … } })')
+        throw new Error('[arao] @vitejs/plugin-vue is in the config twice: arao() already includes it. Remove vue() from plugins; its options go in arao({ vue: { … } })')
       for (const name of Object.keys(modules)) {
         if (rest[name] != null && !existsSync(dir(name)))
-          config.logger.warn(`[phoenyx] the ${name} folder "${folders[name]}" does not exist (${dir(name)}): ${modules[name].missing}`)
+          config.logger.warn(`[arao] the ${name} folder "${folders[name]}" does not exist (${dir(name)}): ${modules[name].missing}`)
       }
     },
     configureServer(server) {
@@ -131,7 +131,7 @@ export default function phoenyx(options = {}) {
       for (const d of outside()) server.watcher.add(d)
     },
     resolveId(id) {
-      const name = id.startsWith('virtual:phoenyx/') && id.slice('virtual:phoenyx/'.length)
+      const name = id.startsWith('virtual:arao/') && id.slice('virtual:arao/'.length)
       return name in modules || name === 'icons' ? resolved(name) : null
     },
     // a saved file that uses an icon the module lacks: the module goes first in the same update,
@@ -161,4 +161,4 @@ export const ${name}Dir = ${JSON.stringify(folders[name])}`
   return [vue(vueWithPug), plugin]
 }
 
-export { phoenyx }
+export { arao }

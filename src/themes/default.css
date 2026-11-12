@@ -1,18 +1,18 @@
 /* Theme = tokens only. Same slides, different venue → different theme. */
 [data-theme="default"] {
-  --ph-letterbox: #000;
-  --ph-bg: #0f1115;
-  --ph-fg: #e8e8ea;
-  --ph-muted: #9aa0a6;
-  --ph-accent: #ff6a3d;
-  --ph-accent-fg: #0f1115;
-  --ph-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --ph-font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
-  --ph-text-base: 40px;
-  --ph-title: 88px;
-  --ph-pad: 96px 120px;
-  --ph-radius: 16px;
+  --ar-letterbox: #000;
+  --ar-bg: #0f1115;
+  --ar-fg: #e8e8ea;
+  --ar-muted: #9aa0a6;
+  --ar-accent: #ff6a3d;
+  --ar-accent-fg: #0f1115;
+  --ar-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ar-font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --ar-text-base: 40px;
+  --ar-title: 88px;
+  --ar-pad: 96px 120px;
+  --ar-radius: 16px;
   /* code windows */
-  --ph-code-theme: material-theme-darker;
-  --ph-code-size: 44px;
+  --ar-code-theme: material-theme-darker;
+  --ar-code-size: 44px;
 }

@@ -28,7 +28,7 @@ export const Notes = {
   setup(props, { slots }) {
     const slide = inject(SLIDE, null)
     if (!slide) {
-      console.warn('[phoenyx] Notes used outside a <Slide>: they show nowhere')
+      console.warn('[arao] Notes used outside a <Slide>: they show nowhere')
       return () => null
     }
     // the slots object, not its function: a re-render of the deck replaces the function in place

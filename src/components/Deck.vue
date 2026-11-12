@@ -9,7 +9,7 @@
      The presenter view mounts every slide twice (current + preview): see useDeck().role.
      touch (phones, tablets): tap the right quarter → next, the left quarter → previous, the middle
      → show/hide the controls; swipe left/right → next/previous. Links, buttons and inputs inside a
-     slide keep their own taps (add data-ph-touch="ignore" to any other element that needs them).
+     slide keep their own taps (add data-ar-touch="ignore" to any other element that needs them).
      Every window of the same deck in the same browser stays in step (sync.js): moving in any of
      them moves the others, and so does a theme change; the last move wins. A window that opens
      takes the position of the ones already open (and their theme, unless its URL names one).
@@ -26,29 +26,29 @@
          span {{ number }} / {{ total }} -->
 <template>
   <div
-    class="ph-viewport"
+    class="ar-viewport"
     v-if="!presenter"
     ref="viewport"
     :data-theme="theme"
-    :class="{ 'ph-nocursor': cursorHidden, 'ph-export': exporting, 'ph-export-done': exported }"
+    :class="{ 'ar-nocursor': cursorHidden, 'ar-export': exporting, 'ar-export-done': exported }"
   >
     <Stage :stage="main" :width="width" :height="height">
       <slot />
     </Stage>
     <template v-if="exporting">
       <!-- the notes of the slide on screen, copied into the book after its page(s); never shown -->
-      <div class="ph-export-notes" v-if="exporting.notes" ref="notesBox">
-        <div class="ph-note" v-for="n in shownNotes" :key="n.id" :data-step="n.step">
+      <div class="ar-export-notes" v-if="exporting.notes" ref="notesBox">
+        <div class="ar-note" v-for="n in shownNotes" :key="n.id" :data-step="n.step">
           <NoteBody :note="n" />
         </div>
       </div>
       <!-- filled by exporter.js, not by Vue -->
-      <div class="ph-book" ref="book"></div>
+      <div class="ar-book" ref="book"></div>
     </template>
     <Controls v-else ref="controls" />
     <!-- the browser blocked the presenter window: the same URL as a link, which it does not block -->
-    <Transition v-if="!exporting" name="ph-toast">
-      <div class="ph-toast" v-if="blocked" role="status">
+    <Transition v-if="!exporting" name="ar-toast">
+      <div class="ar-toast" v-if="blocked" role="status">
         <span>El navegador ha bloqueado la ventana del presentador.</span>
         <a :href="blocked" :target="presenterName" :title="blocked" @click="dismiss">Abrirla aquí</a>
       </div>
@@ -216,14 +216,14 @@ const { book, notesBox, done: exported, shownNotes } = useExport(main, {
 
 <style>
 /* a notice above the controls (the presenter window was blocked); window px, not canvas px */
-.ph-toast {
+.ar-toast {
   position: absolute; left: 50%; bottom: 128px; z-index: 101; transform: translateX(-50%);
   display: flex; align-items: baseline; gap: 14px; max-width: calc(100% - 32px); box-sizing: border-box;
   padding: 12px 16px; border: 1px solid rgba(255, 255, 255, .16); border-radius: 12px;
   background: #1c1c22; box-shadow: 0 12px 32px rgba(0, 0, 0, .35);
   color: rgba(255, 255, 255, .94); font: 15px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
-.ph-toast a { color: #8ab4ff; font-weight: 600; white-space: nowrap; }
-.ph-toast-enter-active, .ph-toast-leave-active { transition: opacity .2s, translate .2s; }
-.ph-toast-enter-from, .ph-toast-leave-to { opacity: 0; translate: 0 6px; }
+.ar-toast a { color: #8ab4ff; font-weight: 600; white-space: nowrap; }
+.ar-toast-enter-active, .ar-toast-leave-active { transition: opacity .2s, translate .2s; }
+.ar-toast-enter-from, .ar-toast-leave-to { opacity: 0; translate: 0 6px; }
 </style>

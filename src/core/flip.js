@@ -23,7 +23,7 @@ export function snapshot(host, roots) {
 }
 
 function timing(host) {
-  const v = getComputedStyle(host).getPropertyValue('--ph-step-duration').trim()
+  const v = getComputedStyle(host).getPropertyValue('--ar-step-duration').trim()
   const ms = v.endsWith('ms') ? parseFloat(v) : parseFloat(v) * 1000
   return { duration: ms >= 0 ? ms : 350, easing: 'ease' }
 }

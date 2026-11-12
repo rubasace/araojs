@@ -1,6 +1,6 @@
 <!-- Addon: slide number in a corner. -->
 <template>
-  <div class="ph-slide-number">{{ deck.index.value + 1 }} / {{ deck.total.value }}</div>
+  <div class="ar-slide-number">{{ deck.index.value + 1 }} / {{ deck.total.value }}</div>
 </template>
 
 <script setup>
@@ -9,8 +9,8 @@ const deck = useDeck()
 </script>
 
 <style>
-.ph-slide-number {
+.ar-slide-number {
   position: absolute; right: 40px; bottom: 28px; z-index: 10;
-  font-size: 24px; color: var(--ph-muted); pointer-events: none;
+  font-size: 24px; color: var(--ar-muted); pointer-events: none;
 }
 </style>

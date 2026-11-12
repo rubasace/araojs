@@ -16,7 +16,7 @@ import { inject, provide } from 'vue'
 //                               more press leads ({ index, step, end }), the slide's Notes
 //   timer, setTimer, duration   the talk's timer (core/timer.js) and its length in ms (or null)
 // Every value is a ref (or computed) or a function, except deck, a plain object of refs.
-const KEY = Symbol('phoenyx-deck-ui')
+const KEY = Symbol('arao-deck-ui')
 
 export function provideDeckContext(context) {
   provide(KEY, context)
@@ -25,6 +25,6 @@ export function provideDeckContext(context) {
 
 export function useDeckContext() {
   const context = inject(KEY, null)
-  if (!context) throw new Error('[phoenyx] the deck controls and presenter view only work inside <Deck>')
+  if (!context) throw new Error('[arao] the deck controls and presenter view only work inside <Deck>')
   return context
 }

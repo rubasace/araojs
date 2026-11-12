@@ -1,4 +1,4 @@
-// The Vue plugin: app.use(Phoenyx) registers what a deck uses without importing it.
+// The Vue plugin: app.use(Arao) registers what a deck uses without importing it.
 //   components   Deck, Slide, Img, Icon, Notes, Snippet, Cols, Rows, Grid, Center
 //   directives   v-step, v-step-from
 // It also brings the engine's CSS (structure and layouts; each component carries its own).

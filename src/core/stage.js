@@ -149,7 +149,7 @@ export function createStage({ follow, onMove, role = 'audience' } = {}) {
 
 // A slide's title, for the jump menu, the presenter view and the notes pages: Slide(title="…"),
 // else its first heading outside the background and the footer.
-const HEADING = ':is(h1, h2, h3):not(.ph-slide-bg *, .ph-footer *)'
+const HEADING = ':is(h1, h2, h3):not(.ar-slide-bg *, .ar-footer *)'
 export const titleOf = (slide) => slide.title.value || slide.el.value?.querySelector(HEADING)?.textContent.trim() || ''
 
 // Where the audience will be after one more press: the next step of the same slide, else the

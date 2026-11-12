@@ -1,6 +1,6 @@
 // Helpers shared by Img and Slide, and the one place that reads the images folder.
 import { shallowRef } from 'vue'
-import { images as folder, imagesDir } from 'virtual:phoenyx/images'
+import { images as folder, imagesDir } from 'virtual:arao/images'
 
 export { imagesDir }
 
@@ -10,7 +10,7 @@ export { imagesDir }
 // is just a missing file.
 const images = shallowRef(folder)
 if (import.meta.hot) {
-  import.meta.hot.accept('virtual:phoenyx/images', (mod) => {
+  import.meta.hot.accept('virtual:arao/images', (mod) => {
     if (!mod) return
     warned.clear() // what is missing now (again) is reported again
     images.value = mod.images
@@ -81,7 +81,7 @@ export function warnOnce(message, name) {
   warned.add(message + name)
   if (!batches.size) {
     setTimeout(() => {
-      for (const [msg, names] of batches) console.warn(`[phoenyx] Img: ${msg} (${names.length}): ${names.join(', ')}`)
+      for (const [msg, names] of batches) console.warn(`[arao] Img: ${msg} (${names.length}): ${names.join(', ')}`)
       batches.clear()
     })
   }

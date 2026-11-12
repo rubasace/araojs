@@ -1,8 +1,8 @@
-# AGENTS.md — writing decks with Phoenyx
+# AGENTS.md — writing decks with Arao
 
 Operational guide for AI agents writing or editing slide decks in a slides project that uses
-Phoenyx (the `phoenyxjs` package). In such a project this file is
-`node_modules/phoenyxjs/AGENTS.md`, next to the full API, [docs/reference.md](docs/reference.md).
+Arao (the `araojs` package). In such a project this file is
+`node_modules/araojs/AGENTS.md`, next to the full API, [docs/reference.md](docs/reference.md).
 Overview: [README.md](README.md).
 
 ## Mental model
@@ -25,16 +25,16 @@ Overview: [README.md](README.md).
 - **A content slide has three zones**: the header (the `h1`/`h2` the slide starts with), the body
   (everything else, **centred vertically by default**) and the deck's footer (`Deck`'s `#footer`
   slot, on every slide but covers and sections). No template needed for the title.
-- Look comes from the theme (`--ph-*` tokens). Slides say *what*, themes say *how it looks*.
+- Look comes from the theme (`--ar-*` tokens). Slides say *what*, themes say *how it looks*.
 - Globally available: `Deck Slide Img Icon Snippet Notes Cols Rows Grid Center`, `v-step` and `v-step-from`. Addons
   (`ProgressBar`, `SlideNumber`) and composables (`useDeck`, `useSlide`) are imported from
-  `'phoenyxjs'` in `<script setup>`.
+  `'araojs'` in `<script setup>`.
 
 ## The project
 
 ```
-package.json       depends on phoenyxjs; scripts dev (vite), build (vite build), export (phoenyx export)
-vite.config.js     plugins: [phoenyx()], from 'phoenyxjs/vite' (Vue, Pug and the folders below)
+package.json       depends on araojs; scripts dev (vite), build (vite build), export (arao export)
+vite.config.js     plugins: [arao()], from 'araojs/vite' (Vue, Pug and the folders below)
 index.html         <div id="app"> and /src/main.js
 src/main.js        createDeckApp().mount('#app'), after the theme imports
 src/decks/         one .vue file per deck (?deck=<file name>)
@@ -58,17 +58,17 @@ Do:
   view and notes pages. Something before it (a kicker line) makes it body: use `template(#title)`
   for a header with more than a heading.
 - Let the body be centred (the default) or say where: `Slide(align="start")` for a long list or
-  anything read from the top, `align="end"`; a theme changes the default with `--ph-body-align`.
+  anything read from the top, `align="end"`; a theme changes the default with `--ar-body-align`.
 - Put what goes on every slide (event, company, slide number) in `Deck`'s `template(#footer)`,
   with `{ number, total }` for the slide number; `Slide(:footer="false")` hides it on one slide,
   `:footer="true"` shows it on a cover or a section.
-- Write tables as plain `table` / `thead` / `tbody`: the theme styles them (`--ph-table-*`).
+- Write tables as plain `table` / `thead` / `tbody`: the theme styles them (`--ar-table-*`).
 - One idea per slide. Reveal with steps instead of cramming.
 - Name files, never import them: `Snippet(file="App.java")` from `src/snippets/`,
   `Img(file="team.jpg")` / `Slide(bg="team.jpg")` from `src/images/` (subfolders ok, case-sensitive).
 - Use `Icon` for icons and logos, by name: `Icon(name="lucide:…")` for UI icons, `Icon(name="simple-icons:…")`
   for technology logos (names: icon-sets.iconify.design, lucide.dev, simpleicons.org). Don't put icon
-  files in `src/images/` or paste SVG into a deck. Colour it like text (`color: var(--ph-accent)`);
+  files in `src/images/` or paste SVG into a deck. Colour it like text (`color: var(--ar-accent)`);
   logos are trademarks: use them to name the technology, not as decoration.
 - Write sizes, if any, in canvas px (`gap="24"`, `:size="36"`, `width: 320px`).
 - Put speaker notes in `Notes` inside the slide.
@@ -78,20 +78,20 @@ Do:
 
 Don't:
 - Don't write ad-hoc layout CSS (flex/grid wrappers, margins to position things) when a layout,
-  piece or prop does it. In particular, no `margin: auto` or selectors on `.ph-slide > …` to
+  piece or prop does it. In particular, no `margin: auto` or selectors on `.ar-slide > …` to
   centre a body (`align` does it) and no footer drawn in a background image or an addon
   (`#footer` does it). Title colour, size, gap, list spacing and table look are tokens
-  (`--ph-title-*`, `--ph-list-gap`, `--ph-table-*`), set in the theme.
+  (`--ar-title-*`, `--ar-list-gap`, `--ar-table-*`), set in the theme.
 - Don't hard-code colours or fonts in a deck. Style through tokens:
-  `color: var(--ph-accent)`, `background: color-mix(in srgb, var(--ph-fg) 8%, var(--ph-bg))`.
+  `color: var(--ar-accent)`, `background: color-mix(in srgb, var(--ar-fg) 8%, var(--ar-bg))`.
   Venue-specific looks are a new theme, not edits to slides.
 - Don't use `vw`, `vh`, `%` font sizes or media queries inside slides: the canvas keeps its size
   whatever the window; only its scale changes.
 - Don't put a highlight at step 1 (`{ "4": 1 }`): step 1 always shows the code plain.
 - Don't expect Snippet highlights to accumulate: each step shows only its own rules.
 - Don't use `v-step` inside `Notes` (not supported) or outside a `Slide` (warns).
-- Don't edit the library (`node_modules/phoenyxjs`) to make one deck look right: an engine change
-  is a change to Phoenyx, made in its own repository.
+- Don't edit the library (`node_modules/araojs`) to make one deck look right: an engine change
+  is a change to Arao, made in its own repository.
 
 ## Gotchas
 
@@ -108,11 +108,11 @@ Don't:
 - **Icon names must be written out in the source.** The build includes only the icons whose full
   name (`lucide:rocket`) appears in `src/`, in a template or in data (`{ icon: 'lucide:rocket' }` +
   `Icon(:name="it.icon")` is fine). A name put together at runtime (`` `lucide:${kind}` ``) is not:
-  it shows a dashed box and warns. List such names in the source, or in `phoenyx({ icons: [...] })`
+  it shows a dashed box and warns. List such names in the source, or in `arao({ icons: [...] })`
   in `vite.config.js`. Another set than Lucide or Simple Icons needs `npm install -D @iconify-json/<prefix>`.
-- **A new theme** is `src/themes/<name>.css` holding one `[data-theme="<name>"] { --ph-…: …; }`
+- **A new theme** is `src/themes/<name>.css` holding one `[data-theme="<name>"] { --ar-…: …; }`
   block, imported in `src/main.js` and listed in `Deck(:themes)`. The shipped themes are imported
-  the same way, from the package: `import 'phoenyxjs/themes/vigojug.css'`. If the file is not imported or
+  the same way, from the package: `import 'araojs/themes/vigojug.css'`. If the file is not imported or
   the selector does not match the name, the slides render unstyled and nothing warns.
 - **Headings inside `#background` are ignored for the slide's title** (jump menu, presenter,
   notes pages). Put the heading in the content, or use `Slide(title="…")`.
@@ -137,7 +137,7 @@ Deck(:themes="['default', 'vigojug']" duration="30m")
 </template>
 
 <script setup>
-import { ProgressBar, SlideNumber } from 'phoenyxjs'
+import { ProgressBar, SlideNumber } from 'araojs'
 </script>
 ```
 
@@ -245,7 +245,7 @@ Slide
       p {{ t.label }}
 ```
 with `const tech = [{ icon: 'simple-icons:vuedotjs', label: 'Vue' }, { icon: 'simple-icons:kubernetes', label: 'Kubernetes' }, { icon: 'simple-icons:openjdk', label: 'Java' }]`
-in `<script setup>`. Accent colour: a class, `Icon.hot(name="lucide:flame")` and `.hot { color: var(--ph-accent); }`.
+in `<script setup>`. Accent colour: a class, `Icon.hot(name="lucide:flame")` and `.hot { color: var(--ar-accent); }`.
 
 Background image with opacity:
 ```pug
@@ -291,10 +291,10 @@ Deck(:themes="['default']")
   Slide(:footer="false")
     h2 Not on this one
 ```
-A theme moves and colours it with tokens: `--ph-footer-align: flex-end`, `--ph-footer-color`,
-`--ph-footer-size`, `--ph-footer-height`.
+A theme moves and colours it with tokens: `--ar-footer-align: flex-end`, `--ar-footer-color`,
+`--ar-footer-size`, `--ar-footer-height`.
 
-Table (styled by the theme's `--ph-table-*` tokens):
+Table (styled by the theme's `--ar-table-*` tokens):
 ```pug
 Slide
   h2 Pace
@@ -316,10 +316,10 @@ Slide
 2. Headless check (Playwright / `playwright-core`), at a 1920x1080 viewport:
    - collect `console` messages of type `warning`/`error` and `pageerror`: expect none. They come
      in two kinds: Vue's own, `[Vue warn]: Invalid prop: …`, when a prop fails its type or its
-     validator (`gap="huge"`, `size="36"` without the colon, `fit="fill"`); and Phoenyx's, prefixed
-     `[phoenyx]`, on missing files or icons, values it cannot use (`bg`, `duration`), `v-step` or
+     validator (`gap="huge"`, `size="36"` without the colon, `fit="fill"`); and Arao's, prefixed
+     `[arao]`, on missing files or icons, values it cannot use (`bg`, `duration`), `v-step` or
      `Notes` outside a slide;
-   - count `.ph-slide` elements; press `ArrowRight` until the hash stops changing and record the
+   - count `.ar-slide` elements; press `ArrowRight` until the hash stops changing and record the
      highest step per slide: compare with what you meant;
    - for overflow, compare the visible slide's `scrollHeight`/`scrollWidth` with its
      `clientHeight`/`clientWidth`;
@@ -331,7 +331,7 @@ Slide
 ## Where to look
 
 - Every prop, slot, token, key and URL parameter: [docs/reference.md](docs/reference.md).
-- Working examples: the project's own decks; `playground/` in the Phoenyx repository, a tiny
+- Working examples: the project's own decks; `playground/` in the Arao repository, a tiny
   project set up like any other.
-- Themes: the shipped ones in `node_modules/phoenyxjs/dist/themes/*.css`, the project's in
+- Themes: the shipped ones in `node_modules/araojs/dist/themes/*.css`, the project's in
   `src/themes/*.css`.

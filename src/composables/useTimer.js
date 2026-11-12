@@ -12,7 +12,7 @@ export function useTimer(length) {
   const duration = computed(() => parseDuration(toValue(length)))
   watch(() => toValue(length), (v) => {
     if (v != null && String(v).trim() && duration.value == null) {
-      console.warn(`[phoenyx] Deck duration="${v}" is not a length (90, "45m", "1h30", "45:00"…): the presenter view shows no countdown`)
+      console.warn(`[arao] Deck duration="${v}" is not a length (90, "45m", "1h30", "45:00"…): the presenter view shows no countdown`)
     }
   }, { immediate: true })
   function startTimer() {

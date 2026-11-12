@@ -25,7 +25,7 @@ export function useExport(stage, { options, theme, themes, viewport, width, heig
     try {
       const result = await buildBook({
         stage,
-        canvas: viewport.value.querySelector(':scope > .ph-stage > .ph-canvas'),
+        canvas: viewport.value.querySelector(':scope > .ar-stage > .ar-canvas'),
         book: book.value,
         notes: options.notes ? notesBox.value : null,
         title: (i) => titleOf(stage.list[i]),
@@ -36,7 +36,7 @@ export function useExport(stage, { options, theme, themes, viewport, width, heig
       done.value = true
       reportReady({ ...result, theme: theme.value })
     } catch (e) {
-      console.error('[phoenyx] export failed', e)
+      console.error('[arao] export failed', e)
       reportReady({ error: String(e?.message || e) })
     }
   }

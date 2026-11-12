@@ -1,18 +1,18 @@
 <!-- The presenter view's top bar: where the deck is, the talk's timer, the wall clock. It ticks on
      its own (four times a second), so the rest of the presenter view does not re-render with it. -->
 <template>
-  <header class="ph-p-bar">
-    <div class="ph-p-where">
-      <span class="ph-p-count">{{ deck.index.value + 1 }}<span class="ph-p-of"> / {{ deck.total.value }}</span></span>
-      <span class="ph-p-title" :title="title">{{ title }}</span>
+  <header class="ar-p-bar">
+    <div class="ar-p-where">
+      <span class="ar-p-count">{{ deck.index.value + 1 }}<span class="ar-p-of"> / {{ deck.total.value }}</span></span>
+      <span class="ar-p-title" :title="title">{{ title }}</span>
     </div>
-    <div class="ph-p-timer" :class="[timer.state, tone]">
-      <div class="ph-p-times">
-        <span class="ph-p-elapsed" title="Tiempo transcurrido">{{ clock(spent) }}</span>
-        <span class="ph-p-sub" v-if="sub">{{ sub }}</span>
+    <div class="ar-p-timer" :class="[timer.state, tone]">
+      <div class="ar-p-times">
+        <span class="ar-p-elapsed" title="Tiempo transcurrido">{{ clock(spent) }}</span>
+        <span class="ar-p-sub" v-if="sub">{{ sub }}</span>
       </div>
       <button
-        class="ph-p-btn"
+        class="ar-p-btn"
         @mousedown.prevent
         @click="setTimer(toggle(timer, Date.now()))"
         :title="timer.state === 'running' ? 'Pausar el tiempo' : timer.state === 'paused' ? 'Reanudar el tiempo' : 'Empezar el tiempo'"
@@ -21,7 +21,7 @@
         <svg v-else viewBox="0 0 24 24"><path class="fill" d="M8 5.5v13l10.5-6.5z" /></svg>
       </button>
       <button
-        class="ph-p-btn"
+        class="ar-p-btn"
         @mousedown.prevent
         @click="setTimer(IDLE)"
         :disabled="timer.state === 'idle'"
@@ -30,7 +30,7 @@
         <svg viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v4h4" /></svg>
       </button>
     </div>
-    <time class="ph-p-clock" title="Hora">{{ wall }}</time>
+    <time class="ar-p-clock" title="Hora">{{ wall }}</time>
   </header>
 </template>
 
@@ -62,42 +62,42 @@ const wall = computed(() => new Date(now.value).toLocaleTimeString([], { hour: '
 </script>
 
 <style>
-.ph-p-bar {
+.ar-p-bar {
   display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 24px;
   padding: 12px 24px; background: #101216; border-bottom: 1px solid var(--p-line);
   font-variant-numeric: tabular-nums;
 }
-.ph-p-where { display: flex; align-items: baseline; gap: 14px; min-width: 0; }
-.ph-p-count { font-size: 28px; font-weight: 700; white-space: nowrap; }
-.ph-p-of { color: var(--p-dim); font-weight: 500; }
-.ph-p-title { color: var(--p-dim); font-size: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ar-p-where { display: flex; align-items: baseline; gap: 14px; min-width: 0; }
+.ar-p-count { font-size: 28px; font-weight: 700; white-space: nowrap; }
+.ar-p-of { color: var(--p-dim); font-weight: 500; }
+.ar-p-title { color: var(--p-dim); font-size: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.ph-p-timer { display: flex; align-items: center; gap: 6px; }
-.ph-p-times { display: flex; flex-direction: column; align-items: center; min-width: 168px; margin-right: 6px; }
-.ph-p-elapsed { font-size: 40px; font-weight: 700; line-height: 1.1; }
-.ph-p-sub { font-size: 14px; color: var(--p-dim); white-space: nowrap; }
-.ph-p-timer.idle .ph-p-elapsed, .ph-p-timer.paused .ph-p-elapsed { color: var(--p-dim); }
-.ph-p-timer.low :is(.ph-p-elapsed, .ph-p-sub) { color: var(--p-low); }
-.ph-p-timer.over :is(.ph-p-elapsed, .ph-p-sub) { color: var(--p-over); }
+.ar-p-timer { display: flex; align-items: center; gap: 6px; }
+.ar-p-times { display: flex; flex-direction: column; align-items: center; min-width: 168px; margin-right: 6px; }
+.ar-p-elapsed { font-size: 40px; font-weight: 700; line-height: 1.1; }
+.ar-p-sub { font-size: 14px; color: var(--p-dim); white-space: nowrap; }
+.ar-p-timer.idle .ar-p-elapsed, .ar-p-timer.paused .ar-p-elapsed { color: var(--p-dim); }
+.ar-p-timer.low :is(.ar-p-elapsed, .ar-p-sub) { color: var(--p-low); }
+.ar-p-timer.over :is(.ar-p-elapsed, .ar-p-sub) { color: var(--p-over); }
 
-.ph-p-btn {
+.ar-p-btn {
   display: grid; place-items: center; width: 44px; height: 44px; padding: 0;
   border: 1px solid var(--p-line); border-radius: 10px; background: var(--p-panel); color: inherit;
   cursor: pointer; transition: background .15s, opacity .15s;
 }
-.ph-p-btn:hover:not(:disabled) { background: #272b34; }
-.ph-p-btn:focus-visible { outline: 2px solid var(--p-accent); outline-offset: 2px; }
-.ph-p-btn:disabled { opacity: .35; cursor: default; }
-.ph-p-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.ph-p-btn svg .fill { fill: currentColor; stroke: none; }
+.ar-p-btn:hover:not(:disabled) { background: #272b34; }
+.ar-p-btn:focus-visible { outline: 2px solid var(--p-accent); outline-offset: 2px; }
+.ar-p-btn:disabled { opacity: .35; cursor: default; }
+.ar-p-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ar-p-btn svg .fill { fill: currentColor; stroke: none; }
 
-.ph-p-clock { justify-self: end; font-size: 40px; font-weight: 700; white-space: nowrap; }
+.ar-p-clock { justify-self: end; font-size: 40px; font-weight: 700; white-space: nowrap; }
 
 @media (max-width: 900px) {
-  .ph-p-bar { gap: 12px; padding: 10px 16px; }
-  .ph-p-elapsed, .ph-p-clock { font-size: 28px; }
-  .ph-p-count { font-size: 22px; }
-  .ph-p-title { display: none; }
-  .ph-p-times { min-width: 0; }
+  .ar-p-bar { gap: 12px; padding: 10px 16px; }
+  .ar-p-elapsed, .ar-p-clock { font-size: 28px; }
+  .ar-p-count { font-size: 22px; }
+  .ar-p-title { display: none; }
+  .ar-p-times { min-width: 0; }
 }
 </style>

@@ -18,7 +18,7 @@ import { nextTick } from 'vue'
 // pixels drawn by script (canvas, WebGL), video frames, iframes, shadow DOM, and references by
 // element id (an SVG gradient url(#id): ids repeat in the book, the first one wins).
 // What Chromium prints differently from what it shows, and the book works around:
-//   - a page is one piece (engine.css, .ph-page): otherwise content whose box reaches past the
+//   - a page is one piece (engine.css, .ar-page): otherwise content whose box reaches past the
 //     bottom of its page, even clipped or moved back up by a transform, is split there and the
 //     part above the break is drawn as a box of its own;
 //   - blurred box-shadows are redrawn as pictures (printableShadows below): Chromium prints them
@@ -27,14 +27,14 @@ import { nextTick } from 'vue'
 //     Chromium blurs only what is inside the clip, and the edge of the blur shows.
 // A blurred text-shadow stays a soft mask: see the reference, Export.
 //
-// Ready: window.__phoenyxReady = { pages, slides, steps, width, height, missing, stalled } once
+// Ready: window.__araoReady = { pages, slides, steps, width, height, missing, stalled } once
 // every page is in the book with its fonts and pictures loaded; { error } if the export cannot be
 // made. missing: names of pictures shown as placeholders (they failed). stalled: what was still
 // on its way when printed (it neither loaded nor failed in time), printed as it stood.
-// Content that arrives late marks itself with the attribute data-ph-busy while it does (Snippet
+// Content that arrives late marks itself with the attribute data-ar-busy while it does (Snippet
 // until its colours are in, Img until its picture has loaded or failed); a page is copied once
 // its slide and the addons have none left. Any component may do the same:
-//   div(:data-ph-busy="loading ? '' : undefined")
+//   div(:data-ar-busy="loading ? '' : undefined")
 // A page still busy after BUSY_MS is copied as it is, with a warning. The attribute may name what
 // it waits for (Img: its picture's URL): what one page gave up on, no later page waits for again,
 // and it is reported in stalled. Unnamed (''), every page waits for it in full.
@@ -42,7 +42,7 @@ import { nextTick } from 'vue'
 const BUSY_MS = 15000
 // a picture of the finished book still on its way after this long is let go (and is stalled)
 const PICTURE_MS = 5000
-const SLIDE = '[data-ph-slide]'
+const SLIDE = '[data-ar-slide]'
 
 // a flag of the URL: there, and not 0/false/no/off
 const flag = (query, name) => query.has(name) && !/^(0|false|no|off)$/i.test(query.get(name))
@@ -52,7 +52,7 @@ export function exportOptions(query) {
 }
 
 export function reportReady(value) {
-  window.__phoenyxReady = value
+  window.__araoReady = value
 }
 
 const pause = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -60,9 +60,9 @@ const pause = (ms) => new Promise((r) => setTimeout(r, ms))
 // what this page still waits for: the busy elements inside its slide or outside every slide (an
 // addon), less those named in `stalled` (given up on already)
 function waiting(canvas, id, stalled) {
-  return [...canvas.querySelectorAll('[data-ph-busy]')].filter((el) => {
+  return [...canvas.querySelectorAll('[data-ar-busy]')].filter((el) => {
     const host = el.closest(SLIDE)
-    return (!host || host.dataset.phSlide === id) && !stalled.has(el.dataset.phBusy)
+    return (!host || host.dataset.arSlide === id) && !stalled.has(el.dataset.arBusy)
   })
 }
 // [] once nothing is busy; what still is, after BUSY_MS
@@ -87,7 +87,7 @@ function copyCanvas(canvas, slide) {
     else if (!child.matches(SLIDE)) {
       const c = child.cloneNode(true)
       // a component wrapping slides: keep the one on screen, if it is one of them
-      for (const s of c.querySelectorAll(SLIDE)) if (s.dataset.phSlide !== slide.dataset.phSlide) s.remove()
+      for (const s of c.querySelectorAll(SLIDE)) if (s.dataset.arSlide !== slide.dataset.arSlide) s.remove()
       copy.append(c)
     }
   }
@@ -390,7 +390,7 @@ async function pictures(book, stalled) {
 
 // Walks the stage and fills `book` with its pages.
 //   stage    the deck's stage (stage.js), its role 'export'
-//   canvas   its .ph-canvas element
+//   canvas   its .ar-canvas element
 //   notes    an element holding the notes of the slide on screen, or null for no notes pages
 //   title(i) the title of slide i, for the notes pages
 export async function buildBook({ stage, canvas, book, notes, title, perStep, width, height }) {
@@ -402,7 +402,7 @@ export async function buildBook({ stage, canvas, book, notes, title, perStep, wi
   await document.fonts.ready
   let pages = 0
   let steps = 0
-  const stalled = new Set() // what a page gave up on, by the name in its data-ph-busy
+  const stalled = new Set() // what a page gave up on, by the name in its data-ar-busy
   const drawn = new Map() // printableShadows and printableFilters: the pictures they have made
   for (let i = 0; i < stage.list.length; i++) {
     const total = stage.list[i].steps.value
@@ -410,15 +410,15 @@ export async function buildBook({ stage, canvas, book, notes, title, perStep, wi
     for (let s = perStep ? 1 : total; s <= total; s++) {
       stage.place(i, s)
       const slide = stage.list[i].el.value
-      const left = await settle(canvas, slide.dataset.phSlide, stalled)
+      const left = await settle(canvas, slide.dataset.arSlide, stalled)
       if (left.length) {
-        const names = [...new Set(left.map((el) => el.dataset.phBusy).filter(Boolean))]
+        const names = [...new Set(left.map((el) => el.dataset.arBusy).filter(Boolean))]
         for (const n of names) stalled.add(n)
         const what = names.length ? ` (${names.join(', ')}: not waited for again)` : ''
-        console.warn(`[phoenyx] export: slide ${i + 1}, step ${s} still loading after ${BUSY_MS / 1000} s${what}: printed as it is`)
+        console.warn(`[arao] export: slide ${i + 1}, step ${s} still loading after ${BUSY_MS / 1000} s${what}: printed as it is`)
       }
       await document.fonts.ready
-      const copy = page(width, height, 'ph-page', copyCanvas(canvas, slide))
+      const copy = page(width, height, 'ar-page', copyCanvas(canvas, slide))
       book.append(copy)
       await printableShadows(copy, drawn)
       await printableFilters(copy, drawn)
@@ -426,16 +426,16 @@ export async function buildBook({ stage, canvas, book, notes, title, perStep, wi
     }
     if (notes?.children.length) {
       const head = document.createElement('header')
-      head.className = 'ph-notes-head'
+      head.className = 'ar-notes-head'
       head.textContent = [`Diapositiva ${i + 1}`, title(i)].filter(Boolean).join(' · ')
       const body = notes.cloneNode(true)
-      body.className = 'ph-notes-body'
-      book.append(page(width, height, 'ph-page ph-notes-page', head, body))
+      body.className = 'ar-notes-body'
+      book.append(page(width, height, 'ar-page ar-notes-page', head, body))
       pages++
     }
   }
   await pictures(book, stalled)
   await document.fonts.ready
-  const missing = [...new Set([...book.querySelectorAll('.ph-img-missing .ph-img-file')].map((el) => el.textContent))]
+  const missing = [...new Set([...book.querySelectorAll('.ar-img-missing .ar-img-file')].map((el) => el.textContent))]
   return { pages, slides: stage.list.length, steps, width, height, missing, stalled: [...stalled] }
 }

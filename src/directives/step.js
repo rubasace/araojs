@@ -12,14 +12,14 @@ import { flip, snapshot } from '../core/flip'
 // their numbers become relative, 1 = step n of the slide. Scopes nest and add up. This lets a
 // component number its own steps from 1 and be placed at any point of a slide:
 //   Card(v-step-from="5")   →   li(v-step="1") inside Card shows at step 5, v-step="2" at 6…
-const HIDDEN = 'ph-step-hidden'
-const COLLAPSED = 'ph-step-collapsed'
+const HIDDEN = 'ar-step-hidden'
+const COLLAPSED = 'ar-step-collapsed'
 
 // Sum of the v-step-from scopes between el (exclusive) and its slide.
-export function stepOffset(el, host = el?.closest?.('[data-ph-slide]')) {
+export function stepOffset(el, host = el?.closest?.('[data-ar-slide]')) {
   let off = 0
   for (let e = el?.parentElement; e && e !== host; e = e.parentElement) {
-    if (e.dataset.phStepFrom) off += Number(e.dataset.phStepFrom) - 1
+    if (e.dataset.arStepFrom) off += Number(e.dataset.arStepFrom) - 1
   }
   return off
 }
@@ -27,10 +27,10 @@ export function stepOffset(el, host = el?.closest?.('[data-ph-slide]')) {
 export const scopesVersion = ref(0)
 
 function attach(el, binding) {
-  const host = el.closest('[data-ph-slide]')
-  const slide = host && slides.get(host.dataset.phSlide)
+  const host = el.closest('[data-ar-slide]')
+  const slide = host && slides.get(host.dataset.arSlide)
   if (!slide) {
-    console.warn('[phoenyx] v-step used outside a <Slide>', el)
+    console.warn('[arao] v-step used outside a <Slide>', el)
     return
   }
   const n = Number(binding.value) + stepOffset(el, host)
@@ -122,24 +122,24 @@ export function sweep(elements) {
 function fromValue(binding) {
   const n = Number(binding.value)
   if (Number.isInteger(n) && n >= 1) return n
-  console.warn(`[phoenyx] v-step-from="${binding.value}" must be an integer ≥ 1; using 1`)
+  console.warn(`[arao] v-step-from="${binding.value}" must be an integer ≥ 1; using 1`)
   return 1
 }
 export const stepFrom = {
   created(el, binding) {
-    el.dataset.phStepFrom = fromValue(binding)
+    el.dataset.arStepFrom = fromValue(binding)
   },
   updated(el, binding) {
     const n = String(fromValue(binding))
-    if (el.dataset.phStepFrom === n) return
-    el.dataset.phStepFrom = n
+    if (el.dataset.arStepFrom === n) return
+    el.dataset.arStepFrom = n
     for (const d of el.querySelectorAll('*')) {
       if (d.__phStep) { const b = d.__phStep.binding; detach(d); attach(d, b) }
     }
     scopesVersion.value++
   },
   beforeUnmount(el) {
-    delete el.dataset.phStepFrom
+    delete el.dataset.arStepFrom
   },
 }
 

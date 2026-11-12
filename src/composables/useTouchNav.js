@@ -7,10 +7,10 @@ import { useEventListener } from './useEventListener'
 //   swipe left → next(), right → prev()
 //   tap() runs first on every tap, before what the tap does (Deck closes the jump menu)
 // The mouse is not touch. Links, buttons, inputs and the deck's own controls keep their taps, and
-// so does any element with data-ph-touch="ignore".
+// so does any element with data-ar-touch="ignore".
 // target: an element, or a ref or getter of one; null listens to nothing.
 const TAP_MS = 500, TAP_MOVE = 12, SWIPE = 50
-const OWN_TAPS = '.ph-controls, .ph-toast, a, button, input, select, textarea, label, [contenteditable], [data-ph-touch="ignore"]'
+const OWN_TAPS = '.ar-controls, .ar-toast, a, button, input, select, textarea, label, [contenteditable], [data-ar-touch="ignore"]'
 
 export function useTouchNav(target, { next, prev, middle, tap }) {
   let touch = null
