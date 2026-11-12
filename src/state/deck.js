@@ -21,7 +21,10 @@ import { ahead, createStage, titleOf, useStage } from './stage'
 //   next                where one more press leads: { index, step } or { end: true }
 //   notes, titles()     the Notes of the slide on screen; every slide's title (jump menu)
 //   theme, setTheme, cycleTheme, themes()
-//   timer, setTimer, duration    the talk's timer (core/timer.js) and its length in ms, or null
+//   timer, setTimer     the talk's timer (core/timer.js)
+//   duration            the talk's length in effect, in ms, or null: the presenter's, else the deck's
+//   deckDuration        the deck's own (its duration prop), in ms, or null
+//   setDuration(ms)     sets the presenter's length (ms); null goes back to the deck's
 //   viewport            the element fullscreen fills: the audience view's viewport (it sets it);
 //                       without one (the presenter window), the page. fullscreen is true while
 //                       anything in the window is fullscreen, and "f" then leaves it
@@ -59,14 +62,21 @@ export function createDeck(props) {
     setTheme(list[(list.indexOf(theme.value) + 1) % list.length])
   }
 
-  // ---- the talk's timer, kept by every window (useDeckSync shares it), and its length ---------
-  // duration: in ms, or null; a value that is no length warns (once per value). startTimer()
-  // starts it if it is idle (the deck's first move); a paused timer stays paused.
+  // ---- the talk's timer and its length, kept by every window (useDeckSync shares both) --------
+  // startTimer() starts the timer if it is idle (the deck's first move); a paused one stays paused.
+  // The length is the deck's (its duration prop, in ms, or null; a value that is no length warns,
+  // once per value) unless the presenter set another: override, in ms, or null. setDuration(ms)
+  // sets it; null, or the deck's own value, goes back to the deck's (no override left).
   const timer = shallowRef(IDLE)
   const setTimer = (t) => (timer.value = t)
-  const duration = computed(() => parseDuration(props.duration))
+  const deckDuration = computed(() => parseDuration(props.duration))
+  const override = shallowRef(null)
+  // anything but a length (a value kept by another version, say) is no override
+  const setOverride = (ms) => (override.value = Number.isFinite(ms) && ms > 0 ? ms : null)
+  const setDuration = (ms) => setOverride(ms === deckDuration.value ? null : ms)
+  const duration = computed(() => override.value ?? deckDuration.value)
   watch(() => props.duration, (v) => {
-    if (v != null && String(v).trim() && duration.value == null) {
+    if (v != null && String(v).trim() && deckDuration.value == null) {
       console.warn(`[arao] Deck duration="${v}" is not a length (90, "45m", "1h30", "45:00"…): the presenter view shows no countdown`)
     }
   }, { immediate: true })
@@ -83,7 +93,7 @@ export function createDeck(props) {
   let sync = null
   if (!exporting) {
     useHashRoute(stage) // first: the position the URL gives is in place before the windows sync
-    sync = useDeckSync(stage, { theme, setTheme, adoptTheme: !query.has('theme'), timer, setTimer })
+    sync = useDeckSync(stage, { theme, setTheme, adoptTheme: !query.has('theme'), timer, setTimer, override, setOverride })
   }
   // A move made here (keys, controls, an addon, the URL; not a position received, nor the deck
   // renumbering its slides after an edit): the other windows follow, and the first one starts the
@@ -94,13 +104,15 @@ export function createDeck(props) {
 
   // The public face (useDeck): read-only refs (deeply: the themes' array and the timer's object
   // too) and the actions, in a frozen object, so no component can reassign a field or edit the
-  // deck's state in place. Its setTheme only wears one of the deck's themes.
+  // deck's state in place. Its setTheme only wears one of the deck's themes. Its duration is the
+  // one in effect (a computed, so read-only); setting it stays with the presenter view.
   const face = Object.freeze({
     ...stage.view,
     theme: readonly(theme),
     themes: readonly(toRef(props, 'themes')),
     fullscreen: readonly(fullscreen),
     timer: readonly(timer),
+    duration,
     setTheme(name) {
       if (props.themes.includes(name)) setTheme(name)
       else console.warn(`[arao] setTheme("${name}"): not one of the deck's themes (${props.themes.join(', ')}); ignored`)
@@ -113,7 +125,7 @@ export function createDeck(props) {
   return {
     mode, exporting, face, stage, preview, next, notes, titles,
     theme, setTheme, cycleTheme, themes: () => props.themes,
-    timer, setTimer, duration,
+    timer, setTimer, duration, deckDuration, setDuration,
     viewport, presenterWindow,
   }
 }
@@ -129,13 +141,18 @@ export function createDeck(props) {
 //                                         name warns and is ignored)
 //   fullscreen, toggleFullscreen()        read-only ref; enters or leaves fullscreen
 //   timer                                 read-only ref of the talk's timer (core/timer.js)
+//   duration                              read-only ref: the talk's length in ms, or null; the
+//                                         one the presenter set in the presenter view, else the
+//                                         deck's duration prop
 //   openPresenter()                       opens the presenter window (from the audience's)
 //   role                                  a plain string: which drawing of the deck this is
 // The position is that of the drawing the caller is in. The presenter view draws the deck twice,
 // the current slide and a preview of the next step: in the preview, a component reads the
 // preview's position, and no action does anything (next/prev/go, setTheme, toggleFullscreen,
 // openPresenter): the preview is a copy, it cannot act.
-// The face is frozen and its refs read-only, deeply: only its actions change the deck.
+// The face is frozen and its refs read-only, deeply: only its actions change the deck. Frozen, it
+// stays as it is inside reactive() or data() (its refs are not unwrapped there): read its refs
+// directly (deck.index.value).
 // role: 'audience' (the audience window), 'presenter' (the presenter view's current slide),
 // 'preview' (its next step) or 'export' (the deck being printed, ?export: each page is a static
 // copy, so what plays does not print). Everything mounts once per drawing, so a presenter window

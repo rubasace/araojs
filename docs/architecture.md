@@ -50,15 +50,15 @@ listens to no mouse or touch of its own.
 
 Nothing else is provided. The views get the deck's internals from `Deck` as a prop (`deck`), and
 pass what their parts need as props (the controls' `docked`/`shown`/`titles`, the bar's
-`title`/`duration`/`setTimer`). `v-step` finds its slide through the DOM (`data-ar-slide`, a map
-in directives/step.js).
+`title`/`setTimer`/`deckDuration`/`setDuration`). `v-step` finds its slide through the DOM
+(`data-ar-slide`, a map in directives/step.js).
 
 ## Composables
 
 | Composable | Effect |
 |---|---|
 | `useHashRoute(stage)` | the URL hash is the position (`#/slide/step`): read on mount and on `hashchange`, written on every move |
-| `useDeckSync(stage, …)` | every window of the deck in step through core/sync.js: position, theme, timer |
+| `useDeckSync(stage, …)` | every window of the deck in step through core/sync.js: position, theme, timer, the duration set in the presenter view (the last two kept through a reload) |
 | `usePresenterWindow()` | opens the presenter window or brings it forward; `blocked` when the browser blocks it |
 | `useKeyboard(actions)` | the deck's keys on the window (VueUse `onKeyStroke`) |
 | `useTouchNav(el, …)` | taps (edges, middle) and swipes, from pointer events: touch and pen (VueUse's `useSwipe` reads touch events only, so the pen would lose its swipes) |
@@ -78,14 +78,17 @@ in; outside every stage (the controls, the presenter's bar) it is the deck's own
 | `index`, `step`, `total`, `steps`, `progress` | read-only refs, of the caller's stage |
 | `role` | string: `'audience'`, `'presenter'`, `'preview'` or `'export'` |
 | `theme`, `themes`, `fullscreen`, `timer` | read-only refs, deeply (`themes.value`, `timer.value` cannot be edited in place) |
+| `duration` | computed: the talk's length in effect, in ms, or null (the presenter's, else `Deck(duration)`) |
 | `next()`, `prev()`, `go(i, step)` | moves |
 | `setTheme(name)`, `toggleFullscreen()`, `openPresenter()` | actions; `setTheme` with a name not in `themes` warns and is ignored |
 
 The face, and each stage's copy of it, is frozen: no component can reassign `go`, `setTheme` or
-any other field. Internals stay off it: slide registration, sync, the writable timer, the export.
+any other field. Internals stay off it: slide registration, sync, the writable timer and
+duration (`setTimer`, `setDuration`: the presenter view hands them to its bar), the export.
+Frozen, Vue leaves it as it is inside `reactive()` or `data()`: its refs are not unwrapped there.
 
 One rule for the preview (role `'preview'`, the presenter view's next step): it is a copy, it
 cannot act. Every function of its face does nothing: `next`, `prev`, `go` (the stage is a follower,
 state/stage.js) and `setTheme`, `toggleFullscreen`, `openPresenter` (useDeck() swaps them for
-no-ops, state/deck.js). Its refs still read: its own position, the deck's theme, timer and
-fullscreen.
+no-ops, state/deck.js). Its refs still read: its own position, the deck's theme, timer, duration
+and fullscreen.

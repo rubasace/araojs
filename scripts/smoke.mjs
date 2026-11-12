@@ -23,18 +23,23 @@
 //   5. useDeck()'s face, under the dev server, on the second deck: frozen, its refs read-only all
 //      the way down, setTheme refuses a name the deck has not (one [arao] warning), and in the
 //      presenter view's preview no function acts
-//   6. createDeckApp's other cases, under the dev server, on the same install (src/main.js, and
+//   6. the talk's length, under the dev server, on the second deck (duration="15m"): set to 20m in
+//      the presenter's bar, the countdown follows and an audience window gets it (useDeck());
+//      an invalid one shows its error and changes nothing, the keyboard alone opens and cancels
+//      the editor; a reload keeps it with no other window open, a new audience window takes it,
+//      and its reset brings back the deck's 15:00 in every window
+//   7. createDeckApp's other cases, under the dev server, on the same install (src/main.js, and
 //      vite.config.js for the first, rewritten for each and then put back): a project with one deck
 //      opens it at /; createDeckApp({ deck: 'second' }) opens that deck at / and ?deck=<other>
 //      still wins; createDeckApp({ deck: 'missing' }) shows the list with one [arao] warning
-//   7. <bin> export                    no --deck: every deck, one PDF each, at its default name
+//   8. <bin> export                    no --deck: every deck, one PDF each, at its default name
 //                                      (exports/<deck>.pdf); each PDF must have (its pages counted
 //                                      in the file itself) as many pages as its summary line says
 //                                      and as the walk counted steps (per step is the default), and
 //                                      a total line all the decks
-//   8. <bin> export --deck <name> --per-slide   the one PDF (exports/<deck>-slides.pdf), with as
+//   9. <bin> export --deck <name> --per-slide   the one PDF (exports/<deck>-slides.pdf), with as
 //                                      many pages as slides
-//   9. the CLI's other cases, each on a decks folder of tiny decks of its own (vite.config.js
+//  10. the CLI's other cases, each on a decks folder of tiny decks of its own (vite.config.js
 //      rewritten for each, and put back), with --out <folder> and several decks:
 //        --theme vigojug over a deck that lists it and one that does not (a symlink, next to a
 //        dotfile deck that must not count): <deck>-vigojug.pdf and <other>.pdf, whose line says it
@@ -66,10 +71,12 @@ if (!BIN) throw new Error('package.json has no "bin"')
 const CONTENT = ['decks', 'images', 'snippets'] // from the playground's src/
 // a deck of the smoke project only: with the playground's, the project has several. MARK, its
 // heading, tells it from the others once open. Faces keeps every useDeck() it is handed (one per
-// drawing of the deck) in window.__faces, for the face check.
+// drawing of the deck) in window.__faces, for the face check and the duration check (15 min:
+// DURATION, in ms).
 const MARK = 'A second deck'
+const DURATION = 15 * 60000
 const SECOND = ['Second.vue', `<template lang="pug">
-Deck(:themes="['default', 'vigojug']")
+Deck(:themes="['default', 'vigojug']" duration="15m")
   Faces
   Slide(layout="cover" title="Second")
     h1 ${MARK}
@@ -348,11 +355,12 @@ try {
       await open('')
       const audience = await page.evaluate(() => {
         const d = window.__faces[0]
-        const was = JSON.stringify([d.theme.value, d.themes.value, d.timer.value])
-        const writes = [() => (d.go = null), () => d.themes.value.push('x'), () => (d.timer.value.state = 'x'), () => (d.theme.value = 'x')]
+        const read = () => JSON.stringify([d.theme.value, d.themes.value, d.timer.value, d.duration.value])
+        const was = read()
+        const writes = [() => (d.go = null), () => d.themes.value.push('x'), () => (d.timer.value.state = 'x'), () => (d.theme.value = 'x'), () => (d.duration.value = 1)]
         for (const write of writes) try { write() } catch {}
         d.setTheme('no-such-theme')
-        return { frozen: Object.isFrozen(d), go: typeof d.go, same: was === JSON.stringify([d.theme.value, d.themes.value, d.timer.value]) }
+        return { frozen: Object.isFrozen(d), go: typeof d.go, same: was === read() }
       })
       if (!audience.frozen || audience.go !== 'function') complaints.push('the face is not frozen')
       if (!audience.same) complaints.push('a write through the face changed the deck')
@@ -374,6 +382,96 @@ try {
     for (const c of complaints) fail(`dev useDeck() face: ${c}`)
   }
 
+  // the talk's length, on the second deck (duration="15m"): edited in the presenter view's bar, in
+  // a browser context of its own (its windows share a channel and sessionStorage like the tabs of
+  // one browser); any console warning, error or page error fails
+  async function duration(base) {
+    const context = await browser.newContext({ viewport: { width: 1920, height: 1080 } })
+    const complaints = []
+    const open = async (query, who) => {
+      const page = await context.newPage()
+      page.on('console', (m) => ['warning', 'error'].includes(m.type()) && complaints.push(`${who}: console ${m.type()}: ${m.text()}`))
+      page.on('pageerror', (e) => complaints.push(`${who}: page error: ${e.message}`))
+      await page.goto(new URL(`?deck=${second}${query}`, base).href)
+      await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
+      await pause(300)
+      return page
+    }
+    const minutes = (ms) => `${ms / 60000}:00`
+    // the presenter's bar shows the length on its button, the time left under the timer, and
+    // marks a length that is not the deck's (.changed); waits for it, says what it saw otherwise
+    const shows = async (page, ms, changed, when) => {
+      const want = { button: minutes(ms), left: `quedan ${minutes(ms)}`, changed }
+      const read = () => page.evaluate(() => ({
+        button: document.querySelector('.ar-p-dur')?.textContent.trim(),
+        left: document.querySelector('.ar-p-sub')?.textContent.match(/quedan [\d:]+/)?.[0],
+        changed: !!document.querySelector('.ar-p-dur.changed'),
+      }))
+      const ok = await page.waitForFunction((w) => {
+        const b = document.querySelector('.ar-p-dur')
+        return b?.textContent.trim() === w.button && document.querySelector('.ar-p-sub')?.textContent.includes(w.left)
+          && b.classList.contains('changed') === w.changed
+      }, want, { timeout: 5_000 }).then(() => true, () => false)
+      if (!ok) complaints.push(`${when}: the bar shows ${JSON.stringify(await read())}, not ${JSON.stringify(want)}`)
+    }
+    // every face of the audience window reads the length (useDeck().duration)
+    const hears = async (page, ms, when) => {
+      const ok = await page.waitForFunction((w) => window.__faces?.length && window.__faces.every((f) => f.duration.value === w), ms, { timeout: 5_000 }).then(() => true, () => false)
+      if (!ok) complaints.push(`${when}: the audience reads ${await page.evaluate(() => JSON.stringify(window.__faces?.map((f) => f.duration.value)))}, not ${ms}`)
+    }
+    const editor = (page) => page.locator('.ar-p-edit')
+    try {
+      const presenter = await open('&presenter', 'presenter')
+      let audience = await open('', 'audience')
+      await shows(presenter, DURATION, false, 'opened')
+      await hears(audience, DURATION, 'opened')
+
+      // with the mouse: 20m, Enter
+      const set = 20 * 60000
+      await presenter.click('.ar-p-dur')
+      await presenter.locator('.ar-p-edit input').fill('20m')
+      await presenter.keyboard.press('Enter')
+      await shows(presenter, set, true, 'set to 20m')
+      if (await editor(presenter).count()) complaints.push('set to 20m: the editor is still open')
+      await hears(audience, set, 'set to 20m')
+
+      // with the keyboard alone: focus the button, Enter opens with the input focused; an invalid
+      // length shows its error and keeps the editor; Escape cancels, the focus back on the button
+      await presenter.locator('.ar-p-dur').focus()
+      await presenter.keyboard.press('Enter')
+      const focused = await presenter.evaluate(() => document.activeElement?.matches('.ar-p-edit input'))
+      if (!focused) complaints.push('Enter on the length button: the input does not have the focus')
+      await presenter.keyboard.type('abc')
+      await presenter.keyboard.press('Enter')
+      const error = await presenter.locator('.ar-p-edit-msg.bad').textContent({ timeout: 2_000 }).catch(() => '')
+      const invalid = await presenter.locator('.ar-p-edit input[aria-invalid="true"]').count()
+      if (!error.includes('abc') || !invalid) complaints.push(`an invalid length: no inline error naming it (${JSON.stringify(error)})`)
+      await presenter.keyboard.press('Escape')
+      if (await editor(presenter).count()) complaints.push('Escape: the editor is still open')
+      const back = await presenter.evaluate(() => document.activeElement?.matches('.ar-p-dur'))
+      if (!back) complaints.push('Escape: the focus is not back on the length button')
+      await shows(presenter, set, true, 'after an invalid length and Escape')
+
+      // a reload with no other window open keeps it; a new audience window takes it
+      await audience.close()
+      await presenter.reload()
+      await presenter.waitForSelector('.ar-p-dur', { timeout: 30_000 })
+      await shows(presenter, set, true, 'reloaded alone')
+      audience = await open('', 'audience')
+      await hears(audience, set, 'a new audience window')
+
+      // back to the deck's
+      await presenter.click('.ar-p-dur')
+      await presenter.click('.ar-p-reset')
+      await shows(presenter, DURATION, false, 'reset')
+      await hears(audience, DURATION, 'reset')
+      console.log(`  dev duration: ${complaints.length ? 'problems below' : '15:00 → 20m in every window, kept on reload, reset to 15:00'}`)
+    } finally {
+      await context.close()
+    }
+    for (const c of complaints) fail(`dev duration: ${c}`)
+  }
+
   const second = basename(SECOND[0], '.vue').toLowerCase()
   for (const mode of ['dev', 'preview']) {
     log(`walking the decks under vite ${mode}`)
@@ -390,6 +488,7 @@ try {
       for (const deck of decks) await walk(base, deck, mode)
       await selector(base, mode)
       if (mode === 'dev') await face(base)
+      if (mode === 'dev') await duration(base)
     } finally {
       await stop()
     }

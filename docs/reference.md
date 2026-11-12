@@ -111,7 +111,7 @@ view and export mode. One per deck file (`src/decks/<Name>.vue`).
 | Prop | Type | Default | Notes |
 |---|---|---|---|
 | `themes` | Array of strings | `['default']` | the themes this deck can wear; the first is the default. Each must exist as a `[data-theme="<name>"]` token block imported in `src/main.js` (`araojs/themes/<name>.css` for the shipped ones). |
-| `duration` | String or Number | none | the talk's length, for the presenter's countdown. `90` / `"90"` / `"7.5"` (minutes), `"45m"`, `"45min"`, `"1h30m"`, `"1h 30m"`, `"1h30"`, `"90s"`, `"45:00"` (m:ss), `"1:30:00"` (h:mm:ss). Anything else warns and shows no countdown. |
+| `duration` | String or Number | none | the talk's length, for the presenter's countdown. `90` / `"90"` / `"7.5"` (minutes), `"45m"`, `"45min"`, `"1h30m"`, `"1h 30m"`, `"1h30"`, `"90s"`, `"45:00"` (m:ss), `"1:30:00"` (h:mm:ss). Anything else warns and shows no countdown. It is the default: the presenter can change it live, without editing the deck ([Presenter view](#presenter-view)). |
 | `width` | Number | `1920` | canvas width in px |
 | `height` | Number | `1080` | canvas height in px |
 | `hideCursorAfter` | Number (ms) | `5000` | hide the mouse cursor after this long without movement; `0` never hides it |
@@ -138,9 +138,10 @@ Behaviour:
 - `?theme=<name>` picks the theme; `t` or the picker cycles through `themes`. A name that is not
   in `themes` is applied anyway in the normal view (no tokens match: the slides look unstyled) and
   is an error in export mode.
-- All windows of the same deck in the same browser stay in step (position, theme, timer) through a
-  `BroadcastChannel` keyed by the page path and query, ignoring `presenter` and `theme`. A new
-  window takes the position and theme of those already open, unless its URL names a theme.
+- All windows of the same deck in the same browser stay in step (position, theme, timer, the
+  duration set in the presenter view) through a `BroadcastChannel` keyed by the page path and
+  query, ignoring `presenter` and `theme`. A new window takes the position and theme of those
+  already open, unless its URL names a theme.
 
 ```pug
 Deck(:themes="['default', 'vigojug']" duration="45m")
@@ -701,7 +702,7 @@ browser blocks it, a notice above the controls links to it.
 
 Layout (its own dark look, whatever the deck theme; only the slides wear the theme):
 - **Top bar**: slide `n / total` and title; the timer (elapsed, state, remaining) with
-  play/pause and reset buttons; the wall clock.
+  play/pause and reset buttons and the talk's duration (a button); the wall clock.
 - **Current slide**, large, with the controls docked under it (always visible).
 - **Next**: a live preview of what one more press shows (the next step, or the next slide at step
   1); "Fin de la presentación" at the end.
@@ -711,9 +712,24 @@ Layout (its own dark look, whatever the deck theme; only the slides wear the the
 Timer:
 - Idle until the first move of the deck in any window; then running. Pause/resume and reset
   (back to idle: starts again with the next move).
-- With `Deck(duration)`: shows `quedan m:ss`, turns amber when the time left is at most 10 % of the
+- With a duration: shows `quedan m:ss`, turns amber when the time left is at most 10 % of the
   duration and at most 5 minutes, red with `m:ss de más` when over.
 - Kept in `sessionStorage`: survives reloading the windows, not closing them.
+
+Duration:
+- Set in the deck with `Deck(duration="45m")`: the default, and the deck's own value.
+- Changed live from the bar, without editing the deck: its duration button (it shows the duration
+  in effect, or `duración` when there is none) opens a field that takes the same formats as
+  `Deck(duration)` (`90`, `45m`, `1h30`, `45:00`…). `Enter` applies, `Esc` (or a click elsewhere)
+  cancels, an invalid value shows an inline error and changes nothing. Works without
+  `Deck(duration)` too: it adds a countdown. The button is keyboard reachable (`Tab`, then
+  `Enter`), and the focus goes back to it when the field closes.
+- A changed duration shows in the accent colour; the field then offers to go back to the deck's
+  value (`Volver a la de la presentación: m:ss`, or `Quitar la cuenta atrás` when the deck has
+  none). Setting the deck's own value is the same as going back.
+- Shared like the timer: every window of the deck takes it (`useDeck().duration`), and it is kept
+  in `sessionStorage` (survives reloading the windows, not closing them). The elapsed time is not
+  touched: only the countdown changes.
 
 Gotchas: the presenter window mounts every slide twice (current + preview): side effects in
 slides and addons run twice there and element ids repeat. Use `useDeck().role` to skip them.
@@ -837,6 +853,7 @@ const deck = useDeck()
 | `themes` | readonly ref, Array of strings | the deck's `themes` |
 | `fullscreen` | readonly ref, Boolean | the window is fullscreen (whatever element is: `f` then leaves it) |
 | `timer` | readonly ref, Object | the talk's timer: `{ state: 'idle' \| 'running' \| 'paused', acc, since }` (ms counted before `since`, and when it last started running) |
+| `duration` | computed, Number or `null` | the talk's length in effect, in ms: the one set in the presenter view, else `Deck(duration)`; `null` when there is none |
 | `next()`, `prev()` | functions | move one step |
 | `go(i, step = 1)` | function | go to slide `i` (0-based) at `step` (clamped; `Infinity` = last step); out-of-range `i` is ignored |
 | `setTheme(name)` | function | wear another of the deck's `themes` (written in the URL, followed by the other windows); any other name warns and is ignored |
@@ -847,7 +864,9 @@ const deck = useDeck()
 In the `'preview'` copy the refs read the preview's position and no function does anything
 (`next`, `prev`, `go`, `setTheme`, `toggleFullscreen`, `openPresenter`): the preview is a copy, it
 cannot act. The object is frozen and its refs read-only, all the way down (`themes.value`,
-`timer.value`): change things through the functions.
+`timer.value`): change things through the functions. Being frozen, Vue does not make it reactive:
+don't put it inside `reactive()` or `data()` (its refs are not unwrapped there); read its refs
+directly (`deck.index.value`).
 
 ```js
 onMounted(() => deck.role === 'audience' && video.value.play())

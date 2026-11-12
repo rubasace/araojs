@@ -7,11 +7,17 @@
      there, so its side effects run twice in this window and its element ids repeat (useDeck().role
      is 'preview' in that copy, 'presenter' in the current one).
      Where the deck is comes from useDeck(); deck (state/deck.js) brings the internals: the stages,
-     where one more press leads, the notes, the titles and the timer's setter. The presenter window
+     where one more press leads, the notes, the titles, the timer's setter, and the talk's length as
+     the deck sets it with its setter (the bar edits it for every window). The presenter window
      listens to no mouse or touch of its own: only its controls and the keys (Deck.vue) move it. -->
 <template>
   <div class="ar-presenter">
-    <PresenterBar :title="title" :duration="deck.duration.value" :set-timer="deck.setTimer" />
+    <PresenterBar
+      :title="title"
+      :set-timer="deck.setTimer"
+      :deck-duration="deck.deckDuration.value"
+      :set-duration="deck.setDuration"
+    />
     <div class="ar-p-main">
       <section class="ar-p-current" aria-label="Diapositiva actual">
         <div class="ar-p-screen" :style="{ aspectRatio: ratio }">
