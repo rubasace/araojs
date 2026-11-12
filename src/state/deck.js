@@ -1,4 +1,4 @@
-import { computed, inject, provide, readonly, ref, shallowRef, watch } from 'vue'
+import { computed, inject, provide, readonly, ref, shallowRef, toRef, watch } from 'vue'
 import { exportOptions } from '../core/exporter'
 import { IDLE, parseDuration, start } from '../core/timer'
 import { useDeckSync } from '../composables/useDeckSync'
@@ -92,16 +92,22 @@ export function createDeck(props) {
     if (sync?.moved()) startTimer()
   }
 
-  const face = {
+  // The public face (useDeck): read-only refs (deeply: the themes' array and the timer's object
+  // too) and the actions, in a frozen object, so no component can reassign a field or edit the
+  // deck's state in place. Its setTheme only wears one of the deck's themes.
+  const face = Object.freeze({
     ...stage.view,
     theme: readonly(theme),
-    themes: computed(() => props.themes),
+    themes: readonly(toRef(props, 'themes')),
     fullscreen: readonly(fullscreen),
-    timer: computed(() => timer.value),
-    setTheme,
+    timer: readonly(timer),
+    setTheme(name) {
+      if (props.themes.includes(name)) setTheme(name)
+      else console.warn(`[arao] setTheme("${name}"): not one of the deck's themes (${props.themes.join(', ')}); ignored`)
+    },
     toggleFullscreen,
     openPresenter: presenterWindow.open,
-  }
+  })
   provide(KEY, face)
 
   return {
@@ -119,14 +125,17 @@ export function createDeck(props) {
 //                                         progress over every step of the deck (0..1)
 //   next(), prev(), go(i, step)           move it
 //   theme, themes                         the theme worn, the deck's list (read-only refs);
-//                                         setTheme(name) wears another
+//                                         setTheme(name) wears another of the list (any other
+//                                         name warns and is ignored)
 //   fullscreen, toggleFullscreen()        read-only ref; enters or leaves fullscreen
 //   timer                                 read-only ref of the talk's timer (core/timer.js)
 //   openPresenter()                       opens the presenter window (from the audience's)
 //   role                                  a plain string: which drawing of the deck this is
 // The position is that of the drawing the caller is in. The presenter view draws the deck twice,
 // the current slide and a preview of the next step: in the preview, a component reads the
-// preview's position, and next/prev/go do nothing.
+// preview's position, and no action does anything (next/prev/go, setTheme, toggleFullscreen,
+// openPresenter): the preview is a copy, it cannot act.
+// The face is frozen and its refs read-only, deeply: only its actions change the deck.
 // role: 'audience' (the audience window), 'presenter' (the presenter view's current slide),
 // 'preview' (its next step) or 'export' (the deck being printed, ?export: each page is a static
 // copy, so what plays does not print). Everything mounts once per drawing, so a presenter window
@@ -134,12 +143,15 @@ export function createDeck(props) {
 //   onMounted(() => deck.role === 'audience' && video.value.play())
 // Outside every drawing (the controls, the presenter view's bar) it is the audience's stage.
 const views = new WeakMap() // stage → the face of the deck drawn in it
+const noop = () => {}
+// the preview's actions (its next/prev/go are no-ops already: state/stage.js)
+const inert = { setTheme: noop, toggleFullscreen: noop, openPresenter: noop }
 
 export function useDeck() {
   const deck = inject(KEY, null)
   if (!deck) throw new Error('[arao] useDeck() must be used inside <Deck>')
   const stage = useStage()
   if (!stage) return deck
-  if (!views.has(stage)) views.set(stage, { ...deck, ...stage.view })
+  if (!views.has(stage)) views.set(stage, Object.freeze({ ...deck, ...stage.view, ...(stage.role === 'preview' && inert) }))
   return views.get(stage)
 }

@@ -76,8 +76,15 @@ in; outside every stage (the controls, the presenter's bar) it is the deck's own
 |---|---|
 | `index`, `step`, `total`, `steps`, `progress` | read-only refs, of the caller's stage |
 | `role` | string: `'audience'`, `'presenter'`, `'preview'` or `'export'` |
-| `theme`, `themes`, `fullscreen`, `timer` | read-only refs |
-| `next()`, `prev()`, `go(i, step)` | moves (do nothing in the preview) |
-| `setTheme(name)`, `toggleFullscreen()`, `openPresenter()` | actions |
+| `theme`, `themes`, `fullscreen`, `timer` | read-only refs, deeply (`themes.value`, `timer.value` cannot be edited in place) |
+| `next()`, `prev()`, `go(i, step)` | moves |
+| `setTheme(name)`, `toggleFullscreen()`, `openPresenter()` | actions; `setTheme` with a name not in `themes` warns and is ignored |
 
-Internals stay off it: slide registration, sync, the writable timer, the export.
+The face, and each stage's copy of it, is frozen: no component can reassign `go`, `setTheme` or
+any other field. Internals stay off it: slide registration, sync, the writable timer, the export.
+
+One rule for the preview (role `'preview'`, the presenter view's next step): it is a copy, it
+cannot act. Every function of its face does nothing: `next`, `prev`, `go` (the stage is a follower,
+state/stage.js) and `setTheme`, `toggleFullscreen`, `openPresenter` (useDeck() swaps them for
+no-ops, state/deck.js). Its refs still read: its own position, the deck's theme, timer and
+fullscreen.
