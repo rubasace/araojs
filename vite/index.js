@@ -13,8 +13,8 @@
 // ("../shared/images") works the same: the dev server is allowed to serve it (server.fs.allow)
 // and watches it. A folder that was set but does not exist is reported when Vite starts.
 //
-// Decks: one lazily loaded chunk each; createDeckApp() picks one from ?deck=<file name>, and the
-// export CLI (arao export) looks for decks in the same folder.
+// Decks: one lazily loaded chunk each; createDeckApp() picks one from ?deck=<file name>. The export
+// CLI (arao export) asks this plugin for them (api.decks()), so both see the same decks.
 //
 // Images: only pictures are taken (png, jpg, jpeg, gif, webp, avif, svg, in any case); anything
 // else in the folder (notes, sources, .psd) stays out of the build. Names are case-sensitive,
@@ -29,9 +29,9 @@
 // resolved here, at build time: the source is read for the names it uses and only those go into
 // virtual:arao/icons (icons.js). arao({ icons: ['lucide:rocket'] }) adds names the source
 // does not spell out (built at runtime).
-import { existsSync } from 'node:fs'
+import { existsSync, readdirSync, statSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { isAbsolute, relative, resolve, sep } from 'node:path'
+import { isAbsolute, join, relative, resolve, sep } from 'node:path'
 import vue from '@vitejs/plugin-vue'
 import { searchForWorkspaceRoot } from 'vite'
 import { createIcons, forced } from './icons.js'
@@ -48,6 +48,22 @@ const modules = {
   decks: { pattern: '*.vue', options: '{}', missing: 'createDeckApp() has no deck to open' },
   snippets: { pattern: '**/*', options: "{ query: '?raw', import: 'default' }", missing: 'files named in slides will show as missing' },
   images: { pattern: `**/*.{${IMAGES}}`, options: "{ query: '?url', import: 'default', eager: true, caseSensitive: false }", missing: 'files named in slides will show as missing' },
+}
+
+// the decks in a folder, by name: what import.meta.glob takes for the decks' '*.vue' (files directly
+// in it or symlinks to files, not dotfiles, case-sensitive)
+function decksIn(folder) {
+  let entries
+  try {
+    entries = readdirSync(folder, { withFileTypes: true })
+  } catch {
+    return []
+  }
+  return entries
+    .filter((e) => !e.name.startsWith('.') && e.name.endsWith('.vue')
+      && (e.isFile() || (e.isSymbolicLink() && statSync(join(folder, e.name), { throwIfNoEntry: false })?.isFile())))
+    .map((e) => e.name.slice(0, -'.vue'.length))
+    .sort()
 }
 
 // glob syntax in a folder's name is literal: "talk (draft)", "[2024]"
@@ -97,7 +113,11 @@ export default function arao(options = {}) {
   const plugin = {
     name: 'arao',
     // for tools that run the project's Vite config (the export CLI): the folders, resolved
-    api: { folders: () => Object.fromEntries(Object.keys(modules).map((n) => [n, dir(n)])) },
+    api: {
+      folders: () => Object.fromEntries(Object.keys(modules).map((n) => [n, dir(n)])),
+      // the decks' names, sorted: what the decks glob below ('*.vue') takes
+      decks: () => decksIn(dir('decks')),
+    },
     config(user) {
       root = resolve(user.root ?? process.cwd()) // as Vite resolves it
       const config = {

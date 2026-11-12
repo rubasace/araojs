@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Packaged-consumer smoke test: installs the packed library into a brand-new slides project, the
 // way a user would, and checks that it builds, that every deck runs without a warning, and that
-// the export CLI prints a PDF.
+// the export CLI prints a PDF of each deck, per step and per slide.
 //
 //   node scripts/smoke.mjs [path/to/package.tgz]
 //
@@ -27,7 +27,20 @@
 //      vite.config.js for the first, rewritten for each and then put back): a project with one deck
 //      opens it at /; createDeckApp({ deck: 'second' }) opens that deck at / and ?deck=<other>
 //      still wins; createDeckApp({ deck: 'missing' }) shows the list with one [arao] warning
-//   7. <bin> export --deck <name>      the PDF must exist and its summary line report pages > 0
+//   7. <bin> export                    no --deck: every deck, one PDF each, at its default name
+//                                      (exports/<deck>.pdf); each PDF must have (its pages counted
+//                                      in the file itself) as many pages as its summary line says
+//                                      and as the walk counted steps (per step is the default), and
+//                                      a total line all the decks
+//   8. <bin> export --deck <name> --per-slide   the one PDF (exports/<deck>-slides.pdf), with as
+//                                      many pages as slides
+//   9. the CLI's other cases, each on a decks folder of tiny decks of its own (vite.config.js
+//      rewritten for each, and put back), with --out <folder> and several decks:
+//        --theme vigojug over a deck that lists it and one that does not (a symlink, next to a
+//        dotfile deck that must not count): <deck>-vigojug.pdf and <other>.pdf, whose line says it
+//        fell back; --theme no deck lists: exit 1 and no PDF; a deck that throws at runtime: the
+//        others exported, exit 1; decks that resolve to one file (Alpha in vigojug and
+//        alpha-vigojug, Beta and beta): the first kept, the second failed, a warning on the case
 // The package name and the CLI's name are read from package.json: nothing here names them.
 //
 // Environment:
@@ -38,7 +51,7 @@
 // Chromium's own needs (shared libraries, fonts: LD_LIBRARY_PATH, FONTCONFIG_FILE…) pass through
 // to the browser and to the export as they are.
 import { spawn } from 'node:child_process'
-import { cp, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { cp, mkdir, mkdtemp, readdir, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
@@ -79,18 +92,29 @@ const fail = (msg) => {
   console.error(`[smoke] FAIL ${msg}`)
 }
 
-// runs a command, its output shown as it comes; resolves to its stdout
-function run(cmd, args, cwd) {
+// runs a command, its output shown as it comes; resolves to { code, out, err } (stdout, stderr)
+function exec(cmd, args, cwd) {
   return new Promise((ok, ko) => {
-    const child = spawn(cmd, args, { cwd, stdio: ['ignore', 'pipe', 'inherit'] })
+    const child = spawn(cmd, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] })
     let out = ''
+    let err = ''
     child.stdout.on('data', (d) => {
       out += d
       process.stdout.write(d)
     })
+    child.stderr.on('data', (d) => {
+      err += d
+      process.stderr.write(d)
+    })
     child.on('error', ko)
-    child.on('close', (code) => (code === 0 ? ok(out) : ko(new Error(`${cmd} ${args.join(' ')} exited with ${code}`))))
+    child.on('close', (code) => ok({ code, out, err }))
   })
+}
+// the same, failing unless it exits with 0; resolves to its stdout
+async function run(cmd, args, cwd) {
+  const { code, out } = await exec(cmd, args, cwd)
+  if (code !== 0) throw new Error(`${cmd} ${args.join(' ')} exited with ${code}`)
+  return out
 }
 
 const freePort = () => new Promise((ok, ko) => {
@@ -188,7 +212,8 @@ try {
     await gone
   }
 
-  // opens a deck and walks it to its end; reports what it saw
+  // opens a deck and walks it to its end; reports what it saw, and keeps its counts in walked
+  const walked = {} // deck → { slides, steps }, the last walk's
   async function walk(base, deck, mode) {
     const context = await browser.newContext({ viewport: { width: 1920, height: 1080 } })
     const page = await context.newPage()
@@ -222,6 +247,7 @@ try {
       console.log(`  ${mode} ?deck=${deck}: ${slides} slides, ended at ${at}; steps per slide ${per}`)
       if (slides && Object.keys(steps).length !== slides)
         complaints.push(`the walk visited ${Object.keys(steps).length} slides of ${slides}`)
+      walked[deck] = { slides, steps: Object.values(steps).reduce((a, b) => a + b, 0) }
     } finally {
       await context.close()
     }
@@ -439,20 +465,117 @@ try {
     await rm(join(project, solo), { recursive: true, force: true })
   }
 
-  for (const deck of decks) {
-    log(`${BIN} export --deck ${deck}`)
-    const out = join(project, 'exports', `${deck}.pdf`)
-    let said = ''
-    try {
-      said = await run('npx', ['--no-install', BIN, 'export', '--deck', deck, '--out', out], project)
-    } catch (e) {
-      fail(`export of ${deck}: ${e.message}`)
-      continue
+  // the summary line of a PDF: "<path>: <pages> pages (<slides> slides, <steps> steps), …"
+  const summary = (said, file) => {
+    const line = said.split('\n').find((l) => l.startsWith(`${file}: `))
+    const [, pages, slides, steps] = line?.match(/: (\d+) pages \((\d+) slides, (\d+) steps\)/) ?? []
+    return line && { pages: Number(pages), slides: Number(slides), steps: Number(steps) }
+  }
+  const pdfAt = async (file) => ((await stat(join(project, file)).catch(() => null))?.size ?? 0) > 0
+  // the pages of a PDF, counted in the file (its /Type /Page objects), not taken from the CLI;
+  // 0 if there is no file
+  const pagesIn = async (file) => {
+    const bytes = await readFile(join(project, file)).catch(() => null)
+    return bytes ? (bytes.toString('latin1').match(/\/Type\s*\/Page(?!s)/g) || []).length : 0
+  }
+
+  log(`${BIN} export (every deck, per step)`)
+  let said = null
+  try {
+    said = await run('npx', ['--no-install', BIN, 'export'], project)
+  } catch (e) {
+    fail(`export of every deck: ${e.message}`)
+  }
+  if (said != null) {
+    for (const deck of decks) {
+      const file = `exports/${deck.toLowerCase()}.pdf`
+      const got = summary(said, file)
+      const pages = await pagesIn(file)
+      if (!(await pdfAt(file))) fail(`export of every deck: no PDF at ${file}`)
+      else if (!got) fail(`export of every deck: no summary line for ${file}`)
+      else if (!(pages > 0) || pages !== got.pages || pages !== got.steps) fail(`export of every deck: ${file} has ${pages} pages (its line says ${got.pages}) for ${got.steps} steps`)
+      else if (walked[deck] && pages !== walked[deck].steps) fail(`export of every deck: ${file} has ${pages} pages, the walk counted ${walked[deck].steps} steps`)
     }
-    const pages = Number(said.match(/: (\d+) pages \(/)?.[1] ?? 0)
-    const size = (await stat(out).catch(() => null))?.size ?? 0
-    if (!size) fail(`export of ${deck}: no PDF at ${out}`)
-    if (!(pages > 0)) fail(`export of ${deck}: the summary line reports no pages`)
+    if (!new RegExp(`^${decks.length} of ${decks.length} decks exported, \\d+ pages`, 'm').test(said))
+      fail(`export of every deck: no total line for ${decks.length} decks`)
+  }
+
+  const one = decks[0]
+  log(`${BIN} export --deck ${one} --per-slide`)
+  try {
+    said = await run('npx', ['--no-install', BIN, 'export', '--deck', one, '--per-slide'], project)
+    const file = `exports/${one.toLowerCase()}-slides.pdf`
+    const got = summary(said, file)
+    const pages = await pagesIn(file)
+    if (!(await pdfAt(file))) fail(`export --per-slide: no PDF at ${file}`)
+    else if (!got) fail(`export --per-slide: no summary line for ${file}`)
+    else if (!(pages > 0) || pages !== got.pages || pages !== got.slides) fail(`export --per-slide: ${file} has ${pages} pages (its line says ${got.pages}) for ${got.slides} slides`)
+    else if (walked[one] && pages !== walked[one].slides) fail(`export --per-slide: ${file} has ${pages} pages, the walk counted ${walked[one].slides} slides`)
+  } catch (e) {
+    fail(`export --per-slide of ${one}: ${e.message}`)
+  }
+
+  // the CLI's other cases: each a decks folder of tiny decks (src/cases/<case>), vite.config.js
+  // pointed at it, one export into a folder of its own (--out <case>/)
+  const tiny = (title, themes, script = '') => `<template lang="pug">
+Deck(:themes="${JSON.stringify(themes).replace(/"/g, "'")}")
+  Slide(layout="cover" title="${title}")
+    h1 ${title}
+  Slide
+    h2 Two steps
+    p(v-step="2") The second.
+</template>
+${script}`
+  const THROWS = `<script setup>
+setTimeout(() => { throw new Error('smoke: this deck throws at runtime') })
+</script>
+`
+  const cases = [
+    { name: 'theme', args: ['--theme', 'vigojug'],
+      files: { 'Second.vue': tiny('Second', ['default']), '.Hidden.vue': tiny('Hidden', ['default', 'vigojug']) },
+      link: { 'Third.vue': tiny('Third', ['default', 'vigojug']) },
+      code: 0, pdfs: { 'third-vigojug.pdf': 3, 'second.pdf': 3 },
+      lines: [/^theme\/second\.pdf: .*theme default \(it does not list vigojug/m, /^theme\/third-vigojug\.pdf: .*theme vigojug$/m, /^2 of 2 decks exported, 6 pages$/m] },
+    { name: 'typo', args: ['--theme', 'nosuch'],
+      files: { 'Second.vue': tiny('Second', ['default']), 'Third.vue': tiny('Third', ['default', 'vigojug']) },
+      code: 1, pdfs: {}, errs: [/no deck lists the theme "nosuch"/] },
+    { name: 'partial', args: [],
+      files: { 'Broken.vue': tiny('Broken', ['default'], THROWS), 'Second.vue': tiny('Second', ['default']), 'Third.vue': tiny('Third', ['default']) },
+      code: 1, pdfs: { 'second.pdf': 3, 'third.pdf': 3 },
+      lines: [/^2 of 3 decks exported, 6 pages; failed: Broken$/m], errs: [/Broken: the deck threw before its pages were ready: .*smoke: this deck throws/] },
+    { name: 'clash', args: ['--theme', 'vigojug'],
+      files: { 'Alpha.vue': tiny('Alpha', ['default', 'vigojug']), 'alpha-vigojug.vue': tiny('Not Alpha', ['default']),
+        'Beta.vue': tiny('Beta', ['default']), 'beta.vue': tiny('Beta again', ['default']) },
+      code: 1, pdfs: { 'alpha-vigojug.pdf': 3, 'beta.pdf': 3 },
+      lines: [/^clash\/alpha-vigojug\.pdf: .*theme vigojug$/m, /^2 of 4 decks exported, 6 pages; failed: alpha-vigojug, beta$/m],
+      errs: [/differ only in case.*Beta and beta/, /alpha-vigojug: clash\/alpha-vigojug\.pdf is Alpha's, written in this run: not overwritten/, /beta: clash\/beta\.pdf is Beta's/] },
+  ]
+  try {
+    for (const c of cases) {
+      log(`${BIN} export ${[...c.args, '--out', `${c.name}/`].join(' ')} (${c.name})`)
+      const folder = `src/cases/${c.name}`
+      await mkdir(join(project, folder), { recursive: true })
+      for (const [name, text] of Object.entries(c.files)) await writeFile(join(project, folder, name), text)
+      // a deck that is a symlink to a file elsewhere: the app's glob takes it, so must the CLI
+      for (const [name, text] of Object.entries(c.link ?? {})) {
+        await writeFile(join(project, 'src/cases', name), text)
+        await symlink(join(project, 'src/cases', name), join(project, folder, name))
+      }
+      await writeFile(join(project, 'vite.config.js'), asIs['vite.config.js'].replace('arao()', `arao({ decks: '${folder}' })`))
+      const { code, out, err } = await exec('npx', ['--no-install', BIN, 'export', ...c.args, '--out', `${c.name}/`], project)
+      const what = `export (${c.name})`
+      if (code !== c.code) fail(`${what}: exited with ${code}, not ${c.code}`)
+      for (const [file, want] of Object.entries(c.pdfs)) {
+        const pages = await pagesIn(`${c.name}/${file}`)
+        if (pages !== want) fail(`${what}: ${c.name}/${file} has ${pages} pages, not ${want}`)
+      }
+      const made = (await readdir(join(project, c.name)).catch(() => [])).filter((f) => !(f in c.pdfs))
+      if (made.length) fail(`${what}: unexpected files in ${c.name}/: ${made.join(', ')}`)
+      for (const re of c.lines ?? []) if (!re.test(out)) fail(`${what}: no line matching ${re} in its output`)
+      for (const re of c.errs ?? []) if (!re.test(err)) fail(`${what}: no message matching ${re} on its stderr`)
+    }
+  } finally {
+    await writeFile(join(project, 'vite.config.js'), asIs['vite.config.js'])
   }
 } catch (e) {
   fail(e.stack ?? String(e))

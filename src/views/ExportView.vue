@@ -49,7 +49,7 @@ const shownNotes = computed(() => (stage.current.value?.notes ?? []).filter((n) 
 async function run() {
   const list = themes.value
   if (!list.includes(theme.value))
-    return reportReady({ error: `theme "${theme.value}" is not one of the deck's themes: ${list.join(', ')}` })
+    return reportReady({ error: `theme "${theme.value}" is not one of the deck's themes: ${list.join(', ')}`, code: 'theme-not-listed', themes: list })
   try {
     const result = await buildBook({
       stage,

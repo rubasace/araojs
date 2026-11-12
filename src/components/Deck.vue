@@ -16,9 +16,9 @@
      duration="45m" is the talk's length (formats: core/timer.js parseDuration): the presenter view
      counts down to it. The timer starts with the first move of the deck, in any window, and
      survives reloading the windows (not closing them).
-     Export: ?export prints the deck, one page per slide (&per-step: per step; &notes: a page of
+     Export: ?export prints the deck, one page per step (&per-slide: per slide; &notes: a page of
      notes after each slide that has them): views/ExportView.vue and core/exporter.js, and
-     npm run export for the PDF.
+     npm run export for the PDFs.
      Footer: the #footer slot is drawn at the bottom of every slide except covers and sections
      (each Slide draws it, so it fades, prints and shows in the presenter view with its slide);
      its slot props are { number, total }, the slide's number (1-based) and the slide count:

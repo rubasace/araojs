@@ -327,7 +327,8 @@ Slide
      `clientHeight`/`clientWidth`;
    - screenshot a few `#/<slide>/<step>` and look at them.
 3. `npm run export -- --deck <name>` (once: `npx playwright-core install chromium`) and read the
-   summary line: pages, slides, steps, missing pictures.
+   summary line: pages (one per step by default; `--per-slide` for one per slide), slides, steps,
+   missing pictures. Without `--deck` it exports every deck, one line each plus a total.
 4. `npm run build` must pass.
 
 ## Where to look
