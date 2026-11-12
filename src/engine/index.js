@@ -8,8 +8,9 @@ import { useDeck } from './useDeck'
 import { useSlide } from './useSlide'
 import Snippet from '../components/Snippet.vue'
 import './engine.css'
+import './layouts.css'
 
-export { Center, Cols, Deck, Grid, Img, Notes, Rows, Slide, Snippet, step, useDeck, useSlide }
+export { Center, Cols, Deck, Grid, Img, Notes, Rows, Slide, Snippet, step, stepFrom, useDeck, useSlide }
 
 export default {
   install(app) {

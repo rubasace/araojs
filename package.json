@@ -1,24 +1,45 @@
 {
   "name": "phoenyxjs",
-  "private": true,
-  "version": "0.3.0-dev",
+  "version": "0.3.0",
+  "description": "A slide engine for technical talks: Vue 3 + Vite, slides in Pug, one fixed canvas, themes as tokens, PDF export",
   "type": "module",
   "engines": {
     "node": ">=20.19"
   },
+  "exports": {
+    ".": "./dist/index.js",
+    "./vite": "./vite/index.js",
+    "./style.css": "./dist/phoenyx.css",
+    "./themes/*": "./dist/themes/*",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "phoenyx": "./bin/phoenyx.js"
+  },
+  "files": [
+    "dist",
+    "vite",
+    "bin",
+    "docs",
+    "AGENTS.md"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "export": "node scripts/export.mjs"
+    "prepack": "vite build"
+  },
+  "peerDependencies": {
+    "vite": "^8.0.0",
+    "vue": "^3.5.0"
   },
   "dependencies": {
-    "shiki": "^4.6.0",
-    "vue": "^3.5.45"
-  },
-  "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.10",
     "playwright-core": "~1.64.0",
     "pug": "^3.0.4",
-    "vite": "^8.3.8"
+    "shiki": "^4.6.0"
+  },
+  "devDependencies": {
+    "vite": "^8.3.8",
+    "vue": "^3.5.45"
   }
 }
