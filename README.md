@@ -56,7 +56,8 @@ That is the whole setup:
 
 - `phoenyx()` is the only Vite plugin: it brings `@vitejs/plugin-vue` and Pug along (don't add
   `vue()` too; Vue's options go in `phoenyx({ vue: { … } })`), and serves the project's folders:
-  decks in `src/decks`, code files in `src/snippets`, pictures in `src/images` (each one an option).
+  decks in `src/decks`, code files in `src/snippets`, pictures in `src/images` (each one an option),
+  and builds in the icons the source names.
 - `createDeckApp()` creates the Vue app with the engine installed and renders the deck named by
   `?deck=`. A project with its own app shell uses `createApp(MyApp).use(Phoenyx)` instead
   (`import Phoenyx from 'phoenyxjs'`).
@@ -132,7 +133,7 @@ import { ProgressBar, SlideNumber } from 'phoenyxjs'
 </script>
 ```
 
-`Deck`, `Slide`, `Img`, `Snippet`, `Notes`, `Cols`, `Rows`, `Grid`, `Center` and the `v-step`
+`Deck`, `Slide`, `Img`, `Icon`, `Snippet`, `Notes`, `Cols`, `Rows`, `Grid`, `Center` and the `v-step`
 directive are registered globally. Addons (`ProgressBar`, `SlideNumber` from `'phoenyxjs'`, your
 own) are imported.
 
@@ -165,11 +166,11 @@ This repository, the library:
 src/
   index.js          what 'phoenyxjs' exports
   app.js            createDeckApp
-  engine/           the engine (Deck, Slide, v-step, layouts, Img, Notes, presenter, export, CSS)
+  engine/           the engine (Deck, Slide, v-step, layouts, Img, Icon, Notes, presenter, export, CSS)
   components/       Snippet
   addons/           ProgressBar, SlideNumber: things drawn over every slide
   themes/           the shipped themes (default.css, vigojug.css)
-vite/index.js       the Vite plugin (phoenyxjs/vite)
+vite/               the Vite plugin (phoenyxjs/vite; icons.js resolves the icons)
 bin/                the phoenyx command (phoenyx export)
 playground/         a tiny slides project on the library's source, for developing it
 docs/reference.md   the full reference
@@ -190,6 +191,11 @@ dist/               the build (npm run build): index.js, phoenyx.css, themes/
   per step.
 - **Pictures** — `Img(file=…)` from the images folder, with `fit`, `position`, `opacity`, `blur`,
   `rounded`; a dashed placeholder with the file name when it is missing.
+- **Icons** — `Icon(name="lucide:rocket")`: any [Iconify](https://icon-sets.iconify.design/) icon by
+  name, inline SVG in the text colour, `1em` tall or `size` px. Lucide (UI) and Simple Icons
+  (technology logos) come with the library, other sets with `npm install -D @iconify-json/<prefix>`.
+  Resolved at build time from the names the source uses: offline, and vectors in the PDF
+  (sets and licences: [docs/reference.md](docs/reference.md#icon)).
 - **Backgrounds** — `Slide(bg=…)` takes a picture, a URL, a colour or a gradient, tuned with
   `bg-opacity`, `bg-position`, `bg-blur`, `bg-fit`; or a free `#background` slot. A theme may set
   a default background.

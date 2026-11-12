@@ -4,13 +4,14 @@
 //   components, directives and composables, for code that wants them by name
 //   ProgressBar, SlideNumber: the addons, imported by the decks that use them
 // It needs the Vite plugin (phoenyxjs/vite): the engine reads the project's decks, snippets and
-// images through virtual modules only that plugin provides. Its CSS comes along with it.
+// images (and the icons they use) through virtual modules only that plugin provides. Its CSS comes along with it.
 export {
   default,
   Center,
   Cols,
   Deck,
   Grid,
+  Icon,
   Img,
   Notes,
   Rows,
