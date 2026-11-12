@@ -7,22 +7,22 @@
        image-left | image-right   #image fills its side edge to edge; the default slot is the
                                   text side, padded like any slide
      Zones (default layout): when the default slot starts with a heading (h1 or h2), that is the
-     slide's title and goes into the header (.ph-header), with the headings right after it (a
-     subtitle, or one title per step with v-step.only); everything else is the body (.ph-body).
+     slide's title and goes into the header (.ar-header), with the headings right after it (a
+     subtitle, or one title per step with v-step.only); everything else is the body (.ar-body).
      A #title slot, when given, is the header instead (complex headers) and the whole default slot
      is the body. With neither, the body takes the whole slide.
        Slide
          h2 Three pillars          ← header
          Cols …                    ← body
-     align="start|center|end" places the body vertically; without it, the theme's --ph-body-align
+     align="start|center|end" places the body vertically; without it, the theme's --ar-body-align
      decides (center unless the theme says otherwise; read from the slide's computed style). In a
      centred or end-aligned body, Cols/Rows/Grid placed directly in it centre their rows too
      (engine.css). What fills the body (Img, Snippet, an element with flex: 1, the 1fr rows of
      Grid and Rows) still fills it, exactly as in a start-aligned body.
      The title in every layout (the header's heading, the split header's, the text side's in
-     image-*) carries .ph-title and follows the --ph-title-* tokens (layouts.css).
-     Footer: the Deck's #footer slot, drawn at the bottom of every slide (.ph-footer, a band
-     --ph-footer-height tall) except on cover and section. :footer="false" hides it on a slide,
+     image-*) carries .ar-title and follows the --ar-title-* tokens (layouts.css).
+     Footer: the Deck's #footer slot, drawn at the bottom of every slide (.ar-footer, a band
+     --ar-footer-height tall) except on cover and section. :footer="false" hides it on a slide,
      :footer="true" shows it on a cover or a section. Its slot props are { number, total }: this
      slide's number (1-based) and the deck's slide count. The band takes the place of the slide's
      bottom padding: the body (split's and image-*'s zones too) ends where the footer begins.
@@ -52,52 +52,52 @@
          .tint
      With both, the bg goes first and the slot above it. With neither (a slot that renders nothing
      counts as none), the slide shows the theme's default background, if the theme sets one
-     (--ph-slide-bg-* tokens, engine.css), and the bg-* props tune that one.
+     (--ar-slide-bg-* tokens, engine.css), and the bg-* props tune that one.
      Headings in the background or the footer are not the slide's title (the jump menu skips them).
      Speaker notes: Notes anywhere inside the slide (notes.js); only the presenter view shows them. -->
 <template>
-  <Transition name="ph-slide" :css="!still">
+  <Transition name="ar-slide" :css="!still">
     <!-- export mode switches slides at once (no CSS transition): the book copies the slide on screen -->
     <section
-      class="ph-slide"
+      class="ar-slide"
       ref="el"
       v-show="active"
-      :data-ph-slide="id"
-      :class="['layout-' + layout, { 'ph-footed': footed() && !flat }]"
+      :data-ar-slide="id"
+      :class="['layout-' + layout, { 'ar-footed': footed() && !flat }]"
       :style="image ? zones : undefined"
     >
-      <div class="ph-slide-bg" aria-hidden="true">
+      <div class="ar-slide-bg" aria-hidden="true">
         <Img v-if="picture" v-bind="picture" />
-        <div class="ph-slide-bg-fill" v-else-if="kind || !renders($slots.background, { step })" :class="{ 'ph-slide-bg-theme': !kind }" :style="fill"></div>
+        <div class="ar-slide-bg-fill" v-else-if="kind || !renders($slots.background, { step })" :class="{ 'ar-slide-bg-theme': !kind }" :style="fill"></div>
         <slot name="background" :step="step" />
       </div>
       <template v-if="layout === 'split'">
-        <div class="ph-slide-head" v-if="$slots.title || $slots.default">
+        <div class="ar-slide-head" v-if="$slots.title || $slots.default">
           <VNodes :nodes="titled()" />
         </div>
-        <div class="ph-zones" :style="zones">
-          <div class="ph-zone ph-zone-left">
+        <div class="ar-zones" :style="zones">
+          <div class="ar-zone ar-zone-left">
             <slot name="left" :step="step" />
           </div>
-          <div class="ph-zone ph-zone-right">
+          <div class="ar-zone ar-zone-right">
             <slot name="right" :step="step" />
           </div>
         </div>
       </template>
       <!-- zones in visual order, left to right, so the DOM (and reading order) matches the screen -->
       <template v-else-if="layout === 'image-left'">
-        <div class="ph-zone ph-zone-image">
+        <div class="ar-zone ar-zone-image">
           <slot name="image" :step="step" />
         </div>
-        <div class="ph-zone ph-zone-text">
+        <div class="ar-zone ar-zone-text">
           <VNodes :nodes="titled()" />
         </div>
       </template>
       <template v-else-if="layout === 'image-right'">
-        <div class="ph-zone ph-zone-text">
+        <div class="ar-zone ar-zone-text">
           <VNodes :nodes="titled()" />
         </div>
-        <div class="ph-zone ph-zone-image">
+        <div class="ar-zone ar-zone-image">
           <slot name="image" :step="step" />
         </div>
       </template>
@@ -106,7 +106,7 @@
         <slot :step="step" />
       </template>
       <VNodes v-else :nodes="zoned()" />
-      <footer class="ph-footer" v-if="footed()">
+      <footer class="ar-footer" v-if="footed()">
         <VNodes :nodes="footerSlot()({ number: index + 1, total: deck.api.total.value })" />
       </footer>
     </section>
@@ -130,7 +130,7 @@ const props = defineProps({
   layout: { type: String, default: 'default' },
   // shown in the jump menu; defaults to the slide's first heading
   title: String,
-  // vertical place of the body (default layout): start | center | end; default --ph-body-align
+  // vertical place of the body (default layout): start | center | end; default --ar-body-align
   align: { type: String, validator: (v) => ['start', 'center', 'end'].includes(v) },
   // the deck's footer on this slide: false hides it, true shows it on cover and section too
   footer: { type: Boolean, default: undefined },
@@ -167,7 +167,7 @@ if (import.meta.env.DEV) {
   watchEffect(() => {
     const v = props.bg?.trim()
     if (kind.value === 'css' && !CSS.supports('background', v))
-      console.warn(`[phoenyx] Slide: bg="${v}" is none of the three: no file "${v}" in ${imagesDir}, not a URL (https://…, /…), and not a valid CSS background`)
+      console.warn(`[arao] Slide: bg="${v}" is none of the three: no file "${v}" in ${imagesDir}, not a URL (https://…, /…), and not a valid CSS background`)
   })
 }
 
@@ -225,8 +225,8 @@ function titleRun(nodes, anywhere = false) {
   for (let j = end; j < nodes.length && (blank(nodes[j]) || heading(nodes[j])); j++) if (heading(nodes[j])) end = j + 1
   return [i, end]
 }
-const marked = (nodes) => nodes.map((n) => (heading(n) ? cloneVNode(n, { class: 'ph-title' }) : n))
-// the nodes with their title marked .ph-title, in place; { nodes, tag } (its first heading's tag)
+const marked = (nodes) => nodes.map((n) => (heading(n) ? cloneVNode(n, { class: 'ar-title' }) : n))
+// the nodes with their title marked .ar-title, in place; { nodes, tag } (its first heading's tag)
 function mark(nodes, anywhere) {
   const [first, end] = titleRun(nodes, anywhere)
   if (first < 0) return { nodes, tag: null }
@@ -257,33 +257,33 @@ function zoned() {
   const zones = []
   if (head) {
     zones.push(h('div', {
-      key: 'ph-header',
-      class: ['ph-header', head.tag && `ph-header-${head.tag}`, { 'ph-header-band': band.value }],
+      key: 'ar-header',
+      class: ['ar-header', head.tag && `ar-header-${head.tag}`, { 'ar-header-band': band.value }],
     }, head.nodes))
   }
   // a body of nothing visible (only Notes, v-if comments) gets no box; its Notes still mount
-  if (body.some((n) => !blank(n))) zones.push(h('div', { key: 'ph-body', class: ['ph-body', `ph-body-${align.value}`] }, body))
+  if (body.some((n) => !blank(n))) zones.push(h('div', { key: 'ar-body', class: ['ar-body', `ar-body-${align.value}`] }, body))
   else zones.push(...body)
   return zones
 }
 
 // Body alignment: the prop, else the theme's token; and whether the theme gives the header a
-// band (--ph-header-height). Tokens are CSS, so they are read from the slide's computed style
+// band (--ar-header-height). Tokens are CSS, so they are read from the slide's computed style
 // once mounted and again whenever the theme changes (before the first paint either way);
-// per-layout values (.layout-x { --ph-body-align: … }) work too.
+// per-layout values (.layout-x { --ar-body-align: … }) work too.
 const themeAlign = ref('center')
 const band = ref(false)
 let warned = false
 function readTokens() {
   if (!el.value) return
   const style = getComputedStyle(el.value)
-  const v = style.getPropertyValue('--ph-body-align').trim()
+  const v = style.getPropertyValue('--ar-body-align').trim()
   if (v && !ALIGN.includes(v) && !warned && import.meta.env.DEV) {
     warned = true
-    console.warn(`[phoenyx] --ph-body-align: "${v}" is not start, center or end: the body is centred`)
+    console.warn(`[arao] --ar-body-align: "${v}" is not start, center or end: the body is centred`)
   }
   themeAlign.value = ALIGN.includes(v) ? v : 'center'
-  const hh = style.getPropertyValue('--ph-header-height').trim()
+  const hh = style.getPropertyValue('--ar-header-height').trim()
   band.value = !!hh && hh !== 'auto'
 }
 onMounted(readTokens)

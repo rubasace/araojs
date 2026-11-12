@@ -1,15 +1,15 @@
 // Two jobs:
-//   npm run build   the library: dist/index.js (ESM) + dist/phoenyx.css + dist/themes/*.css
+//   npm run build   the library: dist/index.js (ESM) + dist/arao.css + dist/themes/*.css
 //   npm run dev     the playground (playground/), a tiny slides project on the library's source
 import { readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
-import phoenyx from './vite/index.js'
+import arao from './vite/index.js'
 
 const here = (p) => fileURLToPath(new URL(p, import.meta.url))
-const publicHost = process.env.PHOENYX_PUBLIC_HOST
-const CSS = 'phoenyx.css'
+const publicHost = process.env.ARAO_PUBLIC_HOST
+const CSS = 'arao.css'
 
 // The engine reads import.meta.env (DEV, BASE_URL) and import.meta.hot. They belong to the app
 // that runs it, not to this build, which would put its own values in (DEV false, base "/", no
@@ -17,13 +17,13 @@ const CSS = 'phoenyx.css'
 // dev server and in its own build.
 function keepImportMeta() {
   const used = /\bimport\.meta\.(env|hot)\b/g
-  const hidden = /\bimport\.meta\.__phoenyx_(env|hot)\b/g
+  const hidden = /\bimport\.meta\.__arao_(env|hot)\b/g
   return {
-    name: 'phoenyx:keep-import-meta',
+    name: 'arao:keep-import-meta',
     enforce: 'pre',
     transform(code, id) {
       if (id.includes('/node_modules/') || !/\.(js|vue)$/.test(id.split('?')[0])) return null
-      return code.replace(used, 'import.meta.__phoenyx_$1')
+      return code.replace(used, 'import.meta.__arao_$1')
     },
     renderChunk(code) {
       return { code: code.replace(hidden, 'import.meta.$1'), map: null }
@@ -36,7 +36,7 @@ function keepImportMeta() {
 // copied as they are, one file each, for the project to import the ones its decks wear.
 function cssAndThemes() {
   return {
-    name: 'phoenyx:css-and-themes',
+    name: 'arao:css-and-themes',
     generateBundle: {
       order: 'post', // after Vite has put the CSS in the bundle
       handler(_, bundle) {
@@ -60,16 +60,16 @@ export default defineConfig(({ command }) => command === 'build'
         copyPublicDir: false,
         minify: false, // a library: the project's build minifies it along with everything else
         lib: { entry: here('src/index.js'), formats: ['es'], fileName: 'index', cssFileName: CSS.replace(/\.css$/, '') },
-        rolldownOptions: { external: [/^vue(\/|$)/, /^shiki(\/|$)/, /^virtual:phoenyx\//] },
+        rolldownOptions: { external: [/^vue(\/|$)/, /^shiki(\/|$)/, /^virtual:arao\//] },
       },
     }
   : {
       root: here('playground'),
-      plugins: [phoenyx()],
+      plugins: [arao()],
       resolve: {
         alias: [
-          { find: /^phoenyxjs$/, replacement: here('src/index.js') },
-          { find: /^phoenyxjs\/themes\/(.*)$/, replacement: `${here('src/themes')}/$1` },
+          { find: /^araojs$/, replacement: here('src/index.js') },
+          { find: /^araojs\/themes\/(.*)$/, replacement: `${here('src/themes')}/$1` },
         ],
       },
       server: {

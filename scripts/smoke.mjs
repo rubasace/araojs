@@ -8,7 +8,7 @@
 // Without a tarball it packs one itself (npm pack, which builds the library first).
 // The project is made in a temporary folder outside the repository: package.json depending on the
 // tarball (vite and vue at the versions of the library's devDependencies), vite.config.js with the
-// phoenyx() plugin, index.html, src/main.js with the default and vigojug themes, and the
+// arao() plugin, index.html, src/main.js with the default and vigojug themes, and the
 // playground's decks, images and snippets as content. Then, in order:
 //   1. npm install
 //   2. vite build                      must pass
@@ -20,10 +20,10 @@
 // The package name and the CLI's name are read from package.json: nothing here names them.
 //
 // Environment:
-//   PHOENYX_CHROMIUM=/path/to/chrome   a Chrome/Chromium to use, here and in the export, instead of
-//                                      the one Playwright downloads for its version of
-//                                      playwright-core (npx playwright-core install chromium)
-//   SMOKE_KEEP=1                       keep the temporary project (its path is printed)
+//   ARAO_CHROMIUM=/path/to/chrome   a Chrome/Chromium to use, here and in the export, instead of
+//                                   the one Playwright downloads for its version of
+//                                   playwright-core (npx playwright-core install chromium)
+//   SMOKE_KEEP=1                    keep the temporary project (its path is printed)
 // Chromium's own needs (shared libraries, fonts: LD_LIBRARY_PATH, FONTCONFIG_FILE…) pass through
 // to the browser and to the export as they are.
 import { spawn } from 'node:child_process'
@@ -105,7 +105,7 @@ try {
       scripts: { dev: 'vite', build: 'vite build', export: `${BIN} export` },
       dependencies: { [PKG]: `file:${tarball}`, vite: dev.vite, vue: dev.vue },
     }, null, 2),
-    'vite.config.js': `import { defineConfig } from 'vite'\nimport phoenyx from '${PKG}/vite'\n\nexport default defineConfig({ plugins: [phoenyx()] })\n`,
+    'vite.config.js': `import { defineConfig } from 'vite'\nimport arao from '${PKG}/vite'\n\nexport default defineConfig({ plugins: [arao()] })\n`,
     'index.html': `<!doctype html>\n<html lang="en">\n  <head><meta charset="UTF-8" /><title>smoke</title></head>\n  <body>\n    <div id="app"></div>\n    <script type="module" src="/src/main.js"></script>\n  </body>\n</html>\n`,
     'src/main.js': `import { createDeckApp } from '${PKG}'\nimport '${PKG}/themes/default.css'\nimport '${PKG}/themes/vigojug.css'\n\ncreateDeckApp().mount('#app')\n`,
   }
@@ -133,7 +133,7 @@ try {
   log('vite build')
   await run(process.execPath, [viteBin, 'build'], project)
 
-  browser = await chromium.launch({ executablePath: process.env.PHOENYX_CHROMIUM || undefined })
+  browser = await chromium.launch({ executablePath: process.env.ARAO_CHROMIUM || undefined })
 
   // starts the dev server or vite preview; resolves to its URL once it answers
   async function serve(mode) {
@@ -165,9 +165,9 @@ try {
     page.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
     try {
       await page.goto(new URL(`?deck=${encodeURIComponent(deck)}`, base).href)
-      await page.waitForSelector('.ph-slide', { state: 'attached', timeout: 30_000 }).catch(() => {})
-      const slides = await page.locator('.ph-slide').count()
-      if (!slides) complaints.push('no .ph-slide in the page')
+      await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 }).catch(() => {})
+      const slides = await page.locator('.ar-slide').count()
+      if (!slides) complaints.push('no .ar-slide in the page')
       // the hash is #/<slide>/<step>; the walk ends when ArrowRight no longer changes it
       const steps = {}
       const hash = () => page.evaluate(() => location.hash)

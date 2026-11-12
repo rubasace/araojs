@@ -14,6 +14,6 @@ import { DECK } from '../core/registry'
 //   onMounted(() => deck.role === 'audience' && video.value.play())
 export function useDeck() {
   const deck = inject(DECK, null)
-  if (!deck) throw new Error('[phoenyx] useDeck() must be used inside <Deck>')
+  if (!deck) throw new Error('[arao] useDeck() must be used inside <Deck>')
   return deck.api
 }

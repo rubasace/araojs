@@ -6,11 +6,11 @@ Deck(:themes="['default', 'vigojug']")
   SlideNumber
   //- on every slide but the cover and the sections (the last one asks for it)
   template(#footer)
-    span Phoenyx · playground
+    span Arao · playground
 
   Slide(layout="cover" title="Playground")
     .bar
-    h1 Phoenyx playground
+    h1 Arao playground
     p.muted The library's source, served as a slides project
 
   Slide
@@ -71,7 +71,7 @@ Deck(:themes="['default', 'vigojug']")
 </template>
 
 <script setup>
-import { ProgressBar, SlideNumber } from 'phoenyxjs'
+import { ProgressBar, SlideNumber } from 'araojs'
 
 // written out here, so the Vite plugin finds and builds in these icons
 const tech = [

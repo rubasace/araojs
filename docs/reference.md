@@ -1,6 +1,6 @@
-# Phoenyx reference
+# Arao reference
 
-Everything a deck can use, as the library (the `phoenyxjs` package) implements it. Sizes are
+Everything a deck can use, as the library (the `araojs` package) implements it. Sizes are
 canvas px (the canvas is 1920x1080 unless `Deck` says otherwise). Examples are Pug, inside a
 deck's `<template lang="pug">`: the recommended form, for brevity. A deck can also be a plain
 HTML `<template>`, with the same components, props, slots and directives
@@ -8,7 +8,7 @@ HTML `<template>`, with the same components, props, slots and directives
 plugin's default folders.
 
 Globally registered: `Deck`, `Slide`, `Img`, `Icon`, `Snippet`, `Notes`, `Cols`, `Rows`, `Grid`,
-`Center`, and the directives `v-step` and `v-step-from`. Imported by hand from `'phoenyxjs'`:
+`Center`, and the directives `v-step` and `v-step-from`. Imported by hand from `'araojs'`:
 the addons (`ProgressBar`, `SlideNumber`) and the composables (`useDeck`, `useSlide`).
 
 Pug reminders: a plain attribute is a string (`gap="sm"`); a `:`-bound one is a JavaScript
@@ -26,42 +26,42 @@ Contents: [Setup](#setup) · [Deck](#deck) · [Slide](#slide) ([zones](#zones-he
 
 ## Setup
 
-A slides project is a Vite app with the `phoenyxjs` package (and `vue`, `vite`, its peers):
+A slides project is a Vite app with the `araojs` package (and `vue`, `vite`, its peers):
 
 ```bash
-npm install phoenyxjs vue && npm install -D vite
+npm install araojs vue && npm install -D vite
 ```
 
 ```js
 // vite.config.js
 import { defineConfig } from 'vite'
-import phoenyx from 'phoenyxjs/vite'
-export default defineConfig({ plugins: [phoenyx()] })
+import arao from 'araojs/vite'
+export default defineConfig({ plugins: [arao()] })
 ```
 
 ```js
 // src/main.js (index.html: <div id="app"></div> and <script type="module" src="/src/main.js">)
-import { createDeckApp } from 'phoenyxjs'
-import 'phoenyxjs/themes/default.css'
-import 'phoenyxjs/themes/vigojug.css'
+import { createDeckApp } from 'araojs'
+import 'araojs/themes/default.css'
+import 'araojs/themes/vigojug.css'
 createDeckApp().mount('#app')
 ```
 
 ```json
-"scripts": { "dev": "vite", "build": "vite build", "export": "phoenyx export" }
+"scripts": { "dev": "vite", "build": "vite build", "export": "arao export" }
 ```
 
-- `phoenyx()` is the only plugin: it includes `@vitejs/plugin-vue` and Pug ([Vite plugin](#vite-plugin)).
+- `arao()` is the only plugin: it includes `@vitejs/plugin-vue` and Pug ([Vite plugin](#vite-plugin)).
 - `createDeckApp()` creates the Vue app with the engine installed and renders the deck named by
   `?deck=` ([URL parameters](#url-parameters)).
-- The engine's CSS (structure, layouts, controls) comes with `'phoenyxjs'`; themes are imported
-  one by one: `phoenyxjs/themes/<name>.css` for the shipped ones (`default`, `vigojug`), your own
+- The engine's CSS (structure, layouts, controls) comes with `'araojs'`; themes are imported
+  one by one: `araojs/themes/<name>.css` for the shipped ones (`default`, `vigojug`), your own
   from `src/themes/` ([Theme tokens](#theme-tokens)).
-- Own app shell instead of `createDeckApp`: `createApp(MyApp).use(Phoenyx)` with
-  `import Phoenyx from 'phoenyxjs'`; it registers the components and directives above.
-- Package entry points: `phoenyxjs` (engine, `createDeckApp`, components, `step`/`stepFrom`,
-  composables, addons), `phoenyxjs/vite` (the plugin), `phoenyxjs/themes/*.css`,
-  `phoenyxjs/style.css` (the engine's CSS, already imported by `phoenyxjs`); the `phoenyx` command
+- Own app shell instead of `createDeckApp`: `createApp(MyApp).use(Arao)` with
+  `import Arao from 'araojs'`; it registers the components and directives above.
+- Package entry points: `araojs` (engine, `createDeckApp`, components, `step`/`stepFrom`,
+  composables, addons), `araojs/vite` (the plugin), `araojs/themes/*.css`,
+  `araojs/style.css` (the engine's CSS, already imported by `araojs`); the `arao` command
   ([Export mode](#export-mode)).
 
 ### Pug or HTML
@@ -100,7 +100,7 @@ view and export mode. One per deck file (`src/decks/<Name>.vue`).
 
 | Prop | Type | Default | Notes |
 |---|---|---|---|
-| `themes` | Array of strings | `['default']` | the themes this deck can wear; the first is the default. Each must exist as a `[data-theme="<name>"]` token block imported in `src/main.js` (`phoenyxjs/themes/<name>.css` for the shipped ones). |
+| `themes` | Array of strings | `['default']` | the themes this deck can wear; the first is the default. Each must exist as a `[data-theme="<name>"]` token block imported in `src/main.js` (`araojs/themes/<name>.css` for the shipped ones). |
 | `duration` | String or Number | none | the talk's length, for the presenter's countdown. `90` / `"90"` / `"7.5"` (minutes), `"45m"`, `"45min"`, `"1h30m"`, `"1h 30m"`, `"1h30"`, `"90s"`, `"45:00"` (m:ss), `"1:30:00"` (h:mm:ss). Anything else warns and shows no countdown. |
 | `width` | Number | `1920` | canvas width in px |
 | `height` | Number | `1080` | canvas height in px |
@@ -144,7 +144,7 @@ Deck(:themes="['default', 'vigojug']" duration="45m")
 
 ## Slide
 
-One slide, inside its padding (`--ph-pad`). A content slide has three zones, top to bottom: the
+One slide, inside its padding (`--ar-pad`). A content slide has three zones, top to bottom: the
 header (its title), the body (everything else) and the deck's footer
 ([Zones](#zones-header-body-footer)).
 
@@ -152,7 +152,7 @@ header (its title), the body (everything else) and the deck's footer
 |---|---|---|---|
 | `layout` | String | `default` | `default`, `cover`, `section`, `split`, `image-left`, `image-right`, `two-cols`; any other value adds the class `layout-<value>` (for a theme to style) and works as `default` |
 | `title` | String | first `h1`/`h2`/`h3` of the slide (outside the background and the footer) | name in the jump menu, the presenter bar and the notes pages |
-| `align` | String | the theme's `--ph-body-align` (`center` by default) | `start`, `center`, `end`: where the body sits vertically (`default` layout) |
+| `align` | String | the theme's `--ar-body-align` (`center` by default) | `start`, `center`, `end`: where the body sits vertically (`default` layout) |
 | `footer` | Boolean | shown, except on `cover` and `section` | `:footer="false"` hides the deck's footer on this slide; `:footer="true"` shows it on a `cover` or `section` |
 | `ratio` | String | `"1 1"` | zone widths for `split`, `image-left`, `image-right`, left to right. Exactly two entries; each a positive number (a share), `auto`, or `<n>px`. Shares are proportions: `"2 1"` = `"66 33"`. Invalid → warning, `"1 1"`. |
 | `bg` | String | none | background: a URL, an images-folder file, or a CSS colour/gradient (see below) |
@@ -166,10 +166,10 @@ header (its title), the body (everything else) and the deck's footer
 | Layout | What it does | Slots |
 |---|---|---|
 | `default` | zones: the header (the heading the slot starts with), the body (the rest, centred by default), the footer | `#title` (optional, for a complex header), default |
-| `cover` | content centred vertically; `h1` at 1.25x `--ph-title`; a `.bar` element draws a short accent bar; no footer unless `:footer="true"` | default |
-| `section` | everything centred, slide filled with `--ph-accent`, text `--ph-accent-fg`; `h1` at 1.4x `--ph-title`; no footer unless `:footer="true"` | default |
+| `cover` | content centred vertically; `h1` at 1.25x `--ar-title`; a `.bar` element draws a short accent bar; no footer unless `:footer="true"` | default |
+| `section` | everything centred, slide filled with `--ar-accent`, text `--ar-accent-fg`; `h1` at 1.4x `--ar-title`; no footer unless `:footer="true"` | default |
 | `split` | a header (the default slot: the heading, maybe a lead line) above two zones side by side | `#title`, default (header), `#left`, `#right` |
-| `image-left` / `image-right` | the `#image` zone fills its half edge to edge (no padding, inset `--ph-image-inset`); the default slot is the text side, padded like a slide | `#image`, `#title`, default (text side) |
+| `image-left` / `image-right` | the `#image` zone fills its half edge to edge (no padding, inset `--ar-image-inset`); the default slot is the text side, padded like a slide | `#image`, `#title`, default (text side) |
 | `two-cols` | legacy: a child with class `.cols` becomes a two-column grid. Prefer `split` or `Cols`. | default |
 
 All slots receive `{ step }` (the slide's current step) as slot props.
@@ -179,10 +179,10 @@ All slots receive `{ step }` (the slide's current step) as slot props.
 - `ratio` in `image-*` sizes the zones left to right, whichever side holds the image:
   `image-right` with `ratio="3 2"` is text 3/5, image 2/5.
 - `split` and `image-*` keep their own zones; the footer shows under them (their zones end where
-  it begins), and their heading is the slide's title for the `--ph-title-*` tokens. `align` only
+  it begins), and their heading is the slide's title for the `--ar-title-*` tokens. `align` only
   places the body of `default` (and of layouts without zones of their own).
-- Content styles from `layouts.css`: `h1` is `--ph-title`; `h2` is 0.6x `--ph-title` in
-  `--ph-accent`; `p` has a bottom margin of 0.6em; lists and tables below.
+- Content styles from `layouts.css`: `h1` is `--ar-title`; `h2` is 0.6x `--ar-title` in
+  `--ar-accent`; `p` has a bottom margin of 0.6em; lists and tables below.
 
 ### Zones: header, body, footer
 
@@ -202,11 +202,11 @@ Slide
   that render nothing and `Notes` before it do not count. A `#title` slot, when given, is the
   header instead, for headers with more than a heading (a kicker line, a logo); its first `h1`/`h2`
   is the title. A slide that starts with anything else has no header: the body takes the slide.
-  The title carries the class `ph-title` and follows the `--ph-title-*` tokens; with
-  `--ph-header-height` the header is a band of that height with the title centred in it
+  The title carries the class `ar-title` and follows the `--ar-title-*` tokens; with
+  `--ar-header-height` the header is a band of that height with the title centred in it
   ([Theme tokens](#slide-zones-and-content)).
 - **Body**: everything else, in a column that fills the space between the header and the footer.
-  `align` (or the theme's `--ph-body-align`, `center` unless the theme says otherwise) places it:
+  `align` (or the theme's `--ar-body-align`, `center` unless the theme says otherwise) places it:
   `start` (from the top), `center`, `end`. What does not fit overflows at the bottom, never at the
   top. What fills the body still fills it whatever the alignment: `Img`, `Snippet`, an element with
   `flex: 1`, the `1fr` rows of `Grid` and `Rows`. `Cols`, `Rows` and `Grid` placed directly in a
@@ -214,13 +214,13 @@ Slide
   they hold something that needs the full height (a `Snippet`, an `Img`, another piece): then
   they fill as in a `start` body. `Cols(align="stretch")`, written out, keeps full-height columns.
   `.collapse` steps in a centred body move the rest as they come and go (it is re-centred).
-- **Footer**: the `Deck`'s `#footer` slot, in a band `--ph-footer-height` tall (88 px) at the
-  bottom of the slide, with the slide's side padding and its text in `--ph-footer-size` and
-  `--ph-footer-color`. Its children sit in a row, spread by `--ph-footer-align` (`space-between`:
+- **Footer**: the `Deck`'s `#footer` slot, in a band `--ar-footer-height` tall (88 px) at the
+  bottom of the slide, with the slide's side padding and its text in `--ar-footer-size` and
+  `--ar-footer-color`. Its children sit in a row, spread by `--ar-footer-align` (`space-between`:
   one at the start, two at both ends). The band takes the place of the slide's bottom padding, so
   the body (and the zones of `split` and `image-*`) ends where the footer begins. Hidden on `cover`
   and `section` unless `:footer="true"`; there it sits over the bottom padding, and on a section it
-  takes the section's text colour unless the theme sets `--ph-footer-color` for `.layout-section`.
+  takes the section's text colour unless the theme sets `--ar-footer-color` for `.layout-section`.
   `Slide(:footer="false")` hides it on one slide.
 - `SlideNumber` keeps its corner (bottom right, on the footer band's line with the default
   height), outside the footer's content box. To have the number inside the footer, use the slot
@@ -237,10 +237,10 @@ Slide(:footer="false")    //- no footer here (a full-bleed picture, say)
 
 ### Lists and tables
 
-- Lists: `--ph-list-gap` is the space between items (default `0`).
+- Lists: `--ar-list-gap` is the space between items (default `0`).
 - Tables get a plain style from tokens: full width, collapsed borders, cells padded
-  `--ph-table-pad`, a line `--ph-table-border` under every row, header cells in
-  `--ph-table-head-color` on `--ph-table-head-bg`, every other body row on `--ph-table-stripe`.
+  `--ar-table-pad`, a line `--ar-table-border` under every row, header cells in
+  `--ar-table-head-color` on `--ar-table-head-bg`, every other body row on `--ar-table-stripe`.
   These rules have zero specificity: any rule of the deck (`.my-table td { … }`) wins.
 
 ```pug
@@ -277,7 +277,7 @@ The background is a layer under the content, as big as the slide, that never cat
 A blank `bg` is no bg. `#background` slot: every element in it covers the whole slide, stacked in
 order (a picture, then a tint over it); `v-step` works inside. With both, `bg` is drawn first and
 the slot above it. With neither (a slot that renders nothing counts as none), the theme's default
-background shows (`--ph-slide-bg-*`), and the `bg-*` props tune it. Headings inside the
+background shows (`--ar-slide-bg-*`), and the `bg-*` props tune it. Headings inside the
 background are not used as the slide's title.
 
 ```pug
@@ -308,7 +308,7 @@ Slide
 ```
 
 (`.veil` is a class of the deck, e.g.
-`.veil { background: color-mix(in srgb, var(--ph-bg) 70%, transparent); }`.)
+`.veil { background: color-mix(in srgb, var(--ar-bg) 70%, transparent); }`.)
 
 ---
 
@@ -336,7 +336,7 @@ Numbering rules:
 Behaviour:
 - Works in nested components (it finds its slide through the DOM) and in `#background`.
 - Outside a `Slide` it warns and does nothing.
-- Fade duration: `--ph-step-duration` (default `.35s`).
+- Fade duration: `--ar-step-duration` (default `.35s`).
 - With `.collapse`, the elements around it glide to their new place (FLIP). Slides not on screen,
   `prefers-reduced-motion`, and export mode switch without the glide.
 - Inside `Cols`/`Rows`/`Grid`, a collapsed child frees its track and the children after it shift
@@ -400,7 +400,7 @@ the title, a zone, a cell of another piece) and takes `v-step` like any element.
   number (a share of the free space; shares are proportions, `"1 2"` = `"33 67"`), `auto` (fits its
   content) or `<n>px`. No other units, no `fr`, no CSS functions. Invalid → warning, equal tracks.
   Children beyond the entries start a new row (`Cols`) or get equal rows (`Rows`).
-- `gap` (String or Number): `sm` | `md` | `lg` (tokens `--ph-gap-sm|md|lg`: 24/48/80 px), a number
+- `gap` (String or Number): `sm` | `md` | `lg` (tokens `--ar-gap-sm|md|lg`: 24/48/80 px), a number
   of px (`12`), or a length in `px`, `em`, `rem` (`"1.5em"`). Invalid → warning, `md`.
 - `align` (`Cols` only): `start` | `center` | `end` | `stretch`, vertical placement in each column.
   In a centred slide body the row is as tall as its content; `align="stretch"`, written out, keeps
@@ -446,10 +446,10 @@ An escape hatch for one-off tweaks inside a slide, not a styling system.
 
 | Class | Effect |
 |---|---|
-| `.muted` | colour `--ph-muted` |
+| `.muted` | colour `--ar-muted` |
 | `.center` | `text-align: center` |
 | `.upper` | uppercase |
-| `.small` | font size `--ph-text-small` (default `.75em`) |
+| `.small` | font size `--ar-text-small` (default `.75em`) |
 
 `.bar` inside a `cover` slide draws the accent bar. `.cols` inside a `two-cols` slide is its grid.
 
@@ -472,7 +472,7 @@ A picture from the images folder (`src/images` by default) or any URL.
 | `position` | String | `center` | CSS `object-position`: what stays in view when cropped |
 | `opacity` | Number or String | `1` | `0`..`1` |
 | `blur` | Number or String | `0` | px |
-| `rounded` | Boolean, String or Number | `false` | `rounded` = the theme's `--ph-radius`; `rounded="full"` = circle; `rounded="24"` = px; or a CSS length |
+| `rounded` | Boolean, String or Number | `false` | `rounded` = the theme's `--ar-radius`; `rounded="full"` = circle; `rounded="24"` = px; or a CSS length |
 
 Behaviour and gotchas:
 - **No size of its own.** It fills the box its container gives it (the space under the title, a
@@ -518,7 +518,7 @@ Grid(cols="4" gap="md")
   Icon(v-for="it in items" :key="it.icon" :name="it.icon" size="96")
 ```
 
-(`.hot { color: var(--ph-accent); }` in the deck's `<style scoped>`; `items` lists the names in the
+(`.hot { color: var(--ar-accent); }` in the deck's `<style scoped>`; `items` lists the names in the
 deck's script: `[{ icon: 'lucide:gauge' }, …]`.)
 
 **Sets.** `lucide` (UI icons, [lucide.dev](https://lucide.dev)) and `simple-icons` (logos of
@@ -531,27 +531,27 @@ the library's copy of the same set, so a project can pin another version of Luci
 **How icons get in.** The Vite plugin reads the project's source (`src/` and the decks folder;
 `.vue .pug .js .ts .jsx .tsx .mjs .cjs` files; not the snippets and images folders) for words of the
 form `prefix:name` that are icons of an installed set, and builds only those into the app, through
-the module `virtual:phoenyx/icons`. A static `name="…"` is found, and so are names written in data
+the module `virtual:arao/icons`. A static `name="…"` is found, and so are names written in data
 (`{ icon: 'lucide:rocket' }`) and bound with `:name`. During development, a name written in a
 saved file shows at once, without a restart; a set installed while the dev server runs is found at
 the next save of a file that uses it.
 - **Limitation:** a name put together at runtime (`` :name="`lucide:${kind}`" ``, a value from a
   fetch) is not in the source, so it is not built in. Write the full names somewhere in the source
   (a list of them is enough), or force them with the plugin option
-  `phoenyx({ icons: ['lucide:sun', 'lucide:moon'] })` ([Vite plugin](#vite-plugin)).
+  `arao({ icons: ['lucide:sun', 'lucide:moon'] })` ([Vite plugin](#vite-plugin)).
 - A word that looks like a name but is no icon (`localhost:5173`, `a:hover`) is ignored; a real
   name in a comment or in text is built in too (it only costs its few hundred bytes).
 
 **Look.** The colour is `currentColor`: the icon takes the colour of the text, and is styled like
-text (`color: var(--ph-accent)`). Multicolour sets keep their own colours. It is `1em` tall by
+text (`color: var(--ar-accent)`). Multicolour sets keep their own colours. It is `1em` tall by
 default, so it follows the font size where it sits (in a heading it is as tall as the heading's
 text; a class with `font-size` resizes it); `size` sets px. It sits on the text's baseline like a
 glyph and never shrinks in a flex row. Width and height are SVG attributes, so a CSS rule with
-`width`/`height` wins over them. Classes: `.ph-icon` (the `svg`), `.ph-icon-missing`.
+`width`/`height` wins over them. Classes: `.ar-icon` (the `svg`), `.ar-icon-missing`.
 
 **Missing icon.** A name that is not in the build (its set is not installed, a typo, a name built
 at runtime) shows an empty dashed box of the same size, so nothing around it moves, and one warning
-per name in development: `[phoenyx] Icon "foo:bar" not found: …`, which says to install
+per name in development: `[arao] Icon "foo:bar" not found: …`, which says to install
 `@iconify-json/foo` or to check the name.
 
 **Licences.** Icons are others' work, under their own licences: check a set's licence on
@@ -578,14 +578,14 @@ A code window: macOS-style title bar, Shiki syntax colours, line numbers, per-st
 | `highlights` | Object | `{}` | `{ "<lines>[:<word>+++<word>]": <step> }`, see below |
 | `line-numbers` | Boolean | `true` | `:line-numbers="false"` hides them |
 | `fit` | Boolean | `false` | the window hugs the code instead of the standard frame (small inline snippets) |
-| `size` | Number | theme's `--ph-code-size` | font size in px (`:size="36"`); still shrinks to fit |
-| `theme` | String | theme's `--ph-code-theme`, else `material-theme-darker` | a Shiki theme name for this snippet |
+| `size` | Number | theme's `--ar-code-size` | font size in px (`:size="36"`); still shrinks to fit |
+| `theme` | String | theme's `--ar-code-theme`, else `material-theme-darker` | a Shiki theme name for this snippet |
 
-**Frame and size.** Every snippet window has the slide's shape (`--ph-code-aspect`, 16/9) and is as
-large as fits in the space it gets, up to `--ph-code-width` (1520 px): on a slide with a title that
+**Frame and size.** Every snippet window has the slide's shape (`--ar-code-aspect`, 16/9) and is as
+large as fits in the space it gets, up to `--ar-code-width` (1520 px): on a slide with a title that
 is about 1396 x 785, the same on every full-slide snippet. In a column it keeps the shape, smaller.
 Code sits top-left like an editor; `fit` makes the window hug the code instead. The font
-is the theme's standard `--ph-code-size` on every slide; a snippet that would not fit at that size
+is the theme's standard `--ar-code-size` on every slide; a snippet that would not fit at that size
 shrinks to fit, never grows.
 
 **Highlights.** Keys are a line spec, optionally followed by `:` and words separated by `+++`;
@@ -649,7 +649,7 @@ Built into `Deck`; nothing to add. A floating panel at the bottom centre of the 
 
 - **Touch** (phones, tablets): tap the right quarter of the screen → next, the left quarter →
   previous, the middle → show/hide the panel (it stays 4 s); swipe left/right → next/previous.
-  Links, buttons and inputs inside a slide keep their taps; add `data-ph-touch="ignore"` to any
+  Links, buttons and inputs inside a slide keep their taps; add `data-ar-touch="ignore"` to any
   other element that needs them. Pinch-zoom still works. Below 560 px wide the panel drops the
   first/last buttons and the jump menu fits the screen.
 - **Shows on mouse movement only**, never on keyboard navigation; hides 2.5 s after the mouse
@@ -724,13 +724,13 @@ transitions, no sync with other windows; `useDeck().role` is `'export'`.
 
 A flag set to `0`, `false`, `no` or `off` counts as unset. Every page is exactly the canvas size.
 
-**CLI**: `phoenyx export [--deck <name>] [--theme <name>] [--per-step] [--notes] [--out <path>] [--url <url>]`,
-run in the slides project (its folder is the current directory); with `"export": "phoenyx export"`
+**CLI**: `arao export [--deck <name>] [--theme <name>] [--per-step] [--notes] [--out <path>] [--url <url>]`,
+run in the slides project (its folder is the current directory); with `"export": "arao export"`
 in its scripts, `npm run export -- …`. Without `--deck`, the first deck by name (as the app picks
 it). Builds the project with its own Vite config to a temp folder, serves it, prints `?export` with headless Chromium, checks the
 page count, writes atomically. Default output `exports/<deck>[-<theme>][-steps][-notes].pdf`; an
 `--out` that is a folder (exists, or ends in `/`) gets that name inside. Chromium:
-`npx playwright-core install chromium`, or `PHOENYX_CHROMIUM=/path/to/chrome`. Missing pictures
+`npx playwright-core install chromium`, or `ARAO_CHROMIUM=/path/to/chrome`. Missing pictures
 print as placeholders and are listed.
 
 - `--url <url>`: no build and no server of its own; prints from the server already running at
@@ -741,16 +741,16 @@ print as placeholders and are listed.
 - `-h`, `--help`: prints the usage and exits. An unknown option prints the error and the usage,
   and exits with code 1.
 
-**Late content**: the export waits for elements with the attribute `data-ph-busy` inside the slide
+**Late content**: the export waits for elements with the attribute `data-ar-busy` inside the slide
 (or in addons) before copying each page, up to 15 s. Snippet and Img set it while loading. A
 component that loads something may do the same:
 
 ```pug
-div(:data-ph-busy="loading ? '' : undefined")
+div(:data-ar-busy="loading ? '' : undefined")
 ```
 
 A named value (Img uses its URL) is given up on once, for all later pages; an empty value is
-waited for on every page. When done, `window.__phoenyxReady` is
+waited for on every page. When done, `window.__araoReady` is
 `{ pages, slides, steps, width, height, missing, stalled, theme }` or `{ error }`.
 
 Gotcha: pages are static DOM copies: canvas/WebGL drawings, video frames, iframes, shadow DOM and
@@ -759,7 +759,7 @@ Gotcha: pages are static DOM copies: canvas/WebGL drawings, video frames, iframe
 **Printing** (Chromium's print path; the deck on screen is untouched). The book works around what
 Chromium prints differently from what it shows:
 
-- A page prints in one piece (`contain: size` on `.ph-page`). Otherwise Chromium splits whatever is
+- A page prints in one piece (`contain: size` on `.ar-page`). Otherwise Chromium splits whatever is
   laid out across the bottom edge of a page that has a page after it, clipped or not, and prints the
   part above the break as a box of its own: no bottom border, no rounded bottom corners, percentages
   of its height taken from that part. A ring placed with `top: 50%; transform: translateY(-50%)`
@@ -793,7 +793,7 @@ For components inside `Deck` (addons, or anything in a slide) to read where the 
 it. Throws outside a `Deck`.
 
 ```js
-import { useDeck } from 'phoenyxjs'
+import { useDeck } from 'araojs'
 const deck = useDeck()
 ```
 
@@ -833,7 +833,7 @@ than just appear. Throws outside a `Slide`.
 </template>
 
 <script setup>
-import { useSlide } from 'phoenyxjs'
+import { useSlide } from 'araojs'
 const props = defineProps({ to: { type: Number, default: 3 } })
 const slide = useSlide()
 slide.requireSteps(() => props.to)
@@ -846,7 +846,7 @@ slide.requireSteps(() => props.to)
 
 Components placed inside `Deck` but outside any `Slide`, drawn over every slide in canvas space
 (absolute positioning, `z-index: 10`). They are copied onto every export page. They are imported
-by the deck (`import { ProgressBar, SlideNumber } from 'phoenyxjs'`):
+by the deck (`import { ProgressBar, SlideNumber } from 'araojs'`):
 
 ```pug
 Deck
@@ -856,8 +856,8 @@ Deck
 
 | Addon | Props | What it draws |
 |---|---|---|
-| `ProgressBar` | `position`: `"bottom"` (default) or `"top"` | a full-width bar, `--ph-progress-height` tall (8 px), filled with `--ph-accent` by `progress` |
-| `SlideNumber` | none | `n / total`, bottom right, 24 px, `--ph-muted`; on the line of the footer band, outside its content (with a footer, `{{ number }} / {{ total }}` in `#footer` puts the number inside it) |
+| `ProgressBar` | `position`: `"bottom"` (default) or `"top"` | a full-width bar, `--ar-progress-height` tall (8 px), filled with `--ar-accent` by `progress` |
+| `SlideNumber` | none | `n / total`, bottom right, 24 px, `--ar-muted`; on the line of the footer band, outside its content (with a footer, `{{ number }} / {{ total }}` in `#footer` puts the number inside it) |
 
 **Writing one**: a component that calls `useDeck()`, positions itself absolutely in canvas px,
 uses tokens for colours, and sets `pointer-events: none`. Skip side effects where they do not
@@ -871,7 +871,7 @@ belong with `role`.
 
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { useDeck } from 'phoenyxjs'
+import { useDeck } from 'araojs'
 
 const deck = useDeck()
 const time = ref('')
@@ -884,7 +884,7 @@ onBeforeUnmount(() => clearInterval(timer))
 <style>
 .slide-clock {
   position: absolute; top: 28px; right: 40px; z-index: 10;
-  font-size: 24px; color: var(--ph-muted); pointer-events: none;
+  font-size: 24px; color: var(--ar-muted); pointer-events: none;
 }
 </style>
 ```
@@ -893,22 +893,22 @@ onBeforeUnmount(() => clearInterval(timer))
 
 ## Vite plugin
 
-`phoenyx()` from `phoenyxjs/vite` is all a slides project puts in its Vite config. It includes
+`arao()` from `araojs/vite` is all a slides project puts in its Vite config. It includes
 `@vitejs/plugin-vue` (do not add `vue()` as well: Vite stops with an error) with Pug for the
 templates (no need to install `pug`; HTML templates need nothing), and exposes three project folders as virtual modules, so
 slides name files and need no imports. It also resolves the [icons](#icon) the source uses.
 
 ```js
 // vite.config.js
-import phoenyx from 'phoenyxjs/vite'
+import arao from 'araojs/vite'
 export default defineConfig({
-  plugins: [phoenyx({ decks: 'src/decks', snippets: 'src/snippets', images: 'src/images' })],
+  plugins: [arao({ decks: 'src/decks', snippets: 'src/snippets', images: 'src/images' })],
 })
 ```
 
 | Option | Default | Used by | Contents |
 |---|---|---|---|
-| `decks` | `'src/decks'` | `createDeckApp()`, `phoenyx export` | the `.vue` files directly in it (not in subfolders), one lazily loaded chunk each |
+| `decks` | `'src/decks'` | `createDeckApp()`, `arao export` | the `.vue` files directly in it (not in subfolders), one lazily loaded chunk each |
 | `snippets` | `'src/snippets'` | `Snippet(file)` | every file, as raw text, loaded lazily |
 | `images` | `'src/images'` | `Img(file)`, `Slide(bg)` | `png jpg jpeg gif webp avif svg` (any case), as URLs, eager |
 | `icons` | `[]` | `Icon` | names (`'lucide:sun'`) built in even when the source does not spell them out (built at runtime); one that is in no installed set is reported when the module is built |
@@ -920,12 +920,12 @@ export default defineConfig({
 - Subfolders are allowed; files are named by their path inside the folder; names are
   case-sensitive.
 - Adding or removing a picture during development updates the slides in place.
-- Modules: `virtual:phoenyx/decks` exports `decks` (file name → loader) and `decksDir`;
-  `virtual:phoenyx/snippets` exports `snippets` (path → loader) and `snippetsDir`;
-  `virtual:phoenyx/images` exports `images` (path → URL) and `imagesDir`;
-  `virtual:phoenyx/icons` exports `icons` (`prefix:name` → `{ body, width, height }`, only the icons
+- Modules: `virtual:arao/decks` exports `decks` (file name → loader) and `decksDir`;
+  `virtual:arao/snippets` exports `snippets` (path → loader) and `snippetsDir`;
+  `virtual:arao/images` exports `images` (path → URL) and `imagesDir`;
+  `virtual:arao/icons` exports `icons` (`prefix:name` → `{ body, width, height }`, only the icons
   the source uses, plus the `icons` option).
-- It also keeps `phoenyxjs` out of Vite's dependency prebundling (it imports those virtual
+- It also keeps `araojs` out of Vite's dependency prebundling (it imports those virtual
   modules), prebundles what it imports (`vue`, `shiki`), and dedupes `vue`, so a linked copy of
   the library (`npm link`, `file:`) uses the project's Vue.
 
@@ -933,8 +933,8 @@ export default defineConfig({
 
 ## Theme tokens
 
-A theme is a CSS rule `[data-theme="<name>"] { --ph-…: …; }` in a CSS file imported in
-`src/main.js` and listed in `Deck(:themes)`: `import 'phoenyxjs/themes/default.css'` for a shipped
+A theme is a CSS rule `[data-theme="<name>"] { --ar-…: …; }` in a CSS file imported in
+`src/main.js` and listed in `Deck(:themes)`: `import 'araojs/themes/default.css'` for a shipped
 one, `src/themes/<name>.css` in the project for your own. Themes set tokens only; layouts read them
 (the engine's CSS: `layouts.css`, `engine.css`, component styles). Unset tokens use the fallback below. Rows marked
 **theme** have no engine fallback: every theme must set them (both shipped themes do).
@@ -943,117 +943,117 @@ one, `src/themes/<name>.css` in the project for your own. Themes set tokens only
 
 | Token | Default (`default` theme / fallback) | Meaning |
 |---|---|---|
-| `--ph-bg` | `#0f1115` (theme) | slide background colour |
-| `--ph-fg` | `#e8e8ea` (theme) | text colour |
-| `--ph-muted` | `#9aa0a6` (theme) | secondary text (`.muted`, slide number) |
-| `--ph-accent` | `#ff6a3d` (theme) | `h2`, cover bar, section background, progress, highlights |
-| `--ph-accent-fg` | `#0f1115` (theme) | text on accent (section slides) |
-| `--ph-letterbox` | `#000` | around the canvas when the window shape differs |
-| `--ph-font-sans` | `"Inter", system-ui, …` (theme) | text font |
-| `--ph-font-mono` | `"JetBrains Mono", ui-monospace, …` (theme) | code font |
-| `--ph-text-base` | `40px` | base font size of a slide |
-| `--ph-title` | `88px` (theme) | the type scale: `h1` size; `h2` is 0.6x, cover `h1` 1.25x, section `h1` 1.4x (the slide title's own size is `--ph-title-size`) |
-| `--ph-text-small` | `.75em` | `.small` |
-| `--ph-placeholder` | text colour | colour of the missing-picture box |
+| `--ar-bg` | `#0f1115` (theme) | slide background colour |
+| `--ar-fg` | `#e8e8ea` (theme) | text colour |
+| `--ar-muted` | `#9aa0a6` (theme) | secondary text (`.muted`, slide number) |
+| `--ar-accent` | `#ff6a3d` (theme) | `h2`, cover bar, section background, progress, highlights |
+| `--ar-accent-fg` | `#0f1115` (theme) | text on accent (section slides) |
+| `--ar-letterbox` | `#000` | around the canvas when the window shape differs |
+| `--ar-font-sans` | `"Inter", system-ui, …` (theme) | text font |
+| `--ar-font-mono` | `"JetBrains Mono", ui-monospace, …` (theme) | code font |
+| `--ar-text-base` | `40px` | base font size of a slide |
+| `--ar-title` | `88px` (theme) | the type scale: `h1` size; `h2` is 0.6x, cover `h1` 1.25x, section `h1` 1.4x (the slide title's own size is `--ar-title-size`) |
+| `--ar-text-small` | `.75em` | `.small` |
+| `--ar-placeholder` | text colour | colour of the missing-picture box |
 
 ### Spacing and shape
 
 | Token | Default | Meaning |
 |---|---|---|
-| `--ph-pad` | `96px 120px` | slide padding, the safe margin (and the text side of `image-*`); the footer band, when shown, takes the place of its bottom |
-| `--ph-radius` | `16px` (theme) | corner radius (`Img rounded`, placeholders) |
-| `--ph-gap-sm` / `-md` / `-lg` | `24px` / `48px` / `80px` | `gap="sm\|md\|lg"`; `md` is the default gap of `Cols`/`Rows`/`Grid`; `lg` between zones |
-| `--ph-image-inset` | `0` | padding around the picture in an `image-*` zone |
+| `--ar-pad` | `96px 120px` | slide padding, the safe margin (and the text side of `image-*`); the footer band, when shown, takes the place of its bottom |
+| `--ar-radius` | `16px` (theme) | corner radius (`Img rounded`, placeholders) |
+| `--ar-gap-sm` / `-md` / `-lg` | `24px` / `48px` / `80px` | `gap="sm\|md\|lg"`; `md` is the default gap of `Cols`/`Rows`/`Grid`; `lg` between zones |
+| `--ar-image-inset` | `0` | padding around the picture in an `image-*` zone |
 
 ### Background, steps, addons
 
 | Token | Default | Meaning |
 |---|---|---|
-| `--ph-slide-bg-image` | `none` | default slide background: a gradient, or `url(…)` relative to the theme file |
-| `--ph-slide-bg-position` | `center` | its position |
-| `--ph-slide-bg-opacity` | `1` | its opacity |
-| `--ph-step-duration` | `.35s` | fade time of `v-step` |
-| `--ph-progress-height` | `8px` | `ProgressBar` height |
+| `--ar-slide-bg-image` | `none` | default slide background: a gradient, or `url(…)` relative to the theme file |
+| `--ar-slide-bg-position` | `center` | its position |
+| `--ar-slide-bg-opacity` | `1` | its opacity |
+| `--ar-step-duration` | `.35s` | fade time of `v-step` |
+| `--ar-progress-height` | `8px` | `ProgressBar` height |
 
 A theme can leave a layout without its default background:
-`[data-theme="x"] .layout-section { --ph-slide-bg-image: none; }`.
+`[data-theme="x"] .layout-section { --ar-slide-bg-image: none; }`.
 
 ### Slide zones and content
 
-The title tokens style the slide's title (`.ph-title`: the header's heading, the heading of
+The title tokens style the slide's title (`.ar-title`: the header's heading, the heading of
 `split`'s header and of `image-*`'s text side), not every `h1`/`h2`; cover and section headings
-keep `--ph-title`. Without them the title looks as any `h2` (or `h1`) does.
+keep `--ar-title`. Without them the title looks as any `h2` (or `h1`) does.
 
 | Token | Default | Meaning |
 |---|---|---|
-| `--ph-title-size` | an `h2`: 0.6x `--ph-title`; an `h1`: `--ph-title` | the title's font size |
-| `--ph-title-color` | an `h2`: `--ph-accent`; an `h1`: the text colour | the title's colour |
-| `--ph-title-align` | as the slide's text | `start`, `center`, `end` |
-| `--ph-title-gap` | `.6em` under an `h2`, `.4em` under an `h1` | space between the title and the body (em: the title's size; under a header band, give px) |
-| `--ph-header-height` | none (as tall as the title) | a header band: the header is at least this tall, the title centred in it, `--ph-title-gap` under the band |
-| `--ph-body-align` | `center` | `start`, `center` or `end`: where the body sits, unless `Slide(align)` says (anything else warns and centres) |
-| `--ph-list-gap` | `0` | space between list items |
-| `--ph-footer-height` | `88px` | the footer band, at the bottom of the slide, in place of the bottom padding |
-| `--ph-footer-size` | `24px` | footer text size |
-| `--ph-footer-color` | `--ph-muted` (on a section: its text colour) | footer text colour |
-| `--ph-footer-align` | `space-between` | how the footer's children spread: `flex-start`, `center`, `flex-end`, `space-between` |
+| `--ar-title-size` | an `h2`: 0.6x `--ar-title`; an `h1`: `--ar-title` | the title's font size |
+| `--ar-title-color` | an `h2`: `--ar-accent`; an `h1`: the text colour | the title's colour |
+| `--ar-title-align` | as the slide's text | `start`, `center`, `end` |
+| `--ar-title-gap` | `.6em` under an `h2`, `.4em` under an `h1` | space between the title and the body (em: the title's size; under a header band, give px) |
+| `--ar-header-height` | none (as tall as the title) | a header band: the header is at least this tall, the title centred in it, `--ar-title-gap` under the band |
+| `--ar-body-align` | `center` | `start`, `center` or `end`: where the body sits, unless `Slide(align)` says (anything else warns and centres) |
+| `--ar-list-gap` | `0` | space between list items |
+| `--ar-footer-height` | `88px` | the footer band, at the bottom of the slide, in place of the bottom padding |
+| `--ar-footer-size` | `24px` | footer text size |
+| `--ar-footer-color` | `--ar-muted` (on a section: its text colour) | footer text colour |
+| `--ar-footer-align` | `space-between` | how the footer's children spread: `flex-start`, `center`, `flex-end`, `space-between` |
 
 | Token | Default | Meaning |
 |---|---|---|
-| `--ph-table-pad` | `.4em .8em` | cell padding |
-| `--ph-table-border` | `2px solid` the text colour at 15 % | the line under every row (a CSS `border`) |
-| `--ph-table-head-bg` | none | header cells' background |
-| `--ph-table-head-color` | `--ph-muted` | header cells' text colour |
-| `--ph-table-stripe` | none | background of every other body row |
+| `--ar-table-pad` | `.4em .8em` | cell padding |
+| `--ar-table-border` | `2px solid` the text colour at 15 % | the line under every row (a CSS `border`) |
+| `--ar-table-head-bg` | none | header cells' background |
+| `--ar-table-head-color` | `--ar-muted` | header cells' text colour |
+| `--ar-table-stripe` | none | background of every other body row |
 
 Tokens may be set per layout, or on any element, like every token:
 
 ```css
-[data-theme="venue"] .layout-default { --ph-title-color: #fff; --ph-title-gap: 120px; } /* content slides */
-[data-theme="venue"] .layout-section { --ph-footer-color: #fff; }
+[data-theme="venue"] .layout-default { --ar-title-color: #fff; --ar-title-gap: 120px; } /* content slides */
+[data-theme="venue"] .layout-section { --ar-footer-color: #fff; }
 ```
 
 ```pug
-table.dense(style="--ph-table-pad: 12px 20px")
+table.dense(style="--ar-table-pad: 12px 20px")
 ```
 
 ### Sizes
 
 Rules of thumb for a 1920x1080 canvas (and what the defaults do):
 
-- **Safe margin** ≈ 5 % of each side, for projectors that crop the edges: `--ph-pad` (96 x 120 px).
-- **Header** ≈ 12–15 % of the height for the title zone (a band, if any: `--ph-header-height`).
+- **Safe margin** ≈ 5 % of each side, for projectors that crop the edges: `--ar-pad` (96 x 120 px).
+- **Header** ≈ 12–15 % of the height for the title zone (a band, if any: `--ar-header-height`).
 - **Footer** ≈ 5–8 % of the height: the default band is 88 px, in place of the bottom padding,
   with 24 px text.
-- **Body text** 36–44 px (`--ph-text-base`: 40 px); nothing under ≈ 28 px except the footer and
+- **Body text** 36–44 px (`--ar-text-base`: 40 px); nothing under ≈ 28 px except the footer and
   dense code.
 
 ### Code (Snippet)
 
 | Token | Default | Meaning |
 |---|---|---|
-| `--ph-code-theme` | `material-theme-darker` | Shiki theme (`vigojug`: `github-light`) |
-| `--ph-code-size` | `44px` | standard code font size |
-| `--ph-code-width` | `1520px` | standard window width |
-| `--ph-code-aspect` | `16 / 9` | window shape (width / height); the window is as large as fits with this shape |
-| `--ph-code-bg` | `#2b2b2b` | window background |
-| `--ph-code-bar` | `#383a40` | title bar |
-| `--ph-code-fg` | `#eeffff` | text before colours load |
-| `--ph-code-muted` | `#8a8f98` | line numbers |
-| `--ph-code-title` | `rgba(255,255,255,.92)` | title bar text |
-| `--ph-code-hl` | `--ph-accent` | highlight colour |
-| `--ph-code-radius` | `22px` | window corner radius |
+| `--ar-code-theme` | `material-theme-darker` | Shiki theme (`vigojug`: `github-light`) |
+| `--ar-code-size` | `44px` | standard code font size |
+| `--ar-code-width` | `1520px` | standard window width |
+| `--ar-code-aspect` | `16 / 9` | window shape (width / height); the window is as large as fits with this shape |
+| `--ar-code-bg` | `#2b2b2b` | window background |
+| `--ar-code-bar` | `#383a40` | title bar |
+| `--ar-code-fg` | `#eeffff` | text before colours load |
+| `--ar-code-muted` | `#8a8f98` | line numbers |
+| `--ar-code-title` | `rgba(255,255,255,.92)` | title bar text |
+| `--ar-code-hl` | `--ar-accent` | highlight colour |
+| `--ar-code-radius` | `22px` | window corner radius |
 
-Set by the engine, read-only: `--ph-scale` (the stage's current scale factor; `1` in export).
+Set by the engine, read-only: `--ar-scale` (the stage's current scale factor; `1` in export).
 
 ```css
 /* src/themes/venue.css, then import it in src/main.js and add 'venue' to Deck(:themes) */
 [data-theme="venue"] {
-  --ph-letterbox: #111; --ph-bg: #fff; --ph-fg: #222; --ph-muted: #777;
-  --ph-accent: #0a7; --ph-accent-fg: #fff;
-  --ph-font-sans: system-ui, sans-serif; --ph-font-mono: ui-monospace, monospace;
-  --ph-title: 88px; --ph-radius: 12px;
-  --ph-code-theme: github-light; --ph-code-bg: #f6f8fa; --ph-code-bar: #e6e8eb;
+  --ar-letterbox: #111; --ar-bg: #fff; --ar-fg: #222; --ar-muted: #777;
+  --ar-accent: #0a7; --ar-accent-fg: #fff;
+  --ar-font-sans: system-ui, sans-serif; --ar-font-mono: ui-monospace, monospace;
+  --ar-title: 88px; --ar-radius: 12px;
+  --ar-code-theme: github-light; --ar-code-bg: #f6f8fa; --ar-code-bar: #e6e8eb;
 }
 ```
 

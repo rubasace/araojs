@@ -1,4 +1,4 @@
-# Phoenyx
+# Arao
 
 A slide engine of its own for technical talks, built on **Vue 3 + Vite**, with slides written as
 Vue templates: plain **HTML**, or **Pug**, supported out of the box and recommended for brevity.
@@ -7,39 +7,41 @@ Vue templates: plain **HTML**, or **Pug**, supported out of the box and recommen
   (`Deck(:width="…" :height="…")` sets another), and scaled to the window with a CSS transform.
   What you see on your laptop is what the projector, the presenter view and the PDF show: same
   line breaks, same sizes. All sizes inside a slide are canvas px.
-- **Themes are tokens only.** A theme is a block of `--ph-*` CSS variables (colours, fonts, sizes,
+- **Themes are tokens only.** A theme is a block of `--ar-*` CSS variables (colours, fonts, sizes,
   title, body placement, footer, tables, code colours). Same slides, different venue: only the
   theme changes.
 - **Declarative.** Layouts, composition pieces and props cover the usual arrangements, so a deck
   needs little or no custom CSS. That also makes decks easy for AI agents to write (see
   [AGENTS.md](AGENTS.md)).
 
-Phoenyx is a library (the `phoenyxjs` package: the engine, its components, addons, themes, a Vite
+Arao is a library (the `araojs` package: the engine, its components, addons, themes, a Vite
 plugin and the PDF export). Decks live in a **slides project** of their own that depends on it.
 
-> **Status:** not published to npm yet (the package name `phoenyxjs` is a placeholder). A project
-> uses it from a checkout: `"phoenyxjs": "file:../phoenyxjs"` (then `npm run build` here after each
-> change to the library), or from a tarball made with `npm pack`.
+Arao continues the idea of [eagle.js](https://github.com/Zulko/eagle.js): slides as Vue components.
+
+> **Status:** not published to npm yet. A project uses it from a checkout:
+> `"araojs": "file:../araojs"` (then `npm run build` here after each change to the library), or
+> from a tarball made with `npm pack`.
 
 ## Quick start: a slides project
 
 ```bash
-npm install phoenyxjs vue && npm install -D vite
+npm install araojs vue && npm install -D vite
 ```
 
 ```js
 // vite.config.js
 import { defineConfig } from 'vite'
-import phoenyx from 'phoenyxjs/vite'
+import arao from 'araojs/vite'
 
-export default defineConfig({ plugins: [phoenyx()] })
+export default defineConfig({ plugins: [arao()] })
 ```
 
 ```js
 // src/main.js
-import { createDeckApp } from 'phoenyxjs'
-import 'phoenyxjs/themes/default.css'
-import 'phoenyxjs/themes/vigojug.css'
+import { createDeckApp } from 'araojs'
+import 'araojs/themes/default.css'
+import 'araojs/themes/vigojug.css'
 
 createDeckApp().mount('#app')
 ```
@@ -51,19 +53,19 @@ createDeckApp().mount('#app')
 ```
 
 ```json
-"scripts": { "dev": "vite", "build": "vite build", "export": "phoenyx export" }
+"scripts": { "dev": "vite", "build": "vite build", "export": "arao export" }
 ```
 
 That is the whole setup:
 
-- `phoenyx()` is the only Vite plugin: it brings `@vitejs/plugin-vue` and Pug along (don't add
-  `vue()` too; Vue's options go in `phoenyx({ vue: { … } })`), and serves the project's folders:
+- `arao()` is the only Vite plugin: it brings `@vitejs/plugin-vue` and Pug along (don't add
+  `vue()` too; Vue's options go in `arao({ vue: { … } })`), and serves the project's folders:
   decks in `src/decks`, code files in `src/snippets`, pictures in `src/images` (each one an option),
   and builds in the icons the source names.
 - `createDeckApp()` creates the Vue app with the engine installed and renders the deck named by
-  `?deck=`. A project with its own app shell uses `createApp(MyApp).use(Phoenyx)` instead
-  (`import Phoenyx from 'phoenyxjs'`).
-- The engine's CSS comes with `'phoenyxjs'`; the themes the decks wear are imported one by one.
+  `?deck=`. A project with its own app shell uses `createApp(MyApp).use(Arao)` instead
+  (`import Arao from 'araojs'`).
+- The engine's CSS comes with `'araojs'`; the themes the decks wear are imported one by one.
 
 Then `npm run dev` and open `http://localhost:5173/`:
 
@@ -131,7 +133,7 @@ Deck(:themes="['default', 'vigojug']" duration="30m")
 </template>
 
 <script setup>
-import { ProgressBar, SlideNumber } from 'phoenyxjs'
+import { ProgressBar, SlideNumber } from 'araojs'
 </script>
 ```
 
@@ -175,7 +177,7 @@ Each file picks its own. The same deck in HTML (the `<script setup>` does not ch
 ```
 
 `Deck`, `Slide`, `Img`, `Icon`, `Snippet`, `Notes`, `Cols`, `Rows`, `Grid`, `Center` and the `v-step`
-directive are registered globally. Addons (`ProgressBar`, `SlideNumber` from `'phoenyxjs'`, your
+directive are registered globally. Addons (`ProgressBar`, `SlideNumber` from `'araojs'`, your
 own) are imported.
 
 ## Folder layout
@@ -183,8 +185,8 @@ own) are imported.
 A slides project:
 
 ```
-package.json        depends on phoenyxjs; scripts dev, build, export
-vite.config.js      plugins: [phoenyx()]
+package.json        depends on araojs; scripts dev, build, export
+vite.config.js      plugins: [arao()]
 index.html          <div id="app"> and /src/main.js
 src/
   main.js           createDeckApp().mount('#app'), after the theme imports
@@ -205,7 +207,7 @@ This repository, the library:
 
 ```
 src/
-  index.js          what 'phoenyxjs' exports (the only barrel: every other module imports a file)
+  index.js          what 'araojs' exports (the only barrel: every other module imports a file)
   plugin.js         the Vue plugin: global components and directives, the engine's CSS
   app.js            createDeckApp
   components/       Deck, Slide, Img, Icon, Snippet, Notes, Cols/Rows/Grid/Center (layout.js)
@@ -216,11 +218,11 @@ src/
   core/             plain modules: stage, sync, timer, exporter, image, icons, flip, registry
   styles/           engine.css (structure), layouts.css (content and layouts)
   themes/           the shipped themes (default.css, vigojug.css)
-vite/               the Vite plugin (phoenyxjs/vite; icons.js resolves the icons)
-bin/                the phoenyx command (phoenyx export)
+vite/               the Vite plugin (araojs/vite; icons.js resolves the icons)
+bin/                the arao command (arao export)
 playground/         a tiny slides project on the library's source, for developing it
 docs/reference.md   the full reference
-dist/               the build (npm run build): index.js, phoenyx.css, themes/
+dist/               the build (npm run build): index.js, arao.css, themes/
 ```
 
 ## Features
@@ -232,11 +234,11 @@ dist/               the build (npm run build): index.js, phoenyx.css, themes/
   `image-left` / `image-right` (an edge-to-edge picture beside the text), with `ratio`.
 - **Slide zones** — a content slide is a header (the heading it starts with, no template needed),
   a body (centred vertically by default; `Slide(align="start|center|end")` or the theme's
-  `--ph-body-align`) and a footer.
+  `--ar-body-align`) and a footer.
 - **Footer** — `Deck`'s `#footer` slot on every slide (real text in the theme's fonts, with the
   slide number if wanted), hidden on covers and sections, in the presenter view and the PDF.
-- **Tables and lists** — plain `table` and lists styled by the theme (`--ph-table-*`,
-  `--ph-list-gap`); title colour, size, alignment and gap are tokens too (`--ph-title-*`).
+- **Tables and lists** — plain `table` and lists styled by the theme (`--ar-table-*`,
+  `--ar-list-gap`); title colour, size, alignment and gap are tokens too (`--ar-title-*`).
 - **Composition** — `Cols`, `Rows`, `Grid`, `Center`: boxes laid out by props (`ratio`, `gap`,
   `align`, `cols`), no CSS needed.
 - **Code** — `Snippet`: a macOS-style window with Shiki colours, files by name, the same frame
@@ -279,7 +281,7 @@ The presenter UI is in Spanish.
 
 ## Export to PDF
 
-In a slides project (`"export": "phoenyx export"` in its scripts; `npx phoenyx export …` works too):
+In a slides project (`"export": "arao export"` in its scripts; `npx arao export …` works too):
 
 ```bash
 npx playwright-core install chromium      # once: the Chromium that playwright-core drives
@@ -298,7 +300,7 @@ npm run export -- --deck mytalk --theme vigojug --per-step --notes --out talk.pd
 
 The command builds the project (with its own Vite config) into a temporary folder, serves it, opens `?export` in headless
 Chromium and prints. By default each slide is one page showing its last step. Pages are
-1920x1080 px (1440x810 pt). `PHOENYX_CHROMIUM=/path/to/chrome` uses a browser you already have.
+1920x1080 px (1440x810 pt). `ARAO_CHROMIUM=/path/to/chrome` uses a browser you already have.
 Opening `?export` in a normal browser and printing to PDF gives the same pages.
 
 ## Scripts
@@ -315,8 +317,8 @@ In this repository:
 
 | Script | What it does |
 |---|---|
-| `npm run build` | the library into `dist/`: `index.js` (ESM, imports its CSS), `phoenyx.css`, `themes/*.css`; also run by `npm pack` / `npm publish` |
-| `npm run dev` | the playground, on the library's source, on 127.0.0.1:5173 (`PHOENYX_PUBLIC_HOST` allows a tunnel host) |
+| `npm run build` | the library into `dist/`: `index.js` (ESM, imports its CSS), `arao.css`, `themes/*.css`; also run by `npm pack` / `npm publish` |
+| `npm run dev` | the playground, on the library's source, on 127.0.0.1:5173 (`ARAO_PUBLIC_HOST` allows a tunnel host) |
 | `npm run smoke [-- <file.tgz>]` | the packaged-consumer smoke test (below) |
 
 Node 20.19 or newer.
@@ -338,7 +340,7 @@ The package name and the CLI's name come from `package.json`. CI runs it on ever
 and on every push to `main`. To run it locally:
 
 ```bash
-npx playwright-core install chromium   # once; or PHOENYX_CHROMIUM=/path/to/chrome
+npx playwright-core install chromium   # once; or ARAO_CHROMIUM=/path/to/chrome
 npm run smoke                          # or: node scripts/smoke.mjs path/to/package.tgz
 ```
 

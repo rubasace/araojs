@@ -18,7 +18,7 @@ import { Comment, Fragment, Text, cloneVNode, h } from 'vue'
 //        development and is ignored: equal tracks, as without one.
 //        Without ratio: equal tracks, one per child. Children beyond the ratio's entries start
 //        a new row (Cols) or get equal rows (Rows).
-// gap:   sm | md | lg (theme tokens --ph-gap-sm|md|lg), a number of px (12) or a length in
+// gap:   sm | md | lg (theme tokens --ar-gap-sm|md|lg), a number of px (12) or a length in
 //        px, em or rem ("12px", "1.5em"). Default md; an invalid gap warns and keeps md.
 // align (Cols): start | center | end | stretch, vertical placement in each column. Default stretch.
 //        In a centred (or end-aligned) slide body the row is only as tall as its content and sits
@@ -45,7 +45,7 @@ const LENGTH = /^\d*\.?\d+(px|em|rem)$/
 // gap → CSS value; undefined when invalid, so the stylesheet default (md) applies. The prop
 // validator is this same function, so what passes validation is exactly what renders.
 export const gapValue = (v) => {
-  if (GAPS.includes(v)) return `var(--ph-gap-${v})`
+  if (GAPS.includes(v)) return `var(--ar-gap-${v})`
   if (v == null) return undefined
   if (isNumber(v)) return `${Number(v)}px`
   const s = String(v).trim()
@@ -81,7 +81,7 @@ const piece = (name, props, style) => ({
   name,
   props,
   setup(p, { slots }) {
-    const cls = `ph-${name.toLowerCase()}`
+    const cls = `ar-${name.toLowerCase()}`
     return () => h('div', { class: cls, style: style(p) }, slots.default?.())
   },
 })
@@ -138,7 +138,7 @@ export const Grid = {
       const children = elements(slots.default?.())
       const shape = shapeValue(p.ratio)
       if (!shape) {
-        return h('div', { class: 'ph-grid', style: {
+        return h('div', { class: 'ar-grid', style: {
           gridTemplateColumns: `repeat(${Math.max(1, Math.floor(Number(p.cols)) || 1)}, minmax(0, 1fr))`,
           gap: gapValue(p.gap),
         } }, children)
@@ -149,7 +149,7 @@ export const Grid = {
       const { cols } = gridShape(n || 1, shape)
       const last = n % cols
       const firstOfLast = last ? n - last : -1
-      return h('div', { class: 'ph-grid ph-grid-shaped', style: {
+      return h('div', { class: 'ar-grid ar-grid-shaped', style: {
         gridTemplateColumns: `repeat(${cols * 2}, minmax(0, 1fr))`,
         gap: gapValue(p.gap),
       } }, children.map((c, i) => cloneVNode(c, {

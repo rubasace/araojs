@@ -1,14 +1,14 @@
-// The one place that reads the icons the Vite plugin found in the project (virtual:phoenyx/icons):
+// The one place that reads the icons the Vite plugin found in the project (virtual:arao/icons):
 // "prefix:name" → { body, width, height }. Used by Icon.
 import { shallowRef } from 'vue'
-import { icons as found } from 'virtual:phoenyx/icons'
+import { icons as found } from 'virtual:arao/icons'
 
 // A name newly used during development brings a new module (the plugin sends it in the same hot
 // update as the file that uses it): the map is replaced in place and the Icons re-render. The map
 // has no prototype, so a name like "constructor" is just a missing icon.
 const icons = shallowRef(found)
 if (import.meta.hot) {
-  import.meta.hot.accept('virtual:phoenyx/icons', (mod) => {
+  import.meta.hot.accept('virtual:arao/icons', (mod) => {
     if (!mod) return
     warned.clear() // what is still missing is reported again
     icons.value = mod.icons
@@ -26,11 +26,11 @@ export function warnMissing(name) {
   if (!import.meta.env.DEV || warned.has(name)) return
   warned.add(name)
   const prefix = name.split(':')[0]
-  const force = `a name built at runtime goes in phoenyx({ icons: ['${name}'] })`
-  if (!NAME.test(name)) console.warn(`[phoenyx] Icon "${name}" is not an icon name: write prefix:name, as in "lucide:rocket"`)
+  const force = `a name built at runtime goes in arao({ icons: ['${name}'] })`
+  if (!NAME.test(name)) console.warn(`[arao] Icon "${name}" is not an icon name: write prefix:name, as in "lucide:rocket"`)
   else if (Object.keys(icons.value).some((n) => n.startsWith(prefix + ':')))
-    console.warn(`[phoenyx] Icon "${name}" not found: check the name in the set (https://icon-sets.iconify.design/${prefix}/); ${force}`)
-  else console.warn(`[phoenyx] Icon "${name}" not found: is the set installed? npm install -D @iconify-json/${prefix}; ${force}`)
+    console.warn(`[arao] Icon "${name}" not found: check the name in the set (https://icon-sets.iconify.design/${prefix}/); ${force}`)
+  else console.warn(`[arao] Icon "${name}" not found: is the set installed? npm install -D @iconify-json/${prefix}; ${force}`)
 }
 
 // ids inside an icon (gradients, masks, clip paths) made unique for each drawing: the same icon
@@ -39,7 +39,7 @@ export function warnMissing(name) {
 let drawn = 0
 export function uniqueIds(body) {
   if (!body.includes('id=')) return body
-  const tag = `ph-icon-${++drawn}`
+  const tag = `ar-icon-${++drawn}`
   const ids = Array.from(body.matchAll(/\sid="([^"]+)"/g), (m) => m[1])
   return ids.reduce((out, id, i) => out.replace(
     new RegExp(`([#;"])(${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})([")]|\\.[a-z])`, 'g'),

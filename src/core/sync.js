@@ -96,5 +96,5 @@ export function deckKey(location) {
   params.delete('presenter')
   params.delete('theme')
   params.sort()
-  return `phoenyx:${location.pathname}?${params}`
+  return `arao:${location.pathname}?${params}`
 }

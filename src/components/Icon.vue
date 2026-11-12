@@ -7,8 +7,8 @@
      Sets: lucide (UI icons) and simple-icons (tech logos) come with the library; any other set
      once the project installs @iconify-json/<prefix>. The Vite plugin reads the project's source
      for the names it uses and builds only those in: no network when presenting, vectors in the PDF
-     (vite/icons.js). A name built at runtime goes in phoenyx({ icons: ['lucide:x'] }).
-     Colour: currentColor, so the text colour (style it like text: color: var(--ph-accent)).
+     (vite/icons.js). A name built at runtime goes in arao({ icons: ['lucide:x'] }).
+     Colour: currentColor, so the text colour (style it like text: color: var(--ar-accent)).
      Size: 1em tall by default, so it follows the font size (a class with font-size resizes it);
      size="64" is px. Width follows the icon's shape (square for lucide and simple-icons). The
      size is given as width and height attributes, so a CSS rule with width/height wins over it.
@@ -17,7 +17,7 @@
      shows an empty dashed box of the same size, and a warning once in development. -->
 <template>
   <svg
-    class="ph-icon"
+    class="ar-icon"
     v-if="icon"
     xmlns="http://www.w3.org/2000/svg"
     :viewBox="`0 0 ${icon.width} ${icon.height}`"
@@ -29,7 +29,7 @@
     v-html="body"
   ></svg>
   <span
-    class="ph-icon ph-icon-missing"
+    class="ar-icon ar-icon-missing"
     v-else
     :style="box"
     :title="key"

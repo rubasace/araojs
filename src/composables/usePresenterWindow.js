@@ -9,7 +9,7 @@ import { deckKey } from '../core/sync'
 // If the browser blocks it, blocked holds the presenter view's URL for 10 s (Deck shows it as a
 // link, which the browser does not block); dismiss() clears it.
 export function usePresenterWindow() {
-  const name = `phoenyx-presenter ${deckKey(location)}`
+  const name = `arao-presenter ${deckKey(location)}`
   const blocked = ref(null)
   let blockedTimer
   function open() {
@@ -19,7 +19,7 @@ export function usePresenterWindow() {
     const url = new URL(`${location.pathname}?${q ? q + '&' : ''}presenter${location.hash}`, location.href).href
     const w = window.open('', name, 'popup,width=1280,height=800')
     if (!w) {
-      console.warn(`[phoenyx] The browser blocked the presenter window: allow pop-ups for this site, or open ${url}`)
+      console.warn(`[arao] The browser blocked the presenter window: allow pop-ups for this site, or open ${url}`)
       blocked.value = url
       clearTimeout(blockedTimer)
       blockedTimer = setTimeout(() => (blocked.value = null), 10000)

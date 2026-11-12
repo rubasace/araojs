@@ -10,9 +10,9 @@
 // prefix:name whose prefix is an installed set and whose name is an icon of it. That finds
 // name="lucide:rocket" and names in data arrays ({ icon: 'lucide:rocket' }) alike; words that
 // look like one but are not (localhost:5173, a:hover) are dropped. Only the icons found go into
-// virtual:phoenyx/icons, as "prefix:name" → { body, width, height } (viewBox 0 0 width height).
+// virtual:arao/icons, as "prefix:name" → { body, width, height } (viewBox 0 0 width height).
 // A name the source does not spell out (built at runtime: `lucide:${kind}`) is not found: list it
-// in the plugin option, phoenyx({ icons: ['lucide:rocket'] }).
+// in the plugin option, arao({ icons: ['lucide:rocket'] }).
 //
 // During development, a saved file that brings a name not yet in the module updates the module
 // (no restart), in the same hot update as the file itself, so the slide never renders the new
@@ -104,7 +104,7 @@ export function createIcons({ root, sources, skip, force = [], warn }) {
         if (found) icons[name] = found
         else if (force.includes(name) && !warned.has(name)) {
           warned.add(name)
-          warn(`[phoenyx] icons: "${name}" is in no installed icon set (npm install -D @iconify-json/${name.split(':')[0]}, or check the name)`)
+          warn(`[arao] icons: "${name}" is in no installed icon set (npm install -D @iconify-json/${name.split(':')[0]}, or check the name)`)
         }
       }
       shipped = new Set(Object.keys(icons))
@@ -129,6 +129,6 @@ export const icons = Object.assign(Object.create(null), ${JSON.stringify(icons)}
 export function forced(value) {
   if (value == null) return []
   const bad = !Array.isArray(value) ? value : value.find((n) => typeof n !== 'string' || !new RegExp(`^${WORD}:${WORD}$`).test(n.trim()))
-  if (bad !== undefined) throw new Error(`[phoenyx] icons must be a list of "prefix:name" (as "lucide:rocket"), got ${JSON.stringify(bad)}`)
+  if (bad !== undefined) throw new Error(`[arao] icons must be a list of "prefix:name" (as "lucide:rocket"), got ${JSON.stringify(bad)}`)
   return value.map((n) => n.trim())
 }

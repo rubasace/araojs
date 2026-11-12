@@ -4,44 +4,44 @@
      deck's theme: only the slides wear the theme. The slides come in through the slots, each one
      a Stage (Deck.vue); the rest comes from its Deck (useDeckContext). -->
 <template>
-  <div class="ph-presenter">
+  <div class="ar-presenter">
     <PresenterBar />
-    <div class="ph-p-main">
-      <section class="ph-p-current" aria-label="Diapositiva actual">
-        <div class="ph-p-screen" :style="{ aspectRatio: ratio }">
+    <div class="ar-p-main">
+      <section class="ar-p-current" aria-label="Diapositiva actual">
+        <div class="ar-p-screen" :style="{ aspectRatio: ratio }">
           <slot name="current" />
         </div>
-        <div class="ph-p-controls">
+        <div class="ar-p-controls">
           <slot name="controls" />
         </div>
       </section>
-      <div class="ph-p-side">
-        <section class="ph-p-panel ph-p-next" aria-label="Siguiente">
-          <header class="ph-p-label">
+      <div class="ar-p-side">
+        <section class="ar-p-panel ar-p-next" aria-label="Siguiente">
+          <header class="ar-p-label">
             <span>Siguiente</span>
-            <span class="ph-p-detail">{{ nextDetail }}</span>
+            <span class="ar-p-detail">{{ nextDetail }}</span>
           </header>
           <!-- a copy of the deck: kept away from the pointer, the keyboard and screen readers -->
-          <div class="ph-p-screen" :style="{ aspectRatio: ratio }" aria-hidden="true" inert>
+          <div class="ar-p-screen" :style="{ aspectRatio: ratio }" aria-hidden="true" inert>
             <slot name="next" />
-            <div class="ph-p-end" v-if="next.end">Fin de la presentación</div>
+            <div class="ar-p-end" v-if="next.end">Fin de la presentación</div>
           </div>
         </section>
-        <section class="ph-p-panel ph-p-notes" aria-label="Notas">
-          <header class="ph-p-label">
+        <section class="ar-p-panel ar-p-notes" aria-label="Notas">
+          <header class="ar-p-label">
             <span>Notas</span>
-            <span class="ph-p-detail" v-if="deck.steps.value > 1">Paso {{ deck.step.value }} de {{ deck.steps.value }}</span>
+            <span class="ar-p-detail" v-if="deck.steps.value > 1">Paso {{ deck.step.value }} de {{ deck.steps.value }}</span>
           </header>
-          <div class="ph-p-notes-body" ref="body">
+          <div class="ar-p-notes-body" ref="body">
             <div
-              class="ph-p-note"
+              class="ar-p-note"
               v-for="n in shown" :key="n.id"
               :class="{ fresh: n.step > 1 && n.step === deck.step.value }"
               :data-step="n.step"
             >
               <NoteBody :note="n" />
             </div>
-            <p class="ph-p-empty" v-if="!shown.length">Sin notas en esta diapositiva</p>
+            <p class="ar-p-empty" v-if="!shown.length">Sin notas en esta diapositiva</p>
           </div>
         </section>
       </div>
@@ -85,7 +85,7 @@ watch(() => deck.index.value, () => body.value && (body.value.scrollTop = 0))
 watch(() => deck.step.value, async () => {
   await nextTick()
   const box = body.value
-  const note = box?.querySelector('.ph-p-note.fresh')
+  const note = box?.querySelector('.ar-p-note.fresh')
   if (!note) return
   const top = note.offsetTop // the box is their offsetParent
   const h = note.offsetHeight + parseFloat(getComputedStyle(box).paddingBottom)
@@ -97,7 +97,7 @@ watch(() => deck.step.value, async () => {
 </script>
 
 <style>
-.ph-presenter {
+.ar-presenter {
   --p-bg: #14161b;
   --p-panel: #1c1f26;
   --p-line: #2b2f39;
@@ -111,57 +111,57 @@ watch(() => deck.step.value, async () => {
   background: var(--p-bg); color: var(--p-fg);
   font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
-.ph-p-main {
+.ar-p-main {
   display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
   gap: 20px; padding: 20px; min-height: 0;
 }
-.ph-p-current { display: flex; flex-direction: column; align-items: center; gap: 16px; min-height: 0; }
-.ph-p-screen { position: relative; flex: 0 1 auto; width: 100%; min-height: 0; }
-/* the slide's own edge, drawn on top of it (in canvas px: --ph-scale is the stage's scale) */
-.ph-p-screen .ph-canvas { border-radius: calc(10px / var(--ph-scale)); }
-.ph-p-screen .ph-canvas::after {
+.ar-p-current { display: flex; flex-direction: column; align-items: center; gap: 16px; min-height: 0; }
+.ar-p-screen { position: relative; flex: 0 1 auto; width: 100%; min-height: 0; }
+/* the slide's own edge, drawn on top of it (in canvas px: --ar-scale is the stage's scale) */
+.ar-p-screen .ar-canvas { border-radius: calc(10px / var(--ar-scale)); }
+.ar-p-screen .ar-canvas::after {
   content: ''; position: absolute; inset: 0; z-index: 1000; pointer-events: none;
-  border: calc(1px / var(--ph-scale)) solid rgba(255, 255, 255, .16); border-radius: inherit;
+  border: calc(1px / var(--ar-scale)) solid rgba(255, 255, 255, .16); border-radius: inherit;
 }
-.ph-p-controls { flex: none; }
+.ar-p-controls { flex: none; }
 
-.ph-p-side { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 20px; min-height: 0; }
-.ph-p-panel {
+.ar-p-side { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 20px; min-height: 0; }
+.ar-p-panel {
   display: flex; flex-direction: column; min-height: 0;
   background: var(--p-panel); border: 1px solid var(--p-line); border-radius: 14px;
 }
-.ph-p-label {
+.ar-p-label {
   display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
   padding: 12px 16px 10px;
   font-size: 13px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--p-dim);
 }
-.ph-p-detail { font-weight: 500; letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }
-.ph-p-next .ph-p-screen { width: auto; margin: 0 16px 16px; }
-.ph-p-end {
+.ar-p-detail { font-weight: 500; letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }
+.ar-p-next .ar-p-screen { width: auto; margin: 0 16px 16px; }
+.ar-p-end {
   position: absolute; inset: 0; display: grid; place-items: center;
   background: #0d0f13; border: 1px solid var(--p-line); border-radius: 10px;
   color: var(--p-dim); font-size: 20px;
 }
 
-.ph-p-notes-body {
+.ar-p-notes-body {
   position: relative; flex: 1; min-height: 0; overflow-y: auto; padding: 0 20px 20px;
   font-size: clamp(18px, .85vw + 9px, 28px); line-height: 1.5;
   scrollbar-width: thin; scrollbar-color: #3a3f4b transparent;
 }
-.ph-p-note { padding: .15em 0 .15em .75em; margin: 0 0 .5em -.75em; border-left: 4px solid transparent; border-radius: 2px; }
-.ph-p-note.fresh { border-left-color: var(--p-accent); }
-.ph-p-note > :first-child { margin-top: 0; }
-.ph-p-note :is(p, ul, ol) { margin: 0 0 .5em; }
-.ph-p-note :is(ul, ol) { padding-left: 1.2em; }
-.ph-p-note strong { color: #fff; }
-.ph-p-note code { font: .9em ui-monospace, "SFMono-Regular", Menlo, monospace; background: #2a2e38; padding: .05em .35em; border-radius: 5px; }
-.ph-p-empty { margin: 0; color: var(--p-dim); font-size: .8em; }
+.ar-p-note { padding: .15em 0 .15em .75em; margin: 0 0 .5em -.75em; border-left: 4px solid transparent; border-radius: 2px; }
+.ar-p-note.fresh { border-left-color: var(--p-accent); }
+.ar-p-note > :first-child { margin-top: 0; }
+.ar-p-note :is(p, ul, ol) { margin: 0 0 .5em; }
+.ar-p-note :is(ul, ol) { padding-left: 1.2em; }
+.ar-p-note strong { color: #fff; }
+.ar-p-note code { font: .9em ui-monospace, "SFMono-Regular", Menlo, monospace; background: #2a2e38; padding: .05em .35em; border-radius: 5px; }
+.ar-p-empty { margin: 0; color: var(--p-dim); font-size: .8em; }
 
 /* narrow windows: one column, each box at its full size, the page scrolls */
 @media (max-width: 900px) {
-  .ph-p-main { grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; overflow-y: auto; }
-  .ph-p-side { grid-template-rows: auto auto; }
-  .ph-p-screen { flex: none; }
-  .ph-p-notes { min-height: 40vh; }
+  .ar-p-main { grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; overflow-y: auto; }
+  .ar-p-side { grid-template-rows: auto auto; }
+  .ar-p-screen { flex: none; }
+  .ar-p-notes { min-height: 40vh; }
 }
 </style>

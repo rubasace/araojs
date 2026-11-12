@@ -1,23 +1,23 @@
 [data-theme="vigojug"] {
-  --ph-letterbox: #1b2a3a;
-  --ph-bg: #f6f3ec;
-  --ph-fg: #1b2a3a;
-  --ph-muted: #5b6b7b;
-  --ph-accent: #2a7de1;
-  --ph-accent-fg: #fff;
-  --ph-font-sans: Georgia, "Times New Roman", serif;
-  --ph-font-mono: ui-monospace, Menlo, monospace;
-  --ph-text-base: 42px;
-  --ph-title: 96px;
-  --ph-pad: 110px 140px;
-  --ph-radius: 4px;
+  --ar-letterbox: #1b2a3a;
+  --ar-bg: #f6f3ec;
+  --ar-fg: #1b2a3a;
+  --ar-muted: #5b6b7b;
+  --ar-accent: #2a7de1;
+  --ar-accent-fg: #fff;
+  --ar-font-sans: Georgia, "Times New Roman", serif;
+  --ar-font-mono: ui-monospace, Menlo, monospace;
+  --ar-text-base: 42px;
+  --ar-title: 96px;
+  --ar-pad: 110px 140px;
+  --ar-radius: 4px;
   /* code windows: light editor */
-  --ph-code-theme: github-light;
-  --ph-code-bg: #ffffff;
-  --ph-code-bar: #e9e6df;
-  --ph-code-muted: #8b95a1;
-  --ph-code-fg: #24292e;
-  --ph-code-title: #3b4048;
-  --ph-code-radius: 14px;
-  --ph-code-size: 42px;
+  --ar-code-theme: github-light;
+  --ar-code-bg: #ffffff;
+  --ar-code-bar: #e9e6df;
+  --ar-code-muted: #8b95a1;
+  --ar-code-fg: #24292e;
+  --ar-code-title: #3b4048;
+  --ar-code-radius: 14px;
+  --ar-code-size: 42px;
 }

@@ -13,7 +13,7 @@ import { scopesVersion, stepOffset } from '../directives/step'
 // the offset is read from the DOM once the component is mounted.
 export function useSlide() {
   const slide = inject(SLIDE, null)
-  if (!slide) throw new Error('[phoenyx] useSlide() must be used inside <Slide>')
+  if (!slide) throw new Error('[arao] useSlide() must be used inside <Slide>')
 
   const releases = []
   const instance = getCurrentInstance()
@@ -24,7 +24,7 @@ export function useSlide() {
       let el = instance.vnode.el
       while (el && el.nodeType !== 1) el = el.parentElement ?? el.nextSibling // fragment/text roots
       // the component's own root may carry v-step-from: it applies to what the component renders
-      offset.value = el ? stepOffset(el) + (el.dataset?.phStepFrom ? Number(el.dataset.phStepFrom) - 1 : 0) : 0
+      offset.value = el ? stepOffset(el) + (el.dataset?.arStepFrom ? Number(el.dataset.arStepFrom) - 1 : 0) : 0
     }
     onMounted(() => { read(); watch(scopesVersion, read) })
   }

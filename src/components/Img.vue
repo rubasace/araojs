@@ -22,17 +22,17 @@
      deck's pictures when it opens. Size them for the screen you present on: text and SVG stay sharp
      at any scale, but a photo is upscaled with the canvas, so on a 4K screen a full-slide picture
      wants ~3840 px wide (twice the size it shows at in canvas px); use WebP/AVIF/JPEG for photos.
-     Until its picture has loaded (or failed) it carries data-ph-busy, set to its URL: the export
+     Until its picture has loaded (or failed) it carries data-ar-busy, set to its URL: the export
      waits for it, and for a URL that never answers only once (exporter.js). -->
 <template>
   <div
-    class="ph-img"
-    :class="{ 'ph-img-missing': missing }"
+    class="ar-img"
+    :class="{ 'ar-img-missing': missing }"
     :style="box"
     :title="missing ? (alt ? `${alt} — ${name}` : name) : undefined"
     :role="missing && alt ? 'img' : undefined"
     :aria-label="missing && alt ? alt : undefined"
-    :data-ph-busy="missing || shown === url ? undefined : url"
+    :data-ar-busy="missing || shown === url ? undefined : url"
   >
     <img
       v-if="!missing"
@@ -44,9 +44,9 @@
       @load="loaded"
       @error="failed = url"
     />
-    <span class="ph-img-name" v-else>
-      <span class="ph-img-alt" v-if="alt">{{ alt }}</span>
-      <span class="ph-img-file">{{ stem }}<wbr />{{ ext }}</span>
+    <span class="ar-img-name" v-else>
+      <span class="ar-img-alt" v-if="alt">{{ alt }}</span>
+      <span class="ar-img-file">{{ stem }}<wbr />{{ ext }}</span>
     </span>
   </div>
 </template>
@@ -94,7 +94,7 @@ function loaded(e) {
 }
 
 const radius = (r) => {
-  if (r === true || r === '') return 'var(--ph-radius)'
+  if (r === true || r === '') return 'var(--ar-radius)'
   if (r === 'full') return '50%'
   if (typeof r === 'number' || /^\d*\.?\d+$/.test(r)) return `${Number(r)}px`
   return r || undefined // a CSS length: "1em", "12px"

@@ -1,33 +1,33 @@
 <!-- Code window: macOS-style chrome, syntax colours (Shiki), per-step line/word highlights.
      Source: file="App.java" (a file in the project's snippets folder, src/snippets by default;
      language from the extension, title from the file name) or code="…" inline.
-     Frame: every snippet window has the same shape as the slide (--ph-code-aspect, 16/9) and is as
-     large as fits in the space it gets, up to --ph-code-width (1520px): on every full-slide snippet
+     Frame: every snippet window has the same shape as the slide (--ar-code-aspect, 16/9) and is as
+     large as fits in the space it gets, up to --ar-code-width (1520px): on every full-slide snippet
      it has the same size and position. The code sits top-left like an editor; short snippets leave
      room below. "fit" makes the window hug its content instead (for small inline snippets).
-     Size: the theme's --ph-code-size is the standard size for every snippet in the deck;
+     Size: the theme's --ar-code-size is the standard size for every snippet in the deck;
      a snippet that would not fit shrinks to fit, but never grows past the standard size.
        Snippet(file="App.java" :highlights='{"2-3": 2, "5:@Bean": 3}')
        Snippet(file="legacy/App.java" name="ApplicationConfiguration.java" lang="java")
      highlights: { lineSpec[:word+++word]: step }  e.g. "4", "4-7", "1,10-14", "2:implements Filter"
      Step 1 shows the code plain; at step n the rules for n highlight their lines/words and dim the rest.
-     Until its file and colours are in it carries data-ph-busy: the export waits for it. -->
+     Until its file and colours are in it carries data-ar-busy: the export waits for it. -->
 <template>
-  <div class="ph-snippet" ref="root" :style="vars" :class="{ fit }" :data-ph-busy="busy ? '' : undefined">
-    <div class="ph-snippet-window">
-      <div class="ph-snippet-header">
-        <div class="ph-snippet-lights">
+  <div class="ar-snippet" ref="root" :style="vars" :class="{ fit }" :data-ar-busy="busy ? '' : undefined">
+    <div class="ar-snippet-window">
+      <div class="ar-snippet-header">
+        <div class="ar-snippet-lights">
           <i class="r"></i>
           <i class="y"></i>
           <i class="g"></i>
         </div>
-        <span class="ph-snippet-name">{{ title }}</span>
+        <span class="ar-snippet-name">{{ title }}</span>
       </div>
-      <div class="ph-snippet-body">
-        <div class="ph-snippet-code">
-          <div class="ph-snippet-line" v-for="(line, i) in rendered" :key="i" :class="line.cls">
-            <span class="ph-snippet-ln" v-if="lineNumbers">{{ i + 1 }}</span>
-            <span class="ph-snippet-tx">
+      <div class="ar-snippet-body">
+        <div class="ar-snippet-code">
+          <div class="ar-snippet-line" v-for="(line, i) in rendered" :key="i" :class="line.cls">
+            <span class="ar-snippet-ln" v-if="lineNumbers">{{ i + 1 }}</span>
+            <span class="ar-snippet-tx">
               <span v-for="(t, j) in line.tokens" :key="j" :class="t.cls" :style="t.style">{{ t.text }}</span>
             </span>
           </div>
@@ -59,7 +59,7 @@ function tokenize(code, lang, theme) {
 <script setup>
 import { computed, inject, nextTick, onMounted, ref, shallowRef, watch, watchEffect } from 'vue'
 import { bundledLanguages } from 'shiki'
-import { snippets } from 'virtual:phoenyx/snippets'
+import { snippets } from 'virtual:arao/snippets'
 import { useSlide } from '../composables/useSlide'
 import { DECK } from '../core/registry'
 
@@ -72,7 +72,7 @@ const props = defineProps({
   lineNumbers: { type: Boolean, default: true },
   fit: Boolean, // window hugs the code instead of the standard frame
   size: Number, // px; overrides the theme's standard size (still shrinks to fit)
-  theme: String, // Shiki theme; defaults to the deck theme's --ph-code-theme
+  theme: String, // Shiki theme; defaults to the deck theme's --ar-code-theme
 })
 
 const WORDS = '+++'
@@ -97,7 +97,7 @@ watchEffect(async () => {
   if (!props.file) return
   const load = snippets[props.file]
   if (!load) {
-    console.warn(`[phoenyx] Snippet: no file "${props.file}" in the snippets folder`)
+    console.warn(`[arao] Snippet: no file "${props.file}" in the snippets folder`)
     fileCode.value = `// missing snippet: ${props.file}`
     return
   }
@@ -113,14 +113,14 @@ const source = computed(() => props.code ?? fileCode.value)
 const lines = computed(() => source.value.replace(/\s+$/, '').split(/\r?\n/))
 
 // ---- syntax colours (async; plain text until ready, same layout) --------------------
-// Shiki theme: prop, else the deck theme's --ph-code-theme token (re-read when the deck theme changes)
+// Shiki theme: prop, else the deck theme's --ar-code-theme token (re-read when the deck theme changes)
 const root = ref()
 const deckTheme = inject(DECK, null)?.api.theme
 const tokenTheme = ref(null)
 const themeRead = ref(false)
 async function readTokenTheme() {
   await nextTick()
-  if (root.value) tokenTheme.value = getComputedStyle(root.value).getPropertyValue('--ph-code-theme').trim().replace(/^["']|["']$/g, '') || null
+  if (root.value) tokenTheme.value = getComputedStyle(root.value).getPropertyValue('--ar-code-theme').trim().replace(/^["']|["']$/g, '') || null
   themeRead.value = true
 }
 onMounted(readTokenTheme)
@@ -141,7 +141,7 @@ watchEffect(async () => {
     const tokens = await tokenize(code, lang, theme)
     if (mine === run) colored.value = tokens
   } catch (e) {
-    console.warn(`[phoenyx] Snippet: cannot highlight "${language.value}"`, e)
+    console.warn(`[arao] Snippet: cannot highlight "${language.value}"`, e)
     if (mine === run) colored.value = null
   } finally {
     if (mine === run) highlighting.value = false
@@ -237,25 +237,25 @@ const vars = computed(() => {
 </script>
 
 <style>
-.ph-snippet {
+.ar-snippet {
   /* code window palette: tokens with defaults (dark editor, like a real Mac window) */
-  --sn-bg: var(--ph-code-bg, #2b2b2b);
-  --sn-bar: var(--ph-code-bar, #383a40);
-  --sn-fg: var(--ph-code-fg, #eeffff);
-  --sn-muted: var(--ph-code-muted, #8a8f98);
-  --sn-hl: var(--ph-code-hl, var(--ph-accent));
-  --sn-radius: var(--ph-code-radius, 22px);
-  --sn-size-std: var(--sn-size, var(--ph-code-size, 44px));
+  --sn-bg: var(--ar-code-bg, #2b2b2b);
+  --sn-bar: var(--ar-code-bar, #383a40);
+  --sn-fg: var(--ar-code-fg, #eeffff);
+  --sn-muted: var(--ar-code-muted, #8a8f98);
+  --sn-hl: var(--ar-code-hl, var(--ar-accent));
+  --sn-radius: var(--ar-code-radius, 22px);
+  --sn-size-std: var(--sn-size, var(--ar-code-size, 44px));
   /* window box: fixed shape, as large as fits (cq units resolve against this element: they are
      substituted where used, in its children) */
-  --sn-aspect: var(--ph-code-aspect, 16 / 9);
-  --sn-w: min(100cqw, var(--ph-code-width, 1520px), 100cqh * (var(--sn-aspect)));
+  --sn-aspect: var(--ar-code-aspect, 16 / 9);
+  --sn-w: min(100cqw, var(--ar-code-width, 1520px), 100cqh * (var(--sn-aspect)));
   --sn-h: calc(var(--sn-w) / (var(--sn-aspect)));
   flex: 1; min-height: 0; align-self: stretch;
   container-type: size;
   display: flex; align-items: center; justify-content: center;
 }
-.ph-snippet-window {
+.ar-snippet-window {
   /* standard frame: the slide's shape, as large as the space allows */
   width: var(--sn-w);
   height: var(--sn-h);
@@ -265,24 +265,24 @@ const vars = computed(() => {
   box-shadow: 0 30px 70px rgba(0, 0, 0, .35), 0 8px 20px rgba(0, 0, 0, .2),
     inset 0 0 0 1px rgba(255, 255, 255, .06);
 }
-.ph-snippet-header {
+.ar-snippet-header {
   flex: none; height: 80px; padding: 0 30px;
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
   background: var(--sn-bar);
-  font: 400 34px/1 var(--ph-font-sans);
-  color: var(--ph-code-title, rgba(255, 255, 255, .92));
+  font: 400 34px/1 var(--ar-font-sans);
+  color: var(--ar-code-title, rgba(255, 255, 255, .92));
 }
-.ph-snippet-lights { display: flex; gap: 18px; }
-.ph-snippet-lights i { width: 24px; height: 24px; border-radius: 50%; }
-.ph-snippet-lights .r { background: #ff5f57; }
-.ph-snippet-lights .y { background: #febc2e; }
-.ph-snippet-lights .g { background: #28c840; }
-.ph-snippet-name { grid-column: 2; white-space: nowrap; }
-.ph-snippet-body { flex: 1; min-height: 0; padding: 36px 48px 40px 28px; overflow: hidden; }
-.ph-snippet.fit { --sn-w: min(100cqw, var(--ph-code-width, 1520px)); --sn-h: 100cqh; }
-.ph-snippet.fit .ph-snippet-window { width: auto; height: auto; max-width: 100%; max-height: 100%; }
-.ph-snippet-code {
-  font-family: var(--ph-font-mono);
+.ar-snippet-lights { display: flex; gap: 18px; }
+.ar-snippet-lights i { width: 24px; height: 24px; border-radius: 50%; }
+.ar-snippet-lights .r { background: #ff5f57; }
+.ar-snippet-lights .y { background: #febc2e; }
+.ar-snippet-lights .g { background: #28c840; }
+.ar-snippet-name { grid-column: 2; white-space: nowrap; }
+.ar-snippet-body { flex: 1; min-height: 0; padding: 36px 48px 40px 28px; overflow: hidden; }
+.ar-snippet.fit { --sn-w: min(100cqw, var(--ar-code-width, 1520px)); --sn-h: 100cqh; }
+.ar-snippet.fit .ar-snippet-window { width: auto; height: auto; max-width: 100%; max-height: 100%; }
+.ar-snippet-code {
+  font-family: var(--ar-font-mono);
   line-height: 1.5;
   /* standard size, shrunk only if rows/columns would not fit the free space */
   font-size: min(
@@ -291,32 +291,32 @@ const vars = computed(() => {
     calc((var(--sn-w) - 76px) / (var(--sn-cols) * 0.61))
   );
 }
-.ph-snippet-line {
+.ar-snippet-line {
   display: flex; white-space: pre;
   transition: opacity .3s;
 }
-.ph-snippet-ln {
+.ar-snippet-ln {
   flex: none; box-sizing: content-box;
   width: calc(var(--sn-digits) * 1ch); padding: 0 .7ch 0 .4ch; margin-right: .4ch;
   border-right: 2px solid color-mix(in srgb, var(--sn-muted) 40%, transparent);
   text-align: right; color: var(--sn-muted);
 }
 /* the code side of a line: highlights shade this, not the line numbers */
-.ph-snippet-tx {
+.ar-snippet-tx {
   flex: 1; min-width: 0; padding-left: .5ch; border-radius: .2em;
   transition: background-color .3s;
 }
-.ph-snippet-tx > span { transition: opacity .3s; }
+.ar-snippet-tx > span { transition: opacity .3s; }
 
 /* steps */
-.ph-snippet-line.dim { opacity: .28; }
-.ph-snippet-line.hl .ph-snippet-tx { background: color-mix(in srgb, var(--sn-hl) 14%, transparent); }
+.ar-snippet-line.dim { opacity: .28; }
+.ar-snippet-line.hl .ar-snippet-tx { background: color-mix(in srgb, var(--sn-hl) 14%, transparent); }
 /* a run of highlighted lines reads as one block */
-.ph-snippet-line.hl + .ph-snippet-line.hl .ph-snippet-tx { border-top-left-radius: 0; border-top-right-radius: 0; }
-.ph-snippet-line.hl:has(+ .ph-snippet-line.hl) .ph-snippet-tx { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-.ph-snippet-line.hl .ph-snippet-ln { color: var(--sn-hl); border-right-color: var(--sn-hl); }
-.ph-snippet-line.words .ph-snippet-tx .dim { opacity: .28; }
-.ph-snippet-line.words .ph-snippet-tx .hl {
+.ar-snippet-line.hl + .ar-snippet-line.hl .ar-snippet-tx { border-top-left-radius: 0; border-top-right-radius: 0; }
+.ar-snippet-line.hl:has(+ .ar-snippet-line.hl) .ar-snippet-tx { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.ar-snippet-line.hl .ar-snippet-ln { color: var(--sn-hl); border-right-color: var(--sn-hl); }
+.ar-snippet-line.words .ar-snippet-tx .dim { opacity: .28; }
+.ar-snippet-line.words .ar-snippet-tx .hl {
   background: color-mix(in srgb, var(--sn-hl) 22%, transparent); border-radius: .15em;
 }
 </style>
