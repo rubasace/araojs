@@ -14,14 +14,36 @@ import { decks, decksDir } from 'virtual:arao/decks'
 import Arao from './plugin'
 import DeckSelector from './views/DeckSelector.vue'
 
-// file names without ".vue", in plain string order (the export CLI picks its default the same way)
-const names = Object.keys(decks).map((f) => f.slice(0, -'.vue'.length)).sort()
+// file names without ".vue", case-insensitive and in the reader's alphabetical order (the order of
+// the list), code-point order between names that differ only in case. ?deck= cannot tell those
+// apart: the first one is kept, and the dev server says so.
+const byName = (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }) || (a < b ? -1 : a > b ? 1 : 0)
+const names = []
+for (const name of Object.keys(decks).map((f) => f.slice(0, -'.vue'.length)).sort(byName)) {
+  const kept = names.find((n) => n.toLowerCase() === name.toLowerCase())
+  if (!kept) names.push(name)
+  else if (import.meta.env.DEV) console.warn(`[arao] decks "${kept}" and "${name}" differ only in case: ?deck= cannot tell them apart (${decksDir}/${kept}.vue opens)`)
+}
 const find = (wanted) => names.find((n) => n.toLowerCase() === wanted.toLowerCase())
 
 // the title the list shows for a deck: its file name in words ("my-talk" → "My talk", "MyTalk" → "My Talk")
 const humanise = (name) => {
   const words = name.replace(/([a-z\d])([A-Z])/g, '$1 $2').replace(/[-_\s]+/g, ' ').trim()
   return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+// the `deck` option out of createDeckApp's argument, which is { deck } or nothing. A bare string is
+// taken for the name it obviously is, with a warning; anything else that is no object is ignored.
+function deckOption(options) {
+  if (options == null) return undefined
+  if (typeof options === 'object' && !Array.isArray(options)) return options.deck
+  const shape = `createDeckApp() takes an options object, createDeckApp({ deck: 'talk' })`
+  if (typeof options === 'string') {
+    console.warn(`[arao] ${shape}: got the string ${JSON.stringify(options)}, read as { deck: ${JSON.stringify(options)} }`)
+    return options
+  }
+  console.warn(`[arao] ${shape}: got ${Array.isArray(options) ? 'an array' : typeof options}, ignored`)
+  return undefined
 }
 
 // what to render: { name } of a deck, or {} for the list ({ missing } names one that is no deck)
@@ -42,8 +64,8 @@ function pick(option) {
   return {}
 }
 
-export function createDeckApp({ deck: option } = {}) {
-  const { name, missing } = pick(option)
+export function createDeckApp(options) {
+  const { name, missing } = pick(deckOption(options))
   const deck = name && defineAsyncComponent(decks[`${name}.vue`])
   const list = names.map((n) => ({ name: n.toLowerCase(), title: humanise(n) }))
   const render = deck ? () => h(deck) : () => h(DeckSelector, { decks: list, missing, dir: decksDir })
