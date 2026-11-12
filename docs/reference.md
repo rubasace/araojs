@@ -943,8 +943,8 @@ export default defineConfig({
   `virtual:arao/icons` exports `icons` (`prefix:name` → `{ body, width, height }`, only the icons
   the source uses, plus the `icons` option).
 - It also keeps `araojs` out of Vite's dependency prebundling (it imports those virtual
-  modules), prebundles what it imports (`vue`, `shiki`), and dedupes `vue`, so a linked copy of
-  the library (`npm link`, `file:`) uses the project's Vue.
+  modules), prebundles what it imports (`vue`, `shiki`, `@vueuse/core`), and dedupes `vue`, so a
+  linked copy of the library (`npm link`, `file:`) uses the project's Vue.
 
 ---
 
