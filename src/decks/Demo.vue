@@ -53,7 +53,7 @@ Deck(:themes="['default', 'vigojug']")
 
   Slide(layout="image-left")
     template(#image)
-      img(:src="landscape" alt="")
+      Img(file="demo/landscape.svg")
     h2 Layout image-left
     p La imagen llena su lado de borde a borde; el slot por defecto es el texto.
     p(v-step.collapse="2") Con .collapse, lo de debajo se recoloca deslizándose.
@@ -61,7 +61,7 @@ Deck(:themes="['default', 'vigojug']")
 
   Slide(layout="image-right" ratio="3 2")
     template(#image)
-      img(:src="landscape" alt="")
+      Img(file="demo/landscape.svg")
     h2 Layout image-right
     p #[strong ratio="3 2"] va de izquierda a derecha: texto tres quintos, imagen dos.
 
@@ -92,13 +92,42 @@ Deck(:themes="['default', 'vigojug']")
       p(v-step="2") …y los pasos siguen funcionando.
     p.center.small.muted Utilidades, solo como último recurso: .muted · .center · .upper · .small
 
+  Slide
+    h2 Img
+    Cols
+      Rows(ratio="1 auto" gap="sm")
+        Img(file="demo/landscape.svg")
+        p.small.muted.center fit="contain" (por defecto)
+      Rows(ratio="1 auto" gap="sm")
+        Img(file="demo/landscape.svg" fit="cover" rounded)
+        p.small.muted.center fit="cover" rounded
+      Rows(ratio="1 auto" gap="sm")
+        Center
+          Img.avatar(file="demo/city.svg" fit="cover" rounded="full" v-step="2")
+        p.small.muted.center(v-step="2") rounded="full"
+    p.small.muted Archivos de src/images por nombre: #[strong Img(file="demo/landscape.svg")]. Sin tamaño propio: ocupa la caja que le da su contenedor, o la que le dé una clase.
+
+  Slide(bg="demo/city.svg" bg-opacity="0.2")
+    h2 Fondo: bg
+    p #[strong bg="demo/city.svg"] pone una imagen detrás del contenido, en toda la slide.
+    p(v-step="2") #[strong bg-opacity="0.2"] la funde con el fondo del tema, y el texto se sigue leyendo.
+    p(v-step="3") También #[strong bg-position], #[strong bg-blur] y #[strong bg-fit]; y bg acepta un color o un degradado.
+
+  Slide
+    template(#background)
+      Img(file="demo/landscape.svg" blur="8")
+      Img(v-step="2" file="demo/city.svg")
+      .tint
+    h2 Fondo: template(#background)
+    p Cada elemento del slot cubre la slide, apilados en orden: una imagen desenfocada y un velo encima.
+    p(v-step="2") v-step también funciona ahí: la ciudad aparece en el paso 2.
+
   Slide(layout="section")
     h1 ¡Fin!
 </template>
 
 <script setup>
 import Card from '../slides/Card.vue'
-import landscape from './demo/landscape.svg'
 import ProgressBar from '../addons/ProgressBar.vue'
 import SlideNumber from '../addons/SlideNumber.vue'
 </script>
@@ -111,4 +140,7 @@ import SlideNumber from '../addons/SlideNumber.vue'
 }
 .box.tall { min-height: 260px; }
 .box.accent { background: var(--ph-accent); color: var(--ph-accent-fg); }
+.avatar { flex: none; width: 320px; height: 320px; }
+/* a veil of the theme's background colour, solid behind the text, lighter to the right */
+.tint { background: linear-gradient(90deg, color-mix(in srgb, var(--ph-bg) 92%, transparent) 40%, color-mix(in srgb, var(--ph-bg) 35%, transparent)); }
 </style>
