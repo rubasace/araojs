@@ -28,6 +28,29 @@ html, body, #app { margin: 0; height: 100%; }
   box-sizing: border-box;
   padding: var(--ph-pad, 96px 120px);
   display: flex; flex-direction: column;
+  isolation: isolate; /* its own stacking context: the background layer stays inside it */
+}
+
+/* Layers, bottom to top: the background (.ph-slide-bg), the content, then the addons (z-index 10,
+   outside the slides). The background is Slide(bg="…"), the #background slot, or else the
+   theme's default; it never catches the pointer, so it never gets in the way of the content. */
+.ph-slide-bg {
+  position: absolute; inset: 0; z-index: -1;
+  overflow: hidden; pointer-events: none; user-select: none;
+}
+/* each child of the layer (the bg, every element of #background) covers the whole slide,
+   stacked in order: an Img, then an overlay above it */
+.ph-slide-bg > * { position: absolute; inset: 0; }
+/* the theme's default background, on slides with none of their own (tokens, all optional):
+     --ph-slide-bg-image      a CSS background-image: a gradient, or url(…) relative to the theme
+                              file, url(../images/venue.jpg), which Vite resolves (default none)
+     --ph-slide-bg-position   where it sits, as CSS background-position (default center)
+     --ph-slide-bg-opacity    0..1 (default 1)
+   It is drawn to cover the slide. A theme can leave a layout out:
+     [data-theme="x"] .layout-section { --ph-slide-bg-image: none; } */
+.ph-slide-bg-theme {
+  background: var(--ph-slide-bg-image, none) var(--ph-slide-bg-position, center) / cover no-repeat;
+  opacity: var(--ph-slide-bg-opacity, 1);
 }
 
 /* zones: Slide(layout="split" | "image-left" | "image-right" ratio="…") */
@@ -43,6 +66,38 @@ html, body, #app { margin: 0; height: 100%; }
 .ph-zone-image { position: relative; overflow: hidden; box-sizing: border-box; padding: var(--ph-image-inset, 0); }
 .ph-zone-image > * { flex: 1 1 0; min-height: 0; }
 .ph-zone-image > :is(img, video, picture, svg, canvas) { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* Img: no size of its own, it fills the box its container gives it and fits the picture inside.
+   Zero specificity: a class on it wins (set width and height both, or one plus width/height: auto
+   to follow the picture's shape). Where its container has no height to give (a plain block), the
+   picture's shape, learnt on load, sets it (aspect-ratio). */
+:where(.ph-img) {
+  position: relative; box-sizing: border-box; overflow: hidden;
+  flex: 1 1 0; width: 100%; height: 100%; min-width: 0; min-height: 0;
+}
+.ph-img > img {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: block; object-fit: contain;
+}
+/* in an image zone and in the background it covers its box, edge to edge (fit="contain" still wins) */
+.ph-zone-image > .ph-img > img, .ph-slide-bg > .ph-img > img { object-fit: cover; }
+/* missing file: a dashed box (colour from --ph-placeholder, default the text colour) with its name */
+.ph-img-missing {
+  display: flex; align-items: center; justify-content: center;
+  border: 3px dashed color-mix(in srgb, var(--ph-placeholder, currentColor) 40%, transparent);
+  border-radius: var(--ph-radius);
+  background: color-mix(in srgb, var(--ph-placeholder, currentColor) 5%, transparent);
+}
+.ph-img-name {
+  padding: 8px 12px;
+  font: calc(var(--ph-text-base, 40px) * .5) / 1.2 var(--ph-font-mono, monospace);
+  color: color-mix(in srgb, var(--ph-placeholder, currentColor) 65%, transparent);
+  text-align: center; text-transform: none; font-weight: normal;
+  overflow-wrap: anywhere;
+}
+/* a missing background: framed inside the slide, its name in the top-right corner (the bottom
+   corners belong to the addons) */
+.ph-slide-bg > .ph-img-missing { inset: 24px; width: auto; height: auto; align-items: flex-start; justify-content: flex-end; }
 
 /* composition: Cols, Rows, Grid, Center (layout.js) fill the free space of their container */
 .ph-cols, .ph-rows, .ph-grid, .ph-center { box-sizing: border-box; flex: 1 1 auto; min-width: 0; min-height: 0; }
