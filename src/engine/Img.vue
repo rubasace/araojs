@@ -21,7 +21,8 @@
      shows an empty box first; and every slide is in the page, so the browser fetches all the
      deck's pictures when it opens. Downscale them to the size they show at (a full-slide picture
      needs no more than 1920 px wide) and use JPEG or WebP for photos.
-     Until its picture has loaded (or failed) it carries data-ph-busy: the export waits for it. -->
+     Until its picture has loaded (or failed) it carries data-ph-busy, set to its URL: the export
+     waits for it, and for a URL that never answers only once (exporter.js). -->
 <template lang="pug">
 .ph-img(
   :class="{ 'ph-img-missing': missing }"
@@ -29,7 +30,7 @@
   :title="missing ? (alt ? `${alt} — ${name}` : name) : undefined"
   :role="missing && alt ? 'img' : undefined"
   :aria-label="missing && alt ? alt : undefined"
-  :data-ph-busy="missing || shown === url ? undefined : ''"
+  :data-ph-busy="missing || shown === url ? undefined : url"
 )
   img(
     v-if="!missing"
