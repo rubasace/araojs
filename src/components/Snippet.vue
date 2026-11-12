@@ -12,21 +12,29 @@
      highlights: { lineSpec[:word+++word]: step }  e.g. "4", "4-7", "1,10-14", "2:implements Filter"
      Step 1 shows the code plain; at step n the rules for n highlight their lines/words and dim the rest.
      Until its file and colours are in it carries data-ph-busy: the export waits for it. -->
-<template lang="pug">
-.ph-snippet(ref="root" :style="vars" :class="{ fit }" :data-ph-busy="busy ? '' : undefined")
-  .ph-snippet-window
-    .ph-snippet-header
-      .ph-snippet-lights
-        i.r
-        i.y
-        i.g
-      span.ph-snippet-name {{ title }}
-    .ph-snippet-body
-      .ph-snippet-code
-        .ph-snippet-line(v-for="(line, i) in rendered" :key="i" :class="line.cls")
-          span.ph-snippet-ln(v-if="lineNumbers") {{ i + 1 }}
-          span.ph-snippet-tx
-            span(v-for="(t, j) in line.tokens" :key="j" :class="t.cls" :style="t.style") {{ t.text }}
+<template>
+  <div class="ph-snippet" ref="root" :style="vars" :class="{ fit }" :data-ph-busy="busy ? '' : undefined">
+    <div class="ph-snippet-window">
+      <div class="ph-snippet-header">
+        <div class="ph-snippet-lights">
+          <i class="r"></i>
+          <i class="y"></i>
+          <i class="g"></i>
+        </div>
+        <span class="ph-snippet-name">{{ title }}</span>
+      </div>
+      <div class="ph-snippet-body">
+        <div class="ph-snippet-code">
+          <div class="ph-snippet-line" v-for="(line, i) in rendered" :key="i" :class="line.cls">
+            <span class="ph-snippet-ln" v-if="lineNumbers">{{ i + 1 }}</span>
+            <span class="ph-snippet-tx">
+              <span v-for="(t, j) in line.tokens" :key="j" :class="t.cls" :style="t.style">{{ t.text }}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>

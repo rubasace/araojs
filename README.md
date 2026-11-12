@@ -1,6 +1,7 @@
 # Phoenyx
 
-A slide engine of its own for technical talks, built on **Vue 3 + Vite**, with slides written in **Pug**.
+A slide engine of its own for technical talks, built on **Vue 3 + Vite**, with slides written as
+Vue templates: plain **HTML**, or **Pug**, supported out of the box and recommended for brevity.
 
 - **One fixed canvas.** Every slide is drawn on a canvas of fixed size, 1920x1080 px by default
   (`Deck(:width="…" :height="…")` sets another), and scaled to the window with a CSS transform.
@@ -132,6 +133,45 @@ Deck(:themes="['default', 'vigojug']" duration="30m")
 <script setup>
 import { ProgressBar, SlideNumber } from 'phoenyxjs'
 </script>
+```
+
+A deck's template is a plain Vue template. Pug, as above and in every example of these docs, is
+the recommended way to write it: it is shorter, and the plugin brings it along. Plain HTML works
+just as well, with the same components, props, slots and directives: a `<template>` with no `lang`.
+Each file picks its own. The same deck in HTML (the `<script setup>` does not change):
+
+```vue
+<template>
+  <Deck :themes="['default', 'vigojug']" duration="30m">
+    <ProgressBar />
+    <SlideNumber />
+
+    <Slide layout="cover">
+      <div class="bar"></div>
+      <h1>My talk</h1>
+      <p class="muted">Jane Doe · Conf 2026</p>
+    </Slide>
+
+    <Slide>
+      <h2>Three things</h2>
+      <ul>
+        <li>First, from the start</li>
+        <li v-step="2">Second, at step 2</li>
+        <li v-step="3">Third, at step 3</li>
+      </ul>
+      <Notes><p>Speaker notes: only the presenter view shows them.</p></Notes>
+    </Slide>
+
+    <Slide title="The code">
+      <h2>The code</h2>
+      <Snippet file="DebugFilter.java" :highlights='{ "8-10": 2 }' />
+    </Slide>
+
+    <Slide layout="section">
+      <h1>Thanks!</h1>
+    </Slide>
+  </Deck>
+</template>
 ```
 
 `Deck`, `Slide`, `Img`, `Icon`, `Snippet`, `Notes`, `Cols`, `Rows`, `Grid`, `Center` and the `v-step`
