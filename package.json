@@ -2,6 +2,7 @@
   "name": "araojs",
   "version": "0.3.0",
   "description": "A slide engine for technical talks: Vue 3 + Vite, one fixed canvas, themes as tokens, PDF export",
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rubasace/araojs.git"
