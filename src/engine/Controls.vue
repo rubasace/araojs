@@ -13,7 +13,7 @@ nav.ph-controls(
   button.ph-btn(@mousedown.prevent @click="deck.prev()" :disabled="atStart" title="Anterior (←)")
     svg(viewBox="0 0 24 24"): path(d="M15 18l-6-6 6-6")
 
-  .ph-center
+  .ph-ctl-mid
     button.ph-counter(@mousedown.prevent @click="toggle('slides')" :class="{ active: open === 'slides' }" title="Ir a… (g)")
       span.cur {{ deck.index.value + 1 }}
       span.sep /
@@ -223,7 +223,7 @@ defineExpose({
   stroke-linecap: round; stroke-linejoin: round; }
 .ph-btn svg .fill { fill: currentColor; stroke: none; }
 
-.ph-center { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 0 10px; min-width: 88px; }
+.ph-ctl-mid { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 0 10px; min-width: 88px; }
 .ph-counter {
   border: 0; background: transparent; color: inherit; cursor: pointer;
   padding: 6px 12px; border-radius: 8px; font: inherit; font-size: 17px; transition: background .15s;
@@ -260,7 +260,7 @@ defineExpose({
   .ph-controls { bottom: 20px; gap: 2px; padding: 6px; }
   .ph-btn { width: 40px; height: 40px; }
   .ph-btn.ph-edge { display: none; }
-  .ph-center { min-width: 64px; padding: 0 4px; }
+  .ph-ctl-mid { min-width: 64px; padding: 0 4px; }
   .ph-divider { margin: 0 2px; }
 }
 .ph-themes { right: 0; min-width: 220px; }
