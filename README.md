@@ -312,5 +312,63 @@ In this repository:
 |---|---|
 | `npm run build` | the library into `dist/`: `index.js` (ESM, imports its CSS), `phoenyx.css`, `themes/*.css`; also run by `npm pack` / `npm publish` |
 | `npm run dev` | the playground, on the library's source, on 127.0.0.1:5173 (`PHOENYX_PUBLIC_HOST` allows a tunnel host) |
+| `npm run smoke [-- <file.tgz>]` | the packaged-consumer smoke test (below) |
 
 Node 20.19 or newer.
+
+## Smoke test
+
+`scripts/smoke.mjs` checks the package the way a user gets it. It packs the library (or takes
+the tarball it is given), installs it into a new slides project in a temporary folder with the
+playground's decks, images and snippets, and then:
+
+1. runs `vite build`;
+2. opens every deck under the dev server (Vue's own warnings only show up in dev) and under
+   `vite preview`, and walks each one with ArrowRight to its last step. Any console warning or
+   error, any page error, or a deck with no slides fails the test;
+3. runs `<bin> export --deck <name>` for every deck and checks that the PDF exists and that the
+   summary line reports at least one page.
+
+The package name and the CLI's name come from `package.json`. CI runs it on every pull request
+and on every push to `main`. To run it locally:
+
+```bash
+npx playwright-core install chromium   # once; or PHOENYX_CHROMIUM=/path/to/chrome
+npm run smoke                          # or: node scripts/smoke.mjs path/to/package.tgz
+```
+
+It needs network access (`npm install`). Anything Chromium needs on your machine (shared
+libraries through `LD_LIBRARY_PATH`, `FONTCONFIG_FILE`) is passed through to the browser.
+`SMOKE_KEEP=1` keeps the temporary project and prints its path.
+
+## Releasing
+
+Releases are automated with [release-please](https://github.com/googleapis/release-please) and
+npm trusted publishing (`.github/workflows/release-please.yml`):
+
+1. Commit to `main` using [Conventional Commits](https://www.conventionalcommits.org/):
+   `feat:` (minor while below 1.0), `fix:`, `perf:`, `refactor:` and `docs:` (patch), and `feat!:`
+   or `BREAKING CHANGE:` (minor while below 1.0). `ci:`, `chore:`, `test:` and similar don't
+   trigger a release.
+2. On every push to `main`, release-please opens or updates a release pull request that bumps
+   `package.json` and `.release-please-manifest.json` and writes `CHANGELOG.md`.
+3. Merging that pull request tags the version (`0.3.1`, no `v`, like the existing tags) and
+   creates the GitHub release.
+4. The `publish` job in the same workflow builds the package and runs `npm publish`. It
+   authenticates through OIDC, so there is no npm token. npm adds provenance on its own when the
+   repository is public.
+
+The release pull request is opened with `GITHUB_TOKEN`, and GitHub doesn't start other workflows
+for events made with that token. As a result, CI doesn't run on the release PR by itself. To get
+CI on it, give the action a fine-grained PAT or a GitHub App token through its `token` input.
+
+One-time setup by the owner:
+
+- **GitHub**: Settings → Actions → General → Workflow permissions: select "Read and write
+  permissions" and tick "Allow GitHub Actions to create and approve pull requests".
+- **npm**: the package (published as `araojs`) has to exist on npmjs.com first. Then, under the
+  package's Settings → Trusted publisher → GitHub Actions, set organization or user `rubasace`, repository
+  `araojs`, workflow filename `release-please.yml`, and leave the environment empty. Under
+  "Allowed actions", allow `npm publish`: new trusted publishers allow only `npm stage publish`
+  by default. Every field is case-sensitive. If you rename the package or the repository, update
+  the trusted publisher and `repository.url` in `package.json` too: they have to match.
