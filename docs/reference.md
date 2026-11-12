@@ -1,23 +1,66 @@
 # Phoenyx reference
 
-Everything a deck can use, as the code on `v2-engine` implements it. Sizes are canvas px (the
-canvas is 1920x1080 unless `Deck` says otherwise). Examples are Pug, inside a deck's
-`<template lang="pug">`.
+Everything a deck can use, as the library (the `phoenyxjs` package) implements it. Sizes are
+canvas px (the canvas is 1920x1080 unless `Deck` says otherwise). Examples are Pug, inside a
+deck's `<template lang="pug">`. Paths like `src/decks` are the slides project's, with the
+plugin's default folders.
 
 Globally registered: `Deck`, `Slide`, `Img`, `Snippet`, `Notes`, `Cols`, `Rows`, `Grid`,
-`Center`, and the directive `v-step`. Imported by hand: the addons (`src/addons/*.vue`) and the
-composables (`useDeck`, `useSlide` from `src/engine`).
+`Center`, and the directives `v-step` and `v-step-from`. Imported by hand from `'phoenyxjs'`:
+the addons (`ProgressBar`, `SlideNumber`) and the composables (`useDeck`, `useSlide`).
 
 Pug reminders: a plain attribute is a string (`gap="sm"`); a `:`-bound one is a JavaScript
 expression (`:themes="['default']"`, `:size="36"`, `:line-numbers="false"`). Object props are
 written as JSON in single quotes: `:highlights='{ "2-3": 2 }'`.
 
-Contents: [Deck](#deck) · [Slide](#slide) · [v-step](#v-step) ·
+Contents: [Setup](#setup) · [Deck](#deck) · [Slide](#slide) · [v-step](#v-step) ·
 [Cols, Rows, Grid, Center](#cols-rows-grid-center) · [Utility classes](#utility-classes) ·
 [Img](#img) · [Snippet](#snippet) · [Notes](#notes) · [Controls](#controls) ·
 [Presenter view](#presenter-view) · [Export mode](#export-mode) · [useDeck()](#usedeck) ·
 [useSlide()](#useslide) · [Addons](#addons) · [Vite plugin](#vite-plugin) ·
 [Theme tokens](#theme-tokens) · [URL parameters](#url-parameters)
+
+---
+
+## Setup
+
+A slides project is a Vite app with the `phoenyxjs` package (and `vue`, `vite`, its peers):
+
+```bash
+npm install phoenyxjs vue && npm install -D vite
+```
+
+```js
+// vite.config.js
+import { defineConfig } from 'vite'
+import phoenyx from 'phoenyxjs/vite'
+export default defineConfig({ plugins: [phoenyx()] })
+```
+
+```js
+// src/main.js (index.html: <div id="app"></div> and <script type="module" src="/src/main.js">)
+import { createDeckApp } from 'phoenyxjs'
+import 'phoenyxjs/themes/default.css'
+import 'phoenyxjs/themes/vigojug.css'
+createDeckApp().mount('#app')
+```
+
+```json
+"scripts": { "dev": "vite", "build": "vite build", "export": "phoenyx export" }
+```
+
+- `phoenyx()` is the only plugin: it includes `@vitejs/plugin-vue` and Pug ([Vite plugin](#vite-plugin)).
+- `createDeckApp()` creates the Vue app with the engine installed and renders the deck named by
+  `?deck=` ([URL parameters](#url-parameters)).
+- The engine's CSS (structure, layouts, controls) comes with `'phoenyxjs'`; themes are imported
+  one by one: `phoenyxjs/themes/<name>.css` for the shipped ones (`default`, `vigojug`), your own
+  from `src/themes/` ([Theme tokens](#theme-tokens)).
+- Own app shell instead of `createDeckApp`: `createApp(MyApp).use(Phoenyx)` with
+  `import Phoenyx from 'phoenyxjs'`; it registers the components and directives above.
+- Package entry points: `phoenyxjs` (engine, `createDeckApp`, components, `step`/`stepFrom`,
+  composables, addons), `phoenyxjs/vite` (the plugin), `phoenyxjs/themes/*.css`,
+  `phoenyxjs/style.css` (the engine's CSS, already imported by `phoenyxjs`); the `phoenyx` command
+  ([Export mode](#export-mode)).
 
 ---
 
@@ -28,7 +71,7 @@ view and export mode. One per deck file (`src/decks/<Name>.vue`).
 
 | Prop | Type | Default | Notes |
 |---|---|---|---|
-| `themes` | Array of strings | `['default']` | the themes this deck can wear; the first is the default. Each must exist as a `[data-theme="<name>"]` token block imported in `src/main.js`. |
+| `themes` | Array of strings | `['default']` | the themes this deck can wear; the first is the default. Each must exist as a `[data-theme="<name>"]` token block imported in `src/main.js` (`phoenyxjs/themes/<name>.css` for the shipped ones). |
 | `duration` | String or Number | none | the talk's length, for the presenter's countdown. `90` / `"90"` / `"7.5"` (minutes), `"45m"`, `"45min"`, `"1h30m"`, `"1h 30m"`, `"1h30"`, `"90s"`, `"45:00"` (m:ss), `"1:30:00"` (h:mm:ss). Anything else warns and shows no countdown. |
 | `width` | Number | `1920` | canvas width in px |
 | `height` | Number | `1080` | canvas height in px |
@@ -487,8 +530,10 @@ transitions, no sync with other windows; `useDeck().role` is `'export'`.
 
 A flag set to `0`, `false`, `no` or `off` counts as unset. Every page is exactly the canvas size.
 
-**CLI**: `npm run export -- [--deck <name>] [--theme <name>] [--per-step] [--notes] [--out <path>] [--url <url>]`.
-Builds the site to a temp folder, serves it, prints `?export` with headless Chromium, checks the
+**CLI**: `phoenyx export [--deck <name>] [--theme <name>] [--per-step] [--notes] [--out <path>] [--url <url>]`,
+run in the slides project (its folder is the current directory); with `"export": "phoenyx export"`
+in its scripts, `npm run export -- …`. Without `--deck`, the first deck by name (as the app picks
+it). Builds the project with its own Vite config to a temp folder, serves it, prints `?export` with headless Chromium, checks the
 page count, writes atomically. Default output `exports/<deck>[-<theme>][-steps][-notes].pdf`; an
 `--out` that is a folder (exists, or ends in `/`) gets that name inside. Chromium:
 `npx playwright-core install chromium`, or `PHOENYX_CHROMIUM=/path/to/chrome`. Missing pictures
@@ -497,7 +542,7 @@ print as placeholders and are listed.
 - `--url <url>`: no build and no server of its own; prints from the server already running at
   that URL (`npm run dev`: `http://127.0.0.1:5173/`). The export query (`?deck=…&export…`)
   replaces the URL's own query and hash; its path is kept. The `--deck` name is still checked
-  against this checkout's `src/decks` before anything opens, so the server must serve the same
+  against the project's decks folder before anything opens, so the server must serve the same
   decks.
 - `-h`, `--help`: prints the usage and exits. An unknown option prints the error and the usage,
   and exits with code 1.
@@ -525,7 +570,7 @@ For components inside `Deck` (addons, or anything in a slide) to read where the 
 it. Throws outside a `Deck`.
 
 ```js
-import { useDeck } from '../engine' // path relative to your component
+import { useDeck } from 'phoenyxjs'
 const deck = useDeck()
 ```
 
@@ -565,7 +610,7 @@ than just appear. Throws outside a `Slide`.
 </template>
 
 <script setup>
-import { useSlide } from '../../engine'
+import { useSlide } from 'phoenyxjs'
 const props = defineProps({ to: { type: Number, default: 3 } })
 const slide = useSlide()
 slide.requireSteps(() => props.to)
@@ -578,7 +623,7 @@ slide.requireSteps(() => props.to)
 
 Components placed inside `Deck` but outside any `Slide`, drawn over every slide in canvas space
 (absolute positioning, `z-index: 10`). They are copied onto every export page. They are imported
-by the deck:
+by the deck (`import { ProgressBar, SlideNumber } from 'phoenyxjs'`):
 
 ```pug
 Deck
@@ -588,8 +633,8 @@ Deck
 
 | Addon | Props | What it draws |
 |---|---|---|
-| `ProgressBar` (`src/addons/ProgressBar.vue`) | `position`: `"bottom"` (default) or `"top"` | a full-width bar, `--ph-progress-height` tall (8 px), filled with `--ph-accent` by `progress` |
-| `SlideNumber` (`src/addons/SlideNumber.vue`) | none | `n / total`, bottom right, 24 px, `--ph-muted` |
+| `ProgressBar` | `position`: `"bottom"` (default) or `"top"` | a full-width bar, `--ph-progress-height` tall (8 px), filled with `--ph-accent` by `progress` |
+| `SlideNumber` | none | `n / total`, bottom right, 24 px, `--ph-muted` |
 
 **Writing one**: a component that calls `useDeck()`, positions itself absolutely in canvas px,
 uses tokens for colours, and sets `pointer-events: none`. Skip side effects where they do not
@@ -603,7 +648,7 @@ belong with `role`.
 
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { useDeck } from '../../engine'
+import { useDeck } from 'phoenyxjs'
 
 const deck = useDeck()
 const time = ref('')
@@ -625,21 +670,25 @@ onBeforeUnmount(() => clearInterval(timer))
 
 ## Vite plugin
 
-`phoenyx/vite.js` exposes two project folders as virtual modules, so slides name files and need
-no imports.
+`phoenyx()` from `phoenyxjs/vite` is all a slides project puts in its Vite config. It includes
+`@vitejs/plugin-vue` (do not add `vue()` as well: Vite stops with an error) with Pug for the
+templates (no need to install `pug`), and exposes three project folders as virtual modules, so
+slides name files and need no imports.
 
 ```js
 // vite.config.js
-import phoenyx from './phoenyx/vite.js'
+import phoenyx from 'phoenyxjs/vite'
 export default defineConfig({
-  plugins: [vue(), phoenyx({ snippets: 'src/snippets', images: 'src/images' })],
+  plugins: [phoenyx({ decks: 'src/decks', snippets: 'src/snippets', images: 'src/images' })],
 })
 ```
 
 | Option | Default | Used by | Contents |
 |---|---|---|---|
+| `decks` | `'src/decks'` | `createDeckApp()`, `phoenyx export` | the `.vue` files directly in it (not in subfolders), one lazily loaded chunk each |
 | `snippets` | `'src/snippets'` | `Snippet(file)` | every file, as raw text, loaded lazily |
 | `images` | `'src/images'` | `Img(file)`, `Slide(bg)` | `png jpg jpeg gif webp avif svg` (any case), as URLs, eager |
+| `vue` | `{}` | — | options for `@vitejs/plugin-vue`, passed through |
 
 - A folder is relative to the Vite root, or absolute. One outside the root (`../shared/images`)
   works too: it is added to `server.fs.allow` and watched.
@@ -647,16 +696,21 @@ export default defineConfig({
 - Subfolders are allowed; files are named by their path inside the folder; names are
   case-sensitive.
 - Adding or removing a picture during development updates the slides in place.
-- Modules: `virtual:phoenyx/snippets` exports `snippets` (path → loader) and `snippetsDir`;
+- Modules: `virtual:phoenyx/decks` exports `decks` (file name → loader) and `decksDir`;
+  `virtual:phoenyx/snippets` exports `snippets` (path → loader) and `snippetsDir`;
   `virtual:phoenyx/images` exports `images` (path → URL) and `imagesDir`.
+- It also keeps `phoenyxjs` out of Vite's dependency prebundling (it imports those virtual
+  modules), prebundles what it imports (`vue`, `shiki`), and dedupes `vue`, so a linked copy of
+  the library (`npm link`, `file:`) uses the project's Vue.
 
 ---
 
 ## Theme tokens
 
-A theme is a CSS rule `[data-theme="<name>"] { --ph-…: …; }` in `src/themes/<name>.css`,
-imported in `src/main.js` and listed in `Deck(:themes)`. Themes set tokens only; layouts read them
-(`layouts.css`, `engine.css`, component styles). Unset tokens use the fallback below. Rows marked
+A theme is a CSS rule `[data-theme="<name>"] { --ph-…: …; }` in a CSS file imported in
+`src/main.js` and listed in `Deck(:themes)`: `import 'phoenyxjs/themes/default.css'` for a shipped
+one, `src/themes/<name>.css` in the project for your own. Themes set tokens only; layouts read them
+(the engine's CSS: `layouts.css`, `engine.css`, component styles). Unset tokens use the fallback below. Rows marked
 **theme** have no engine fallback: every theme must set them (both shipped themes do).
 
 ### Colours and type
@@ -733,7 +787,7 @@ Set by the engine, read-only: `--ph-scale` (the stage's current scale factor; `1
 
 | Parameter | Example | Effect |
 |---|---|---|
-| `deck` | `?deck=framework` | the deck file in `src/decks` (case-insensitive); unknown → Demo, silently |
+| `deck` | `?deck=framework` | the deck file in the decks folder (`src/decks`; case-insensitive); none or unknown → the first deck by name, silently |
 | `theme` | `&theme=vigojug` | the theme; also keeps this window's theme when it joins other windows |
 | `presenter` | `&presenter` | the presenter view |
 | `export` | `&export` | export mode (wins over `presenter`); `export=0\|false\|no\|off` = off |
