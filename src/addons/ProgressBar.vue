@@ -6,7 +6,7 @@
 </template>
 
 <script setup>
-import { useDeck } from '../composables/useDeck'
+import { useDeck } from '../state/deck'
 
 defineProps({
   position: { type: String, default: 'bottom' }, // 'top' | 'bottom'

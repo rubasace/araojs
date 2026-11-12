@@ -107,16 +107,16 @@
       </template>
       <VNodes v-else :nodes="zoned()" />
       <footer class="ar-footer" v-if="footed()">
-        <VNodes :nodes="footerSlot()({ number: index + 1, total: deck.api.total.value })" />
+        <VNodes :nodes="footerSlot()({ number: index + 1, total })" />
       </footer>
     </section>
   </Transition>
 </template>
 
 <script setup>
-import { Comment, Fragment, Text, cloneVNode, computed, h, inject, onBeforeUnmount, onMounted, onUpdated, provide, reactive, ref, shallowReactive, useSlots, watch, watchEffect } from 'vue'
-import { DECK, FOOTER, SLIDE, slides } from '../core/registry'
-import { sweep } from '../directives/step'
+import { Comment, Fragment, Text, cloneVNode, computed, h, onMounted, ref, useSlots, watch, watchEffect } from 'vue'
+import { useDeck } from '../state/deck'
+import { createSlide } from '../state/slide'
 import { isRatio, tracks } from './layout'
 import { bgKind, blurStyle, blurValue, imagesDir, isBlur, isOpacity, opacityValue } from '../core/image'
 import { Notes } from './Notes'
@@ -184,25 +184,10 @@ const image = computed(() => props.layout === 'image-left' || props.layout === '
 const flat = computed(() => FLAT.includes(props.layout))
 const zones = computed(() => ({ gridTemplateColumns: tracks(isRatio(props.ratio, 2) ? props.ratio : '1 1', 0) }))
 
-const deck = inject(DECK)
-// export mode (exporter.js): no slide transition, no glide of collapsed steps
-const still = deck.api.role === 'export'
-const id = `s${Math.random().toString(36).slice(2, 9)}`
-
-// step numbers registered by v-step anywhere inside this slide (with multiplicity)
-const counts = reactive(new Map())
-const steps = computed(() => Math.max(1, ...counts.keys()))
-
+const deck = useDeck()
 const el = ref(null)
-// speaker notes (Notes inside this slide) for the presenter view: { id, step, slots } each
-const notes = shallowReactive([])
-// the deck places it by its position in the template, even when mounted after its neighbours
-const index = deck.register({ id, steps, title: computed(() => props.title), el, notes })
-const active = computed(() => deck.index.value === index.value)
-// a slide already passed shows everything; one not reached yet shows step 1
-const step = computed(() =>
-  active.value ? deck.step.value : deck.index.value > index.value ? steps.value : 1,
-)
+// its place in the stage, its step; still: export mode, no transition (state/slide.js)
+const { id, index, active, step, still, total, footer: footerSlot } = createSlide({ el, title: computed(() => props.title) })
 
 // ---- zones: header, body, footer ------------------------------------------------------------
 // Slot content rendered by this component's own render (VNodes only places it), so a change in
@@ -287,43 +272,9 @@ function readTokens() {
   band.value = !!hh && hh !== 'auto'
 }
 onMounted(readTokens)
-if (deck.api.theme) watch(deck.api.theme, readTokens, { flush: 'post' })
+watch(deck.theme, readTokens, { flush: 'post' })
 const align = computed(() => props.align || themeAlign.value)
 
 // The deck's #footer slot (Deck.vue provides it), shown on this slide or not
-const footerSlot = inject(FOOTER, () => undefined)
 const footed = () => !!footerSlot() && (props.footer ?? !flat.value)
-
-const elements = new Set()
-onUpdated(() => sweep(elements))
-
-function registerStep(n) {
-  counts.set(n, (counts.get(n) || 0) + 1)
-  return () => {
-    const c = counts.get(n) - 1
-    c > 0 ? counts.set(n, c) : counts.delete(n)
-  }
-}
-function addNote(note) {
-  notes.push(note)
-  return () => {
-    const i = notes.indexOf(note)
-    if (i >= 0) notes.splice(i, 1)
-  }
-}
-// components reach the slide through useSlide(); v-step through the DOM; Notes through addNote
-provide(SLIDE, { step, registerStep, addNote })
-
-slides.set(id, {
-  step,
-  active,
-  still,
-  elements,
-  registerStep,
-})
-
-onBeforeUnmount(() => {
-  slides.delete(id)
-  deck.unregister(id)
-})
 </script>

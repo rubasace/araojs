@@ -5,7 +5,7 @@ import { useEventListener, useSwipe } from '@vueuse/core'
 //   useTouchNav(viewport, { next, prev, middle, tap })
 //   tap the right quarter → next(), the left quarter → prev(), the middle → middle()
 //   swipe left → next(), right → prev()
-//   tap() runs first on every tap, before what the tap does (Deck closes the jump menu)
+//   tap() runs first on every tap, before what the tap does (the audience view closes the jump menu)
 // The mouse is not touch. Links, buttons, inputs and the deck's own controls keep their taps and
 // swipes, and so does any element with data-ar-touch="ignore". A gesture that a second finger
 // joins, or that the browser takes over (pinch-zoom), is neither a tap nor a swipe.

@@ -3,98 +3,51 @@
        audience view    the slides, full window (the default)
        presenter view   ?presenter, or "p" / the controls' button (opens it in a new window):
                         the current slide, a preview of the next step, the speaker notes (Notes),
-                        a wall clock and the talk's timer (Presenter.vue)
+                        a wall clock and the talk's timer (views/PresenterView.vue)
      "p" brings an open presenter window forward instead of reloading it; if the browser blocks the
      new window, a notice above the controls links to the presenter view to open it by hand.
      The presenter view mounts every slide twice (current + preview): see useDeck().role.
      touch (phones, tablets): tap the right quarter → next, the left quarter → previous, the middle
      → show/hide the controls; swipe left/right → next/previous. Links, buttons and inputs inside a
      slide keep their own taps (add data-ar-touch="ignore" to any other element that needs them).
-     Every window of the same deck in the same browser stays in step (sync.js): moving in any of
+     Every window of the same deck in the same browser stays in step (core/sync.js): moving in any of
      them moves the others, and so does a theme change; the last move wins. A window that opens
      takes the position of the ones already open (and their theme, unless its URL names one).
-     duration="45m" is the talk's length (formats: timer.js parseDuration): the presenter view
+     duration="45m" is the talk's length (formats: core/timer.js parseDuration): the presenter view
      counts down to it. The timer starts with the first move of the deck, in any window, and
      survives reloading the windows (not closing them).
      Export: ?export prints the deck, one page per slide (&per-step: per step; &notes: a page of
-     notes after each slide that has them): exporter.js, and npm run export for the PDF.
+     notes after each slide that has them): views/ExportView.vue and core/exporter.js, and
+     npm run export for the PDF.
      Footer: the #footer slot is drawn at the bottom of every slide except covers and sections
      (each Slide draws it, so it fades, prints and shows in the presenter view with its slide);
      its slot props are { number, total }, the slide's number (1-based) and the slide count:
        template(#footer="{ number, total }")
          span ACME · Conf 2026
-         span {{ number }} / {{ total }} -->
+         span {{ number }} / {{ total }}
+     The deck's state is state/deck.js (createDeck); this component only wires it to the view the
+     window shows (views/: AudienceView, PresenterView or ExportView) and to the keys, which every
+     view but the export's listens to. -->
 <template>
-  <div
-    class="ar-viewport"
-    v-if="!presenter"
-    ref="viewport"
-    :data-theme="theme"
-    :class="{ 'ar-nocursor': cursorHidden, 'ar-export': exporting, 'ar-export-done': exported }"
-  >
-    <Stage :stage="main" :width="width" :height="height">
-      <slot />
-    </Stage>
-    <template v-if="exporting">
-      <!-- the notes of the slide on screen, copied into the book after its page(s); never shown -->
-      <div class="ar-export-notes" v-if="exporting.notes" ref="notesBox">
-        <div class="ar-note" v-for="n in shownNotes" :key="n.id" :data-step="n.step">
-          <NoteBody :note="n" />
-        </div>
-      </div>
-      <!-- filled by exporter.js, not by Vue -->
-      <div class="ar-book" ref="book"></div>
-    </template>
-    <Controls v-else ref="controls" />
-    <!-- the browser blocked the presenter window: the same URL as a link, which it does not block -->
-    <Transition v-if="!exporting" name="ar-toast">
-      <div class="ar-toast" v-if="blocked" role="status">
-        <span>El navegador ha bloqueado la ventana del presentador.</span>
-        <a :href="blocked" :target="presenterName" :title="blocked" @click="dismiss">Abrirla aquí</a>
-      </div>
-    </Transition>
-  </div>
-  <Presenter v-else :ratio="`${width} / ${height}`">
-    <template #current>
-      <Stage :stage="main" :width="width" :height="height" :theme="theme">
-        <slot />
-      </Stage>
-    </template>
-    <!-- A second copy of every slide, one step ahead: each slide and addon mounts again here, so
-         its side effects run twice in this window and its element ids repeat (useDeck().role is
-         'preview' in this copy, 'presenter' in the one above). -->
-    <template #next>
-      <Stage :stage="preview" :width="width" :height="height" :theme="theme">
-        <slot />
-      </Stage>
-    </template>
-    <template #controls>
-      <Controls ref="controls" docked />
-    </template>
-  </Presenter>
+  <ExportView v-if="deck.mode === 'export'" :deck="deck" :width="width" :height="height">
+    <slot />
+  </ExportView>
+  <PresenterView v-else-if="deck.mode === 'presenter'" ref="view" :deck="deck" :width="width" :height="height">
+    <slot />
+  </PresenterView>
+  <AudienceView v-else ref="view" :deck="deck" :width="width" :height="height" :hide-cursor-after="hideCursorAfter">
+    <slot />
+  </AudienceView>
 </template>
 
 <script setup>
-// Deck wires the pieces together; each concern is a composable (src/composables/).
-import { computed, provide, ref, toRef, useSlots } from 'vue'
-import { useFullscreen } from '@vueuse/core'
-import { ahead, createStage, titleOf } from '../core/stage'
-import { exportOptions } from '../core/exporter'
-import { FOOTER } from '../core/registry'
-import { provideDeckContext } from '../composables/useDeckContext'
-import { useDeckSync } from '../composables/useDeckSync'
-import { useExport } from '../composables/useExport'
-import { useHashRoute } from '../composables/useHashRoute'
-import { useMouseIdle } from '../composables/useMouseIdle'
+import { ref, useSlots } from 'vue'
+import { createDeck } from '../state/deck'
+import { provideFooter } from '../state/slide'
 import { useKeyboard } from '../composables/useKeyboard'
-import { usePresenterWindow } from '../composables/usePresenterWindow'
-import { useTheme } from '../composables/useTheme'
-import { useTimer } from '../composables/useTimer'
-import { useTouchNav } from '../composables/useTouchNav'
-import { NoteBody } from './Notes'
-import Controls from './internal/Controls.vue'
-import Presenter from './internal/Presenter.vue'
-import Stage from './internal/Stage.vue'
+import AudienceView from '../views/AudienceView.vue'
+import ExportView from '../views/ExportView.vue'
+import PresenterView from '../views/PresenterView.vue'
 
 const props = defineProps({
   width: { type: Number, default: 1920 },
@@ -109,121 +62,25 @@ const props = defineProps({
 
 // the #footer slot, read when each slide renders (the slots object is updated in place)
 const slots = useSlots()
-provide(FOOTER, () => slots.footer)
+provideFooter(() => slots.footer)
 
-const query = new URLSearchParams(location.search)
-// ?export wins over ?presenter: the window prints the deck, nothing else
-const exporting = exportOptions(query)
-const presenter = !exporting && query.has('presenter')
+const deck = createDeck(props)
 
-// ---- slides ------------------------------------------------------------
-// The audience's stage; the presenter view adds a second rendering of the deck that stands one
-// step ahead of it, for the "next" preview.
-const main = createStage({ onMove: moved, role: exporting ? 'export' : presenter ? 'presenter' : 'audience' })
-const next = computed(() => ahead(main))
-const preview = presenter ? createStage({ follow: () => next.value, role: 'preview' }) : null
-// notes of the slide on screen
-const notes = computed(() => main.current.value?.notes ?? [])
-
-const { theme, setTheme, cycleTheme } = useTheme(() => props.themes)
-// addons/components can follow theme changes
-main.api.theme = theme
-if (preview) preview.api.theme = theme
-const { timer, setTimer, duration, startTimer } = useTimer(() => props.duration)
-
-const viewport = ref()
-const controls = ref()
-const { isFullscreen: fullscreen, toggle: toggleFullscreen } = useFullscreen(viewport)
-const { open: openPresenter, name: presenterName, blocked, dismiss } = usePresenterWindow()
-
-// ---- the audience's window: the mouse shows the controls for 2.5 s (a tap in the middle, for 4 s)
-// and hides the cursor after hideCursorAfter; keys never show them. The presenter view and the
-// export listen to neither.
-const pointer = presenter || exporting ? null : viewport
-const controlsIdle = useMouseIdle(pointer, 2500, { idle: true })
-const hud = computed(() => !controlsIdle.idle.value)
-const { idle: cursorHidden } = useMouseIdle(pointer, () => props.hideCursorAfter)
-if (pointer) {
-  useTouchNav(pointer, {
-    next: main.next,
-    prev: main.prev,
-    tap: () => controls.value?.closeMenu(),
-    middle: () => (hud.value ? controlsIdle.sleep() : controlsIdle.wake(4000)),
-  })
-}
-
-// ---- the URL, the other windows, the keys (not while exporting) ----------------------------
-let sync = null
-if (!exporting) {
-  useHashRoute(main) // first: the position the URL gives is in place before the windows sync
-  sync = useDeckSync(main, { theme, setTheme, adoptTheme: !query.has('theme'), timer, setTimer })
+// the keys, in every view but the export's; the view opens and closes the jump menu
+const view = ref()
+if (deck.mode !== 'export') {
+  const { stage } = deck
   useKeyboard({
-    next: main.next,
-    prev: main.prev,
-    first: () => main.go(0),
-    last: main.last,
-    fullscreen: toggleFullscreen,
-    theme: cycleTheme,
-    presenter: presenter ? null : openPresenter,
-    menu: () => controls.value.toggleMenu(),
-    jump: (digit) => controls.value.openMenu(digit),
-    close: () => controls.value.closeMenu(),
+    next: stage.next,
+    prev: stage.prev,
+    first: () => stage.go(0),
+    last: stage.last,
+    fullscreen: deck.face.toggleFullscreen,
+    theme: deck.cycleTheme,
+    presenter: deck.mode === 'presenter' ? null : deck.face.openPresenter,
+    menu: () => view.value.toggleMenu(),
+    jump: (digit) => view.value.openMenu(digit),
+    close: () => view.value.closeMenu(),
   })
 }
-// A move made here (keys, controls, an addon, the URL; not a position received, nor the deck
-// renumbering its slides after an edit): the other windows follow, and the first one starts the
-// timer.
-function moved() {
-  if (sync?.moved()) startTimer()
-}
-
-// slide titles for the jump menu, re-read whenever the controls show up (the presenter view shows
-// the title: on every move)
-const titles = computed(() => {
-  presenter ? main.index.value : hud.value
-  return main.list.map(titleOf)
-})
-
-// what the controls and the presenter view read (useDeckContext)
-provideDeckContext({
-  deck: main.api,
-  hud,
-  titles,
-  theme,
-  themes: toRef(props, 'themes'),
-  setTheme,
-  fullscreen,
-  toggleFullscreen,
-  openPresenter,
-  title: computed(() => titles.value[main.index.value] || ''),
-  next,
-  notes,
-  timer,
-  setTimer,
-  duration,
-})
-
-// ---- export: the book of pages (exporter.js) ---------------------------------
-const { book, notesBox, done: exported, shownNotes } = useExport(main, {
-  options: exporting,
-  theme,
-  themes: () => props.themes,
-  viewport,
-  width: () => props.width,
-  height: () => props.height,
-})
 </script>
-
-<style>
-/* a notice above the controls (the presenter window was blocked); window px, not canvas px */
-.ar-toast {
-  position: absolute; left: 50%; bottom: 128px; z-index: 101; transform: translateX(-50%);
-  display: flex; align-items: baseline; gap: 14px; max-width: calc(100% - 32px); box-sizing: border-box;
-  padding: 12px 16px; border: 1px solid rgba(255, 255, 255, .16); border-radius: 12px;
-  background: #1c1c22; box-shadow: 0 12px 32px rgba(0, 0, 0, .35);
-  color: rgba(255, 255, 255, .94); font: 15px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-}
-.ar-toast a { color: #8ab4ff; font-weight: 600; white-space: nowrap; }
-.ar-toast-enter-active, .ar-toast-leave-active { transition: opacity .2s, translate .2s; }
-.ar-toast-enter-from, .ar-toast-leave-to { opacity: 0; translate: 0 6px; }
-</style>

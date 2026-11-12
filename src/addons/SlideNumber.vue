@@ -4,7 +4,7 @@
 </template>
 
 <script setup>
-import { useDeck } from '../composables/useDeck'
+import { useDeck } from '../state/deck'
 const deck = useDeck()
 </script>
 

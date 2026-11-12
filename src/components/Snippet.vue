@@ -57,11 +57,11 @@ function tokenize(code, lang, theme) {
 </script>
 
 <script setup>
-import { computed, inject, nextTick, onMounted, ref, shallowRef, watch, watchEffect } from 'vue'
+import { computed, nextTick, onMounted, ref, shallowRef, watch, watchEffect } from 'vue'
 import { bundledLanguages } from 'shiki'
 import { snippets } from 'virtual:arao/snippets'
-import { useSlide } from '../composables/useSlide'
-import { DECK } from '../core/registry'
+import { useDeck } from '../state/deck'
+import { useSlide } from '../state/slide'
 
 const props = defineProps({
   file: String, // path inside the snippets folder
@@ -115,7 +115,7 @@ const lines = computed(() => source.value.replace(/\s+$/, '').split(/\r?\n/))
 // ---- syntax colours (async; plain text until ready, same layout) --------------------
 // Shiki theme: prop, else the deck theme's --ar-code-theme token (re-read when the deck theme changes)
 const root = ref()
-const deckTheme = inject(DECK, null)?.api.theme
+const { theme: deckTheme } = useDeck()
 const tokenTheme = ref(null)
 const themeRead = ref(false)
 async function readTokenTheme() {
@@ -124,7 +124,7 @@ async function readTokenTheme() {
   themeRead.value = true
 }
 onMounted(readTokenTheme)
-if (deckTheme) watch(deckTheme, readTokenTheme)
+watch(deckTheme, readTokenTheme)
 const shikiTheme = computed(() => props.theme || tokenTheme.value || 'material-theme-darker')
 
 const colored = shallowRef(null)

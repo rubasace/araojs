@@ -389,7 +389,7 @@ async function pictures(book, stalled) {
 }
 
 // Walks the stage and fills `book` with its pages.
-//   stage    the deck's stage (stage.js), its role 'export'
+//   stage    the deck's stage (state/stage.js), its role 'export'
 //   canvas   its .ar-canvas element
 //   notes    an element holding the notes of the slide on screen, or null for no notes pages
 //   title(i) the title of slide i, for the notes pages
