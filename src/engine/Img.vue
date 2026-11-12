@@ -12,10 +12,23 @@
      position: what stays in view when cropped, as CSS object-position ("center 30%", "left top")
      opacity: 0..1 · blur: px · rounded: the theme's radius; rounded="full" a circle; rounded="24" px
      alt: describe the picture when it says something; without alt it is decorative (alt="")
+     src="/logo.svg" (root-relative: a file in public/) is served under Vite's base ("/talk/logo.svg").
      A file that is not in the folder (or a URL that does not load) shows a dashed box with its
-     name, in place of the picture, and a warning in the console during development. -->
+     name, and its alt above it when there is one, in place of the picture, and a warning in the
+     console during development.
+     Names are case-sensitive, as on most servers: file="Team.jpg" is not team.jpg.
+     Loading: every picture of the folder has its URL at hand from the start, so a slide never
+     shows an empty box first; and every slide is in the page, so the browser fetches all the
+     deck's pictures when it opens. Downscale them to the size they show at (a full-slide picture
+     needs no more than 1920 px wide) and use JPEG or WebP for photos. -->
 <template lang="pug">
-.ph-img(:class="{ 'ph-img-missing': missing }" :style="box" :title="missing ? name : undefined")
+.ph-img(
+  :class="{ 'ph-img-missing': missing }"
+  :style="box"
+  :title="missing ? (alt ? `${alt} — ${name}` : name) : undefined"
+  :role="missing && alt ? 'img' : undefined"
+  :aria-label="missing && alt ? alt : undefined"
+)
   img(
     v-if="!missing"
     :src="url"
@@ -26,13 +39,14 @@
     @load="loaded"
     @error="failed = url"
   )
-  span.ph-img-name(v-else) {{ stem }}#[wbr]{{ ext }}
+  span.ph-img-name(v-else)
+    span.ph-img-alt(v-if="alt") {{ alt }}
+    span.ph-img-file {{ stem }}#[wbr]{{ ext }}
 </template>
 
 <script setup>
 import { computed, ref, watchEffect } from 'vue'
-import { images, imagesDir } from 'virtual:phoenyx/images'
-import { blurStyle, blurValue, isBlur, isOpacity, opacityValue, warnOnce } from './image'
+import { blurStyle, blurValue, fileUrl, imagesDir, isBlur, isOpacity, opacityValue, warnOnce, withBase } from './image'
 
 const props = defineProps({
   file: String, // path inside the images folder
@@ -46,7 +60,7 @@ const props = defineProps({
 })
 
 const path = computed(() => props.file?.trim().replace(/^\.?\/+/, ''))
-const url = computed(() => (path.value ? images[path.value] : props.src))
+const url = computed(() => (path.value ? fileUrl(path.value) : withBase(props.src?.trim())))
 const failed = ref(null) // the URL that did not load, if it is still the current one
 const missing = computed(() => !url.value || failed.value === url.value)
 

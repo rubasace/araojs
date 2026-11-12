@@ -188,12 +188,13 @@ function toggleFullscreen() {
   document.fullscreenElement ? document.exitFullscreen() : viewport.value.requestFullscreen()
 }
 const onFullscreen = () => (fullscreen.value = !!document.fullscreenElement)
-// slide titles for the jump menu: Slide(title="…"), else its first heading
+// slide titles for the jump menu: Slide(title="…"), else its first heading outside the background
+const HEADING = ':is(h1, h2, h3):not(.ph-slide-bg *)'
 const titles = computed(() => {
   hud.value // re-read headings whenever the controls show up
   return list.map((s) =>
     s.title.value ||
-    viewport.value?.querySelector(`[data-ph-slide="${s.id}"]`)?.querySelector('h1, h2, h3')?.textContent.trim() ||
+    viewport.value?.querySelector(`[data-ph-slide="${s.id}"]`)?.querySelector(HEADING)?.textContent.trim() ||
     '')
 })
 

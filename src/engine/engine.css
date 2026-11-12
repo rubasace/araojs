@@ -91,10 +91,14 @@ html, body, #app { margin: 0; height: 100%; }
 .ph-img-name {
   padding: 8px 12px;
   font: calc(var(--ph-text-base, 40px) * .5) / 1.2 var(--ph-font-mono, monospace);
-  color: color-mix(in srgb, var(--ph-placeholder, currentColor) 65%, transparent);
+  color: color-mix(in srgb, var(--ph-placeholder, currentColor) 85%, transparent);
   text-align: center; text-transform: none; font-weight: normal;
   overflow-wrap: anywhere;
 }
+/* the alt, when there is one, is what the picture was meant to say: first and stronger; the file
+   name under it is the secondary line */
+.ph-img-alt { display: block; margin-bottom: 4px; font-family: var(--ph-font-sans, sans-serif); }
+.ph-img-file { opacity: .75; }
 /* a missing background: framed inside the slide, its name in the top-right corner (the bottom
    corners belong to the addons) */
 .ph-slide-bg > .ph-img-missing { inset: 24px; width: auto; height: auto; align-items: flex-start; justify-content: flex-end; }

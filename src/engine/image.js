@@ -1,17 +1,52 @@
-// Helpers shared by Img and Slide. Nothing here imports the images folder, so adding a picture
-// to it reloads only the Img components, never the slides.
+// Helpers shared by Img and Slide, and the one place that reads the images folder.
+import { shallowRef } from 'vue'
+import { images as folder, imagesDir } from 'virtual:phoenyx/images'
 
-// Slide(bg="…") is one of three things, told apart by its shape:
+export { imagesDir }
+
+// The images folder: file path inside it → URL. A picture added to (or removed from) the folder
+// during development replaces the map here, in place: the Imgs and the slides whose bg names a
+// file re-render, and nothing remounts. The map has no prototype, so a name like "constructor"
+// is just a missing file.
+const images = shallowRef(folder)
+if (import.meta.hot) {
+  import.meta.hot.accept('virtual:phoenyx/images', (mod) => {
+    if (!mod) return
+    warned.clear() // what is missing now (again) is reported again
+    images.value = mod.images
+  })
+}
+
+// The URL of a file in the images folder, or undefined. "./team.jpg" is "team.jpg"; a query or
+// hash ("team.jpg?v=2") is ignored when the name without it is a file. Names are case-sensitive.
+export function fileUrl(name) {
+  const path = name?.trim().replace(/^\.?\/+/, '')
+  if (!path) return undefined
+  return images.value[path] ?? images.value[path.split(/[?#]/)[0]]
+}
+
+// A root-relative URL ("/logo.svg", a file in public/) is served under the app's base: with
+// base "/talk/" it is "/talk/logo.svg". Protocol-relative (//cdn…) and scheme URLs, and paths
+// that already start with the base, are left as they are.
+export function withBase(url, base = import.meta.env.BASE_URL) {
+  if (!url || url[0] !== '/' || url[1] === '/' || !base || base === '/' || url.startsWith(base)) return url
+  return base.replace(/\/$/, '') + url
+}
+
+// Slide(bg="…") is one of three things, tried in this order:
 //   'url'   starts with a scheme or a slash: https://…, data:…, //cdn…, /from-public.jpg
-//   'file'  a name ending in an extension, without parentheses or commas: city.jpg, team/ana.png
-//   'css'   anything else is a CSS background: a colour or a gradient (#123, linear-gradient(…))
+//   'file'  a file in the images folder, whatever its name ("photo (1).jpg", "a.jpg?v=2"); or
+//           a name that looks like a file (ends in an extension, no parentheses or commas) but is
+//           not there yet: it shows as missing, with a warning
+//   'css'   anything else is a CSS background: a colour, a gradient, url(…) (#123, linear-gradient(…))
+// Blank is no bg at all (null).
 const URL_LIKE = /^(?:[a-z][a-z\d+.-]*:|\/)/i
 const FILE_LIKE = /^[^()'",;]+\.[a-z][a-z\d]{1,4}$/i
 export function bgKind(value) {
   const v = value?.trim()
   if (!v) return null
   if (URL_LIKE.test(v)) return 'url'
-  if (FILE_LIKE.test(v)) return 'file'
+  if (fileUrl(v) || FILE_LIKE.test(v.split(/[?#]/)[0])) return 'file'
   return 'css'
 }
 
@@ -37,7 +72,8 @@ export const blurStyle = (px, replaced = false) => (px > 0 ? {
 } : {})
 
 // Development warnings, one per name, gathered into a single line per batch: a deck whose
-// pictures are not in the repo (yet) gets one warning listing them, not one per slide.
+// pictures are not in the repo (yet) gets one warning listing them, not one per slide. A change
+// to the images folder starts over, so a file that comes back missing is reported again.
 const warned = new Set()
 const batches = new Map() // message → names
 export function warnOnce(message, name) {
