@@ -1,8 +1,8 @@
 import { computed, inject, provide, readonly, ref, shallowRef, watch } from 'vue'
-import { useFullscreen } from '@vueuse/core'
 import { exportOptions } from '../core/exporter'
 import { IDLE, parseDuration, start } from '../core/timer'
 import { useDeckSync } from '../composables/useDeckSync'
+import { useFullscreen } from '../composables/useFullscreen'
 import { useHashRoute } from '../composables/useHashRoute'
 import { usePresenterWindow } from '../composables/usePresenterWindow'
 import { ahead, createStage, titleOf, useStage } from './stage'
@@ -23,7 +23,8 @@ import { ahead, createStage, titleOf, useStage } from './stage'
 //   theme, setTheme, cycleTheme, themes()
 //   timer, setTimer, duration    the talk's timer (core/timer.js) and its length in ms, or null
 //   viewport            the element fullscreen fills: the audience view's viewport (it sets it);
-//                       without one (the presenter window), the page
+//                       without one (the presenter window), the page. fullscreen is true while
+//                       anything in the window is fullscreen, and "f" then leaves it
 //   presenterWindow     { name, blocked, dismiss } (composables/usePresenterWindow.js)
 // The URL's hash and the other windows of the deck follow the stage, except while exporting.
 const KEY = Symbol('arao-deck')
@@ -75,7 +76,7 @@ export function createDeck(props) {
 
   // ---- fullscreen, the presenter window ----------------------------------------------------
   const viewport = shallowRef(null)
-  const { isFullscreen: fullscreen, toggle: toggleFullscreen } = useFullscreen(viewport)
+  const { fullscreen, toggle: toggleFullscreen } = useFullscreen(viewport)
   const presenterWindow = usePresenterWindow()
 
   // ---- the URL, the other windows (not while exporting) ------------------------------------

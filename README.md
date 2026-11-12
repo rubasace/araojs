@@ -421,7 +421,7 @@ src/
   plugin.js         the Vue plugin: global components and directives, the engine's CSS
   app.js            createDeckApp
   state/            the deck, its stages, its slides: createDeck/useDeck, createStage/useStage, createSlide/useSlide
-  composables/      the effects (internal): useHashRoute, useDeckSync, usePresenterWindow, useKeyboard, useTouchNav, useMouseIdle
+  composables/      the effects (internal): useHashRoute, useDeckSync, usePresenterWindow, useKeyboard, useTouchNav, useMouseIdle, useFullscreen
   core/             plain modules: sync, timer, exporter, image, icons, flip
   views/            what Arao draws: AudienceView, PresenterView, ExportView
     parts/          Stage (the scaled canvas), Controls, PresenterBar

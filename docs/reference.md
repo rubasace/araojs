@@ -816,7 +816,7 @@ const deck = useDeck()
 | `progress` | computed, 0..1 | position over every step of the deck |
 | `theme` | readonly ref, String | current theme name |
 | `themes` | readonly ref, Array of strings | the deck's `themes` |
-| `fullscreen` | readonly ref, Boolean | the deck is fullscreen |
+| `fullscreen` | readonly ref, Boolean | the window is fullscreen (whatever element is: `f` then leaves it) |
 | `timer` | readonly ref, Object | the talk's timer: `{ state: 'idle' \| 'running' \| 'paused', acc, since }` (ms counted before `since`, and when it last started running) |
 | `next()`, `prev()` | functions | move one step |
 | `go(i, step = 1)` | function | go to slide `i` (0-based) at `step` (clamped; `Infinity` = last step); out-of-range `i` is ignored |

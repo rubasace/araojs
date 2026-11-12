@@ -8,7 +8,7 @@ this: [reference.md](reference.md) is their API, [../AGENTS.md](../AGENTS.md) th
 | Folder | Role | What is in it |
 |---|---|---|
 | `state/` | what there is | the deck, its stages and its slides: reactive state, made by a `create…` and read by a `use…` (the pair shares a provide/inject key private to its file) |
-| `composables/` | effects | small internal composables, one per file, that tie the state to the browser: the URL, other windows, keys, touch, the mouse |
+| `composables/` | effects | small internal composables, one per file, that tie the state to the browser: the URL, other windows, keys, touch, the mouse, fullscreen |
 | `core/` | the pure how | plain modules with no Vue component state: sync, timer, exporter, flip, image, icons |
 | `views/` | what Arao draws | the three views of a deck and their parts (the scaled canvas, the controls, the presenter's bar) |
 | `components/` | what deck authors write | `Deck`, `Slide`, `Img`, `Icon`, `Snippet`, `Notes`, the layout components (`layout.js`); `directives/` holds `v-step` and `v-step-from` |
@@ -62,9 +62,10 @@ in directives/step.js).
 | `useKeyboard(actions)` | the deck's keys on the window (VueUse `onKeyStroke`) |
 | `useTouchNav(el, …)` | taps (edges, middle) and swipes, from pointer events: touch and pen (VueUse's `useSwipe` reads touch events only, so the pen would lose its swipes) |
 | `useMouseIdle(el, ms)` | whether the mouse has been still over the element; ignores a tap's echo mousemove, `wake(ms)` for a time of its own (VueUse's `useIdle` has neither) |
+| `useFullscreen(el)` | `fullscreen` is true while anything in the window is fullscreen; `toggle()` leaves it if so, else makes the element fullscreen; the standard API only (VueUse's `useFullscreen` counts only its own element and falls back to prefixed APIs) |
 
-VueUse (`@vueuse/core`, a dependency, external in the build) also gives `useEventListener` and
-`useFullscreen`.
+VueUse (`@vueuse/core`, a dependency, external in the build, prebundled by the Vite plugin) also
+gives `useEventListener`, which every composable here listens with.
 
 ## useDeck()
 
