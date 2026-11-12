@@ -115,11 +115,11 @@
 
 <script setup>
 import { Comment, Fragment, Text, cloneVNode, computed, h, inject, onBeforeUnmount, onMounted, onUpdated, provide, reactive, ref, shallowReactive, useSlots, watch, watchEffect } from 'vue'
-import { DECK, FOOTER, SLIDE, slides } from './registry'
-import { sweep } from './step'
+import { DECK, FOOTER, SLIDE, slides } from '../core/registry'
+import { sweep } from '../directives/step'
 import { isRatio, tracks } from './layout'
-import { bgKind, blurStyle, blurValue, imagesDir, isBlur, isOpacity, opacityValue } from './image'
-import { Notes } from './notes'
+import { bgKind, blurStyle, blurValue, imagesDir, isBlur, isOpacity, opacityValue } from '../core/image'
+import { Notes } from './Notes'
 import Img from './Img.vue'
 
 const ALIGN = ['start', 'center', 'end']

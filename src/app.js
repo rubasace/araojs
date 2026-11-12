@@ -8,7 +8,7 @@
 // A project with its own app shell installs the engine instead: createApp(MyApp).use(Phoenyx).
 import { createApp, defineAsyncComponent, h } from 'vue'
 import { decks, decksDir } from 'virtual:phoenyx/decks'
-import Phoenyx from './engine'
+import Phoenyx from './plugin'
 
 // file names without ".vue", in plain string order (the export CLI picks its default the same way)
 const names = Object.keys(decks).map((f) => f.slice(0, -'.vue'.length)).sort()

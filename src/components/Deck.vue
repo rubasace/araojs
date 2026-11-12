@@ -108,15 +108,15 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, provide, readonly, ref, shallowRef, useSlots, watch } from 'vue'
-import { ahead, createStage } from './stage'
-import { createSync, deckKey } from './sync'
-import { IDLE, parseDuration, start } from './timer'
-import { buildBook, exportOptions, reportReady } from './exporter'
-import { NoteBody } from './notes'
-import { FOOTER } from './registry'
-import Controls from './Controls.vue'
-import Presenter from './Presenter.vue'
-import Stage from './Stage.vue'
+import { ahead, createStage } from '../core/stage'
+import { createSync, deckKey } from '../core/sync'
+import { IDLE, parseDuration, start } from '../core/timer'
+import { buildBook, exportOptions, reportReady } from '../core/exporter'
+import { NoteBody } from './Notes'
+import { FOOTER } from '../core/registry'
+import Controls from './internal/Controls.vue'
+import Presenter from './internal/Presenter.vue'
+import Stage from './internal/Stage.vue'
 
 const props = defineProps({
   width: { type: Number, default: 1920 },

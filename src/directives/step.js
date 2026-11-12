@@ -1,6 +1,6 @@
 import { effect, ref, stop } from 'vue'
-import { slides } from './registry'
-import { flip, snapshot } from './flip'
+import { slides } from '../core/registry'
+import { flip, snapshot } from '../core/flip'
 
 // v-step="n"       → visible from step n of its slide on
 // v-step.only="n"  → visible only at step n

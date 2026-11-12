@@ -52,7 +52,7 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
 import PresenterBar from './PresenterBar.vue'
-import { NoteBody } from './notes'
+import { NoteBody } from '../Notes'
 
 const props = defineProps({
   deck: { type: Object, required: true }, // the audience's stage api (useDeck)

@@ -36,7 +36,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { IDLE, clock, elapsed, phase, toggle } from './timer'
+import { IDLE, clock, elapsed, phase, toggle } from '../../core/timer'
 
 const props = defineProps({
   deck: { type: Object, required: true },

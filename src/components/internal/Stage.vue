@@ -13,7 +13,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, provide, ref } from 'vue'
-import { DECK } from './registry'
+import { DECK } from '../../core/registry'
 
 const props = defineProps({
   stage: { type: Object, required: true },

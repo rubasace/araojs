@@ -205,11 +205,16 @@ This repository, the library:
 
 ```
 src/
-  index.js          what 'phoenyxjs' exports
+  index.js          what 'phoenyxjs' exports (the only barrel: every other module imports a file)
+  plugin.js         the Vue plugin: global components and directives, the engine's CSS
   app.js            createDeckApp
-  engine/           the engine (Deck, Slide, v-step, layouts, Img, Icon, Notes, presenter, export, CSS)
-  components/       Snippet
+  components/       Deck, Slide, Img, Icon, Snippet, Notes, Cols/Rows/Grid/Center (layout.js)
+    internal/       the deck's own UI: Stage (the scaled canvas), Controls, Presenter, PresenterBar
   addons/           ProgressBar, SlideNumber: things drawn over every slide
+  composables/      useDeck, useSlide
+  directives/       v-step and v-step-from (step.js)
+  core/             plain modules: stage, sync, timer, exporter, image, icons, flip, registry
+  styles/           engine.css (structure), layouts.css (content and layouts)
   themes/           the shipped themes (default.css, vigojug.css)
 vite/               the Vite plugin (phoenyxjs/vite; icons.js resolves the icons)
 bin/                the phoenyx command (phoenyx export)

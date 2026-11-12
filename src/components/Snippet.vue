@@ -60,8 +60,8 @@ function tokenize(code, lang, theme) {
 import { computed, inject, nextTick, onMounted, ref, shallowRef, watch, watchEffect } from 'vue'
 import { bundledLanguages } from 'shiki'
 import { snippets } from 'virtual:phoenyx/snippets'
-import { useSlide } from '../engine/useSlide'
-import { DECK } from '../engine/registry'
+import { useSlide } from '../composables/useSlide'
+import { DECK } from '../core/registry'
 
 const props = defineProps({
   file: String, // path inside the snippets folder

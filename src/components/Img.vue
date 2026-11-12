@@ -53,7 +53,7 @@
 
 <script setup>
 import { computed, ref, watchEffect } from 'vue'
-import { blurStyle, blurValue, fileUrl, imagesDir, isBlur, isOpacity, opacityValue, warnOnce, withBase } from './image'
+import { blurStyle, blurValue, fileUrl, imagesDir, isBlur, isOpacity, opacityValue, warnOnce, withBase } from '../core/image'
 
 const props = defineProps({
   file: String, // path inside the images folder

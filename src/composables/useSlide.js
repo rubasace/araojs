@@ -1,6 +1,6 @@
 import { computed, getCurrentInstance, inject, onBeforeUnmount, onMounted, ref, toValue, watch } from 'vue'
-import { SLIDE } from './registry'
-import { scopesVersion, stepOffset } from './step'
+import { SLIDE } from '../core/registry'
+import { scopesVersion, stepOffset } from '../directives/step'
 
 // For components inside a <Slide> that change *within* the slide (highlight, dim, count…)
 // instead of just appearing: read the slide's step and declare how many steps you need.
