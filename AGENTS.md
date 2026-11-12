@@ -18,7 +18,7 @@ Overview: [README.md](README.md).
 - **A slide counts its own steps**: the largest `v-step` (or Snippet highlight step) inside it.
   Never declare a count.
 - Look comes from the theme (`--ph-*` tokens). Slides say *what*, themes say *how it looks*.
-- Globally available: `Deck Slide Img Snippet Notes Cols Rows Grid Center`, `v-step` and `v-step-from`. Addons
+- Globally available: `Deck Slide Img Icon Snippet Notes Cols Rows Grid Center`, `v-step` and `v-step-from`. Addons
   (`ProgressBar`, `SlideNumber`) and composables (`useDeck`, `useSlide`) are imported from
   `'phoenyxjs'` in `<script setup>`.
 
@@ -50,6 +50,10 @@ Do:
 - One idea per slide. Reveal with steps instead of cramming.
 - Name files, never import them: `Snippet(file="App.java")` from `src/snippets/`,
   `Img(file="team.jpg")` / `Slide(bg="team.jpg")` from `src/images/` (subfolders ok, case-sensitive).
+- Use `Icon` for icons and logos, by name: `Icon(name="lucide:…")` for UI icons, `Icon(name="simple-icons:…")`
+  for technology logos (names: icon-sets.iconify.design, lucide.dev, simpleicons.org). Don't put icon
+  files in `src/images/` or paste SVG into a deck. Colour it like text (`color: var(--ph-accent)`);
+  logos are trademarks: use them to name the technology, not as decoration.
 - Write sizes, if any, in canvas px (`gap="24"`, `:size="36"`, `width: 320px`).
 - Put speaker notes in `Notes` inside the slide.
 - Put components only one talk uses under `src/decks/<talk>/`, and components several decks share
@@ -77,11 +81,16 @@ Don't:
   `:highlights='{ "2-3": 2 }'` (JSON in single quotes). Without it, `size="36"` is the string
   `"36"` and `line-numbers="false"` the string `"false"`: Vue warns and the line numbers stay.
   Props that take text, or a number written as text, are plain: `gap="sm"`, `ratio="2 1"`,
-  `cols="3"`, `file="App.java"`, `bg-opacity="0.25"`, `Notes(step="2")`.
+  `cols="3"`, `file="App.java"`, `bg-opacity="0.25"`, `Notes(step="2")`, `Icon(size="64")`.
 - **`Img` has no size of its own.** It fills the box its container gives it (the space under the
   title, a column, a cell, a zone, `Center`) and fits the picture inside; in a plain block it is as
   wide as the block. For a fixed size, give it a class with both sizes:
   `.avatar { flex: none; width: 320px; height: 320px; }`.
+- **Icon names must be written out in the source.** The build includes only the icons whose full
+  name (`lucide:rocket`) appears in `src/`, in a template or in data (`{ icon: 'lucide:rocket' }` +
+  `Icon(:name="it.icon")` is fine). A name put together at runtime (`` `lucide:${kind}` ``) is not:
+  it shows a dashed box and warns. List such names in the source, or in `phoenyx({ icons: [...] })`
+  in `vite.config.js`. Another set than Lucide or Simple Icons needs `npm install -D @iconify-json/<prefix>`.
 - **A new theme** is `src/themes/<name>.css` holding one `[data-theme="<name>"] { --ph-…: …; }`
   block, imported in `src/main.js` and listed in `Deck(:themes)`. The shipped themes are imported
   the same way, from the package: `import 'phoenyxjs/themes/vigojug.css'`. If the file is not imported or
@@ -186,6 +195,18 @@ Slide
 Uneven: `Cols(ratio="2 1")`. Grid of cards: `Grid(cols="3" gap="sm")`, or let the count decide:
 `Grid(ratio="2:1")` (columns : rows; 5 cards → 3 + 2, last row centred). Centre something: `Center`.
 
+Icons (in text: as tall as the text; alone: `size` px):
+```pug
+Slide
+  h2 #[Icon(name="lucide:rocket")] Getting started
+  Grid(cols="3" gap="md")
+    Center(v-for="(t, i) in tech" :key="t.icon" v-step="i + 1")
+      Icon(:name="t.icon" size="120" :label="t.label")
+      p {{ t.label }}
+```
+with `const tech = [{ icon: 'simple-icons:vuedotjs', label: 'Vue' }, { icon: 'simple-icons:kubernetes', label: 'Kubernetes' }, { icon: 'simple-icons:openjdk', label: 'Java' }]`
+in `<script setup>`. Accent colour: a class, `Icon.hot(name="lucide:flame")` and `.hot { color: var(--ph-accent); }`.
+
 Background image with opacity:
 ```pug
 Slide(bg="demo/city.svg" bg-opacity="0.25")
@@ -214,8 +235,8 @@ Slide
    - collect `console` messages of type `warning`/`error` and `pageerror`: expect none. They come
      in two kinds: Vue's own, `[Vue warn]: Invalid prop: …`, when a prop fails its type or its
      validator (`gap="huge"`, `size="36"` without the colon, `fit="fill"`); and Phoenyx's, prefixed
-     `[phoenyx]`, on missing files, values it cannot use (`bg`, `duration`), `v-step` or `Notes`
-     outside a slide;
+     `[phoenyx]`, on missing files or icons, values it cannot use (`bg`, `duration`), `v-step` or
+     `Notes` outside a slide;
    - count `.ph-slide` elements; press `ArrowRight` until the hash stops changing and record the
      highest step per slide: compare with what you meant;
    - for overflow, compare the visible slide's `scrollHeight`/`scrollWidth` with its
