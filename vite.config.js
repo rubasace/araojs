@@ -5,7 +5,7 @@ import phoenyx from './phoenyx/vite.js'
 const publicHost = process.env.PHOENYX_PUBLIC_HOST
 
 export default defineConfig({
-  plugins: [vue(), phoenyx({ snippets: 'src/snippets' })],
+  plugins: [vue(), phoenyx({ snippets: 'src/snippets', images: 'src/images' })],
   server: {
     host: '127.0.0.1',
     port: 5173,
