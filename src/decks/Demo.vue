@@ -1,5 +1,5 @@
 <template lang="pug">
-Deck(:themes="['default', 'vigojug']")
+Deck(:themes="['default', 'vigojug']" duration="10m")
   ProgressBar(position="bottom")
   SlideNumber
 
@@ -7,12 +7,21 @@ Deck(:themes="['default', 'vigojug']")
     .bar
     h1 Phoenyx
     p.muted Prueba de concepto del motor · pulsa → para avanzar, f pantalla completa, t cambia tema
+    Notes
+      p Demo del motor: cada slide enseña una pieza.
+      p Teclas: → avanza, #[strong f] pantalla completa, #[strong t] cambia el tema, #[strong p] abre esta vista.
 
   Slide
     h2 Pasos dentro de la propia slide
     p(v-step="1") Esto se ve desde el principio (paso 1).
     p(v-step="2") Esto aparece en el paso 2.
     p(v-step="3") Y esto en el paso 3: la slide sabe sola que tiene 3 pasos.
+    Notes
+      p Nadie declara cuántos pasos tiene la slide: es el mayor de sus v-step.
+    Notes(step="2")
+      p Paso 2: aparece el segundo párrafo.
+    Notes(step="3")
+      p Paso 3: el último; la siguiente pulsación pasa de slide.
 
   Slide(layout="two-cols")
     h2 Pasos en componentes anidados
@@ -25,6 +34,8 @@ Deck(:themes="['default', 'vigojug']")
     p Visible siempre.
     p(v-step.only="2") Solo en el paso 2…
     p(v-step.only="3") …y esto solo en el 3.
+    Notes
+      p #[code v-step.only="n"]: visible solo en el paso n, no desde él.
 
   Slide(layout="two-cols")
     h2 Ocupar sitio o no
@@ -121,6 +132,21 @@ Deck(:themes="['default', 'vigojug']")
     h2 Fondo: template(#background)
     p Cada elemento del slot cubre la slide, apilados en orden: una imagen desenfocada y un velo encima.
     p(v-step="2") v-step también funciona ahí: la ciudad aparece en el paso 2.
+
+  Slide
+    h2 Notas del presentador
+    p #[strong Notes] dentro de una Slide: no se pinta, no ocupa sitio, no añade pasos.
+    p(v-step="2") #[strong Notes(step="2")] se ve desde ese paso, como v-step.
+    p(v-step="3") Pulsa #[strong p] (o abre la URL con #[strong ?presenter]): slide actual, siguiente paso, notas, hora y tiempo.
+    Notes
+      p Estas notas solo se ven en la vista del presentador.
+      ul
+        li Contenido libre: #[strong negrita], listas, #[code código].
+    Notes(step="2")
+      p Esta nota aparece en el paso 2 y va marcada mientras ese sea el paso en pantalla.
+    Notes(step="3")
+      p Las dos ventanas van a la par: avanza en cualquiera y la otra la sigue; el tema también.
+      p Con #[code Deck(duration="10m")] el tiempo cuenta hacia atrás: ámbar al final, rojo si te pasas.
 
   Slide(layout="section")
     h1 ¡Fin!
