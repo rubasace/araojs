@@ -1,10 +1,21 @@
+<!-- The deck: its slides on a fixed canvas, the controls, the keyboard, the URL.
+     Two ways to show it, from the same URL:
+       audience view    the slides, full window (the default)
+       presenter view   ?presenter, or "p" / the controls' button (opens it in a new window):
+                        the current slide, a preview of the next step, the speaker notes (Notes),
+                        a wall clock and the talk's timer (Presenter.vue)
+     Every window of the same deck in the same browser stays in step (sync.js): moving in any of
+     them moves the others, and so does a theme change; the last move wins. A window that opens
+     takes the position of the ones already open (and their theme, unless its URL names one).
+     duration="45m" (also "1h30m", "90" minutes) is the talk's length: the presenter view counts
+     down to it. The timer starts with the first move of the deck, in any window. -->
 <template lang="pug">
-.ph-viewport(ref="viewport" :data-theme="theme" :class="{ 'ph-nocursor': cursorHidden }")
-  .ph-canvas(ref="canvas" :style="canvasStyle")
+.ph-viewport(v-if="!presenter" ref="viewport" :data-theme="theme" :class="{ 'ph-nocursor': cursorHidden }")
+  Stage(:stage="main" :width="width" :height="height")
     slot
   Controls(
     ref="controls"
-    :deck="api"
+    :deck="main.api"
     :visible="hud"
     :theme="theme"
     :themes="themes"
@@ -12,13 +23,47 @@
     :titles="titles"
     @theme="setTheme"
     @fullscreen="toggleFullscreen"
+    @presenter="openPresenter"
   )
+Presenter(
+  v-else
+  :deck="main.api"
+  :title="titles[main.index.value] || ''"
+  :next="next"
+  :notes="notes"
+  :timer="timer"
+  :duration="durationMs"
+  :ratio="`${width} / ${height}`"
+  @timer="setTimer"
+)
+  template(#current)
+    Stage(:stage="main" :width="width" :height="height" :theme="theme")
+      slot
+  template(#next)
+    Stage(:stage="preview" :width="width" :height="height" :theme="theme")
+      slot
+  template(#controls)
+    Controls(
+      ref="controls"
+      docked
+      :deck="main.api"
+      :theme="theme"
+      :themes="themes"
+      :fullscreen="fullscreen"
+      :titles="titles"
+      @theme="setTheme"
+      @fullscreen="toggleFullscreen"
+    )
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, provide, readonly, ref, shallowReactive, watch } from 'vue'
-import { DECK } from './registry'
+import { computed, onBeforeUnmount, onMounted, readonly, ref, shallowRef, watch } from 'vue'
+import { ahead, createStage } from './stage'
+import { createSync, deckKey } from './sync'
+import { IDLE, parseDuration, start } from './timer'
 import Controls from './Controls.vue'
+import Presenter from './Presenter.vue'
+import Stage from './Stage.vue'
 
 const props = defineProps({
   width: { type: Number, default: 1920 },
@@ -26,135 +71,31 @@ const props = defineProps({
   themes: { type: Array, default: () => ['default'] },
   // hide the mouse cursor after this many ms without moving it (0 = never)
   hideCursorAfter: { type: Number, default: 5000 },
+  // the talk's length, for the presenter view's countdown: "45m", "1h30m", "90" (minutes)
+  duration: { type: [String, Number], validator: (v) => parseDuration(v) != null },
 })
+
+const query = new URLSearchParams(location.search)
+const presenter = query.has('presenter')
 
 // ---- slides ------------------------------------------------------------
-const list = shallowReactive([])
-const index = ref(0)
-const step = ref(1)
-const current = computed(() => list[index.value])
-
-// public, read-only view for addons (useDeck)
-const api = {
-  index: readonly(index),
-  step: readonly(step),
-  total: computed(() => list.length),
-  steps: computed(() => current.value?.steps.value ?? 1),
-  // progress over every step of the deck, 0..1
-  progress: computed(() => {
-    const all = list.reduce((n, s) => n + s.steps.value, 0)
-    const done = list.slice(0, index.value).reduce((n, s) => n + s.steps.value, 0) + step.value
-    return all > 1 ? (done - 1) / (all - 1) : 1
-  }),
-  next, prev, go,
-}
-
-provide(DECK, {
-  index,
-  step,
-  api,
-  // slide = { id, steps, title, el }; el is a ref to its <section>
-  register(slide) {
-    change()
-    list.push(slide)
-    return computed(() => list.findIndex((s) => s.id === slide.id))
-  },
-  unregister(id) {
-    const i = list.findIndex((s) => s.id === id)
-    if (i < 0) return
-    const tick = change()
-    // the slide on screen is going away: who takes its place is decided once the tick settles
-    if (i === index.value && !tick.vacancy) tick.vacancy = { slide: list[i], step: step.value }
-    list.splice(i, 1)
-    if (i < index.value) index.value--
-    if (index.value >= list.length) index.value = Math.max(0, list.length - 1)
-  },
-})
-
-// Slide order is document order, not mount order: a slide mounted later (v-if, inserted by
-// HMR) or moved (keyed v-for, in the deck or in any component inside it) takes its place in
-// the template. Mounts, unmounts and moves of one tick are settled together once the DOM is
-// final; nothing else (a step, a re-render of the deck) reorders.
-let pending = null // { before: list at the start of the tick, vacancy: { slide, step } | null }
-function change() {
-  if (!pending) {
-    pending = { before: list.slice(), vacancy: null }
-    nextTick(settle)
-  }
-  return pending
-}
-function settle() {
-  const { before, vacancy } = pending
-  pending = null
-  const placed = list.filter((s) => s.el.value?.isConnected)
-  placed.sort((a, b) => (a.el.value.compareDocumentPosition(b.el.value) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1))
-  const sorted = [...placed, ...list.filter((s) => !placed.includes(s))]
-  if (vacancy) {
-    list.splice(0, list.length, ...sorted)
-    return fill(vacancy, before)
-  }
-  // the slide on screen stays on screen
-  if (sorted.every((s, i) => s === list[i])) return
-  const shown = list[index.value]
-  list.splice(0, list.length, ...sorted)
-  if (shown) index.value = list.indexOf(shown)
-}
-
-// The slide on screen went away this tick. A slide mounted in its place in the same tick
-// (re-keyed, v-if/v-else swapped, reloaded by HMR, every slide remounted) takes over at the
-// same step, clamped to its own total. Otherwise the next slide takes its place from step 1;
-// with no next slide, the previous one is shown complete, as if the audience stepped back.
-function fill({ slide, step: at }, before) {
-  const i = before.indexOf(slide)
-  if (i < 0) return go(index.value, 1) // mounted and gone within the same tick
-  const was = new Set(before)
-  const is = new Set(list)
-  // nearest slide before it that survived, and how many removed slides sat in between
-  let p = i - 1
-  while (p >= 0 && !is.has(before[p])) p--
-  const skipped = i - p - 1
-  // slides mounted this tick right after that survivor: the same gap, in the new order
-  const from = p >= 0 ? list.indexOf(before[p]) + 1 : 0
-  let to = from
-  while (to < list.length && !was.has(list[to])) to++
-  if (to > from) go(from + Math.min(skipped, to - from - 1), at)
-  else if (from < list.length) go(from, 1)
-  else if (list.length) go(list.length - 1, list[list.length - 1].steps.value)
-  else step.value = 1
-}
-
-// Moves that mount nothing (keyed v-for reordered) only show up in the DOM: watch the canvas
-// for slide sections being inserted. Changes inside a slide are skipped at once.
-const SLIDE_EL = '[data-ph-slide]'
-const insertsSlide = (r) => !r.target.closest?.(SLIDE_EL) &&
-  [...r.addedNodes].some((n) => n.nodeType === 1 && (n.matches(SLIDE_EL) || n.querySelector(SLIDE_EL)))
-const canvas = ref()
-let mo
-
-function go(i, s = 1) {
-  if (i < 0 || i >= list.length) return
-  index.value = i
-  step.value = Math.min(Math.max(1, s), list[i].steps.value)
-}
-function next() {
-  if (step.value < current.value.steps.value) step.value++
-  else go(index.value + 1, 1)
-}
-function prev() {
-  if (step.value > 1) step.value--
-  else if (index.value > 0) go(index.value - 1, list[index.value - 1].steps.value)
-}
+// The audience's stage; the presenter view adds a second rendering of the deck that stands one
+// step ahead of it, for the "next" preview.
+const main = createStage({ onMove: moved })
+const next = computed(() => ahead(main))
+const preview = presenter ? createStage({ follow: () => next.value }) : null
 
 // ---- URL: #/slide/step (1-based) -----------------------------------------
 function readHash() {
   const [, i, s] = location.hash.match(/^#\/(\d+)(?:\/(\d+))?/) || []
-  if (i) go(Number(i) - 1, Number(s || 1))
+  if (i) main.go(Number(i) - 1, Number(s || 1))
 }
-watch([index, step], () => history.replaceState(null, '', `#/${index.value + 1}/${step.value}`))
 
 // ---- theme: ?theme=name, or cycle with "t" -------------------------------
-const theme = ref(new URLSearchParams(location.search).get('theme') || props.themes[0])
-api.theme = readonly(theme) // addons/components can follow theme changes
+const theme = ref(query.get('theme') || props.themes[0])
+// addons/components can follow theme changes
+main.api.theme = readonly(theme)
+if (preview) preview.api.theme = main.api.theme
 function setTheme(name) {
   theme.value = name
   const url = new URL(location.href)
@@ -166,36 +107,65 @@ function cycleTheme() {
   setTheme(props.themes[(i + 1) % props.themes.length])
 }
 
-// ---- fixed canvas, scaled to fit (letterboxed) ----------------------------
-const viewport = ref()
-const scale = ref(1)
-const canvasStyle = computed(() => ({
-  width: `${props.width}px`,
-  height: `${props.height}px`,
-  transform: `translate(-50%, -50%) scale(${scale.value})`,
-}))
-let ro
-function fit() {
-  const { clientWidth: w, clientHeight: h } = viewport.value
-  scale.value = Math.min(w / props.width, h / props.height)
+// ---- timer (shown by the presenter view, kept by every window) -------------
+const timer = shallowRef(IDLE)
+const setTimer = (t) => (timer.value = t)
+const durationMs = computed(() => parseDuration(props.duration))
+
+// ---- windows in step -------------------------------------------------------
+// Started once the URL has placed the deck: that position is this window's own, not a move.
+let sync = null
+function startSync() {
+  sync = createSync(deckKey(location))
+  sync.register('pos', {
+    get: () => ({ index: main.index.value, step: main.step.value }),
+    set: (v) => main.place(v.index, v.step),
+  })
+  // a window whose URL names a theme keeps it when it opens; later changes still reach it
+  sync.register('theme', { get: () => theme.value, set: setTheme, adopt: !query.has('theme') })
+  sync.register('timer', { get: () => timer.value, set: setTimer })
+  sync.hello()
+}
+// A move made here (keys, controls, an addon, the URL; not a position received, nor the deck
+// renumbering its slides after an edit): the others follow, and the first one starts the timer.
+// Each window renumbers on its own, so an edit (HMR) never sends anyone to another slide.
+function moved() {
+  if (!sync) return // the URL placing the deck as it opens
+  sync.publish('pos', true)
+  if (timer.value.state === 'idle') timer.value = start(timer.value, Date.now())
+}
+watch([main.index, main.step], () => history.replaceState(null, '', `#/${main.index.value + 1}/${main.step.value}`))
+watch(theme, () => sync?.publish('theme'))
+watch(timer, () => sync?.publish('timer'))
+
+// ---- presenter view ---------------------------------------------------------
+// notes of the slide on screen
+const notes = computed(() => main.current.value?.notes ?? [])
+let presenterWindow = null
+function openPresenter() {
+  if (presenterWindow && !presenterWindow.closed) return presenterWindow.focus()
+  const params = new URLSearchParams(location.search)
+  params.delete('presenter')
+  const q = params.toString()
+  const url = `${location.pathname}?${q ? q + '&' : ''}presenter${location.hash}`
+  // a window of its own (not a tab), to drag to the speaker's screen
+  presenterWindow = window.open(url, `phoenyx-presenter ${deckKey(location)}`, 'popup,width=1280,height=800')
 }
 
-// ---- keyboard + HUD -------------------------------------------------------
 // ---- controls ------------------------------------------------------------
+const viewport = ref()
 const controls = ref()
 const fullscreen = ref(false)
 function toggleFullscreen() {
-  document.fullscreenElement ? document.exitFullscreen() : viewport.value.requestFullscreen()
+  document.fullscreenElement ? document.exitFullscreen() : (viewport.value ?? document.documentElement).requestFullscreen()
 }
 const onFullscreen = () => (fullscreen.value = !!document.fullscreenElement)
 // slide titles for the jump menu: Slide(title="…"), else its first heading outside the background
 const HEADING = ':is(h1, h2, h3):not(.ph-slide-bg *)'
 const titles = computed(() => {
-  hud.value // re-read headings whenever the controls show up
-  return list.map((s) =>
-    s.title.value ||
-    viewport.value?.querySelector(`[data-ph-slide="${s.id}"]`)?.querySelector(HEADING)?.textContent.trim() ||
-    '')
+  // re-read headings whenever the controls show up (the presenter view shows the title: on every move)
+  presenter ? main.index.value : hud.value
+  return main.list.map((s) => s.title.value || s.el.value?.querySelector(HEADING)?.textContent.trim() || '')
 })
 
 const hud = ref(false)
@@ -215,13 +185,16 @@ function onMouseMove() {
 }
 function onKey(e) {
   if (e.target.closest?.('input, textarea, [contenteditable]')) return
+  // a button with the focus (the presenter view's) keeps Space and Enter for itself
+  if ((e.key === ' ' || e.key === 'Enter') && e.target.closest?.('button')) return
   const k = e.key
-  if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(k)) next()
-  else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(k)) prev()
-  else if (k === 'Home') go(0)
-  else if (k === 'End') go(list.length - 1, list[list.length - 1].steps.value)
+  if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(k)) main.next()
+  else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(k)) main.prev()
+  else if (k === 'Home') main.go(0)
+  else if (k === 'End') main.last()
   else if (k === 'f') toggleFullscreen()
   else if (k === 't') cycleTheme()
+  else if (k === 'p' && !presenter) openPresenter()
   else if (k === 'g') controls.value.toggleMenu()
   else if (/^[0-9]$/.test(k)) controls.value.openMenu(k) // type a slide number to jump
   else if (k === 'Escape') controls.value.closeMenu()
@@ -230,21 +203,20 @@ function onKey(e) {
   // the controls only show up on mouse movement, never on keyboard navigation
 }
 
+const PRESENTER_TITLE = 'Presentador · '
 onMounted(() => {
-  ro = new ResizeObserver(fit)
-  ro.observe(viewport.value)
-  fit()
   readHash()
-  mo = new MutationObserver((records) => records.some(insertsSlide) && change())
-  mo.observe(canvas.value, { childList: true, subtree: true })
+  startSync()
+  if (presenter && !document.title.startsWith(PRESENTER_TITLE)) document.title = PRESENTER_TITLE + document.title
   window.addEventListener('keydown', onKey)
   window.addEventListener('hashchange', readHash)
-  window.addEventListener('mousemove', onMouseMove)
+  if (!presenter) window.addEventListener('mousemove', onMouseMove)
   document.addEventListener('fullscreenchange', onFullscreen)
 })
 onBeforeUnmount(() => {
-  ro?.disconnect()
-  mo?.disconnect()
+  sync?.close()
+  clearTimeout(hudTimer)
+  clearTimeout(cursorTimer)
   window.removeEventListener('keydown', onKey)
   window.removeEventListener('hashchange', readHash)
   window.removeEventListener('mousemove', onMouseMove)

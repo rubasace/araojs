@@ -30,7 +30,8 @@
      With both, the bg goes first and the slot above it. With neither (a slot that renders nothing
      counts as none), the slide shows the theme's default background, if the theme sets one
      (--ph-slide-bg-* tokens, engine.css), and the bg-* props tune that one.
-     Headings in the background are not the slide's title (the jump menu skips them). -->
+     Headings in the background are not the slide's title (the jump menu skips them).
+     Speaker notes: Notes anywhere inside the slide (notes.js); only the presenter view shows them. -->
 <template lang="pug">
 Transition(name="ph-slide")
   section.ph-slide(
@@ -72,7 +73,7 @@ Transition(name="ph-slide")
 </template>
 
 <script setup>
-import { Comment, Fragment, Text, computed, inject, onBeforeUnmount, onUpdated, provide, reactive, ref, watchEffect } from 'vue'
+import { Comment, Fragment, Text, computed, inject, onBeforeUnmount, onUpdated, provide, reactive, ref, shallowReactive, watchEffect } from 'vue'
 import { DECK, SLIDE, slides } from './registry'
 import { sweep } from './step'
 import { isRatio, tracks } from './layout'
@@ -139,8 +140,10 @@ const counts = reactive(new Map())
 const steps = computed(() => Math.max(1, ...counts.keys()))
 
 const el = ref(null)
+// speaker notes (Notes inside this slide) for the presenter view: { id, step, slots } each
+const notes = shallowReactive([])
 // the deck places it by its position in the template, even when mounted after its neighbours
-const index = deck.register({ id, steps, title: computed(() => props.title), el })
+const index = deck.register({ id, steps, title: computed(() => props.title), el, notes })
 const active = computed(() => deck.index.value === index.value)
 // a slide already passed shows everything; one not reached yet shows step 1
 const step = computed(() =>
@@ -157,8 +160,15 @@ function registerStep(n) {
     c > 0 ? counts.set(n, c) : counts.delete(n)
   }
 }
-// components reach the slide through useSlide(); v-step through the DOM
-provide(SLIDE, { step, registerStep })
+function addNote(note) {
+  notes.push(note)
+  return () => {
+    const i = notes.indexOf(note)
+    if (i >= 0) notes.splice(i, 1)
+  }
+}
+// components reach the slide through useSlide(); v-step through the DOM; Notes through addNote
+provide(SLIDE, { step, registerStep, addNote })
 
 slides.set(id, {
   step,

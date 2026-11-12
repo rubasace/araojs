@@ -13,6 +13,8 @@ html, body, #app { margin: 0; height: 100%; }
   position: fixed; inset: 0; overflow: hidden;
   background: var(--ph-letterbox, #000);
 }
+/* a Stage: the box the canvas is scaled into (the whole window, or a box of the presenter view) */
+.ph-stage { position: absolute; inset: 0; overflow: hidden; }
 .ph-canvas {
   position: absolute; top: 50%; left: 50%;
   transform-origin: center center;
