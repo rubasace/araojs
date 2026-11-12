@@ -1,0 +1,23 @@
+[data-theme="vigojug"] {
+  --ph-letterbox: #1b2a3a;
+  --ph-bg: #f6f3ec;
+  --ph-fg: #1b2a3a;
+  --ph-muted: #5b6b7b;
+  --ph-accent: #2a7de1;
+  --ph-accent-fg: #fff;
+  --ph-font-sans: Georgia, "Times New Roman", serif;
+  --ph-font-mono: ui-monospace, Menlo, monospace;
+  --ph-text-base: 42px;
+  --ph-title: 96px;
+  --ph-pad: 110px 140px;
+  --ph-radius: 4px;
+  /* code windows: light editor */
+  --ph-code-theme: github-light;
+  --ph-code-bg: #ffffff;
+  --ph-code-bar: #e9e6df;
+  --ph-code-muted: #8b95a1;
+  --ph-code-fg: #24292e;
+  --ph-code-title: #3b4048;
+  --ph-code-radius: 14px;
+  --ph-code-size: 42px;
+}

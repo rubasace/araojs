@@ -1,0 +1,14 @@
+/* Base layouts, styled only through tokens */
+.ph-slide h1 { font-size: var(--ph-title); line-height: 1.05; margin: 0 0 .4em; }
+.ph-slide h2 { font-size: calc(var(--ph-title) * .6); margin: 0 0 .6em; color: var(--ph-accent); }
+.ph-slide p { margin: 0 0 .6em; }
+
+.layout-cover { justify-content: center; }
+.layout-cover h1 { font-size: calc(var(--ph-title) * 1.25); }
+.layout-cover .bar { width: 160px; height: 10px; background: var(--ph-accent); border-radius: 5px; margin: 0 0 48px; }
+
+.layout-section { justify-content: center; align-items: center; text-align: center;
+  background: var(--ph-accent); color: var(--ph-accent-fg); }
+.layout-section h1 { font-size: calc(var(--ph-title) * 1.4); }
+
+.layout-two-cols .cols { display: grid; grid-template-columns: 1fr 1fr; gap: var(--ph-gap-lg); flex: 1; }

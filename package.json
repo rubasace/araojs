@@ -1,40 +1,45 @@
 {
-  "name": "slides-framework",
-  "version": "0.2.0",
-  "scripts": {
-    "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
-    "build-lib": "vue-cli-service build --target lib --name slides-framework src/index.js",
-    "lint": "vue-cli-service lint"
+  "name": "phoenyxjs",
+  "version": "0.3.0",
+  "description": "A slide engine for technical talks: Vue 3 + Vite, slides in Pug, one fixed canvas, themes as tokens, PDF export",
+  "type": "module",
+  "engines": {
+    "node": ">=20.19"
   },
-  "publishConfig": {
-    "registry": "https://npm.nasvigo.com"
+  "exports": {
+    ".": "./dist/index.js",
+    "./vite": "./vite/index.js",
+    "./style.css": "./dist/phoenyx.css",
+    "./themes/*": "./dist/themes/*",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "phoenyx": "./bin/phoenyx.js"
+  },
+  "files": [
+    "dist",
+    "vite",
+    "bin",
+    "docs",
+    "AGENTS.md"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "prepack": "vite build"
+  },
+  "peerDependencies": {
+    "vite": "^8.0.0",
+    "vue": "^3.5.0"
   },
   "dependencies": {
-    "animate.css": "^4.1.0",
-    "chart.js": "^2.9.3",
-    "core-js": "^3.6.5",
-    "eagle.js": "^0.6.1",
-    "prism-themes": "^1.7.0",
-    "prismjs": "^1.23.0",
-    "raw-loader": "^4.0.1",
-    "textfit": "^2.4.0",
-    "vue": "^2.6.11",
-    "vue-router": "^3.2.0"
+    "@vitejs/plugin-vue": "^6.0.10",
+    "playwright-core": "~1.64.0",
+    "pug": "^3.0.4",
+    "shiki": "^4.6.0"
   },
   "devDependencies": {
-    "@vue/cli-plugin-babel": "~4.4.0",
-    "@vue/cli-plugin-eslint": "~4.4.0",
-    "@vue/cli-plugin-router": "~4.4.0",
-    "@vue/cli-service": "~4.4.0",
-    "babel-eslint": "^10.1.0",
-    "eslint": "^6.7.2",
-    "eslint-plugin-vue": "^6.2.2",
-    "node-sass": "^4.12.0",
-    "pug": "^2.0.0",
-    "pug-plain-loader": "^1.0.0",
-    "sass-loader": "^8.0.2",
-    "vue-template-compiler": "^2.6.11",
-    "webpack": "^4.46.0"
+    "vite": "^8.3.8",
+    "vue": "^3.5.45"
   }
 }

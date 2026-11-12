@@ -1,0 +1,183 @@
+/* Engine: structure only. Every visual decision is a token the theme supplies. */
+html, body, #app { margin: 0; height: 100%; }
+
+/* Engine defaults for tokens a theme may override, declared wherever a theme is applied: the
+   audience's viewport (and the export book inside it) and each Stage of the presenter view carry
+   data-theme. Zero specificity: the theme's own [data-theme="x"] rule wins on the same element. */
+:where([data-theme]) {
+  --ph-gap-sm: 24px;
+  --ph-gap-md: 48px;
+  --ph-gap-lg: 80px;
+  --ph-text-small: .75em;
+}
+
+.ph-viewport {
+  /* touch: we handle taps and horizontal swipes ourselves; keep pinch-zoom */
+  touch-action: pinch-zoom;
+  -webkit-tap-highlight-color: transparent;
+  position: fixed; inset: 0; overflow: hidden;
+  background: var(--ph-letterbox, #000);
+}
+/* a Stage: the box the canvas is scaled into (the whole window, or a box of the presenter view) */
+.ph-stage { position: absolute; inset: 0; overflow: hidden; }
+.ph-canvas {
+  position: absolute; top: 50%; left: 50%;
+  transform-origin: center center;
+  overflow: hidden;
+  background: var(--ph-bg);
+  color: var(--ph-fg);
+  font-family: var(--ph-font-sans);
+  font-size: var(--ph-text-base, 40px);
+  line-height: 1.35;
+}
+.ph-slide {
+  position: absolute; inset: 0;
+  box-sizing: border-box;
+  padding: var(--ph-pad, 96px 120px);
+  display: flex; flex-direction: column;
+  isolation: isolate; /* its own stacking context: the background layer stays inside it */
+}
+
+/* Layers, bottom to top: the background (.ph-slide-bg), the content, then the addons (z-index 10,
+   outside the slides). The background is Slide(bg="…"), the #background slot, or else the
+   theme's default; it never catches the pointer, so it never gets in the way of the content. */
+.ph-slide-bg {
+  position: absolute; inset: 0; z-index: -1;
+  overflow: hidden; pointer-events: none; user-select: none;
+}
+/* each child of the layer (the bg, every element of #background) covers the whole slide,
+   stacked in order: an Img, then an overlay above it */
+.ph-slide-bg > * { position: absolute; inset: 0; }
+/* the theme's default background, on slides with none of their own (tokens, all optional):
+     --ph-slide-bg-image      a CSS background-image: a gradient, or url(…) relative to the theme
+                              file, url(../images/venue.jpg), which Vite resolves (default none)
+     --ph-slide-bg-position   where it sits, as CSS background-position (default center)
+     --ph-slide-bg-opacity    0..1 (default 1)
+   It is drawn to cover the slide. A theme can leave a layout out:
+     [data-theme="x"] .layout-section { --ph-slide-bg-image: none; } */
+.ph-slide-bg-theme {
+  background: var(--ph-slide-bg-image, none) var(--ph-slide-bg-position, center) / cover no-repeat;
+  opacity: var(--ph-slide-bg-opacity, 1);
+}
+
+/* zones: Slide(layout="split" | "image-left" | "image-right" ratio="…") */
+.ph-zones {
+  flex: 1 1 auto; min-height: 0;
+  display: grid; grid-template-rows: minmax(0, 1fr); gap: var(--ph-gap-lg);
+}
+/* a zone keeps its width: what is wider is clipped at its edge, never painted over the other zone */
+.ph-zone { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow-x: clip; }
+.layout-image-left, .layout-image-right { display: grid; grid-template-rows: minmax(0, 1fr); padding: 0; }
+.ph-zone-text { box-sizing: border-box; padding: var(--ph-pad, 96px 120px); }
+/* the image fills its zone edge to edge (a theme may inset it) */
+.ph-zone-image { position: relative; overflow: hidden; box-sizing: border-box; padding: var(--ph-image-inset, 0); }
+.ph-zone-image > * { flex: 1 1 0; min-height: 0; }
+.ph-zone-image > :is(img, video, picture, svg, canvas) { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* Img: no size of its own, it fills the box its container gives it and fits the picture inside.
+   Zero specificity: a class on it wins (set width and height both, or one plus width/height: auto
+   to follow the picture's shape). Where its container has no height to give (a plain block), the
+   picture's shape, learnt on load, sets it (aspect-ratio). */
+:where(.ph-img) {
+  position: relative; box-sizing: border-box; overflow: hidden;
+  flex: 1 1 0; width: 100%; height: 100%; min-width: 0; min-height: 0;
+}
+.ph-img > img {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: block; object-fit: contain;
+}
+/* in an image zone and in the background it covers its box, edge to edge (fit="contain" still wins) */
+.ph-zone-image > .ph-img > img, .ph-slide-bg > .ph-img > img { object-fit: cover; }
+/* missing file: a dashed box (colour from --ph-placeholder, default the text colour) with its name */
+.ph-img-missing {
+  display: flex; align-items: center; justify-content: center;
+  border: 3px dashed color-mix(in srgb, var(--ph-placeholder, currentColor) 40%, transparent);
+  border-radius: var(--ph-radius);
+  background: color-mix(in srgb, var(--ph-placeholder, currentColor) 5%, transparent);
+}
+.ph-img-name {
+  padding: 8px 12px;
+  font: calc(var(--ph-text-base, 40px) * .5) / 1.2 var(--ph-font-mono, monospace);
+  color: color-mix(in srgb, var(--ph-placeholder, currentColor) 85%, transparent);
+  text-align: center; text-transform: none; font-weight: normal;
+  overflow-wrap: anywhere;
+}
+/* the alt, when there is one, is what the picture was meant to say: first and stronger; the file
+   name under it is the secondary line */
+.ph-img-alt { display: block; margin-bottom: 4px; font-family: var(--ph-font-sans, sans-serif); }
+.ph-img-file { opacity: .75; }
+/* a missing background: framed inside the slide, its name in the top-right corner (the bottom
+   corners belong to the addons) */
+.ph-slide-bg > .ph-img-missing { inset: 24px; width: auto; height: auto; align-items: flex-start; justify-content: flex-end; }
+
+/* composition: Cols, Rows, Grid, Center (layout.js) fill the free space of their container */
+.ph-cols, .ph-rows, .ph-grid, .ph-center { box-sizing: border-box; flex: 1 1 auto; min-width: 0; min-height: 0; }
+.ph-cols, .ph-rows, .ph-grid { display: grid; gap: var(--ph-gap-md); }
+.ph-cols { grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+.ph-rows { grid-template-columns: minmax(0, 1fr); grid-auto-rows: 1fr; }
+.ph-grid { grid-auto-rows: 1fr; }
+.ph-center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+/* widths hold, heights grow: a child is never wider than its track and what is wider inside it is
+   clipped at the track's edge, so it never paints over its neighbour; rows grow to fit (the
+   y axis stays visible). Zero specificity: a child's own rule wins. */
+:where(.ph-cols, .ph-rows, .ph-grid) > * { max-width: 100%; overflow-x: clip; }
+
+/* utility classes: an escape hatch for one-off tweaks, not a styling system */
+.ph-slide .muted { color: var(--ph-muted); }
+.ph-slide .center { text-align: center; }
+.ph-slide .upper { text-transform: uppercase; }
+.ph-slide .small { font-size: var(--ph-text-small); }
+
+/* steps */
+.ph-step-hidden { opacity: 0 !important; pointer-events: none; }
+.ph-step-collapsed { display: none !important; }
+[data-ph-slide] * { transition: opacity var(--ph-step-duration, .35s) ease; }
+
+/* slide transition */
+.ph-slide-enter-active, .ph-slide-leave-active { transition: opacity .4s ease; }
+.ph-slide-enter-from, .ph-slide-leave-to { opacity: 0; }
+
+
+.ph-nocursor, .ph-nocursor * { cursor: none !important; }
+
+/* Export mode (?export, exporter.js): a book of pages, each exactly the canvas size (inline
+   width/height; @page gets the same size), in document order, for printing. */
+html:has(.ph-export), html:has(.ph-export) body, html:has(.ph-export) #app { height: auto; }
+.ph-viewport.ph-export { position: static; overflow: visible; background: none; }
+/* the deck itself, walked while the book fills: on screen until the book is done, never printed */
+.ph-export > .ph-stage { position: fixed; }
+.ph-export-done > .ph-stage, .ph-export-notes { display: none; }
+@media print { .ph-export > .ph-stage { display: none; } }
+/* every page as it stands: nothing moves, nothing fades */
+.ph-export, .ph-export *, .ph-export *::before, .ph-export *::after {
+  transition: none !important; animation: none !important;
+}
+.ph-page {
+  position: relative; overflow: hidden; box-sizing: border-box;
+  break-after: page; break-inside: avoid;
+  print-color-adjust: exact; -webkit-print-color-adjust: exact;
+}
+.ph-page:last-child { break-after: auto; }
+/* the canvas copy fills its page, unscaled (and says so, to whatever sizes itself by the scale) */
+.ph-book { --ph-scale: 1; }
+.ph-page > .ph-canvas { top: 0; left: 0; transform: none !important; }
+/* a page of speaker notes (&notes): plain, for paper, whatever the theme */
+.ph-notes-page {
+  padding: 96px 120px; background: #fff; color: #1c1c22;
+  font: 34px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.ph-notes-head {
+  margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #d4d4da;
+  font-size: 28px; font-weight: 600; color: #5c5c66;
+}
+.ph-notes-body .ph-note { margin-bottom: 28px; }
+.ph-notes-body .ph-note > :first-child { margin-top: 0; }
+.ph-notes-body .ph-note[data-step]:not([data-step="1"])::before {
+  content: "Desde el paso " attr(data-step); display: block; margin-bottom: 6px;
+  font-size: 24px; font-weight: 600; color: #8a5a00;
+}
+/* on screen (?export opened in a browser), the pages one under the other */
+@media screen {
+  .ph-viewport.ph-export { background: #2a2a2e; }
+  .ph-book { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; padding: 24px; }
+}
