@@ -354,9 +354,11 @@ npm trusted publishing (`.github/workflows/release-please.yml`):
    `package.json` and `.release-please-manifest.json` and writes `CHANGELOG.md`.
 3. Merging that pull request tags the version (`0.3.1`, no `v`, like the existing tags) and
    creates the GitHub release.
-4. The `publish` job in the same workflow builds the package and runs `npm publish`. It
+4. The `publish` job in the same workflow builds the package and runs `npm stage publish`. It
    authenticates through OIDC, so there is no npm token. npm adds provenance on its own when the
    repository is public.
+5. The version waits in npm's staging queue until the owner approves it with 2FA, on
+   npmjs.com or with `npm stage approve`. Nothing goes live without that approval.
 
 The release pull request is opened with `GITHUB_TOKEN`, and GitHub doesn't start other workflows
 for events made with that token. As a result, CI doesn't run on the release PR by itself. To get
@@ -369,6 +371,6 @@ One-time setup by the owner:
 - **npm**: the package (published as `araojs`) has to exist on npmjs.com first. Then, under the
   package's Settings → Trusted publisher → GitHub Actions, set organization or user `rubasace`, repository
   `araojs`, workflow filename `release-please.yml`, and leave the environment empty. Under
-  "Allowed actions", allow `npm publish`: new trusted publishers allow only `npm stage publish`
-  by default. Every field is case-sensitive. If you rename the package or the repository, update
+  "Allowed actions", keep only `npm stage publish` (the default): CI stages, the owner approves.
+  Every field is case-sensitive. If you rename the package or the repository, update
   the trusted publisher and `repository.url` in `package.json` too: they have to match.

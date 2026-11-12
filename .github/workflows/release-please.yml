@@ -2,7 +2,8 @@ name: Release
 
 # On every push to main, release-please keeps a release PR up to date from the conventional
 # commits since the last release (version bump in package.json, CHANGELOG.md). Merging that PR
-# tags the release, creates the GitHub release, and the publish job puts it on npm.
+# tags the release, creates the GitHub release, and the publish job stages it on npm: the owner approves it
+# on npmjs.com (2FA) before it goes live.
 #
 # Note: the release PR is opened with GITHUB_TOKEN, and events made with GITHUB_TOKEN do not
 # trigger other workflows, so CI does not run on the release PR by itself. To have it run, give
@@ -54,12 +55,12 @@ jobs:
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
 
-      # trusted publishing needs npm >= 11.5.1
-      - name: Ensure npm >= 11.5.1
+      # npm stage publish under trusted publishing needs a recent npm 11
+      - name: Ensure npm >= 11.15.0
         run: |
           current="$(npm --version)"
-          if [ "$(printf '%s\n' 11.5.1 "$current" | sort -V | head -n1)" != 11.5.1 ]; then
-            npm install -g npm@^11.5.1
+          if [ "$(printf '%s\n' 11.15.0 "$current" | sort -V | head -n1)" != 11.15.0 ]; then
+            npm install -g npm@^11.15.0
           fi
           npm --version
 
@@ -69,4 +70,6 @@ jobs:
 
       # Provenance is added by npm itself under trusted publishing, but only from a public
       # repository: an explicit --provenance makes the publish fail while the repo is private.
-      - run: npm publish --access public
+      # Staged, not published: the version waits on npmjs.com until a maintainer approves it
+      # with 2FA (npm stage approve, or the website). CI can stage, never approve.
+      - run: npm stage publish --access public
