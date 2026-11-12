@@ -108,6 +108,16 @@ Deck(:themes="['default', 'vigojug']" duration="15m")
     Notes
       p El tema vigojug cambia también el tema de Shiki a uno claro.
 
+  Slide(title="Sin fit, solo con Cols")
+    h2 Lo mismo sin fit: solo Cols
+    Cols(ratio="1 1" align="center")
+      div
+        p Sin fit, la columna limita el ancho…
+        p …pero la ventana ocupa todo el alto disponible.
+      Snippet(code="npm install\nnpm run dev\nnpm run export -- --deck showcase" lang="bash" name="terminal" :line-numbers="false")
+    Notes
+      p Comparación con la slide anterior: mismo contenido y mismas columnas, sin fit.
+
   //- ---------------------------------------------------------------- layout
   Slide(layout="section")
     h1 Layout
