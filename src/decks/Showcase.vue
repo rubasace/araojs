@@ -160,6 +160,98 @@ Deck(:themes="['default', 'vigojug']" duration="15m")
     Notes
       p Cols, Rows, Grid y Center: proporciones y espacios por props, sin escribir CSS de colocación.
 
+  //- ---------------------------------------------------------------- grids
+  //- the same shaped grid with a growing number of children
+  Slide(v-for="n in [2, 3, 4, 5, 7, 9]" :key="'g21-' + n" :title="`Grid 2:1 · ${n} elementos`")
+    h2 Grid ratio="2:1" · {{ n }} elementos
+    Grid(ratio="2:1" gap="md")
+      .box(v-for="i in n" :key="i") {{ i }}
+
+  Slide(v-for="n in [4, 5, 6, 10]" :key="'g11-' + n" :title="`Grid 1:1 · ${n} elementos`")
+    h2 Grid ratio="1:1" · {{ n }} elementos
+    Grid(ratio="1:1" gap="sm")
+      .box(v-for="i in n" :key="i") {{ i }}
+
+  Slide(v-for="n in [4, 6, 7]" :key="'g41-' + n" :title="`Grid 4:1 · ${n} elementos`")
+    h2 Grid ratio="4:1" · {{ n }} elementos
+    Grid(ratio="4:1" gap="sm")
+      .box(v-for="i in n" :key="i") {{ i }}
+
+  Slide(title="Grid cols frente a ratio")
+    h2 cols="3" frente a ratio="2:1", con 5
+    Cols(gap="lg")
+      Rows(ratio="auto 1" gap="sm")
+        p.muted.center Grid(cols="3") — rellena por la izquierda
+        Grid(cols="3" gap="sm")
+          .box(v-for="i in 5" :key="i") {{ i }}
+      Rows(ratio="auto 1" gap="sm")
+        p.muted.center Grid(ratio="2:1") — última fila centrada
+        Grid(ratio="2:1" gap="sm")
+          .box(v-for="i in 5" :key="i") {{ i }}
+    Notes
+      p cols fija las columnas; ratio las calcula a partir del número de elementos y centra la última fila.
+
+  Slide(title="Galería en Grid")
+    h2 Galería: Grid con imágenes
+    Grid(ratio="2:1" gap="md")
+      figure.shot(v-for="(f, i) in gallery" :key="f.file" v-step="i + 1")
+        Img(:file="f.file" fit="cover" rounded :alt="f.label")
+        figcaption {{ f.label }}
+    Notes
+      p Cinco imágenes con forma 2:1: 3 arriba y 2 centradas, apareciendo una por paso.
+
+  //- ---------------------------------------------------------------- pictures in layouts
+  Slide(layout="image-left" ratio="2 3" title="image-left")
+    template(#image)
+      Img(file="demo/portrait.svg" alt="Retrato")
+    h2 image-left, ratio="2 3"
+    p La imagen ocupa dos quintos a la izquierda, de borde a borde.
+    p(v-step="2") El texto ocupa el resto con el padding normal.
+
+  Slide(title="Imagen en una columna")
+    h2 Imagen en una columna
+    Cols(ratio="1 2" gap="lg" align="center")
+      Img(file="demo/shapes.svg" rounded alt="Formas")
+      div
+        p Cols(ratio="1 2"): la imagen en un tercio, dentro del padding de la slide.
+        p(v-step="2") Img se ajusta a su columna sin recortar (fit="contain").
+
+  Slide(title="Banner arriba")
+    h2 Banner arriba, texto debajo
+    Rows(ratio="1 auto" gap="md")
+      Img(file="demo/waves.svg" fit="cover" rounded alt="Olas")
+      Cols(gap="lg")
+        p Rows(ratio="1 auto"): la imagen se queda con el alto libre.
+        p(v-step="2") El texto, solo lo que necesita.
+
+  Slide(title="Avatar redondo")
+    h2 Avatar redondo y texto
+    Cols(ratio="1 2" gap="lg" align="center")
+      Center
+        Img.avatar(file="demo/portrait.svg" fit="cover" position="center 30%" rounded="full" alt="Retrato")
+      div
+        h3 Rubén Pahíno
+        p.muted Img(rounded="full") con un tamaño fijo por clase.
+        p(v-step="2") Center lo centra en su columna.
+
+  Slide(layout="split" ratio="3 2" title="split con imagen")
+    h2 split con una imagen en una zona
+    template(#left)
+      ul
+        li Zona izquierda con texto
+        li(v-step="2") Zona derecha con una imagen
+        li(v-step="3") El título va encima de las dos
+    template(#right)
+      Img(file="demo/city.svg" fit="cover" rounded alt="Ciudad")
+
+  Slide(layout="image-right" ratio="1 1" bg="demo/waves.svg" bg-opacity="0.15" title="Todo junto")
+    template(#image)
+      Img(file="demo/shapes.svg" fit="cover" alt="Formas")
+    h2 Fondo, zona e imagen
+    p image-right con un fondo suave en la slide entera.
+    Grid(ratio="2:1" gap="sm" v-step="2")
+      .box(v-for="t in ['bg', 'zona', 'Grid']" :key="t") {{ t }}
+
   //- ---------------------------------------------------------------- images
   Slide(bg="demo/city.svg" bg-opacity="0.3" title="Fondos")
     h2 Fondos por capas
@@ -224,6 +316,16 @@ Deck(:themes="['default', 'vigojug']" duration="15m")
     Notes
       p Usa Chromium headless sobre una build, no hace falta el servidor de desarrollo.
 
+  Slide(title="Resumen de layouts")
+    h2 Resumen de layouts
+    Grid(ratio="4:1" gap="sm")
+      .lay(v-for="l in layouts" :key="l.code")
+        .mini(:class="'mini-' + l.kind")
+          i(v-for="k in l.parts" :key="k")
+        code {{ l.code }}
+    Notes
+      p Arriba los layouts de slide (prop layout); abajo las piezas para componer dentro de cualquier slide o zona.
+
   Slide(layout="cover" title="Fin")
     .bar
     h1 ¡Eso es todo!
@@ -236,6 +338,30 @@ Deck(:themes="['default', 'vigojug']" duration="15m")
 import ProgressBar from '../addons/ProgressBar.vue'
 import SlideNumber from '../addons/SlideNumber.vue'
 import Card from '../slides/Card.vue'
+
+const gallery = [
+  { file: 'demo/landscape.svg', label: 'Paisaje' },
+  { file: 'demo/city.svg', label: 'Ciudad' },
+  { file: 'demo/shapes.svg', label: 'Formas' },
+  { file: 'demo/waves.svg', label: 'Olas' },
+  { file: 'demo/portrait.svg', label: 'Retrato' },
+]
+
+// summary slide: one card per layout, with a tiny diagram (parts = boxes drawn by .mini-<kind>)
+const layouts = [
+  { kind: 'default', parts: 2, code: 'Slide' },
+  { kind: 'cover', parts: 2, code: 'layout="cover"' },
+  { kind: 'section', parts: 1, code: 'layout="section"' },
+  { kind: 'split', parts: 3, code: 'layout="split"' },
+  { kind: 'image-left', parts: 2, code: 'layout="image-left"' },
+  { kind: 'image-right', parts: 2, code: 'layout="image-right"' },
+  { kind: 'bg', parts: 2, code: 'Slide(bg="…")' },
+  { kind: 'cols', parts: 2, code: 'Cols(ratio="2 1")' },
+  { kind: 'rows', parts: 2, code: 'Rows(ratio="auto 1")' },
+  { kind: 'grid', parts: 6, code: 'Grid(cols="3")' },
+  { kind: 'gridr', parts: 5, code: 'Grid(ratio="2:1")' },
+  { kind: 'center', parts: 1, code: 'Center' },
+]
 </script>
 
 <style scoped>
@@ -253,6 +379,39 @@ import Card from '../slides/Card.vue'
   border-left: 8px solid var(--ph-accent);
   font-size: 36px;
 }
+.shot { margin: 0; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+.shot figcaption { text-align: center; font-size: 28px; color: var(--ph-muted); }
+.avatar { flex: none; width: 360px; height: 360px; }
+.lay { display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: center; min-height: 0; }
+.lay code { font: 22px var(--ph-font-mono); color: var(--ph-muted); }
+/* tiny diagrams: a 16:9 frame; the i elements are its boxes */
+.mini {
+  position: relative; width: 240px; aspect-ratio: 16 / 9; box-sizing: border-box;
+  border: 3px solid color-mix(in srgb, var(--ph-fg) 35%, transparent); border-radius: 10px;
+  padding: 12px; display: grid; gap: 8px;
+}
+.mini i { background: color-mix(in srgb, var(--ph-fg) 22%, transparent); border-radius: 4px; }
+.mini i:first-child { background: var(--ph-accent); }
+.mini-default { grid-template-rows: 14px 1fr; }
+.mini-cover { align-content: center; grid-template-rows: 18px 10px; grid-template-columns: 60%; }
+.mini-section { background: var(--ph-accent); place-items: center; }
+.mini-section i { width: 50%; height: 18px; background: var(--ph-accent-fg) !important; }
+.mini-split { grid-template-rows: 14px 1fr; grid-template-columns: 1fr 1fr; }
+.mini-split i:first-child { grid-column: 1 / -1; }
+.mini-image-left, .mini-image-right { padding: 0; grid-template-columns: 2fr 3fr; }
+.mini-image-right { grid-template-columns: 3fr 2fr; }
+.mini-image-left i:first-child, .mini-image-right i:last-child { background: var(--ph-accent); border-radius: 0; }
+.mini-image-right i:first-child { background: color-mix(in srgb, var(--ph-fg) 22%, transparent); margin: 12px; }
+.mini-image-left i:last-child { margin: 12px; }
+.mini-bg { grid-template-rows: 14px 1fr; background: linear-gradient(135deg, color-mix(in srgb, var(--ph-accent) 35%, transparent), transparent); }
+.mini-cols { grid-template-columns: 2fr 1fr; }
+.mini-rows { grid-template-rows: 18px 1fr; }
+.mini-grid { grid-template-columns: repeat(3, 1fr); }
+.mini-gridr { grid-template-columns: repeat(6, 1fr); }
+.mini-gridr i { grid-column: span 2; }
+.mini-gridr i:nth-child(4) { grid-column: 2 / span 2; }
+.mini-center { place-items: center; }
+.mini-center i { width: 40%; height: 40%; }
 .tint {
   background: linear-gradient(90deg, var(--ph-bg) 30%, transparent);
 }
