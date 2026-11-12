@@ -211,7 +211,7 @@ src/
   components/       Deck, Slide, Img, Icon, Snippet, Notes, Cols/Rows/Grid/Center (layout.js)
     internal/       the deck's own UI: Stage (the scaled canvas), Controls, Presenter, PresenterBar
   addons/           ProgressBar, SlideNumber: things drawn over every slide
-  composables/      useDeck, useSlide
+  composables/      useDeck, useSlide (public); the Deck's own pieces (useKeyboard, useIdle, useDeckSync…)
   directives/       v-step and v-step-from (step.js)
   core/             plain modules: stage, sync, timer, exporter, image, icons, flip, registry
   styles/           engine.css (structure), layouts.css (content and layouts)

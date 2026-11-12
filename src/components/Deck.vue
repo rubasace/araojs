@@ -37,7 +37,7 @@
     </Stage>
     <template v-if="exporting">
       <!-- the notes of the slide on screen, copied into the book after its page(s); never shown -->
-      <div class="ph-export-notes" v-if="exporting.notes" ref="exportNotes">
+      <div class="ph-export-notes" v-if="exporting.notes" ref="notesBox">
         <div class="ph-note" v-for="n in shownNotes" :key="n.id" :data-step="n.step">
           <NoteBody :note="n" />
         </div>
@@ -62,7 +62,7 @@
     <Transition v-if="!exporting" name="ph-toast">
       <div class="ph-toast" v-if="blocked" role="status">
         <span>El navegador ha bloqueado la ventana del presentador.</span>
-        <a :href="blocked" :target="presenterName" :title="blocked" @click="blocked = null">Abrirla aquí</a>
+        <a :href="blocked" :target="presenterName" :title="blocked" @click="dismiss">Abrirla aquí</a>
       </div>
     </Transition>
   </div>
@@ -73,7 +73,7 @@
     :next="next"
     :notes="notes"
     :timer="timer"
-    :duration="durationMs"
+    :duration="duration"
     :ratio="`${width} / ${height}`"
     @timer="setTimer"
   >
@@ -107,13 +107,22 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, provide, readonly, ref, shallowRef, useSlots, watch } from 'vue'
-import { ahead, createStage } from '../core/stage'
-import { createSync, deckKey } from '../core/sync'
-import { IDLE, parseDuration, start } from '../core/timer'
-import { buildBook, exportOptions, reportReady } from '../core/exporter'
-import { NoteBody } from './Notes'
+// Deck wires the pieces together; each concern is a composable (src/composables/).
+import { computed, provide, ref, useSlots } from 'vue'
+import { ahead, createStage, titleOf } from '../core/stage'
+import { exportOptions } from '../core/exporter'
 import { FOOTER } from '../core/registry'
+import { useDeckSync } from '../composables/useDeckSync'
+import { useExport } from '../composables/useExport'
+import { useFullscreen } from '../composables/useFullscreen'
+import { useHashRoute } from '../composables/useHashRoute'
+import { useIdle } from '../composables/useIdle'
+import { useKeyboard } from '../composables/useKeyboard'
+import { usePresenterWindow } from '../composables/usePresenterWindow'
+import { useTheme } from '../composables/useTheme'
+import { useTimer } from '../composables/useTimer'
+import { useTouchNav } from '../composables/useTouchNav'
+import { NoteBody } from './Notes'
 import Controls from './internal/Controls.vue'
 import Presenter from './internal/Presenter.vue'
 import Stage from './internal/Stage.vue'
@@ -144,236 +153,76 @@ const presenter = !exporting && query.has('presenter')
 const main = createStage({ onMove: moved, role: exporting ? 'export' : presenter ? 'presenter' : 'audience' })
 const next = computed(() => ahead(main))
 const preview = presenter ? createStage({ follow: () => next.value, role: 'preview' }) : null
-
-// ---- URL: #/slide/step (1-based) -----------------------------------------
-function readHash() {
-  const [, i, s] = location.hash.match(/^#\/(\d+)(?:\/(\d+))?/) || []
-  if (i) main.go(Number(i) - 1, Number(s || 1))
-}
-
-// ---- theme: ?theme=name, or cycle with "t" -------------------------------
-const theme = ref(query.get('theme') || props.themes[0])
-// addons/components can follow theme changes
-main.api.theme = readonly(theme)
-if (preview) preview.api.theme = main.api.theme
-function setTheme(name) {
-  theme.value = name
-  const url = new URL(location.href)
-  url.searchParams.set('theme', theme.value)
-  history.replaceState(null, '', url)
-}
-function cycleTheme() {
-  const i = props.themes.indexOf(theme.value)
-  setTheme(props.themes[(i + 1) % props.themes.length])
-}
-
-// ---- timer (shown by the presenter view, kept by every window) -------------
-const timer = shallowRef(IDLE)
-const setTimer = (t) => (timer.value = t)
-const durationMs = computed(() => parseDuration(props.duration))
-watch(() => props.duration, (v) => {
-  if (v != null && String(v).trim() && durationMs.value == null) {
-    console.warn(`[phoenyx] Deck duration="${v}" is not a length (90, "45m", "1h30", "45:00"…): the presenter view shows no countdown`)
-  }
-}, { immediate: true })
-
-// ---- windows in step -------------------------------------------------------
-// Started once the URL has placed the deck: that position is this window's own, not a move.
-let sync = null
-function startSync() {
-  sync = createSync(deckKey(location))
-  sync.register('pos', {
-    get: () => ({ index: main.index.value, step: main.step.value }),
-    set: (v) => main.place(v.index, v.step),
-  })
-  // a window whose URL names a theme keeps it when it opens; later changes still reach it
-  sync.register('theme', { get: () => theme.value, set: setTheme, adopt: !query.has('theme') })
-  // kept through a reload of every window (sessionStorage), not past closing them
-  sync.register('timer', { get: () => timer.value, set: setTimer, keep: true })
-  sync.hello()
-}
-// A move made here (keys, controls, an addon, the URL; not a position received, nor the deck
-// renumbering its slides after an edit): the others follow, and the first one starts the timer.
-// Each window renumbers on its own, so an edit (HMR) never sends anyone to another slide.
-function moved() {
-  if (!sync) return // the URL placing the deck as it opens
-  sync.publish('pos', true)
-  if (timer.value.state === 'idle') timer.value = start(timer.value, Date.now())
-}
-if (!exporting) watch([main.index, main.step], () => history.replaceState(null, '', `#/${main.index.value + 1}/${main.step.value}`))
-watch(theme, () => sync?.publish('theme'))
-watch(timer, () => sync?.publish('timer'))
-
-// ---- presenter view ---------------------------------------------------------
 // notes of the slide on screen
 const notes = computed(() => main.current.value?.notes ?? [])
-const presenterName = `phoenyx-presenter ${deckKey(location)}`
-// the notice that the browser blocked the window: the URL to open by hand while it shows
-const blocked = ref(null)
-let blockedTimer
-function openPresenter() {
-  const params = new URLSearchParams(location.search)
-  params.delete('presenter')
-  const q = params.toString()
-  const url = new URL(`${location.pathname}?${q ? q + '&' : ''}presenter${location.hash}`, location.href).href
-  // A window of its own (not a tab), to drag to the speaker's screen, found by its name: one
-  // already open (even by this page before a reload) is only brought forward, keeping its scroll;
-  // a new one opens blank and is sent to the presenter view.
-  const w = window.open('', presenterName, 'popup,width=1280,height=800')
-  if (!w) {
-    console.warn(`[phoenyx] The browser blocked the presenter window: allow pop-ups for this site, or open ${url}`)
-    blocked.value = url
-    clearTimeout(blockedTimer)
-    blockedTimer = setTimeout(() => (blocked.value = null), 10000)
-    return
-  }
-  blocked.value = null
-  let blank = false
-  try { blank = w.location.href === 'about:blank' } catch {} // a page of another site: leave it be
-  if (blank) w.location.replace(url)
-  w.focus()
-}
 
-// ---- controls ------------------------------------------------------------
+const { theme, setTheme, cycleTheme } = useTheme(() => props.themes)
+// addons/components can follow theme changes
+main.api.theme = theme
+if (preview) preview.api.theme = theme
+const { timer, setTimer, duration, startTimer } = useTimer(() => props.duration)
+
 const viewport = ref()
 const controls = ref()
-const fullscreen = ref(false)
-function toggleFullscreen() {
-  document.fullscreenElement ? document.exitFullscreen() : (viewport.value ?? document.documentElement).requestFullscreen()
+const { fullscreen, toggle: toggleFullscreen } = useFullscreen(viewport)
+const { open: openPresenter, name: presenterName, blocked, dismiss } = usePresenterWindow()
+
+// ---- the audience's window: the mouse shows the controls for 2.5 s (a tap in the middle, for 4 s)
+// and hides the cursor after hideCursorAfter; keys never show them. The presenter view and the
+// export listen to neither.
+const pointer = presenter || exporting ? null : viewport
+const controlsIdle = useIdle(pointer, 2500, { idle: true })
+const hud = computed(() => !controlsIdle.idle.value)
+const { idle: cursorHidden } = useIdle(pointer, () => props.hideCursorAfter)
+if (pointer) {
+  useTouchNav(pointer, {
+    next: main.next,
+    prev: main.prev,
+    tap: () => controls.value?.closeMenu(),
+    middle: () => (hud.value ? controlsIdle.sleep() : controlsIdle.wake(4000)),
+  })
 }
-const onFullscreen = () => (fullscreen.value = !!document.fullscreenElement)
-// slide titles for the jump menu: Slide(title="…"), else its first heading outside the
-// background and the footer
-const HEADING = ':is(h1, h2, h3):not(.ph-slide-bg *, .ph-footer *)'
-const titleOf = (s) => s.title.value || s.el.value?.querySelector(HEADING)?.textContent.trim() || ''
+
+// ---- the URL, the other windows, the keys (not while exporting) ----------------------------
+let sync = null
+if (!exporting) {
+  useHashRoute(main) // first: the position the URL gives is in place before the windows sync
+  sync = useDeckSync(main, { theme, setTheme, adoptTheme: !query.has('theme'), timer, setTimer })
+  useKeyboard({
+    next: main.next,
+    prev: main.prev,
+    first: () => main.go(0),
+    last: main.last,
+    fullscreen: toggleFullscreen,
+    theme: cycleTheme,
+    presenter: presenter ? null : openPresenter,
+    menu: () => controls.value.toggleMenu(),
+    jump: (digit) => controls.value.openMenu(digit),
+    close: () => controls.value.closeMenu(),
+  })
+}
+// A move made here (keys, controls, an addon, the URL; not a position received, nor the deck
+// renumbering its slides after an edit): the other windows follow, and the first one starts the
+// timer.
+function moved() {
+  if (sync?.moved()) startTimer()
+}
+
+// slide titles for the jump menu, re-read whenever the controls show up (the presenter view shows
+// the title: on every move)
 const titles = computed(() => {
-  // re-read headings whenever the controls show up (the presenter view shows the title: on every move)
   presenter ? main.index.value : hud.value
   return main.list.map(titleOf)
 })
 
-const hud = ref(false)
-let hudTimer
-const cursorHidden = ref(false)
-let cursorTimer
-function poke() {
-  hud.value = true
-  clearTimeout(hudTimer)
-  hudTimer = setTimeout(() => (hud.value = false), 2500)
-}
-let lastTouch = 0
-function onMouseMove() {
-  // browsers follow a tap with a compatibility mousemove: that one is not the mouse
-  if (performance.now() - lastTouch < 800) return
-  poke()
-  cursorHidden.value = false
-  clearTimeout(cursorTimer)
-  if (props.hideCursorAfter > 0) cursorTimer = setTimeout(() => (cursorHidden.value = true), props.hideCursorAfter)
-}
-// ---- touch: edge taps and swipes navigate, a tap in the middle toggles the controls ---------
-const TAP_MS = 500, TAP_MOVE = 12, SWIPE = 50
-let touch = null
-function onPointerDown(e) {
-  if (e.pointerType === 'mouse') return
-  lastTouch = performance.now()
-  touch = e.isPrimary ? { x: e.clientX, y: e.clientY, t: e.timeStamp, id: e.pointerId } : null
-}
-function onPointerUp(e) {
-  if (e.pointerType === 'mouse' || !touch || e.pointerId !== touch.id) return
-  lastTouch = performance.now()
-  const { x, y, t } = touch
-  touch = null
-  if (e.target.closest?.('.ph-controls, .ph-toast, a, button, input, select, textarea, label, [contenteditable], [data-ph-touch="ignore"]')) return
-  const dx = e.clientX - x, dy = e.clientY - y
-  if (Math.abs(dx) > SWIPE && Math.abs(dx) > Math.abs(dy) * 1.5) return dx < 0 ? main.next() : main.prev()
-  if (e.timeStamp - t > TAP_MS || Math.hypot(dx, dy) > TAP_MOVE) return
-  controls.value?.closeMenu()
-  const w = viewport.value?.clientWidth || innerWidth
-  if (e.clientX > w * 0.75) main.next()
-  else if (e.clientX < w * 0.25) main.prev()
-  else if (hud.value) { clearTimeout(hudTimer); hud.value = false }
-  else { hud.value = true; clearTimeout(hudTimer); hudTimer = setTimeout(() => (hud.value = false), 4000) }
-}
-const onPointerCancel = () => (touch = null)
-
-function onKey(e) {
-  if (e.target.closest?.('input, textarea, [contenteditable]')) return
-  // Ctrl/Cmd/Alt + key belongs to the browser (print, find, tabs, history); Shift is ours
-  if (e.ctrlKey || e.metaKey || e.altKey) return
-  // a button with the focus (the presenter view's) keeps Space and Enter for itself
-  if ((e.key === ' ' || e.key === 'Enter') && e.target.closest?.('button')) return
-  const k = e.key
-  if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(k)) main.next()
-  else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(k)) main.prev()
-  else if (k === 'Home') main.go(0)
-  else if (k === 'End') main.last()
-  else if (k === 'f') toggleFullscreen()
-  else if (k === 't') cycleTheme()
-  else if (k === 'p' && !presenter) openPresenter()
-  else if (k === 'g') controls.value.toggleMenu()
-  else if (/^[0-9]$/.test(k)) controls.value.openMenu(k) // type a slide number to jump
-  else if (k === 'Escape') controls.value.closeMenu()
-  else return
-  e.preventDefault()
-  // the controls only show up on mouse movement, never on keyboard navigation
-}
-
 // ---- export: the book of pages (exporter.js) ---------------------------------
-const book = ref()
-const exportNotes = ref()
-const exported = ref(false)
-// the notes the presenter view would show at this step (the book takes them at the slide's last)
-const shownNotes = computed(() => notes.value.filter((n) => n.step <= main.step.value))
-async function exportBook() {
-  if (!props.themes.includes(theme.value))
-    return reportReady({ error: `theme "${theme.value}" is not one of the deck's themes: ${props.themes.join(', ')}` })
-  try {
-    const done = await buildBook({
-      stage: main,
-      canvas: viewport.value.querySelector(':scope > .ph-stage > .ph-canvas'),
-      book: book.value,
-      notes: exporting.notes ? exportNotes.value : null,
-      title: (i) => titleOf(main.list[i]),
-      perStep: exporting.perStep,
-      width: props.width,
-      height: props.height,
-    })
-    exported.value = true
-    reportReady({ ...done, theme: theme.value })
-  } catch (e) {
-    console.error('[phoenyx] export failed', e)
-    reportReady({ error: String(e?.message || e) })
-  }
-}
-
-const PRESENTER_TITLE = 'Presentador · '
-onMounted(() => {
-  if (exporting) return exportBook()
-  readHash()
-  startSync()
-  if (presenter && !document.title.startsWith(PRESENTER_TITLE)) document.title = PRESENTER_TITLE + document.title
-  window.addEventListener('keydown', onKey)
-  window.addEventListener('hashchange', readHash)
-  if (!presenter) {
-    window.addEventListener('mousemove', onMouseMove)
-    viewport.value?.addEventListener('pointerdown', onPointerDown)
-    viewport.value?.addEventListener('pointerup', onPointerUp)
-    viewport.value?.addEventListener('pointercancel', onPointerCancel)
-  }
-  document.addEventListener('fullscreenchange', onFullscreen)
-})
-onBeforeUnmount(() => {
-  sync?.close()
-  clearTimeout(hudTimer)
-  clearTimeout(cursorTimer)
-  clearTimeout(blockedTimer)
-  window.removeEventListener('keydown', onKey)
-  window.removeEventListener('hashchange', readHash)
-  window.removeEventListener('mousemove', onMouseMove)
-  viewport.value?.removeEventListener('pointerdown', onPointerDown)
-  viewport.value?.removeEventListener('pointerup', onPointerUp)
-  viewport.value?.removeEventListener('pointercancel', onPointerCancel)
-  document.removeEventListener('fullscreenchange', onFullscreen)
+const { book, notesBox, done: exported, shownNotes } = useExport(main, {
+  options: exporting,
+  theme,
+  themes: () => props.themes,
+  viewport,
+  width: () => props.width,
+  height: () => props.height,
 })
 </script>
 

@@ -50,7 +50,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import PresenterBar from './PresenterBar.vue'
 import { NoteBody } from '../Notes'
 
@@ -64,6 +64,12 @@ const props = defineProps({
   ratio: { type: String, default: '16 / 9' }, // of the canvas
 })
 defineEmits(['timer'])
+
+// the window says what it is, in its title (once: a remount after an edit does not add it again)
+const TITLE = 'Presentador · '
+onMounted(() => {
+  if (!document.title.startsWith(TITLE)) document.title = TITLE + document.title
+})
 
 // notes show from their step on, as v-step
 const shown = computed(() => props.notes.filter((n) => n.step <= props.deck.step.value))
