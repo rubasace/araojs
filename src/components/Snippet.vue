@@ -27,9 +27,28 @@
             span(v-for="(t, j) in line.tokens" :key="j" :class="t.cls" :style="t.style") {{ t.text }}
 </template>
 
+<script>
+import { codeToTokens } from 'shiki'
+
+// One tokenization per code, language and theme, shared by every snippet of the page: the
+// presenter view renders the deck twice, and a theme switched back is already done. A failure
+// is not kept, so the next render tries again.
+const cache = new Map()
+function tokenize(code, lang, theme) {
+  const key = JSON.stringify([code, lang, theme])
+  if (!cache.has(key)) {
+    cache.set(key, codeToTokens(code, { lang, theme }).then((r) => r.tokens, (e) => {
+      cache.delete(key)
+      throw e
+    }))
+  }
+  return cache.get(key)
+}
+</script>
+
 <script setup>
 import { computed, inject, nextTick, onMounted, ref, shallowRef, watch, watchEffect } from 'vue'
-import { bundledLanguages, codeToTokens } from 'shiki'
+import { bundledLanguages } from 'shiki'
 import { snippets } from 'virtual:phoenyx/snippets'
 import { useSlide } from '../engine/useSlide'
 import { DECK } from '../engine/registry'
@@ -98,7 +117,7 @@ watchEffect(async () => {
   const mine = ++run
   colored.value = null
   try {
-    const { tokens } = await codeToTokens(code, { lang, theme })
+    const tokens = await tokenize(code, lang, theme)
     if (mine === run) colored.value = tokens
   } catch (e) {
     console.warn(`[phoenyx] Snippet: cannot highlight "${language.value}"`, e)
