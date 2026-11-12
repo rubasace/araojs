@@ -1,11 +1,12 @@
-#!/usr/bin/env node
-// PDF of a whole deck:
-//   npm run export -- --deck framework [--theme vigojug] [--per-step] [--notes] [--out talk.pdf]
-// Builds the site into a temporary folder (vite build), serves it on a free local port (vite
-// preview), opens the deck in export mode (?export, src/engine/exporter.js) in headless Chromium
-// and prints it: one page per slide, each slide as it stands at its last step (or one page per
-// step), every page the canvas size (1920x1080 px, which a PDF measures as 1440x810 pt), text
-// as text. Needs no dev server running.
+// phoenyx export: PDF of a whole deck, run in a slides project (the current directory):
+//   phoenyx export --deck framework [--theme vigojug] [--per-step] [--notes] [--out talk.pdf]
+//   (npm run export -- --deck framework, when the project's "export" script is "phoenyx export")
+// Run by bin/phoenyx.js: its options are what follows the command.
+// Builds the project into a temporary folder (vite build, with the project's own Vite config),
+// serves it on a free local port (vite preview), opens the deck in export mode (?export, the
+// engine's exporter.js) in headless Chromium and prints it: one page per slide, each slide as it
+// stands at its last step (or one page per step), every page the canvas size (1920x1080 px,
+// which a PDF measures as 1440x810 pt), text as text. Needs no dev server running.
 // The PDF is checked (one page per page of the deck) and put in place only once complete: an
 // export that fails or is stopped leaves no half file, and an earlier PDF at --out as it was.
 // Stopped (Ctrl-C, SIGTERM, SIGHUP), it closes the browser and the server and removes its
@@ -18,12 +19,11 @@ import { access, mkdir, mkdtemp, readdir, rename, stat, writeFile } from 'node:f
 import { constants, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, relative, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 
-const HELP = `Usage: npm run export -- [options]
+const HELP = `Usage: phoenyx export [options]     (in a project: npm run export -- [options])
 
-  --deck <name>   a deck of src/decks (default: demo)
+  --deck <name>   a deck of the project's decks folder (default: the first by name)
   --theme <name>  one of the deck's themes (default: its first)
   --per-step      one page per step, instead of one per slide
   --notes         after each slide with speaker notes, a page with its notes
@@ -33,11 +33,13 @@ const HELP = `Usage: npm run export -- [options]
                   instead of building the site
   -h, --help      this help
 
+Run it in the slides project: its folder is the current directory, its decks folder the one its
+Vite config gives the phoenyx() plugin (src/decks by default).
 A slide's page shows it at its last step: everything revealed, the last highlight of its
 snippets. What only shows at an earlier step (v-step.only) is in --per-step.
 Chromium: npx playwright-core install chromium, or PHOENYX_CHROMIUM=/path/to/chrome.`
 
-const root = fileURLToPath(new URL('..', import.meta.url))
+const root = process.cwd()
 // an error of the export itself (its message is all there is to say), not a bug of this script
 class ExportError extends Error {}
 const fail = (msg) => {
@@ -48,8 +50,9 @@ const pause = (ms) => new Promise((r) => setTimeout(r, ms))
 let args
 try {
   args = parseArgs({
+    args: process.argv.slice(3),
     options: {
-      deck: { type: 'string', default: 'demo' },
+      deck: { type: 'string' },
       theme: { type: 'string' },
       'per-step': { type: 'boolean', default: false },
       notes: { type: 'boolean', default: false },
@@ -67,11 +70,31 @@ if (args.help) {
   process.exit(0)
 }
 
-// the app falls back to its first deck on a name it does not know: check the name here
-const decks = (await readdir(join(root, 'src/decks'))).filter((f) => f.endsWith('.vue')).map((f) => f.slice(0, -4))
-const deck = decks.find((d) => d.toLowerCase() === args.deck.toLowerCase())
+// The project's Vite, the one its config is written for (a peer dependency of this package).
+// Its config says where the decks are: the phoenyx() plugin's decks folder.
+const { build, preview, resolveConfig } = await import('vite')
+let decksDir
+try {
+  const config = await resolveConfig({ root, logLevel: 'error' }, 'build')
+  decksDir = config.plugins.find((p) => p.name === 'phoenyx')?.api?.folders().decks
+} catch (e) {
+  console.error(`export: cannot load the Vite config of ${root}: ${e.message}`)
+  process.exit(1)
+}
+if (!decksDir) {
+  console.error(`export: the Vite config of ${root} has no phoenyx() plugin: is this a slides project?`)
+  process.exit(1)
+}
+const decksWhere = relative(root, decksDir) || decksDir
+// the app falls back to its first deck on a name it does not know: check the name here; with no
+// name, the first deck by name, as the app picks it
+const decks = (await readdir(decksDir, { withFileTypes: true }).catch(() => []))
+  .filter((f) => f.isFile() && f.name.endsWith('.vue')).map((f) => f.name.slice(0, -4)).sort()
+const deck = args.deck == null ? decks[0] : decks.find((d) => d.toLowerCase() === args.deck.toLowerCase())
 if (!deck) {
-  console.error(`export: no deck "${args.deck}" in src/decks (there are: ${decks.join(', ')})`)
+  console.error(args.deck == null || !decks.length
+    ? `export: no decks in ${decksWhere} (each .vue file directly in it is a deck)`
+    : `export: no deck "${args.deck}" in ${decksWhere} (there are: ${decks.join(', ')})`)
   process.exit(1)
 }
 const name = [deck.toLowerCase(), args.theme, args['per-step'] && 'steps', args.notes && 'notes'].filter(Boolean).join('-')
@@ -152,7 +175,6 @@ try {
 
   let base = args.url
   if (!base) {
-    const { build, preview } = await import('vite')
     tmp = await mkdtemp(join(tmpdir(), 'phoenyx-export-'))
     console.log('Building…')
     await build({ root, logLevel: 'error', build: { outDir: tmp, emptyOutDir: true } })
