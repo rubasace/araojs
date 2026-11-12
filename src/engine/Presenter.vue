@@ -38,6 +38,7 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
 import PresenterBar from './PresenterBar.vue'
+import { NoteBody } from './notes'
 
 const props = defineProps({
   deck: { type: Object, required: true }, // the audience's stage api (useDeck)
@@ -49,10 +50,6 @@ const props = defineProps({
   ratio: { type: String, default: '16 / 9' }, // of the canvas
 })
 defineEmits(['timer'])
-
-// a note's content is its slot, rendered here, far from the slide it was written in
-const NoteBody = (p) => p.note.slots.default?.()
-NoteBody.props = ['note']
 
 // notes show from their step on, as v-step
 const shown = computed(() => props.notes.filter((n) => n.step <= props.deck.step.value))

@@ -12,12 +12,27 @@
      takes the position of the ones already open (and their theme, unless its URL names one).
      duration="45m" is the talk's length (formats: timer.js parseDuration): the presenter view
      counts down to it. The timer starts with the first move of the deck, in any window, and
-     survives reloading the windows (not closing them). -->
+     survives reloading the windows (not closing them).
+     Export: ?export prints the deck, one page per slide (&per-step: per step; &notes: a page of
+     notes after each slide that has them): exporter.js, and npm run export for the PDF. -->
 <template lang="pug">
-.ph-viewport(v-if="!presenter" ref="viewport" :data-theme="theme" :class="{ 'ph-nocursor': cursorHidden }")
+.ph-viewport(
+  v-if="!presenter"
+  ref="viewport"
+  :data-theme="theme"
+  :class="{ 'ph-nocursor': cursorHidden, 'ph-export': exporting, 'ph-export-done': exported }"
+)
   Stage(:stage="main" :width="width" :height="height")
     slot
+  template(v-if="exporting")
+    //- the notes of the slide on screen, copied into the book after its page(s); never shown
+    .ph-export-notes(v-if="exporting.notes" ref="exportNotes")
+      .ph-note(v-for="n in shownNotes" :key="n.id" :data-step="n.step")
+        NoteBody(:note="n")
+    //- filled by exporter.js, not by Vue
+    .ph-book(ref="book")
   Controls(
+    v-else
     ref="controls"
     :deck="main.api"
     :visible="hud"
@@ -30,7 +45,7 @@
     @presenter="openPresenter"
   )
   //- the browser blocked the presenter window: the same URL as a link, which it does not block
-  Transition(name="ph-toast")
+  Transition(v-if="!exporting" name="ph-toast")
     .ph-toast(v-if="blocked" role="status")
       span El navegador ha bloqueado la ventana del presentador.
       a(:href="blocked" :target="presenterName" :title="blocked" @click="blocked = null") Abrirla aquí
@@ -73,6 +88,8 @@ import { computed, onBeforeUnmount, onMounted, readonly, ref, shallowRef, watch 
 import { ahead, createStage } from './stage'
 import { createSync, deckKey } from './sync'
 import { IDLE, parseDuration, start } from './timer'
+import { buildBook, exportOptions, reportReady } from './exporter'
+import { NoteBody } from './notes'
 import Controls from './Controls.vue'
 import Presenter from './Presenter.vue'
 import Stage from './Stage.vue'
@@ -89,12 +106,14 @@ const props = defineProps({
 })
 
 const query = new URLSearchParams(location.search)
-const presenter = query.has('presenter')
+// ?export wins over ?presenter: the window prints the deck, nothing else
+const exporting = exportOptions(query)
+const presenter = !exporting && query.has('presenter')
 
 // ---- slides ------------------------------------------------------------
 // The audience's stage; the presenter view adds a second rendering of the deck that stands one
 // step ahead of it, for the "next" preview.
-const main = createStage({ onMove: moved, role: presenter ? 'presenter' : 'audience' })
+const main = createStage({ onMove: moved, role: exporting ? 'export' : presenter ? 'presenter' : 'audience' })
 const next = computed(() => ahead(main))
 const preview = presenter ? createStage({ follow: () => next.value, role: 'preview' }) : null
 
@@ -153,7 +172,7 @@ function moved() {
   sync.publish('pos', true)
   if (timer.value.state === 'idle') timer.value = start(timer.value, Date.now())
 }
-watch([main.index, main.step], () => history.replaceState(null, '', `#/${main.index.value + 1}/${main.step.value}`))
+if (!exporting) watch([main.index, main.step], () => history.replaceState(null, '', `#/${main.index.value + 1}/${main.step.value}`))
 watch(theme, () => sync?.publish('theme'))
 watch(timer, () => sync?.publish('timer'))
 
@@ -197,10 +216,11 @@ function toggleFullscreen() {
 const onFullscreen = () => (fullscreen.value = !!document.fullscreenElement)
 // slide titles for the jump menu: Slide(title="…"), else its first heading outside the background
 const HEADING = ':is(h1, h2, h3):not(.ph-slide-bg *)'
+const titleOf = (s) => s.title.value || s.el.value?.querySelector(HEADING)?.textContent.trim() || ''
 const titles = computed(() => {
   // re-read headings whenever the controls show up (the presenter view shows the title: on every move)
   presenter ? main.index.value : hud.value
-  return main.list.map((s) => s.title.value || s.el.value?.querySelector(HEADING)?.textContent.trim() || '')
+  return main.list.map(titleOf)
 })
 
 const hud = ref(false)
@@ -240,8 +260,37 @@ function onKey(e) {
   // the controls only show up on mouse movement, never on keyboard navigation
 }
 
+// ---- export: the book of pages (exporter.js) ---------------------------------
+const book = ref()
+const exportNotes = ref()
+const exported = ref(false)
+// the notes the presenter view would show at this step (the book takes them at the slide's last)
+const shownNotes = computed(() => notes.value.filter((n) => n.step <= main.step.value))
+async function exportBook() {
+  if (!props.themes.includes(theme.value))
+    return reportReady({ error: `theme "${theme.value}" is not one of the deck's themes: ${props.themes.join(', ')}` })
+  try {
+    const done = await buildBook({
+      stage: main,
+      canvas: viewport.value.querySelector(':scope > .ph-stage > .ph-canvas'),
+      book: book.value,
+      notes: exporting.notes ? exportNotes.value : null,
+      title: (i) => titleOf(main.list[i]),
+      perStep: exporting.perStep,
+      width: props.width,
+      height: props.height,
+    })
+    exported.value = true
+    reportReady({ ...done, theme: theme.value })
+  } catch (e) {
+    console.error('[phoenyx] export failed', e)
+    reportReady({ error: String(e?.message || e) })
+  }
+}
+
 const PRESENTER_TITLE = 'Presentador · '
 onMounted(() => {
+  if (exporting) return exportBook()
   readHash()
   startSync()
   if (presenter && !document.title.startsWith(PRESENTER_TITLE)) document.title = PRESENTER_TITLE + document.title
