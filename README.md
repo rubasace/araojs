@@ -63,8 +63,8 @@ fixed canvas, absolute steps and themes made of tokens. eagle.js had its bird; s
 - **Presenter view.** Current slide, next step, speaker notes, a timer with countdown and the wall
   clock; every window of the deck stays in step.
 - **Keyboard and touch.** Keys, a jump menu, tap and swipe on phones and tablets.
-- **PDF export.** `arao export`: one page per slide or per step, text kept as text, optional notes
-  pages.
+- **PDF export.** `arao export`: every deck of the project, one PDF each; one page per step (or
+  per slide), text kept as text, optional notes pages.
 - **Written by people or by agents.** The declarative style keeps decks short and regular, which
   also makes them easy for AI agents to write: [AGENTS.md](AGENTS.md) is their guide, and ships
   with the package.
@@ -374,22 +374,28 @@ In a slides project (`"export": "arao export"` in its scripts; `npx arao export 
 
 ```bash
 npx playwright-core install chromium      # once: the Chromium that playwright-core drives
+npm run export                                        # every deck: exports/<deck>.pdf each
 npm run export -- --deck mytalk                       # exports/mytalk.pdf
-npm run export -- --deck mytalk --theme vigojug --per-step --notes --out talk.pdf
+npm run export -- --deck mytalk --theme vigojug --per-slide --notes --out talk.pdf
 ```
 
 | Option | Meaning |
 |---|---|
-| `--deck <name>` | a deck of the decks folder, `src/decks` (default: the first by name) |
-| `--theme <name>` | one of the deck's themes (default its first) |
-| `--per-step` | one page per step instead of one per slide |
+| `--deck <name>` | just this deck of the decks folder, `src/decks` (default: every deck, one PDF each) |
+| `--theme <name>` | one of the deck's themes (default its first); with several decks, only the decks that list it use it |
+| `--per-slide` | one page per slide, each at its last step, instead of one per step |
+| `--per-step` | one page per step: the default, still accepted (not together with `--per-slide`) |
 | `--notes` | a page with the speaker notes after each slide that has them |
-| `--out <path>` | output file or folder (default `exports/<deck>[-<theme>][-steps][-notes].pdf`) |
+| `--out <path>` | output file or folder (default `exports/<deck>[-<theme>][-slides][-notes].pdf`); with several decks always a folder (a path ending in `.pdf` is an error) |
 | `--url <url>` | print from a running server (e.g. `http://127.0.0.1:5173/`) instead of building |
 
 The command builds the project (with its own Vite config) into a temporary folder, serves it,
-opens `?export` in headless Chromium and prints. By default each slide is one page showing its
-last step. Pages are 1920x1080 px (1440x810 pt). `ARAO_CHROMIUM=/path/to/chrome` uses a browser
+opens each deck at `?export` in headless Chromium and prints it, one deck after the other. By
+default every step is a page; with `--per-slide` each slide is one page showing its last step.
+It prints one summary line per PDF and, with several decks, a total; a deck that fails does not
+stop the others, and the exit code is 1 if any failed. With `--theme` and several decks, a deck
+that does not list that theme is printed in its first (its line says so, its file name has no
+theme). Pages are 1920x1080 px (1440x810 pt). `ARAO_CHROMIUM=/path/to/chrome` uses a browser
 you already have. Opening `?export` in a normal browser and printing to PDF gives the same pages.
 
 ## Documentation
@@ -458,8 +464,9 @@ playground's decks, images and snippets (and a second, tiny deck of its own), an
    other cases, under the dev server: a project with one deck opens it at `/`;
    `createDeckApp({ deck: 'second' })` opens that deck at `/` while `?deck=<other>` still wins;
    `createDeckApp({ deck: 'missing' })` shows the list with one `[arao]` warning;
-6. runs `<bin> export --deck <name>` for every deck and checks that the PDF exists and that the
-   summary line reports at least one page.
+6. runs `<bin> export` with no `--deck` and checks one PDF per deck at its default name, each with
+   as many pages as steps (and as many steps as the walk counted), plus the total line; then
+   `<bin> export --deck <name> --per-slide`, whose PDF must have as many pages as slides.
 
 The package name and the CLI's name come from `package.json`. CI runs it on every pull request and
 on every push to `main`. To run it locally:

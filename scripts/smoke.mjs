@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Packaged-consumer smoke test: installs the packed library into a brand-new slides project, the
 // way a user would, and checks that it builds, that every deck runs without a warning, and that
-// the export CLI prints a PDF.
+// the export CLI prints a PDF of each deck, per step and per slide.
 //
 //   node scripts/smoke.mjs [path/to/package.tgz]
 //
@@ -27,7 +27,12 @@
 //      vite.config.js for the first, rewritten for each and then put back): a project with one deck
 //      opens it at /; createDeckApp({ deck: 'second' }) opens that deck at / and ?deck=<other>
 //      still wins; createDeckApp({ deck: 'missing' }) shows the list with one [arao] warning
-//   7. <bin> export --deck <name>      the PDF must exist and its summary line report pages > 0
+//   7. <bin> export                    no --deck: every deck, one PDF each, at its default name
+//                                      (exports/<deck>.pdf); each summary line must report as
+//                                      many pages as steps, and those as many as the walk counted
+//                                      (per step is the default), and a total line all the decks
+//   8. <bin> export --deck <name> --per-slide   the one PDF (exports/<deck>-slides.pdf), with as
+//                                      many pages as slides
 // The package name and the CLI's name are read from package.json: nothing here names them.
 //
 // Environment:
@@ -188,7 +193,8 @@ try {
     await gone
   }
 
-  // opens a deck and walks it to its end; reports what it saw
+  // opens a deck and walks it to its end; reports what it saw, and keeps its counts in walked
+  const walked = {} // deck → { slides, steps }, the last walk's
   async function walk(base, deck, mode) {
     const context = await browser.newContext({ viewport: { width: 1920, height: 1080 } })
     const page = await context.newPage()
@@ -222,6 +228,7 @@ try {
       console.log(`  ${mode} ?deck=${deck}: ${slides} slides, ended at ${at}; steps per slide ${per}`)
       if (slides && Object.keys(steps).length !== slides)
         complaints.push(`the walk visited ${Object.keys(steps).length} slides of ${slides}`)
+      walked[deck] = { slides, steps: Object.values(steps).reduce((a, b) => a + b, 0) }
     } finally {
       await context.close()
     }
@@ -439,20 +446,46 @@ try {
     await rm(join(project, solo), { recursive: true, force: true })
   }
 
-  for (const deck of decks) {
-    log(`${BIN} export --deck ${deck}`)
-    const out = join(project, 'exports', `${deck}.pdf`)
-    let said = ''
-    try {
-      said = await run('npx', ['--no-install', BIN, 'export', '--deck', deck, '--out', out], project)
-    } catch (e) {
-      fail(`export of ${deck}: ${e.message}`)
-      continue
+  // the summary line of a PDF: "<path>: <pages> pages (<slides> slides, <steps> steps), …"
+  const summary = (said, file) => {
+    const line = said.split('\n').find((l) => l.startsWith(`${file}: `))
+    const [, pages, slides, steps] = line?.match(/: (\d+) pages \((\d+) slides, (\d+) steps\)/) ?? []
+    return line && { pages: Number(pages), slides: Number(slides), steps: Number(steps) }
+  }
+  const pdfAt = async (file) => ((await stat(join(project, file)).catch(() => null))?.size ?? 0) > 0
+
+  log(`${BIN} export (every deck, per step)`)
+  let said = null
+  try {
+    said = await run('npx', ['--no-install', BIN, 'export'], project)
+  } catch (e) {
+    fail(`export of every deck: ${e.message}`)
+  }
+  if (said != null) {
+    for (const deck of decks) {
+      const file = `exports/${deck.toLowerCase()}.pdf`
+      const got = summary(said, file)
+      if (!(await pdfAt(file))) fail(`export of every deck: no PDF at ${file}`)
+      if (!got) fail(`export of every deck: no summary line for ${file}`)
+      else if (!(got.pages > 0) || got.pages !== got.steps) fail(`export of every deck: ${file} has ${got.pages} pages for ${got.steps} steps`)
+      else if (walked[deck] && got.steps !== walked[deck].steps) fail(`export of every deck: ${file} has ${got.steps} steps, the walk counted ${walked[deck].steps}`)
     }
-    const pages = Number(said.match(/: (\d+) pages \(/)?.[1] ?? 0)
-    const size = (await stat(out).catch(() => null))?.size ?? 0
-    if (!size) fail(`export of ${deck}: no PDF at ${out}`)
-    if (!(pages > 0)) fail(`export of ${deck}: the summary line reports no pages`)
+    if (!new RegExp(`^${decks.length} of ${decks.length} decks exported, \\d+ pages`, 'm').test(said))
+      fail(`export of every deck: no total line for ${decks.length} decks`)
+  }
+
+  const one = decks[0]
+  log(`${BIN} export --deck ${one} --per-slide`)
+  try {
+    said = await run('npx', ['--no-install', BIN, 'export', '--deck', one, '--per-slide'], project)
+    const file = `exports/${one.toLowerCase()}-slides.pdf`
+    const got = summary(said, file)
+    if (!(await pdfAt(file))) fail(`export --per-slide: no PDF at ${file}`)
+    if (!got) fail(`export --per-slide: no summary line for ${file}`)
+    else if (!(got.pages > 0) || got.pages !== got.slides) fail(`export --per-slide: ${file} has ${got.pages} pages for ${got.slides} slides`)
+    else if (walked[one] && got.slides !== walked[one].slides) fail(`export --per-slide: ${file} has ${got.slides} slides, the walk counted ${walked[one].slides}`)
+  } catch (e) {
+    fail(`export --per-slide of ${one}: ${e.message}`)
   }
 } catch (e) {
   fail(e.stack ?? String(e))

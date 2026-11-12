@@ -2,10 +2,10 @@ import { nextTick } from 'vue'
 
 // Export mode: the deck as a book of pages for printing to PDF (npm run export, or the browser's
 // own Print → Save as PDF on the same URL). Every page is exactly the canvas size, unscaled.
-//   ?export             one page per slide, the slide as it stands at its last step: every
+//   ?export             one page per step of every slide (&per-step says the same)
+//   ?export&per-slide   one page per slide, the slide as it stands at its last step: every
 //                       v-step revealed, its snippets at their last highlight. What shows only at
-//                       an earlier step (v-step.only) is not on it: that is what &per-step is for.
-//   ?export&per-step    one page per step of every slide
+//                       an earlier step (v-step.only) is not on it.
 //   &notes              after the page(s) of a slide with speaker notes, a page with its notes
 //   &theme=name         as anywhere (a name that is not one of the deck's themes is an error)
 // A flag set to 0, false, no or off is not set: ?export=0 is the deck as usual.
@@ -48,7 +48,7 @@ const SLIDE = '[data-ar-slide]'
 const flag = (query, name) => query.has(name) && !/^(0|false|no|off)$/i.test(query.get(name))
 
 export function exportOptions(query) {
-  return flag(query, 'export') ? { perStep: flag(query, 'per-step'), notes: flag(query, 'notes') } : null
+  return flag(query, 'export') ? { perStep: !flag(query, 'per-slide'), notes: flag(query, 'notes') } : null
 }
 
 export function reportReady(value) {
