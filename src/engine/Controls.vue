@@ -1,8 +1,9 @@
-<!-- Built-in deck controls: floating panel, shown on mouse move, hidden when idle. -->
+<!-- Built-in deck controls: floating panel, shown on mouse move, hidden when idle.
+     docked: always shown, in the flow of the page (the presenter view places it under the slide). -->
 <template lang="pug">
 nav.ph-controls(
   ref="root"
-  :class="{ visible: visible || hovering || open }"
+  :class="{ visible: docked || visible || hovering || open, docked }"
   @mouseenter="hovering = true"
   @mouseleave="hovering = false"
   aria-label="Controles de la presentación"
@@ -45,6 +46,11 @@ nav.ph-controls(
       circle.fill(cx="10" cy="7" r="1.3")
       circle.fill(cx="14.5" cy="7" r="1.3")
       circle.fill(cx="17" cy="10.5" r="1.3")
+  button.ph-btn(v-if="!docked" @mousedown.prevent @click="$emit('presenter')" title="Vista del presentador (p)")
+    //- a screen with notes under it
+    svg(viewBox="0 0 24 24")
+      rect(x="3" y="3.5" width="18" height="11" rx="2")
+      path(d="M7 18.5h10M9 21h6")
   button.ph-btn(@mousedown.prevent @click="$emit('fullscreen')" :title="fullscreen ? 'Salir de pantalla completa (f)' : 'Pantalla completa (f)'")
     svg(v-if="!fullscreen" viewBox="0 0 24 24"): path(d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5")
     svg(v-else viewBox="0 0 24 24"): path(d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5")
@@ -95,8 +101,9 @@ const props = defineProps({
   themes: { type: Array, default: () => [] },
   fullscreen: Boolean,
   titles: { type: Array, default: () => [] },
+  docked: Boolean,
 })
-const emit = defineEmits(['theme', 'fullscreen'])
+const emit = defineEmits(['theme', 'fullscreen', 'presenter'])
 
 const root = ref()
 const hovering = ref(false)
@@ -201,6 +208,7 @@ defineExpose({
   user-select: none;
 }
 .ph-controls.visible { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.ph-controls.docked { position: relative; left: auto; bottom: auto; transform: none; transition: none; }
 
 .ph-btn {
   display: grid; place-items: center;
