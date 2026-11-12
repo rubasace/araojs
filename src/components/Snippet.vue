@@ -178,7 +178,12 @@ function baseTokens(i) {
 // split tokens at the [start,end) ranges of the given words, tagging pieces hl/dim
 function markWords(tokens, text, words) {
   const ranges = []
-  const re = new RegExp(words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'g')
+  // whole words only: "Filter" must not light up the end of "LoggingFilter" (a \b is added on
+  // the sides of a word that start/end with a word character; "MDC.put(" still matches as is)
+  const re = new RegExp(words.map((w) => {
+    const body = w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    return (/^\w/.test(w) ? '\\b' : '') + body + (/\w$/.test(w) ? '\\b' : '')
+  }).join('|'), 'g')
   for (let m; (m = re.exec(text)) && m[0]; ) ranges.push([m.index, m.index + m[0].length])
   const inHl = (p) => ranges.some(([a, b]) => p >= a && p < b)
   const out = []
@@ -272,20 +277,28 @@ const vars = computed(() => {
   );
 }
 .ph-snippet-line {
-  display: flex; white-space: pre; border-radius: .2em;
-  transition: opacity .3s, background-color .3s;
+  display: flex; white-space: pre;
+  transition: opacity .3s;
 }
 .ph-snippet-ln {
   flex: none; box-sizing: content-box;
-  width: calc(var(--sn-digits) * 1ch); padding: 0 .7ch 0 .4ch; margin-right: .9ch;
+  width: calc(var(--sn-digits) * 1ch); padding: 0 .7ch 0 .4ch; margin-right: .4ch;
   border-right: 2px solid color-mix(in srgb, var(--sn-muted) 40%, transparent);
   text-align: right; color: var(--sn-muted);
+}
+/* the code side of a line: highlights shade this, not the line numbers */
+.ph-snippet-tx {
+  flex: 1; min-width: 0; padding-left: .5ch; border-radius: .2em;
+  transition: background-color .3s;
 }
 .ph-snippet-tx > span { transition: opacity .3s; }
 
 /* steps */
 .ph-snippet-line.dim { opacity: .28; }
-.ph-snippet-line.hl { background: color-mix(in srgb, var(--sn-hl) 14%, transparent); }
+.ph-snippet-line.hl .ph-snippet-tx { background: color-mix(in srgb, var(--sn-hl) 14%, transparent); }
+/* a run of highlighted lines reads as one block */
+.ph-snippet-line.hl + .ph-snippet-line.hl .ph-snippet-tx { border-top-left-radius: 0; border-top-right-radius: 0; }
+.ph-snippet-line.hl:has(+ .ph-snippet-line.hl) .ph-snippet-tx { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 .ph-snippet-line.hl .ph-snippet-ln { color: var(--sn-hl); border-right-color: var(--sn-hl); }
 .ph-snippet-line.words .ph-snippet-tx .dim { opacity: .28; }
 .ph-snippet-line.words .ph-snippet-tx .hl {
