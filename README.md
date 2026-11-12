@@ -2,9 +2,10 @@
 
 A slide engine of its own for technical talks, built on **Vue 3 + Vite**, with slides written in **Pug**.
 
-- **One fixed canvas.** Every slide is drawn on a 1920x1080 px canvas and scaled to the window
-  with a CSS transform. What you see on your laptop is what the projector, the presenter view and
-  the PDF show: same line breaks, same sizes. All sizes inside a slide are canvas px.
+- **One fixed canvas.** Every slide is drawn on a canvas of fixed size, 1920x1080 px by default
+  (`Deck(:width="…" :height="…")` sets another), and scaled to the window with a CSS transform.
+  What you see on your laptop is what the projector, the presenter view and the PDF show: same
+  line breaks, same sizes. All sizes inside a slide are canvas px.
 - **Themes are tokens only.** A theme is a block of `--ph-*` CSS variables (colours, fonts, sizes,
   code colours). Same slides, different venue: only the theme changes.
 - **Declarative.** Layouts, composition pieces and props cover the usual arrangements, so a deck
@@ -41,12 +42,13 @@ An unknown `?deck=` falls back to Demo without a warning.
 | `←` `↑` `PageUp` `Backspace` | previous step |
 | `Home` / `End` | first slide / last step of the last slide |
 | `g`, or a digit | jump menu (search by number or title; a digit pre-fills it) |
-| `Esc` | close the jump menu |
+| `Esc` | close the open panel (jump menu or theme picker) |
 | `t` | next theme of the deck |
 | `f` | fullscreen |
 | `p` | open (or bring forward) the presenter window |
 
-Keys with Ctrl, Cmd or Alt are left to the browser. Moving the mouse shows the controls
+Keys with Ctrl, Cmd or Alt are left to the browser. Letter keys act in lowercase only: with Caps
+Lock on (or Shift held), `g` `t` `f` `p` do nothing. Moving the mouse shows the controls
 (first/prev/next/last, slide counter with step dots, jump menu, theme picker, presenter view,
 fullscreen); they never show on keyboard navigation and hide after 2.5 s without movement.
 
@@ -95,16 +97,25 @@ directive are registered globally. Addons (`ProgressBar`, `SlideNumber`, your ow
 
 ```
 src/
-  decks/            one .vue file per deck (?deck=<file name>); talk-specific components in decks/<talk>/
+  main.js           creates the app: installs the engine, imports layouts.css and every theme
+  App.vue           picks the deck from ?deck=<name> among the .vue files directly in decks/
+  decks/            one .vue file per deck (?deck=<file name>)
+    <talk>/         components only that talk uses (decks/framework/: Quote, Social…)
+  slides/           components shared by several decks (Card, used by the demo)
   snippets/         code files shown by Snippet(file="…"), by name (subfolders allowed)
   images/           pictures used by Img(file="…") and Slide(bg="…"), by name (subfolders allowed)
-  themes/           theme token files (default.css, vigojug.css) and layouts.css; imported in main.js
+  themes/           theme token files (default.css, vigojug.css) and layouts.css
   addons/           ProgressBar, SlideNumber: things drawn over every slide
   engine/           the engine (Deck, Slide, v-step, layouts, Img, Notes, presenter, export)
   components/       Snippet
 phoenyx/vite.js     the Vite plugin (snippets and images folders)
 scripts/export.mjs  npm run export (PDF)
 ```
+
+A component written for one talk goes in `src/decks/<talk>/` and is imported only by that deck;
+one that several decks use goes in `src/slides/`. Neither is registered globally: the deck
+imports it (`import Card from '../slides/Card.vue'`). A new theme is a file in `src/themes/`,
+imported in `src/main.js`.
 
 ## Features
 
