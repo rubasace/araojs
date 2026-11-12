@@ -1,7 +1,8 @@
 <!-- Addon: put it anywhere inside <Deck>. It draws over the slides, in canvas space. -->
-<template lang="pug">
-.ph-progress(:class="position")
-  .ph-progress-fill(:style="{ width: deck.progress.value * 100 + '%' }")
+<template>
+  <div class="ph-progress" :class="position">
+    <div class="ph-progress-fill" :style="{ width: deck.progress.value * 100 + '%' }"></div>
+  </div>
 </template>
 
 <script setup>

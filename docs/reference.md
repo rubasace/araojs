@@ -2,7 +2,9 @@
 
 Everything a deck can use, as the library (the `phoenyxjs` package) implements it. Sizes are
 canvas px (the canvas is 1920x1080 unless `Deck` says otherwise). Examples are Pug, inside a
-deck's `<template lang="pug">`. Paths like `src/decks` are the slides project's, with the
+deck's `<template lang="pug">`: the recommended form, for brevity. A deck can also be a plain
+HTML `<template>`, with the same components, props, slots and directives
+([Pug or HTML](#pug-or-html)). Paths like `src/decks` are the slides project's, with the
 plugin's default folders.
 
 Globally registered: `Deck`, `Slide`, `Img`, `Icon`, `Snippet`, `Notes`, `Cols`, `Rows`, `Grid`,
@@ -61,6 +63,33 @@ createDeckApp().mount('#app')
   composables, addons), `phoenyxjs/vite` (the plugin), `phoenyxjs/themes/*.css`,
   `phoenyxjs/style.css` (the engine's CSS, already imported by `phoenyxjs`); the `phoenyx` command
   ([Export mode](#export-mode)).
+
+### Pug or HTML
+
+A deck's template is a plain Vue template, in either syntax; each file picks its own. Pug
+(`<template lang="pug">`) is the recommended one, for brevity, and the plugin brings it along.
+HTML (`<template>`) is Vue's own and needs nothing. Components, props, slots, directives and the
+attribute rules above are the same in both: `Slide(layout="split")` is `<Slide layout="split">`,
+`p.muted Text` is `<p class="muted">Text</p>`, `template(#left)` is `<template #left>`, and a
+component with no content may close itself. A split slide, in HTML:
+
+```vue
+<template>
+  <Deck :themes="['default']">
+    <Slide layout="split">
+      <h2>Before and after</h2>
+      <template #left>
+        <h3>Before</h3>
+        <p class="muted">Every team rolled its own.</p>
+      </template>
+      <template #right>
+        <h3 v-step="2">After</h3>
+        <Snippet file="Starter.java" :highlights='{ "2-3": 2 }' :line-numbers="false" />
+      </template>
+    </Slide>
+  </Deck>
+</template>
+```
 
 ---
 
@@ -866,7 +895,7 @@ onBeforeUnmount(() => clearInterval(timer))
 
 `phoenyx()` from `phoenyxjs/vite` is all a slides project puts in its Vite config. It includes
 `@vitejs/plugin-vue` (do not add `vue()` as well: Vite stops with an error) with Pug for the
-templates (no need to install `pug`), and exposes three project folders as virtual modules, so
+templates (no need to install `pug`; HTML templates need nothing), and exposes three project folders as virtual modules, so
 slides name files and need no imports. It also resolves the [icons](#icon) the source uses.
 
 ```js

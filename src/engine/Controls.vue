@@ -1,94 +1,120 @@
 <!-- Built-in deck controls: floating panel, shown on mouse move, hidden when idle.
      docked: always shown, in the flow of the page (the presenter view places it under the slide). -->
-<template lang="pug">
-nav.ph-controls(
-  ref="root"
-  :class="{ visible: docked || visible || hovering || open, docked }"
-  @mouseenter="hovering = true"
-  @mouseleave="hovering = false"
-  aria-label="Controles de la presentación"
-)
-  button.ph-btn.ph-edge(@mousedown.prevent @click="deck.go(0)" :disabled="atStart" title="Primera (Inicio)")
-    svg(viewBox="0 0 24 24"): path(d="M18 17l-5-5 5-5M11 17l-5-5 5-5")
-  button.ph-btn(@mousedown.prevent @click="deck.prev()" :disabled="atStart" title="Anterior (←)")
-    svg(viewBox="0 0 24 24"): path(d="M15 18l-6-6 6-6")
+<template>
+  <nav
+    class="ph-controls"
+    ref="root"
+    :class="{ visible: docked || visible || hovering || open, docked }"
+    @mouseenter="hovering = true"
+    @mouseleave="hovering = false"
+    aria-label="Controles de la presentación"
+  >
+    <button class="ph-btn ph-edge" @mousedown.prevent @click="deck.go(0)" :disabled="atStart" title="Primera (Inicio)">
+      <svg viewBox="0 0 24 24"><path d="M18 17l-5-5 5-5M11 17l-5-5 5-5" /></svg>
+    </button>
+    <button class="ph-btn" @mousedown.prevent @click="deck.prev()" :disabled="atStart" title="Anterior (←)">
+      <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg>
+    </button>
 
-  .ph-ctl-mid
-    button.ph-counter(@mousedown.prevent @click="toggle('slides')" :class="{ active: open === 'slides' }" title="Ir a… (g)")
-      span.cur {{ deck.index.value + 1 }}
-      span.sep /
-      span.tot {{ deck.total.value }}
-    .ph-dots(v-if="deck.steps.value > 1" :aria-label="`Paso ${deck.step.value} de ${deck.steps.value}`")
-      button.ph-dot(
-        v-for="s in deck.steps.value" :key="s"
-        :class="{ on: s <= deck.step.value }"
-        @mousedown.prevent
-        @click="deck.go(deck.index.value, s)"
-        :title="`Paso ${s}`"
-      )
+    <div class="ph-ctl-mid">
+      <button class="ph-counter" @mousedown.prevent @click="toggle('slides')" :class="{ active: open === 'slides' }" title="Ir a… (g)">
+        <span class="cur">{{ deck.index.value + 1 }}</span>
+        <span class="sep">/</span>
+        <span class="tot">{{ deck.total.value }}</span>
+      </button>
+      <div class="ph-dots" v-if="deck.steps.value > 1" :aria-label="`Paso ${deck.step.value} de ${deck.steps.value}`">
+        <button
+          class="ph-dot"
+          v-for="s in deck.steps.value" :key="s"
+          :class="{ on: s <= deck.step.value }"
+          @mousedown.prevent
+          @click="deck.go(deck.index.value, s)"
+          :title="`Paso ${s}`"
+        ></button>
+      </div>
+    </div>
 
-  button.ph-btn(@mousedown.prevent @click="deck.next()" :disabled="atEnd" title="Siguiente (→)")
-    svg(viewBox="0 0 24 24"): path(d="M9 18l6-6-6-6")
-  button.ph-btn.ph-edge(@mousedown.prevent @click="deck.go(deck.total.value - 1, Infinity)" :disabled="atEnd" title="Última (Fin)")
-    svg(viewBox="0 0 24 24"): path(d="M6 17l5-5-5-5M13 17l5-5-5-5")
+    <button class="ph-btn" @mousedown.prevent @click="deck.next()" :disabled="atEnd" title="Siguiente (→)">
+      <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" /></svg>
+    </button>
+    <button class="ph-btn ph-edge" @mousedown.prevent @click="deck.go(deck.total.value - 1, Infinity)" :disabled="atEnd" title="Última (Fin)">
+      <svg viewBox="0 0 24 24"><path d="M6 17l5-5-5-5M13 17l5-5-5-5" /></svg>
+    </button>
 
-  .ph-divider
-  button.ph-btn(
-    v-if="themes.length > 1"
-    @mousedown.prevent @click="toggle('themes')"
-    :class="{ active: open === 'themes' }"
-    :title="`Tema: ${theme} (t)`"
-  )
-    //- palette
-    svg(viewBox="0 0 24 24")
-      path(d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.8-1.9 0-.5-.2-.9-.5-1.3-.3-.3-.5-.8-.5-1.3 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4C21 6.5 17 3 12 3z")
-      circle.fill(cx="7.5" cy="11" r="1.3")
-      circle.fill(cx="10" cy="7" r="1.3")
-      circle.fill(cx="14.5" cy="7" r="1.3")
-      circle.fill(cx="17" cy="10.5" r="1.3")
-  button.ph-btn(v-if="!docked" @mousedown.prevent @click="$emit('presenter')" title="Vista del presentador (p)")
-    //- a screen with notes under it
-    svg(viewBox="0 0 24 24")
-      rect(x="3" y="3.5" width="18" height="11" rx="2")
-      path(d="M7 18.5h10M9 21h6")
-  button.ph-btn(@mousedown.prevent @click="$emit('fullscreen')" :title="fullscreen ? 'Salir de pantalla completa (f)' : 'Pantalla completa (f)'")
-    svg(v-if="!fullscreen" viewBox="0 0 24 24"): path(d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5")
-    svg(v-else viewBox="0 0 24 24"): path(d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5")
+    <div class="ph-divider"></div>
+    <button
+      class="ph-btn"
+      v-if="themes.length > 1"
+      @mousedown.prevent @click="toggle('themes')"
+      :class="{ active: open === 'themes' }"
+      :title="`Tema: ${theme} (t)`"
+    >
+      <!-- palette -->
+      <svg viewBox="0 0 24 24">
+        <path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.8-1.9 0-.5-.2-.9-.5-1.3-.3-.3-.5-.8-.5-1.3 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4C21 6.5 17 3 12 3z" />
+        <circle class="fill" cx="7.5" cy="11" r="1.3" />
+        <circle class="fill" cx="10" cy="7" r="1.3" />
+        <circle class="fill" cx="14.5" cy="7" r="1.3" />
+        <circle class="fill" cx="17" cy="10.5" r="1.3" />
+      </svg>
+    </button>
+    <button class="ph-btn" v-if="!docked" @mousedown.prevent @click="$emit('presenter')" title="Vista del presentador (p)">
+      <!-- a screen with notes under it -->
+      <svg viewBox="0 0 24 24">
+        <rect x="3" y="3.5" width="18" height="11" rx="2" />
+        <path d="M7 18.5h10M9 21h6" />
+      </svg>
+    </button>
+    <button class="ph-btn" @mousedown.prevent @click="$emit('fullscreen')" :title="fullscreen ? 'Salir de pantalla completa (f)' : 'Pantalla completa (f)'">
+      <svg v-if="!fullscreen" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg>
+      <svg v-else viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" /></svg>
+    </button>
 
-  Transition(name="ph-pop")
-    .ph-panel.ph-slides(v-if="open === 'slides'" role="dialog" aria-label="Ir a slide")
-      input.ph-search(
-        ref="search"
-        v-model="query"
-        placeholder="Número o título…"
-        @keydown.down.prevent="move(1)"
-        @keydown.up.prevent="move(-1)"
-        @keydown.enter.prevent="matches[sel] && jump(matches[sel].i)"
-        @keydown.esc.prevent="close"
-      )
-      .ph-list(ref="listEl")
-        button.ph-item(
-          v-for="(m, k) in matches" :key="m.i"
-          :class="{ current: m.i === deck.index.value, sel: k === sel }"
-          @click="jump(m.i)"
-          @mousemove="sel = k"
-        )
-          span.n {{ m.i + 1 }}
-          span.t {{ m.t || 'Sin título' }}
-        .ph-empty(v-if="!matches.length") Nada coincide
+    <Transition name="ph-pop">
+      <div class="ph-panel ph-slides" v-if="open === 'slides'" role="dialog" aria-label="Ir a slide">
+        <input
+          class="ph-search"
+          ref="search"
+          v-model="query"
+          placeholder="Número o título…"
+          @keydown.down.prevent="move(1)"
+          @keydown.up.prevent="move(-1)"
+          @keydown.enter.prevent="matches[sel] && jump(matches[sel].i)"
+          @keydown.esc.prevent="close"
+        />
+        <div class="ph-list" ref="listEl">
+          <button
+            class="ph-item"
+            v-for="(m, k) in matches" :key="m.i"
+            :class="{ current: m.i === deck.index.value, sel: k === sel }"
+            @click="jump(m.i)"
+            @mousemove="sel = k"
+          >
+            <span class="n">{{ m.i + 1 }}</span>
+            <span class="t">{{ m.t || 'Sin título' }}</span>
+          </button>
+          <div class="ph-empty" v-if="!matches.length">Nada coincide</div>
+        </div>
+      </div>
+    </Transition>
 
-  Transition(name="ph-pop")
-    .ph-panel.ph-themes(v-if="open === 'themes'" role="menu" aria-label="Tema")
-      button.ph-item(
-        v-for="t in themes" :key="t"
-        :class="{ current: t === theme }"
-        @mousedown.prevent
-        @click="pickTheme(t)"
-        role="menuitemradio" :aria-checked="t === theme"
-      )
-        span.swatch(:data-theme="t")
-        span.t {{ t }}
-        svg.check(v-if="t === theme" viewBox="0 0 24 24"): path(d="M5 12l5 5 9-10")
+    <Transition name="ph-pop">
+      <div class="ph-panel ph-themes" v-if="open === 'themes'" role="menu" aria-label="Tema">
+        <button
+          class="ph-item"
+          v-for="t in themes" :key="t"
+          :class="{ current: t === theme }"
+          @mousedown.prevent
+          @click="pickTheme(t)"
+          role="menuitemradio" :aria-checked="t === theme"
+        >
+          <span class="swatch" :data-theme="t"></span>
+          <span class="t">{{ t }}</span>
+          <svg class="check" v-if="t === theme" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10" /></svg>
+        </button>
+      </div>
+    </Transition>
+  </nav>
 </template>
 
 <script setup>

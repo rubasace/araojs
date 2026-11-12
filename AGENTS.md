@@ -8,6 +8,11 @@ Overview: [README.md](README.md).
 ## Mental model
 
 - A deck is one file, `src/decks/<Name>.vue`, opened at `/?deck=<name>` (case-insensitive).
+- **Templates are Pug or HTML.** `<template lang="pug">` is the recommended form (shorter; every
+  recipe here uses it). A plain HTML `<template>` works the same: same components, props, slots
+  and directives; each file picks its own. Translate a recipe tag by tag: `Slide(layout="cover")`
+  → `<Slide layout="cover">…</Slide>`, `p.muted Text` → `<p class="muted">Text</p>`,
+  `template(#left)` → `<template #left>`, `Snippet(file="App.java")` → `<Snippet file="App.java" />`.
 - Structure: `Deck` → `Slide` → content. Addons (`ProgressBar`, `SlideNumber`) sit inside `Deck`,
   outside slides. Slide order = template order.
 - The canvas has a fixed size, **1920x1080 px** by default (`Deck(:width="…" :height="…")` sets
@@ -90,7 +95,7 @@ Don't:
 
 ## Gotchas
 
-- **Pug: a plain attribute is a string; a `:`-bound one is JavaScript.** Numbers, booleans, arrays
+- **Pug or HTML: a plain attribute is a string; a `:`-bound one is JavaScript.** Numbers, booleans, arrays
   and objects need the colon: `:size="36"`, `:line-numbers="false"`, `:themes="['default']"`,
   `:highlights='{ "2-3": 2 }'` (JSON in single quotes). Without it, `size="36"` is the string
   `"36"` and `line-numbers="false"` the string `"false"`: Vue warns and the line numbers stay.
@@ -134,6 +139,19 @@ Deck(:themes="['default', 'vigojug']" duration="30m")
 <script setup>
 import { ProgressBar, SlideNumber } from 'phoenyxjs'
 </script>
+```
+
+The same template in HTML (same `<script setup>`):
+
+```vue
+<template>
+  <Deck :themes="['default', 'vigojug']" duration="30m">
+    <ProgressBar />
+    <SlideNumber />
+
+    <!-- slides go here -->
+  </Deck>
+</template>
 ```
 
 ## Recipes

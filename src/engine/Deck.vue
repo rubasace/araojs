@@ -24,72 +24,86 @@
        template(#footer="{ number, total }")
          span ACME · Conf 2026
          span {{ number }} / {{ total }} -->
-<template lang="pug">
-.ph-viewport(
-  v-if="!presenter"
-  ref="viewport"
-  :data-theme="theme"
-  :class="{ 'ph-nocursor': cursorHidden, 'ph-export': exporting, 'ph-export-done': exported }"
-)
-  Stage(:stage="main" :width="width" :height="height")
-    slot
-  template(v-if="exporting")
-    //- the notes of the slide on screen, copied into the book after its page(s); never shown
-    .ph-export-notes(v-if="exporting.notes" ref="exportNotes")
-      .ph-note(v-for="n in shownNotes" :key="n.id" :data-step="n.step")
-        NoteBody(:note="n")
-    //- filled by exporter.js, not by Vue
-    .ph-book(ref="book")
-  Controls(
-    v-else
-    ref="controls"
-    :deck="main.api"
-    :visible="hud"
-    :theme="theme"
-    :themes="themes"
-    :fullscreen="fullscreen"
-    :titles="titles"
-    @theme="setTheme"
-    @fullscreen="toggleFullscreen"
-    @presenter="openPresenter"
-  )
-  //- the browser blocked the presenter window: the same URL as a link, which it does not block
-  Transition(v-if="!exporting" name="ph-toast")
-    .ph-toast(v-if="blocked" role="status")
-      span El navegador ha bloqueado la ventana del presentador.
-      a(:href="blocked" :target="presenterName" :title="blocked" @click="blocked = null") Abrirla aquí
-Presenter(
-  v-else
-  :deck="main.api"
-  :title="titles[main.index.value] || ''"
-  :next="next"
-  :notes="notes"
-  :timer="timer"
-  :duration="durationMs"
-  :ratio="`${width} / ${height}`"
-  @timer="setTimer"
-)
-  template(#current)
-    Stage(:stage="main" :width="width" :height="height" :theme="theme")
-      slot
-  //- A second copy of every slide, one step ahead: each slide and addon mounts again here, so
-  //- its side effects run twice in this window and its element ids repeat (useDeck().role is
-  //- 'preview' in this copy, 'presenter' in the one above).
-  template(#next)
-    Stage(:stage="preview" :width="width" :height="height" :theme="theme")
-      slot
-  template(#controls)
-    Controls(
+<template>
+  <div
+    class="ph-viewport"
+    v-if="!presenter"
+    ref="viewport"
+    :data-theme="theme"
+    :class="{ 'ph-nocursor': cursorHidden, 'ph-export': exporting, 'ph-export-done': exported }"
+  >
+    <Stage :stage="main" :width="width" :height="height">
+      <slot />
+    </Stage>
+    <template v-if="exporting">
+      <!-- the notes of the slide on screen, copied into the book after its page(s); never shown -->
+      <div class="ph-export-notes" v-if="exporting.notes" ref="exportNotes">
+        <div class="ph-note" v-for="n in shownNotes" :key="n.id" :data-step="n.step">
+          <NoteBody :note="n" />
+        </div>
+      </div>
+      <!-- filled by exporter.js, not by Vue -->
+      <div class="ph-book" ref="book"></div>
+    </template>
+    <Controls
+      v-else
       ref="controls"
-      docked
       :deck="main.api"
+      :visible="hud"
       :theme="theme"
       :themes="themes"
       :fullscreen="fullscreen"
       :titles="titles"
       @theme="setTheme"
       @fullscreen="toggleFullscreen"
-    )
+      @presenter="openPresenter"
+    />
+    <!-- the browser blocked the presenter window: the same URL as a link, which it does not block -->
+    <Transition v-if="!exporting" name="ph-toast">
+      <div class="ph-toast" v-if="blocked" role="status">
+        <span>El navegador ha bloqueado la ventana del presentador.</span>
+        <a :href="blocked" :target="presenterName" :title="blocked" @click="blocked = null">Abrirla aquí</a>
+      </div>
+    </Transition>
+  </div>
+  <Presenter
+    v-else
+    :deck="main.api"
+    :title="titles[main.index.value] || ''"
+    :next="next"
+    :notes="notes"
+    :timer="timer"
+    :duration="durationMs"
+    :ratio="`${width} / ${height}`"
+    @timer="setTimer"
+  >
+    <template #current>
+      <Stage :stage="main" :width="width" :height="height" :theme="theme">
+        <slot />
+      </Stage>
+    </template>
+    <!-- A second copy of every slide, one step ahead: each slide and addon mounts again here, so
+         its side effects run twice in this window and its element ids repeat (useDeck().role is
+         'preview' in this copy, 'presenter' in the one above). -->
+    <template #next>
+      <Stage :stage="preview" :width="width" :height="height" :theme="theme">
+        <slot />
+      </Stage>
+    </template>
+    <template #controls>
+      <Controls
+        ref="controls"
+        docked
+        :deck="main.api"
+        :theme="theme"
+        :themes="themes"
+        :fullscreen="fullscreen"
+        :titles="titles"
+        @theme="setTheme"
+        @fullscreen="toggleFullscreen"
+      />
+    </template>
+  </Presenter>
 </template>
 
 <script setup>

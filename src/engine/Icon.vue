@@ -15,26 +15,28 @@
      Decorative by default (aria-hidden); label="…" makes it an image with that name.
      A name that is not in the module (no such set installed, a typo, a name built at runtime)
      shows an empty dashed box of the same size, and a warning once in development. -->
-<template lang="pug">
-svg.ph-icon(
-  v-if="icon"
-  xmlns="http://www.w3.org/2000/svg"
-  :viewBox="`0 0 ${icon.width} ${icon.height}`"
-  :width="box.width"
-  :height="box.height"
-  :role="label ? 'img' : undefined"
-  :aria-label="label || undefined"
-  :aria-hidden="label ? undefined : 'true'"
-  v-html="body"
-)
-span.ph-icon.ph-icon-missing(
-  v-else
-  :style="box"
-  :title="key"
-  :role="label ? 'img' : undefined"
-  :aria-label="label || undefined"
-  :aria-hidden="label ? undefined : 'true'"
-)
+<template>
+  <svg
+    class="ph-icon"
+    v-if="icon"
+    xmlns="http://www.w3.org/2000/svg"
+    :viewBox="`0 0 ${icon.width} ${icon.height}`"
+    :width="box.width"
+    :height="box.height"
+    :role="label ? 'img' : undefined"
+    :aria-label="label || undefined"
+    :aria-hidden="label ? undefined : 'true'"
+    v-html="body"
+  ></svg>
+  <span
+    class="ph-icon ph-icon-missing"
+    v-else
+    :style="box"
+    :title="key"
+    :role="label ? 'img' : undefined"
+    :aria-label="label || undefined"
+    :aria-hidden="label ? undefined : 'true'"
+  ></span>
 </template>
 
 <script setup>
