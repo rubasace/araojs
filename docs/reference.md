@@ -13,7 +13,7 @@ Pug reminders: a plain attribute is a string (`gap="sm"`); a `:`-bound one is a 
 expression (`:themes="['default']"`, `:size="36"`, `:line-numbers="false"`). Object props are
 written as JSON in single quotes: `:highlights='{ "2-3": 2 }'`.
 
-Contents: [Setup](#setup) · [Deck](#deck) · [Slide](#slide) · [v-step](#v-step) ·
+Contents: [Setup](#setup) · [Deck](#deck) · [Slide](#slide) ([zones](#zones-header-body-footer)) · [v-step](#v-step) ·
 [Cols, Rows, Grid, Center](#cols-rows-grid-center) · [Utility classes](#utility-classes) ·
 [Img](#img) · [Icon](#icon) · [Snippet](#snippet) · [Notes](#notes) · [Controls](#controls) ·
 [Presenter view](#presenter-view) · [Export mode](#export-mode) · [useDeck()](#usedeck) ·
@@ -77,9 +77,22 @@ view and export mode. One per deck file (`src/decks/<Name>.vue`).
 | `height` | Number | `1080` | canvas height in px |
 | `hideCursorAfter` | Number (ms) | `5000` | hide the mouse cursor after this long without movement; `0` never hides it |
 
-Slots: the default slot holds the slides and the addons, in any order. Slide order is the order
-in the template (document order), even for slides mounted later by `v-if` or moved by a keyed
-`v-for`.
+Slots:
+- default: the slides and the addons, in any order. Slide order is the order in the template
+  (document order), even for slides mounted later by `v-if` or moved by a keyed `v-for`.
+- `#footer`: the deck's footer, drawn at the bottom of every slide except `cover` and `section`
+  ([Zones](#zones-header-body-footer)). Slot props: `{ number, total }`, the slide's number
+  (1-based) and the number of slides. Real DOM in the theme's fonts, so it prints as text and shows
+  in the presenter view; each slide draws its own copy, which fades with it.
+
+```pug
+Deck(:themes="['default']")
+  template(#footer="{ number, total }")
+    span ACME · DevConf 2026
+    span {{ number }} / {{ total }}
+  Slide
+    h2 Hello
+```
 
 Behaviour:
 - The hash `#/<slide>/<step>` (both 1-based) is kept up to date and read on load and on change.
@@ -102,12 +115,16 @@ Deck(:themes="['default', 'vigojug']" duration="45m")
 
 ## Slide
 
-One slide. Content flows top to bottom in a padded column (`--ph-pad`).
+One slide, inside its padding (`--ph-pad`). A content slide has three zones, top to bottom: the
+header (its title), the body (everything else) and the deck's footer
+([Zones](#zones-header-body-footer)).
 
 | Prop | Type | Default | Accepted values |
 |---|---|---|---|
-| `layout` | String | `default` | `default`, `cover`, `section`, `split`, `image-left`, `image-right`, `two-cols`; any other value only adds the class `layout-<value>` (for a theme to style) |
-| `title` | String | first `h1`/`h2`/`h3` of the slide (outside the background) | name in the jump menu, the presenter bar and the notes pages |
+| `layout` | String | `default` | `default`, `cover`, `section`, `split`, `image-left`, `image-right`, `two-cols`; any other value adds the class `layout-<value>` (for a theme to style) and works as `default` |
+| `title` | String | first `h1`/`h2`/`h3` of the slide (outside the background and the footer) | name in the jump menu, the presenter bar and the notes pages |
+| `align` | String | the theme's `--ph-body-align` (`center` by default) | `start`, `center`, `end`: where the body sits vertically (`default` layout) |
+| `footer` | Boolean | shown, except on `cover` and `section` | `:footer="false"` hides the deck's footer on this slide; `:footer="true"` shows it on a `cover` or `section` |
 | `ratio` | String | `"1 1"` | zone widths for `split`, `image-left`, `image-right`, left to right. Exactly two entries; each a positive number (a share), `auto`, or `<n>px`. Shares are proportions: `"2 1"` = `"66 33"`. Invalid → warning, `"1 1"`. |
 | `bg` | String | none | background: a URL, an images-folder file, or a CSS colour/gradient (see below) |
 | `bg-opacity` | Number or String | `1` | `0`..`1`: the picture's opacity over the slide colour |
@@ -119,9 +136,9 @@ One slide. Content flows top to bottom in a padded column (`--ph-pad`).
 
 | Layout | What it does | Slots |
 |---|---|---|
-| `default` | padded column | `#title` (optional), default |
-| `cover` | content centred vertically; `h1` at 1.25x `--ph-title`; a `.bar` element draws a short accent bar | default |
-| `section` | everything centred, slide filled with `--ph-accent`, text `--ph-accent-fg`; `h1` at 1.4x `--ph-title` | default |
+| `default` | zones: the header (the heading the slot starts with), the body (the rest, centred by default), the footer | `#title` (optional, for a complex header), default |
+| `cover` | content centred vertically; `h1` at 1.25x `--ph-title`; a `.bar` element draws a short accent bar; no footer unless `:footer="true"` | default |
+| `section` | everything centred, slide filled with `--ph-accent`, text `--ph-accent-fg`; `h1` at 1.4x `--ph-title`; no footer unless `:footer="true"` | default |
 | `split` | a header (the default slot: the heading, maybe a lead line) above two zones side by side | `#title`, default (header), `#left`, `#right` |
 | `image-left` / `image-right` | the `#image` zone fills its half edge to edge (no padding, inset `--ph-image-inset`); the default slot is the text side, padded like a slide | `#image`, `#title`, default (text side) |
 | `two-cols` | legacy: a child with class `.cols` becomes a two-column grid. Prefer `split` or `Cols`. | default |
@@ -132,8 +149,87 @@ All slots receive `{ step }` (the slide's current step) as slot props.
 - A zone keeps its width: wider content is clipped at the zone's edge. Heights do not clip.
 - `ratio` in `image-*` sizes the zones left to right, whichever side holds the image:
   `image-right` with `ratio="3 2"` is text 3/5, image 2/5.
+- `split` and `image-*` keep their own zones; the footer shows under them (their zones end where
+  it begins), and their heading is the slide's title for the `--ph-title-*` tokens. `align` only
+  places the body of `default` (and of layouts without zones of their own).
 - Content styles from `layouts.css`: `h1` is `--ph-title`; `h2` is 0.6x `--ph-title` in
-  `--ph-accent`; `p` has a bottom margin of 0.6em.
+  `--ph-accent`; `p` has a bottom margin of 0.6em; lists and tables below.
+
+### Zones: header, body, footer
+
+A slide of the `default` layout (or of any layout name without zones of its own) is laid out in
+three zones. Nothing to declare: the slide finds them.
+
+```pug
+Slide
+  h2 Three pillars        //- header: the heading the slide starts with
+  Cols(gap="lg")          //- body: everything else
+    div …
+```
+
+- **Header**: when the default slot starts with an `h1` or `h2`, that heading is the slide's title
+  and goes into the header; headings right after it go there too (a subtitle, or one title per
+  step: `h2(v-step.only.collapse="1") …`, `h2(v-step.only.collapse="2") …`). Comments, `v-if`s
+  that render nothing and `Notes` before it do not count. A `#title` slot, when given, is the
+  header instead, for headers with more than a heading (a kicker line, a logo); its first `h1`/`h2`
+  is the title. A slide that starts with anything else has no header: the body takes the slide.
+  The title carries the class `ph-title` and follows the `--ph-title-*` tokens; with
+  `--ph-header-height` the header is a band of that height with the title centred in it
+  ([Theme tokens](#slide-zones-and-content)).
+- **Body**: everything else, in a column that fills the space between the header and the footer.
+  `align` (or the theme's `--ph-body-align`, `center` unless the theme says otherwise) places it:
+  `start` (from the top), `center`, `end`. What does not fit overflows at the bottom, never at the
+  top. What fills the body still fills it whatever the alignment: `Img`, `Snippet`, an element with
+  `flex: 1`, the `1fr` rows of `Grid` and `Rows`. `Cols`, `Rows` and `Grid` placed directly in a
+  centred (or end-aligned) body shrink their auto rows to their content and centre them, unless
+  they hold something that needs the full height (a `Snippet`, an `Img`, another piece): then
+  they fill as in a `start` body. `Cols(align="stretch")`, written out, keeps full-height columns.
+  `.collapse` steps in a centred body move the rest as they come and go (it is re-centred).
+- **Footer**: the `Deck`'s `#footer` slot, in a band `--ph-footer-height` tall (88 px) at the
+  bottom of the slide, with the slide's side padding and its text in `--ph-footer-size` and
+  `--ph-footer-color`. Its children sit in a row, spread by `--ph-footer-align` (`space-between`:
+  one at the start, two at both ends). The band takes the place of the slide's bottom padding, so
+  the body (and the zones of `split` and `image-*`) ends where the footer begins. Hidden on `cover`
+  and `section` unless `:footer="true"`; there it sits over the bottom padding, and on a section it
+  takes the section's text colour unless the theme sets `--ph-footer-color` for `.layout-section`.
+  `Slide(:footer="false")` hides it on one slide.
+- `SlideNumber` keeps its corner (bottom right, on the footer band's line with the default
+  height), outside the footer's content box. To have the number inside the footer, use the slot
+  props (`{{ number }} / {{ total }}`) instead of `SlideNumber`.
+
+```pug
+Slide(align="start")      //- this slide's body from the top
+  h2 A long list
+  ul …
+
+Slide(:footer="false")    //- no footer here (a full-bleed picture, say)
+  …
+```
+
+### Lists and tables
+
+- Lists: `--ph-list-gap` is the space between items (default `0`).
+- Tables get a plain style from tokens: full width, collapsed borders, cells padded
+  `--ph-table-pad`, a line `--ph-table-border` under every row, header cells in
+  `--ph-table-head-color` on `--ph-table-head-bg`, every other body row on `--ph-table-stripe`.
+  These rules have zero specificity: any rule of the deck (`.my-table td { … }`) wins.
+
+```pug
+Slide
+  h2 Pace
+  table
+    thead
+      tr
+        th Period
+        th Merged
+    tbody
+      tr
+        td September
+        td 32
+      tr
+        td October
+        td 59
+```
 
 ### Backgrounds
 
@@ -278,6 +374,8 @@ the title, a zone, a cell of another piece) and takes `v-step` like any element.
 - `gap` (String or Number): `sm` | `md` | `lg` (tokens `--ph-gap-sm|md|lg`: 24/48/80 px), a number
   of px (`12`), or a length in `px`, `em`, `rem` (`"1.5em"`). Invalid → warning, `md`.
 - `align` (`Cols` only): `start` | `center` | `end` | `stretch`, vertical placement in each column.
+  In a centred slide body the row is as tall as its content; `align="stretch"`, written out, keeps
+  the columns as tall as the body.
 - `cols` (`Grid` only): a whole number ≥ 1.
 - `ratio` (`Grid` only): the grid's **shape**, columns : rows — `"2:1"`, `"3/2"`, `"1.5"` (not the
   track ratio of Cols/Rows). With n children: rows = round(√(n / ratio)), at least 1, and
@@ -701,7 +799,7 @@ Deck
 | Addon | Props | What it draws |
 |---|---|---|
 | `ProgressBar` | `position`: `"bottom"` (default) or `"top"` | a full-width bar, `--ph-progress-height` tall (8 px), filled with `--ph-accent` by `progress` |
-| `SlideNumber` | none | `n / total`, bottom right, 24 px, `--ph-muted` |
+| `SlideNumber` | none | `n / total`, bottom right, 24 px, `--ph-muted`; on the line of the footer band, outside its content (with a footer, `{{ number }} / {{ total }}` in `#footer` puts the number inside it) |
 
 **Writing one**: a component that calls `useDeck()`, positions itself absolutely in canvas px,
 uses tokens for colours, and sets `pointer-events: none`. Skip side effects where they do not
@@ -796,7 +894,7 @@ one, `src/themes/<name>.css` in the project for your own. Themes set tokens only
 | `--ph-font-sans` | `"Inter", system-ui, …` (theme) | text font |
 | `--ph-font-mono` | `"JetBrains Mono", ui-monospace, …` (theme) | code font |
 | `--ph-text-base` | `40px` | base font size of a slide |
-| `--ph-title` | `88px` (theme) | `h1` size; `h2` is 0.6x, cover `h1` 1.25x, section `h1` 1.4x |
+| `--ph-title` | `88px` (theme) | the type scale: `h1` size; `h2` is 0.6x, cover `h1` 1.25x, section `h1` 1.4x (the slide title's own size is `--ph-title-size`) |
 | `--ph-text-small` | `.75em` | `.small` |
 | `--ph-placeholder` | text colour | colour of the missing-picture box |
 
@@ -804,7 +902,7 @@ one, `src/themes/<name>.css` in the project for your own. Themes set tokens only
 
 | Token | Default | Meaning |
 |---|---|---|
-| `--ph-pad` | `96px 120px` | slide padding (and the text side of `image-*`) |
+| `--ph-pad` | `96px 120px` | slide padding, the safe margin (and the text side of `image-*`); the footer band, when shown, takes the place of its bottom |
 | `--ph-radius` | `16px` (theme) | corner radius (`Img rounded`, placeholders) |
 | `--ph-gap-sm` / `-md` / `-lg` | `24px` / `48px` / `80px` | `gap="sm\|md\|lg"`; `md` is the default gap of `Cols`/`Rows`/`Grid`; `lg` between zones |
 | `--ph-image-inset` | `0` | padding around the picture in an `image-*` zone |
@@ -821,6 +919,56 @@ one, `src/themes/<name>.css` in the project for your own. Themes set tokens only
 
 A theme can leave a layout without its default background:
 `[data-theme="x"] .layout-section { --ph-slide-bg-image: none; }`.
+
+### Slide zones and content
+
+The title tokens style the slide's title (`.ph-title`: the header's heading, the heading of
+`split`'s header and of `image-*`'s text side), not every `h1`/`h2`; cover and section headings
+keep `--ph-title`. Without them the title looks as any `h2` (or `h1`) does.
+
+| Token | Default | Meaning |
+|---|---|---|
+| `--ph-title-size` | an `h2`: 0.6x `--ph-title`; an `h1`: `--ph-title` | the title's font size |
+| `--ph-title-color` | an `h2`: `--ph-accent`; an `h1`: the text colour | the title's colour |
+| `--ph-title-align` | as the slide's text | `start`, `center`, `end` |
+| `--ph-title-gap` | `.6em` under an `h2`, `.4em` under an `h1` | space between the title and the body (em: the title's size; under a header band, give px) |
+| `--ph-header-height` | none (as tall as the title) | a header band: the header is at least this tall, the title centred in it, `--ph-title-gap` under the band |
+| `--ph-body-align` | `center` | `start`, `center` or `end`: where the body sits, unless `Slide(align)` says (anything else warns and centres) |
+| `--ph-list-gap` | `0` | space between list items |
+| `--ph-footer-height` | `88px` | the footer band, at the bottom of the slide, in place of the bottom padding |
+| `--ph-footer-size` | `24px` | footer text size |
+| `--ph-footer-color` | `--ph-muted` (on a section: its text colour) | footer text colour |
+| `--ph-footer-align` | `space-between` | how the footer's children spread: `flex-start`, `center`, `flex-end`, `space-between` |
+
+| Token | Default | Meaning |
+|---|---|---|
+| `--ph-table-pad` | `.4em .8em` | cell padding |
+| `--ph-table-border` | `2px solid` the text colour at 15 % | the line under every row (a CSS `border`) |
+| `--ph-table-head-bg` | none | header cells' background |
+| `--ph-table-head-color` | `--ph-muted` | header cells' text colour |
+| `--ph-table-stripe` | none | background of every other body row |
+
+Tokens may be set per layout, or on any element, like every token:
+
+```css
+[data-theme="venue"] .layout-default { --ph-title-color: #fff; --ph-title-gap: 120px; } /* content slides */
+[data-theme="venue"] .layout-section { --ph-footer-color: #fff; }
+```
+
+```pug
+table.dense(style="--ph-table-pad: 12px 20px")
+```
+
+### Sizes
+
+Rules of thumb for a 1920x1080 canvas (and what the defaults do):
+
+- **Safe margin** ≈ 5 % of each side, for projectors that crop the edges: `--ph-pad` (96 x 120 px).
+- **Header** ≈ 12–15 % of the height for the title zone (a band, if any: `--ph-header-height`).
+- **Footer** ≈ 5–8 % of the height: the default band is 88 px, in place of the bottom padding,
+  with 24 px text.
+- **Body text** 36–44 px (`--ph-text-base`: 40 px); nothing under ≈ 28 px except the footer and
+  dense code.
 
 ### Code (Snippet)
 

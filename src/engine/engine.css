@@ -9,6 +9,13 @@ html, body, #app { margin: 0; height: 100%; }
   --ph-gap-md: 48px;
   --ph-gap-lg: 80px;
   --ph-text-small: .75em;
+  /* slide zones (Slide.vue): where the body sits, and the deck's footer band */
+  --ph-body-align: center;
+  --ph-footer-height: 88px;
+  --ph-footer-size: 24px;
+  --ph-footer-color: var(--ph-muted);
+  --ph-footer-align: space-between;
+  --ph-list-gap: 0;
 }
 
 .ph-viewport {
@@ -59,6 +66,43 @@ html, body, #app { margin: 0; height: 100%; }
   background: var(--ph-slide-bg-image, none) var(--ph-slide-bg-position, center) / cover no-repeat;
   opacity: var(--ph-slide-bg-opacity, 1);
 }
+
+/* Slide zones (default layout, Slide.vue): the header (its title), the body, the footer.
+   The header is as tall as its title, whose margin (--ph-title-gap, layouts.css) separates it from
+   the body. When the theme sets --ph-header-height, the header is a band at least that tall with
+   the title centred in it, and the gap goes under the band (.ph-header-band, layouts.css). */
+.ph-header { flex: none; display: flex; flex-direction: column; }
+.ph-header-band { min-height: var(--ph-header-height); justify-content: center; box-sizing: border-box; }
+/* the body fills the rest: a column like the slide itself, so pieces and flex: 1 fill it */
+.ph-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+/* centred / end-aligned (Slide align, --ph-body-align): what does not fill the body moves; what
+   does not fit overflows at the bottom, as in a start-aligned body (safe). Pieces placed directly
+   in it still fill it, but their auto rows shrink to their content and move with it (1fr rows,
+   as Grid's, still fill), unless they hold something that needs the full height: a Snippet, an
+   Img or another piece (those keep the rows as tall as the body, as in a start-aligned body).
+   Margins count as part of the content (a full-height body stays exactly as when start-aligned). */
+.ph-body-center { justify-content: safe center; }
+.ph-body-end { justify-content: safe flex-end; }
+.ph-body-center > :is(.ph-cols, .ph-rows, .ph-grid):not(:has(.ph-snippet, .ph-img, .ph-cols, .ph-rows, .ph-grid, .ph-center)) { align-content: safe center; }
+.ph-body-end > :is(.ph-cols, .ph-rows, .ph-grid):not(:has(.ph-snippet, .ph-img, .ph-cols, .ph-rows, .ph-grid, .ph-center)) { align-content: safe end; }
+
+/* The deck's footer (Deck #footer): a band --ph-footer-height tall at the bottom of the slide, with
+   the slide's side padding, its children in a row (--ph-footer-align: space-between puts one at
+   the start, two at both ends). On slides with zones it takes the place of the bottom padding, so
+   the content ends where it begins; on cover and section (only when asked for) it sits over the
+   bottom padding. On a section it takes the section's text colour unless the theme sets
+   --ph-footer-color for .layout-section. */
+.ph-footer {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  box-sizing: border-box; height: var(--ph-footer-height);
+  padding: var(--ph-pad, 96px 120px); padding-top: 0; padding-bottom: 0;
+  display: flex; align-items: center; justify-content: var(--ph-footer-align); gap: var(--ph-gap-sm);
+  font-size: var(--ph-footer-size); line-height: 1.2; color: var(--ph-footer-color);
+  white-space: nowrap;
+}
+.ph-slide.ph-footed { padding-bottom: var(--ph-footer-height); }
+.ph-footed > .ph-zone-text { padding-bottom: 0; }
+:where(.layout-section) { --ph-footer-color: currentColor; }
 
 /* zones: Slide(layout="split" | "image-left" | "image-right" ratio="…") */
 .ph-zones {
