@@ -13,18 +13,24 @@
      in image-* it is the text side, so the title tops the text column, never the image.
      Background: a layer under the content, as big as the slide, never in the pointer's way.
        Slide(bg="city.jpg" bg-opacity="0.15" bg-position="center 30%" bg-blur="4" bg-fit="cover")
-     bg is a file in the images folder (a name ending in an extension: city.jpg, team/ana.png),
-     a URL (https://…, /from-public.jpg), or else any CSS background: a colour or a gradient
-     ("#1d2b4a", "linear-gradient(135deg, #1d2b4a, #f08a5d)"). The bg-* props tune it: opacity
-     0..1, position (CSS background-position), blur in px, fit cover (default) or contain.
+     bg is, tried in this order (image.js):
+       a URL         https://…, data:…, /from-public.jpg (served under Vite's base)
+       a file        in the images folder, by its name there: city.jpg, team/ana.png, "photo (1).jpg";
+                     a name ending in an extension that is not there shows as missing, and warns
+       CSS           anything else: a colour or a gradient ("#1d2b4a", "linear-gradient(…)").
+                     url(…) here is plain CSS: relative to the page, not to the images folder,
+                     and Vite does not process it; for a picture, name the file or give a URL.
+     A blank bg is no bg. The bg-* props tune it: opacity 0..1, position (CSS background-position),
+     blur in px, fit cover (default) or contain.
      For anything more, the #background slot: each element in it covers the slide, stacked in
      order (an Img, then a tint above it), and v-step works in it as anywhere in the slide.
        template(#background)
          Img(file="city.jpg")
          .tint
-     With both, the bg goes first and the slot above it. With neither, the slide shows the theme's
-     default background, if the theme sets one (--ph-slide-bg-* tokens, engine.css), and the bg-*
-     props tune that one. -->
+     With both, the bg goes first and the slot above it. With neither (a slot that renders nothing
+     counts as none), the slide shows the theme's default background, if the theme sets one
+     (--ph-slide-bg-* tokens, engine.css), and the bg-* props tune that one.
+     Headings in the background are not the slide's title (the jump menu skips them). -->
 <template lang="pug">
 Transition(name="ph-slide")
   section.ph-slide(
@@ -36,7 +42,7 @@ Transition(name="ph-slide")
   )
     .ph-slide-bg(aria-hidden="true")
       Img(v-if="picture" v-bind="picture")
-      .ph-slide-bg-fill(v-else-if="bg || !$slots.background" :class="{ 'ph-slide-bg-theme': !bg }" :style="fill")
+      .ph-slide-bg-fill(v-else-if="kind || !renders($slots.background, { step })" :class="{ 'ph-slide-bg-theme': !kind }" :style="fill")
       slot(name="background" :step="step")
     template(v-if="layout === 'split'")
       .ph-slide-head(v-if="$slots.title || $slots.default")
@@ -66,11 +72,11 @@ Transition(name="ph-slide")
 </template>
 
 <script setup>
-import { computed, inject, onBeforeUnmount, onUpdated, provide, reactive, ref, watchEffect } from 'vue'
+import { Comment, Fragment, Text, computed, inject, onBeforeUnmount, onUpdated, provide, reactive, ref, watchEffect } from 'vue'
 import { DECK, SLIDE, slides } from './registry'
 import { sweep } from './step'
 import { isRatio, tracks } from './layout'
-import { bgKind, blurStyle, blurValue, isBlur, isOpacity, opacityValue } from './image'
+import { bgKind, blurStyle, blurValue, imagesDir, isBlur, isOpacity, opacityValue } from './image'
 import Img from './Img.vue'
 
 const props = defineProps({
@@ -99,7 +105,7 @@ const picture = computed(() => (kind.value === 'file' || kind.value === 'url'
     }
   : null))
 const fill = computed(() => ({
-  background: kind.value === 'css' ? props.bg : undefined,
+  background: kind.value === 'css' ? props.bg.trim() : undefined,
   backgroundPosition: props.bgPosition,
   backgroundSize: props.bgFit,
   opacity: opacityValue(props.bgOpacity),
@@ -107,10 +113,20 @@ const fill = computed(() => ({
 }))
 if (import.meta.env.DEV) {
   watchEffect(() => {
-    if (kind.value === 'css' && !CSS.supports('background', props.bg))
-      console.warn(`[phoenyx] Slide: bg="${props.bg}" is neither an image file, a URL nor a CSS background`)
+    const v = props.bg?.trim()
+    if (kind.value === 'css' && !CSS.supports('background', v))
+      console.warn(`[phoenyx] Slide: bg="${v}" is none of the three: no file "${v}" in ${imagesDir}, not a URL (https://…, /…), and not a valid CSS background`)
   })
 }
+
+// whether a slot renders anything: an empty #background, or one whose content is all v-if'd
+// away, leaves the theme's default background in place
+const content = (nodes) => nodes.some((n) =>
+  n.type === Comment ? false
+  : n.type === Fragment ? Array.isArray(n.children) && content(n.children)
+  : n.type === Text ? n.children.trim() !== ''
+  : true)
+const renders = (slot, scope) => !!slot && content(slot(scope))
 
 const image = computed(() => props.layout === 'image-left' || props.layout === 'image-right')
 const zones = computed(() => ({ gridTemplateColumns: tracks(isRatio(props.ratio, 2) ? props.ratio : '1 1', 0) }))
