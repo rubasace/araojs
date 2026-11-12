@@ -1,4 +1,0 @@
-@Configuration
-class MetricsAutoConfiguration {
-
-}
