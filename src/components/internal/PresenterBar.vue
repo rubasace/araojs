@@ -14,7 +14,7 @@
       <button
         class="ph-p-btn"
         @mousedown.prevent
-        @click="$emit('timer', toggle(timer, Date.now()))"
+        @click="setTimer(toggle(timer, Date.now()))"
         :title="timer.state === 'running' ? 'Pausar el tiempo' : timer.state === 'paused' ? 'Reanudar el tiempo' : 'Empezar el tiempo'"
       >
         <svg v-if="timer.state === 'running'" viewBox="0 0 24 24"><path d="M9 6v12M15 6v12" /></svg>
@@ -23,7 +23,7 @@
       <button
         class="ph-p-btn"
         @mousedown.prevent
-        @click="$emit('timer', IDLE)"
+        @click="setTimer(IDLE)"
         :disabled="timer.state === 'idle'"
         title="Poner el tiempo a cero (vuelve a empezar al avanzar)"
       >
@@ -37,28 +37,24 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { IDLE, clock, elapsed, phase, toggle } from '../../core/timer'
+import { useDeckContext } from '../../composables/useDeckContext'
 
-const props = defineProps({
-  deck: { type: Object, required: true },
-  title: String,
-  timer: { type: Object, required: true },
-  duration: Number, // ms
-})
-defineEmits(['timer'])
+// title: of the slide on screen; duration: the talk's length in ms, or null
+const { deck, title, timer, setTimer, duration } = useDeckContext()
 
 const now = ref(Date.now())
 let tick
 onMounted(() => (tick = setInterval(() => (now.value = Date.now()), 250)))
 onBeforeUnmount(() => clearInterval(tick))
 // a timer that starts or resumes now is read against now, not against the last tick
-watch(() => props.timer, () => (now.value = Date.now()))
+watch(timer, () => (now.value = Date.now()))
 
 // whole seconds, as shown: the time left is what the shown time leaves (45:00 = 44:59 + 0:01)
-const spent = computed(() => Math.floor(elapsed(props.timer, now.value) / 1000) * 1000)
-const left = computed(() => (props.duration ? props.duration - spent.value : null))
-const tone = computed(() => (props.duration ? phase(left.value, props.duration) : 'ok'))
+const spent = computed(() => Math.floor(elapsed(timer.value, now.value) / 1000) * 1000)
+const left = computed(() => (duration.value ? duration.value - spent.value : null))
+const tone = computed(() => (duration.value ? phase(left.value, duration.value) : 'ok'))
 const sub = computed(() => {
-  const state = { idle: 'empieza al avanzar', paused: 'en pausa' }[props.timer.state]
+  const state = { idle: 'empieza al avanzar', paused: 'en pausa' }[timer.value.state]
   const rest = left.value == null ? '' : left.value >= 0 ? `quedan ${clock(left.value)}` : `${clock(left.value)} de más`
   return [state, rest].filter(Boolean).join(' · ')
 })

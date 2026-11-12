@@ -45,19 +45,7 @@
       <!-- filled by exporter.js, not by Vue -->
       <div class="ph-book" ref="book"></div>
     </template>
-    <Controls
-      v-else
-      ref="controls"
-      :deck="main.api"
-      :visible="hud"
-      :theme="theme"
-      :themes="themes"
-      :fullscreen="fullscreen"
-      :titles="titles"
-      @theme="setTheme"
-      @fullscreen="toggleFullscreen"
-      @presenter="openPresenter"
-    />
+    <Controls v-else ref="controls" />
     <!-- the browser blocked the presenter window: the same URL as a link, which it does not block -->
     <Transition v-if="!exporting" name="ph-toast">
       <div class="ph-toast" v-if="blocked" role="status">
@@ -66,17 +54,7 @@
       </div>
     </Transition>
   </div>
-  <Presenter
-    v-else
-    :deck="main.api"
-    :title="titles[main.index.value] || ''"
-    :next="next"
-    :notes="notes"
-    :timer="timer"
-    :duration="duration"
-    :ratio="`${width} / ${height}`"
-    @timer="setTimer"
-  >
+  <Presenter v-else :ratio="`${width} / ${height}`">
     <template #current>
       <Stage :stage="main" :width="width" :height="height" :theme="theme">
         <slot />
@@ -91,27 +69,18 @@
       </Stage>
     </template>
     <template #controls>
-      <Controls
-        ref="controls"
-        docked
-        :deck="main.api"
-        :theme="theme"
-        :themes="themes"
-        :fullscreen="fullscreen"
-        :titles="titles"
-        @theme="setTheme"
-        @fullscreen="toggleFullscreen"
-      />
+      <Controls ref="controls" docked />
     </template>
   </Presenter>
 </template>
 
 <script setup>
 // Deck wires the pieces together; each concern is a composable (src/composables/).
-import { computed, provide, ref, useSlots } from 'vue'
+import { computed, provide, ref, toRef, useSlots } from 'vue'
 import { ahead, createStage, titleOf } from '../core/stage'
 import { exportOptions } from '../core/exporter'
 import { FOOTER } from '../core/registry'
+import { provideDeckContext } from '../composables/useDeckContext'
 import { useDeckSync } from '../composables/useDeckSync'
 import { useExport } from '../composables/useExport'
 import { useFullscreen } from '../composables/useFullscreen'
@@ -213,6 +182,25 @@ function moved() {
 const titles = computed(() => {
   presenter ? main.index.value : hud.value
   return main.list.map(titleOf)
+})
+
+// what the controls and the presenter view read (useDeckContext)
+provideDeckContext({
+  deck: main.api,
+  hud,
+  titles,
+  theme,
+  themes: toRef(props, 'themes'),
+  setTheme,
+  fullscreen,
+  toggleFullscreen,
+  openPresenter,
+  title: computed(() => titles.value[main.index.value] || ''),
+  next,
+  notes,
+  timer,
+  setTimer,
+  duration,
 })
 
 // ---- export: the book of pages (exporter.js) ---------------------------------
