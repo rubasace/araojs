@@ -15,8 +15,8 @@
 </template>
 
 <script setup>
-import { useDeck } from '../state/deck'
-import Stage from './parts/Stage.vue'
+import { useDeck } from '../../state/deck'
+import Stage from './Stage.vue'
 
 defineProps({
   deck: { type: Object, required: true }, // createDeck()

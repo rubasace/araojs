@@ -1,5 +1,5 @@
-<!-- Internal. One deck's cover in the list of decks (views/DeckSelector.vue): the deck itself,
-     drawn as a thumbnail (state/deck.js provideThumbnail, views/ThumbnailView.vue), filling the
+<!-- Internal. One deck's cover in the list of decks (views/DeckSelectorView.vue): the deck itself,
+     drawn as a thumbnail (state/deck.js provideThumbnail, components/internal/Thumbnail.vue), filling the
      positioned box it is placed in. It mounts once its box comes near the viewport
      (IntersectionObserver, 400 px ahead) and stays mounted; until then, and while the deck's code
      loads, it is empty (the box shows through). A deck that fails to load or to draw says so

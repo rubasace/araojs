@@ -27,9 +27,9 @@ src/
   state/            the deck, its stages, its slides, the talk's timer: createDeck/useDeck, createStage/useStage, createSlide/useSlide, createTimer/useTimer
   composables/      the effects (internal): useHashRoute, useDeckSync, usePresenterWindow, useKeyboard, useTouchNav, useMouseIdle, useFullscreen
   core/             plain modules: sync, exporter, image, icons, flip
-  views/            what Arao draws: AudienceView, PresenterView, ExportView, ThumbnailView; DeckSelector (createDeckApp's list of decks)
-    parts/          Stage (the scaled canvas), Controls, PresenterBar, DeckCover (a deck's cover in the list)
-  components/       Deck, Slide, Img, Icon, Snippet, Notes; layout/: Cols, Rows, Grid, Center, layout.js (their props' parsers), layout.css
+  views/            full screens: AudienceView, PresenterView, ExportView; DeckSelectorView (createDeckApp's list of decks)
+  components/       what authors write: Deck, Slide, Img, Icon, Snippet, Notes; layout/: Cols, Rows, Grid, Center, layout.js (their props' parsers), layout.css
+    internal/       the engine's components, which no author names: Stage (the scaled canvas), Controls, PresenterBar, Thumbnail, DeckCover (a deck's cover in the list)
   directives/       v-step and v-step-from (step.js)
   addons/           ProgressBar, SlideNumber: things drawn over every slide
   styles/           only what is global: tokens.css (every token and its default: the default theme),

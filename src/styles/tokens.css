@@ -163,7 +163,7 @@
                                         editor 1.2x, its fields .8x, inline code .5x */
   --ar-presenter-notes-size: clamp(18px, .85vw + 9px, 28px);
 
-  /* the list of decks (DeckSelector.vue, a cover's frame in it; its type: multiples of
+  /* the list of decks (views/DeckSelectorView.vue, a cover's frame in it; its type: multiples of
      --ar-ui-text). It sits in no theme, as the presenter view: a :root rule restyles it */
   --ar-selector-bg: #14161b;
   --ar-selector-panel: #1c1f26;      /* a card, the notice of a missing deck */

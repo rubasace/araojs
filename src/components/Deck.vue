@@ -28,14 +28,14 @@
          span ACME · Conf 2026
          span {{ number }} / {{ total }}
      Thumbnail: inside something that called provideThumbnail() (state/deck.js), the deck is its
-     cover, small and still (views/ThumbnailView.vue): useDeck().role is 'thumbnail' there.
+     cover, small and still (components/internal/Thumbnail.vue): useDeck().role is 'thumbnail' there.
      The deck's state is state/deck.js (createDeck); this component only wires it to the view the
-     window shows (views/: AudienceView, PresenterView, ExportView or ThumbnailView) and to the
+     window shows (views/: AudienceView, PresenterView or ExportView; internal/Thumbnail) and to the
      keys, which the audience and presenter views listen to. -->
 <template>
-  <ThumbnailView v-if="deck.mode === 'thumbnail'" :deck="deck" :width="width" :height="height">
+  <Thumbnail v-if="deck.mode === 'thumbnail'" :deck="deck" :width="width" :height="height">
     <slot />
-  </ThumbnailView>
+  </Thumbnail>
   <ExportView v-else-if="deck.mode === 'export'" :deck="deck" :width="width" :height="height">
     <slot />
   </ExportView>
@@ -55,7 +55,7 @@ import { useKeyboard } from '../composables/useKeyboard'
 import AudienceView from '../views/AudienceView.vue'
 import ExportView from '../views/ExportView.vue'
 import PresenterView from '../views/PresenterView.vue'
-import ThumbnailView from '../views/ThumbnailView.vue'
+import Thumbnail from './internal/Thumbnail.vue'
 
 const props = defineProps({
   width: { type: Number, default: 1920 },

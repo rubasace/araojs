@@ -25,7 +25,7 @@ import { buildBook, reportReady } from '../core/exporter'
 import { titleOf } from '../state/stage'
 import { useDeck } from '../state/deck'
 import { useNotesOutlet } from '../state/notes'
-import Stage from './parts/Stage.vue'
+import Stage from '../components/internal/Stage.vue'
 
 const props = defineProps({
   deck: { type: Object, required: true }, // createDeck()

@@ -10,14 +10,18 @@ this: [the docs](index.md) are their manual, [../AGENTS.md](../AGENTS.md) their 
 | `state/` | what there is | the deck, its stages, its slides and the talk's timer: reactive state, made by a `create…` and read by a `use…` (the pair shares a provide/inject key private to its file) |
 | `composables/` | effects | small internal composables, one per file, that tie the state to the browser: the URL, other windows, keys, touch, the mouse, fullscreen |
 | `core/` | the pure how | plain modules with no Vue component state: sync, exporter, flip, image, icons |
-| `views/` | what Arao draws | the four views of a deck and their parts (the scaled canvas, the controls, the presenter's bar); `DeckSelector`, the list of decks `createDeckApp` shows at `/`, and its part `DeckCover` (a deck drawn as its cover) |
-| `components/` | what deck authors write | `Deck`, `Slide`, `Img`, `Icon`, `Snippet`, `Notes`; `layout/` holds the layout components (`Cols`, `Rows`, `Grid`, `Center`), the parsers of their props (`layout.js`: ratio, gap, grid shape; Slide's zones use it too) and the CSS they share (`layout.css`), `directives/` holds `v-step` and `v-step-from` |
+| `views/` | full screens | what a window shows: the deck's `AudienceView`, `PresenterView` and `ExportView`, and `DeckSelectorView`, the list of decks `createDeckApp` shows at `/` |
+| `components/` | what deck authors write | `Deck`, `Slide`, `Img`, `Icon`, `Snippet`, `Notes`; `internal/` holds the engine's own components, which no author names: `Stage` (the scaled canvas), `Controls`, `PresenterBar`, `Thumbnail` (a deck drawn as its cover) and `DeckCover` (a cover in the list); `layout/` holds the layout components (`Cols`, `Rows`, `Grid`, `Center`), the parsers of their props (`layout.js`: ratio, gap, grid shape; Slide's zones use it too) and the CSS they share (`layout.css`), `directives/` holds `v-step` and `v-step-from` |
 | `addons/` | drawn over every slide | `ProgressBar`, `SlideNumber` |
 | `styles/` | CSS | only what is global: `tokens.css` (every token and its default: the `default` theme), `base.css` (the page, the viewport, the steps). Everything else comes with its component ([CSS](#css)); no theme ships with the engine ([Themes](#themes)) |
 
+The rule: `components/` is what an author names or imports (registered by `plugin.js` or exported
+by `index.js`, explicitly, never by folder); `components/internal/` is the engine's components that
+no author names; `views/` is full screens.
+
 `index.js` is the only barrel (the public API); every other module imports the file it uses.
 `plugin.js` is the Vue plugin, `app.js` is `createDeckApp`: it renders the deck the URL's path
-names (the first segment after Vite's base), or `views/DeckSelector.vue` (a plain page, outside
+names (the first segment after Vite's base), or `views/DeckSelectorView.vue` (a plain page, outside
 every `Deck`) when there is no deck to open. It is the one place that reads the path: it puts the
 URL in its one form first (`?deck=x` → `/x`, `/X/` → `/x`, with `history.replaceState`), and
 tells the deck which one it is (`provideDeckRoute(app, { name, path })`, state/deck.js): its file
@@ -35,7 +39,7 @@ shows one view, by the URL:
 Deck.vue ── createDeck(props) ── state/deck.js: stage(s), theme, fullscreen, URL, sync
                                    └ createTimer ── state/timer.js: the timer, the talk's length, and their pure helpers (parseDuration, clock…)
    │
-   ├─ thumbnail ───────▶ ThumbnailView   Stage (role 'thumbnail', standing at the cover)
+   ├─ thumbnail ───────▶ Thumbnail       Stage (role 'thumbnail', standing at the cover)
    ├─ ?export ─────────▶ ExportView      Stage (role 'export')            → core/exporter.js book
    ├─ ?presenter ──────▶ PresenterView   PresenterBar
    │                                     Stage (role 'presenter')  + Controls (docked)
@@ -44,7 +48,7 @@ Deck.vue ── createDeck(props) ── state/deck.js: stage(s), theme, fullscr
                                          mouse idle (controls 2.5 s, cursor), touch nav
 ```
 
-`?export` wins over `?presenter`. Each `Stage` (views/parts/Stage.vue) draws the deck's default
+`?export` wins over `?presenter`. Each `Stage` (components/internal/Stage.vue) draws the deck's default
 slot on the scaled canvas, so the presenter view mounts every slide twice. The presenter window
 listens to no mouse or touch of its own.
 

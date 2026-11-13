@@ -5,7 +5,7 @@
 // .vue file directly in the project's decks folder (src/decks by default; the Vite plugin's
 // `decks` option), case-insensitive, right after the app's base (Vite's `base`: /talks/<name>
 // when the site is served under /talks/). The deck's code loads on its own: one chunk per deck.
-// / (the base itself) lists the decks (DeckSelector): a card per deck, with its cover drawn in
+// / (the base itself) lists the decks (DeckSelectorView): a card per deck, with its cover drawn in
 // it, each a link to /<name>. A project with one deck opens it at / instead, unless
 // createDeckApp({ deckList: 'always' }). A name that is no deck warns and shows the list, with a
 // notice: it never opens another deck in its place.
@@ -20,7 +20,7 @@ import { createApp, defineAsyncComponent, h } from 'vue'
 import { decks, decksDir } from 'virtual:arao/decks'
 import Arao from './plugin'
 import { provideDeckRoute } from './state/deck'
-import DeckSelector from './views/DeckSelector.vue'
+import DeckSelectorView from './views/DeckSelectorView.vue'
 
 // file names without ".vue", case-insensitive and in the reader's alphabetical order (the order of
 // the list), code-point order between names that differ only in case. A path cannot tell those
@@ -106,7 +106,7 @@ export function createDeckApp(options) {
   const { name, missing } = pick(base, deckList)
   const deck = name && defineAsyncComponent(decks[`${name}.vue`])
   const list = names.map((n) => ({ name: n.toLowerCase(), title: humanise(n), href: pathOf(base, n), path: decode(pathOf(base, n)), load: decks[`${n}.vue`] }))
-  const render = deck ? () => h(deck) : () => h(DeckSelector, { decks: list, missing, dir: decksDir })
+  const render = deck ? () => h(deck) : () => h(DeckSelectorView, { decks: list, missing, dir: decksDir })
   const app = createApp({ name: 'AraoDeckApp', render }).use(Arao)
   if (name) provideDeckRoute(app, { name, path: pathOf(base, name) })
   return app
