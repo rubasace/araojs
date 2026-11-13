@@ -47,7 +47,7 @@ Deck.vue ── createDeck(props) ── state/deck.js: stage(s), fullscreen, UR
    │                                     Stage (role 'presenter')  + Controls (docked) + keys
    │                                     Stage (role 'preview', one step ahead) + notes
    └─ (default) ───────▶ AudienceView    Stage (role 'audience')   + Controls (auto-hide) + keys + blocked-window notice
-                                         mouse idle (cursor), touch nav (a middle tap shows/hides the controls)
+                                         cursor auto-hide, touch nav (edges, swipes; the middle tap is the controls' auto-hide)
 ```
 
 `?export` wins over `?presenter`. Each `Stage` (components/internal/Stage.vue) draws the deck's default
@@ -80,7 +80,7 @@ heading (else its title prop), which the card shows under the deck's title (its 
 | footer | `provideFooter` (in `Deck`) | `createSlide` | the Deck's `#footer` slot, drawn by every slide |
 
 Nothing else is provided. The views get the deck's internals from `Deck` as a prop (`deck`), and
-pass what their parts need as props (the controls' `docked`/`auto-hide`/`v-model:shown`, the
+pass what their parts need as props (the controls' `docked`/`auto-hide`, the
 bar's `title`). The controls read the slides' titles (`useDeck().titles()`) and the themes
 (`useTheme()`) themselves; which list is open and what is typed in it are their own. No view
 exposes anything, and `Deck` holds no ref to its view. `v-step` finds its slide through the DOM
@@ -93,8 +93,8 @@ exposes anything, and `Deck` holds no ref to its view. `v-step` finds its slide 
 | `useDeckSync(stage, …)` | every window of the deck in step through core/sync.js: position, theme, timer, the duration set in the presenter view (the last two kept through a reload) |
 | `usePresenterWindow()` | opens the presenter window or brings it forward; `blocked` when the browser blocks it |
 | `useKeyboard(actions)` | the deck's keys on the window, called by `Controls` (VueUse `onKeyStroke`); keys inside a text field or an element marked `data-ar-own-keys` (the presenter's duration editor) are left to it |
-| `useTouchNav(el, …)` | taps (edges, middle) and swipes, from pointer events: touch and pen (VueUse's `useSwipe` reads touch events only, so the pen would lose its swipes) |
-| `useMouseIdle(el, ms)` | whether the mouse has been still over the element; ignores a tap's echo mousemove, `wake(ms)` for a time of its own (VueUse's `useIdle` has neither) |
+| `useTouchNav(el, …)` | taps on the edges and swipes move the deck (`useTouchGestures`: the taps, by zone, and swipes, from pointer events: touch and pen; VueUse's `useSwipe` reads touch events only, so the pen would lose its swipes) |
+| `useAutoHide({ after, tap })` | `visible`: shown on a mouse move, hidden after `after` ms without one; optionally a tap in the middle shows it for `tap` ms or hides it; ignores a tap's echo mousemove. The controls' auto-hide and the audience view's cursor (VueUse's `useIdle` counts keys too, with a fixed timeout and no tap) |
 | `useFullscreen(el)` | `fullscreen` is true while anything in the window is fullscreen; `toggle()` leaves it if so, else makes the element fullscreen; the standard API only (VueUse's `useFullscreen` counts only its own element and falls back to prefixed APIs) |
 
 VueUse (`@vueuse/core`, a dependency, external in the build, prebundled by the Vite plugin) also

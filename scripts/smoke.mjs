@@ -649,7 +649,8 @@ try {
   // the controls (components/internal/Controls.vue), in the audience view of the playground's deck:
   // their keys open and close the jump list (g, a digit, Escape) and move the deck; auto-hide: hidden
   // until the mouse moves, shown on a move, hidden again 2.5 s later; a tap in the middle (touch)
-  // shows them, another hides them. Any console warning, error or page error fails.
+  // shows them, another hides them; a tap on a side quarter moves the deck without showing them;
+  // the cursor hides after hideCursorAfter. Any console warning, error or page error fails.
   async function controls(base) {
     const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, hasTouch: true })
     const page = await context.newPage()
@@ -705,7 +706,25 @@ try {
       await pause(400)
       if ((await state()).visible) complaints.push('a second tap in the middle does not hide the controls')
       if ((await state()).hash !== '#/1/1') complaints.push('a tap in the middle moved the deck')
-      console.log(`  dev controls: ${complaints.length ? 'problems below' : 'keys, jump list, auto-hide and taps as expected'}`)
+      // a tap on the right quarter moves on, one on the left goes back; neither shows the controls
+      await page.touchscreen.tap(1800, 400)
+      await page.waitForFunction(() => location.hash !== '#/1/1', null, { timeout: 5_000 }).catch(() => {})
+      s = await state()
+      if (s.hash === '#/1/1') complaints.push('a tap on the right quarter does not move the deck')
+      if (s.visible) complaints.push('a tap on the right quarter showed the controls')
+      await page.touchscreen.tap(120, 400)
+      await page.waitForFunction(() => location.hash === '#/1/1', null, { timeout: 5_000 }).catch(() => {})
+      s = await state()
+      if (s.hash !== '#/1/1') complaints.push(`a tap on the left quarter leaves ${s.hash}, not #/1/1`)
+      if (s.visible) complaints.push('a tap on the left quarter showed the controls')
+      // the cursor: shown on a move, hidden after hideCursorAfter (5 s by default) without one
+      const cursorHidden = () => page.evaluate(() => !!document.querySelector('.ar-viewport.ar-nocursor'))
+      await page.mouse.move(600, 600)
+      await pause(300)
+      if (await cursorHidden()) complaints.push('the cursor is hidden right after a mouse move')
+      await pause(5400)
+      if (!(await cursorHidden())) complaints.push('the cursor is still shown 5 s after the mouse stopped')
+      console.log(`  dev controls: ${complaints.length ? 'problems below' : 'keys, jump list, auto-hide, taps and cursor as expected'}`)
     } finally {
       await context.close()
     }
