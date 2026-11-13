@@ -1681,7 +1681,9 @@ throw new Error('smoke: this deck throws as it is drawn')
         await page.locator('.ar-decks-card').first().waitFor({ timeout: 30_000 }).catch(() => {})
         const cards = await page.locator('.ar-decks-card').count()
         if (cards !== list) complaints.push(`the list has ${cards} decks, not ${list}`)
-        const drawn = await page.waitForFunction((n) => document.querySelectorAll('.ar-decks-card .ar-thumb .ar-slide').length >= n, list, { timeout: 30_000 })
+        // drawn, and each cover's theme set (a slower dev server sets it a moment after the slide)
+        const drawn = await page.waitForFunction((n) => document.querySelectorAll('.ar-decks-card .ar-thumb .ar-slide').length >= n
+          && document.querySelectorAll('.ar-decks-card .ar-thumb[data-theme]').length >= n, list, { timeout: 30_000 })
           .then(() => true, () => false)
         if (!drawn) complaints.push('a card has no cover drawn in it')
         const worn = Object.fromEntries(await page.locator('.ar-decks-card').evaluateAll((cs) => cs.map((c) =>
