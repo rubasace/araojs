@@ -33,8 +33,8 @@ import { computed, ref } from 'vue'
 import { useDeck } from '../state/deck'
 import { useMouseIdle } from '../composables/useMouseIdle'
 import { useTouchNav } from '../composables/useTouchNav'
-import Controls from './parts/Controls.vue'
-import Stage from './parts/Stage.vue'
+import Controls from '../components/internal/Controls.vue'
+import Stage from '../components/internal/Stage.vue'
 
 const props = defineProps({
   deck: { type: Object, required: true }, // createDeck()

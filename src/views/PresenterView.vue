@@ -58,9 +58,9 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useDeck } from '../state/deck'
 import { useNotesOutlet } from '../state/notes'
-import Controls from './parts/Controls.vue'
-import PresenterBar from './parts/PresenterBar.vue'
-import Stage from './parts/Stage.vue'
+import Controls from '../components/internal/Controls.vue'
+import PresenterBar from '../components/internal/PresenterBar.vue'
+import Stage from '../components/internal/Stage.vue'
 
 const props = defineProps({
   deck: { type: Object, required: true }, // createDeck()

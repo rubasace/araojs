@@ -4,7 +4,7 @@ import { computed, inject, nextTick, provide, readonly, ref, shallowReactive } f
 // with it, it orders them and moves between them. The audience window has one. The presenter view
 // renders the deck twice, each copy with its own stage: the current slide, and a preview that
 // follows it one step ahead. The deck makes its stages (state/deck.js); the Stage part that draws
-// one (views/parts/Stage.vue) makes it the stage of everything inside it:
+// one (components/internal/Stage.vue) makes it the stage of everything inside it:
 //   const stage = createStage({ onMove })   navigable: next / prev / go / last move it, and onMove()
 //                                           is called after each of those that changed the position
 //                                           (keys, controls, addons, the URL); the stage's own

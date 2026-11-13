@@ -1,7 +1,7 @@
 <!-- Internal. The list of a project's decks, which createDeckApp() (app.js) shows at / (the app's
      base) when the project has more than one deck (or always, deckList: 'always'), and at a path
      that names no deck (missing). A plain page, not a canvas: a card per deck, with its cover
-     drawn in it (views/parts/DeckCover.vue: the deck itself, small, still and inert, drawn once
+     drawn in it (components/internal/DeckCover.vue: the deck itself, small, still and inert, drawn once
      the card nears the viewport), its title (the file name in words: there from the start, so
      it never changes under the reader), under it the cover's first heading once the cover tells
      it (on a line kept for it, so nothing moves; left empty when it says the same as the title),
@@ -54,7 +54,7 @@
 
 <script setup>
 import { reactive } from 'vue'
-import DeckCover from './parts/DeckCover.vue'
+import DeckCover from '../components/internal/DeckCover.vue'
 
 defineProps({
   // { name, title, href, path, load } per deck: name is what its path takes, title what the card
@@ -166,7 +166,7 @@ html:has(.ar-decks) {
   animation: ar-decks-sheen calc(var(--ar-ui-duration) * 7) ease-in-out infinite;
 }
 @keyframes ar-decks-sheen { from { translate: -100% 0; } to { translate: 100% 0; } }
-/* the cover paints no letterbox of its own (views/ThumbnailView.vue): the frame shows around it.
+/* the cover paints no letterbox of its own (components/internal/Thumbnail.vue): the frame shows around it.
    Two classes, so that it wins over .ar-thumb's own rule whatever their order in arao.css */
 .ar-decks-preview .ar-thumb { background: none; animation: ar-decks-in calc(var(--ar-ui-duration) * 1.5) ease both; }
 @keyframes ar-decks-in { from { opacity: 0; } }
