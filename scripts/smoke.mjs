@@ -9,8 +9,8 @@
 // The project is made in a temporary folder outside the repository: package.json depending on the
 // tarball (vite and vue at the versions of the library's devDependencies), vite.config.js with the
 // arao() plugin, index.html, src/main.js with the default and vigojug themes, the playground's
-// decks, images and snippets as content, and a second, tiny deck of its own (so that the project
-// has several and / lists them). Then, in order:
+// decks, images and snippets as content, and two tiny decks of its own (so that the project has
+// several and / lists them; the second has a duration, the third none). Then, in order:
 //   1. npm install
 //   2. vite build                      must pass
 //   3. every deck of src/decks, under the dev server (Vue's own warnings only exist in dev) and
@@ -23,11 +23,16 @@
 //   5. useDeck()'s face, under the dev server, on the second deck: frozen, its refs read-only all
 //      the way down, setTheme refuses a name the deck has not (one [arao] warning), and in the
 //      presenter view's preview no function acts
-//   6. the talk's length, under the dev server, on the second deck (duration="15m"): set to 20m in
-//      the presenter's bar, the countdown follows and an audience window gets it (useDeck());
-//      an invalid one shows its error and changes nothing, the keyboard alone opens and cancels
-//      the editor; a reload keeps it with no other window open, a new audience window takes it,
-//      and its reset brings back the deck's 15:00 in every window
+//   6. the talk's length, under the dev server, on the second deck (duration="15m"), in the
+//      presenter's bar: 1h30 typed with real keys moves no slide and opens no jump menu, and the
+//      countdown follows in an audience window too (useDeck()); after an apply from the keyboard,
+//      Space moves the slides; an invalid length and one outside 1 min – 24 h show their error and
+//      change nothing; after Escape, ArrowRight moves the slides; with the focus on the editor's
+//      button no key moves them, and Tab out of the editor closes it; an open editor follows a
+//      change made in another presenter window while nothing was typed in it, keeps typed text
+//      otherwise, and says so; a reload keeps the length with no other window open, a new audience
+//      window takes it, and its reset brings back the deck's 15:00 in every window. On the third
+//      deck (no duration): none shown, one set adds the countdown, the reset removes it
 //   7. createDeckApp's other cases, under the dev server, on the same install (src/main.js, and
 //      vite.config.js for the first, rewritten for each and then put back): a project with one deck
 //      opens it at /; createDeckApp({ deck: 'second' }) opens that deck at / and ?deck=<other>
@@ -89,6 +94,17 @@ Deck(:themes="['default', 'vigojug']" duration="15m")
 import { useDeck } from '${PKG}'
 const Faces = { setup: () => ((window.__faces ??= []).push(useDeck()), () => null) }
 </script>
+`]
+
+// a third deck of the smoke project only, with no duration (the countdown the presenter adds)
+const UNTIMED = ['Untimed.vue', `<template lang="pug">
+Deck(:themes="['default']")
+  Slide(layout="cover" title="Untimed")
+    h1 A deck without duration
+  Slide
+    h2 No countdown
+    p(v-step="2") Until the presenter sets one.
+</template>
 `]
 
 const log = (msg) => console.log(`\n[smoke] ${msg}`)
@@ -180,6 +196,7 @@ try {
   }
   await mkdir(join(project, 'src', 'decks'), { recursive: true })
   await writeFile(join(project, 'src', 'decks', SECOND[0]), SECOND[1])
+  await writeFile(join(project, 'src', 'decks', UNTIMED[0]), UNTIMED[1])
   const decks = (await readdir(join(project, 'src', 'decks'))).filter((f) => f.endsWith('.vue')).map((f) => basename(f, '.vue'))
   if (decks.length < 2) throw new Error('the project needs two decks or more to test the selector')
   log(`decks: ${decks.join(', ')}`)
@@ -382,34 +399,41 @@ try {
     for (const c of complaints) fail(`dev useDeck() face: ${c}`)
   }
 
-  // the talk's length, on the second deck (duration="15m"): edited in the presenter view's bar, in
-  // a browser context of its own (its windows share a channel and sessionStorage like the tabs of
-  // one browser); any console warning, error or page error fails
+  // the talk's length, on the second deck (duration="15m") and the third (none): edited in the
+  // presenter view's bar, in a browser context of its own (its windows share a channel and
+  // sessionStorage like the tabs of one browser); any console warning, error or page error fails
   async function duration(base) {
     const context = await browser.newContext({ viewport: { width: 1920, height: 1080 } })
     const complaints = []
-    const open = async (query, who) => {
+    const open = async (query, who, deck = second) => {
       const page = await context.newPage()
       page.on('console', (m) => ['warning', 'error'].includes(m.type()) && complaints.push(`${who}: console ${m.type()}: ${m.text()}`))
       page.on('pageerror', (e) => complaints.push(`${who}: page error: ${e.message}`))
-      await page.goto(new URL(`?deck=${second}${query}`, base).href)
+      await page.goto(new URL(`?deck=${deck}${query}`, base).href)
       await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
       await pause(300)
       return page
     }
-    const minutes = (ms) => `${ms / 60000}:00`
+    // ms as the bar writes it (core/timer.js clock): 1:30:00, 20:00
+    const clock = (ms) => {
+      const t = Math.floor(ms / 1000)
+      const [h, m, sec] = [Math.floor(t / 3600), Math.floor(t / 60) % 60, String(t % 60).padStart(2, '0')]
+      return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`
+    }
     // the presenter's bar shows the length on its button, the time left under the timer, and
-    // marks a length that is not the deck's (.changed); waits for it, says what it saw otherwise
+    // marks a length that is not the deck's (.changed); no length (ms null): "duración" and no
+    // time left. Waits for it, says what it saw otherwise
     const shows = async (page, ms, changed, when) => {
-      const want = { button: minutes(ms), left: `quedan ${minutes(ms)}`, changed }
+      const want = { button: ms ? clock(ms) : 'duración', left: ms ? `quedan ${clock(ms)}` : null, changed }
       const read = () => page.evaluate(() => ({
         button: document.querySelector('.ar-p-dur')?.textContent.trim(),
-        left: document.querySelector('.ar-p-sub')?.textContent.match(/quedan [\d:]+/)?.[0],
+        left: document.querySelector('.ar-p-sub')?.textContent.match(/quedan [\d:]+/)?.[0] ?? null,
         changed: !!document.querySelector('.ar-p-dur.changed'),
       }))
       const ok = await page.waitForFunction((w) => {
         const b = document.querySelector('.ar-p-dur')
-        return b?.textContent.trim() === w.button && document.querySelector('.ar-p-sub')?.textContent.includes(w.left)
+        const sub = document.querySelector('.ar-p-sub')?.textContent ?? ''
+        return b?.textContent.trim() === w.button && (w.left ? sub.includes(w.left) : !sub.includes('quedan'))
           && b.classList.contains('changed') === w.changed
       }, want, { timeout: 5_000 }).then(() => true, () => false)
       if (!ok) complaints.push(`${when}: the bar shows ${JSON.stringify(await read())}, not ${JSON.stringify(want)}`)
@@ -420,52 +444,152 @@ try {
       if (!ok) complaints.push(`${when}: the audience reads ${await page.evaluate(() => JSON.stringify(window.__faces?.map((f) => f.duration.value)))}, not ${ms}`)
     }
     const editor = (page) => page.locator('.ar-p-edit')
+    const input = (page) => page.locator('.ar-p-edit input')
+    const isOpen = async (page) => (await editor(page).count()) > 0
+    const focusOn = (page, selector) => page.evaluate((s) => !!document.activeElement?.matches(s), selector)
+    const hash = (page) => page.evaluate(() => location.hash)
+    // a key that must move the slides (the hash changes); the timer is then put back to idle, so
+    // the time left reads the whole length again
+    const moves = async (page, key, when) => {
+      const was = await hash(page)
+      await page.keyboard.press(key)
+      const ok = await page.waitForFunction((h) => location.hash !== h, was, { timeout: 2_000 }).then(() => true, () => false)
+      if (!ok) complaints.push(`${when}: ${key} did not move the slides (still at ${was || '#/1/1'})`)
+      const rewind = page.locator('.ar-p-timer > button').nth(1)
+      if (await rewind.isEnabled()) await rewind.click()
+    }
+    // keys that must move nothing: the hash stays, and no jump menu opens
+    const still = async (page, keys, when) => {
+      const was = await hash(page)
+      await keys()
+      await pause(200)
+      const at = await hash(page)
+      if (at !== was) complaints.push(`${when}: the slides moved (${was || '#/1/1'} → ${at})`)
+      if (await page.locator('.ar-slides').count()) complaints.push(`${when}: the jump menu opened`)
+    }
+    const error = async (page, has, when) => {
+      const msg = await page.locator('.ar-p-edit-msg.bad').textContent({ timeout: 2_000 }).catch(() => '')
+      const invalid = await page.locator('.ar-p-edit input[aria-invalid="true"]').count()
+      if (!has.every((h) => msg.includes(h)) || !invalid) complaints.push(`${when}: no inline error with ${has.join(', ')} (${JSON.stringify(msg)})`)
+    }
     try {
       const presenter = await open('&presenter', 'presenter')
       let audience = await open('', 'audience')
       await shows(presenter, DURATION, false, 'opened')
       await hears(audience, DURATION, 'opened')
 
-      // with the mouse: 20m, Enter
-      const set = 20 * 60000
+      // with the mouse, then real keys: 1h30 types into the field (its digits open no jump menu,
+      // nothing moves), Enter applies
       await presenter.click('.ar-p-dur')
-      await presenter.locator('.ar-p-edit input').fill('20m')
-      await presenter.keyboard.press('Enter')
-      await shows(presenter, set, true, 'set to 20m')
-      if (await editor(presenter).count()) complaints.push('set to 20m: the editor is still open')
-      await hears(audience, set, 'set to 20m')
+      await still(presenter, () => presenter.keyboard.type('1h30'), 'typing 1h30')
+      const typed = await input(presenter).inputValue().catch(() => null)
+      if (typed !== '1h30') complaints.push(`typing 1h30: the field holds ${JSON.stringify(typed)}`)
+      await still(presenter, () => presenter.keyboard.press('Enter'), 'Enter on 1h30')
+      await shows(presenter, 90 * 60000, true, 'set to 1h30')
+      if (await isOpen(presenter)) complaints.push('set to 1h30: the editor is still open')
+      await hears(audience, 90 * 60000, 'set to 1h30')
 
-      // with the keyboard alone: focus the button, Enter opens with the input focused; an invalid
-      // length shows its error and keeps the editor; Escape cancels, the focus back on the button
+      // with the keyboard alone: focus the button, Enter opens with the input focused; 20m, Enter
+      // applies, and the focus rests next to the button (not on it): Space moves the slides
+      const set = 20 * 60000
       await presenter.locator('.ar-p-dur').focus()
       await presenter.keyboard.press('Enter')
-      const focused = await presenter.evaluate(() => document.activeElement?.matches('.ar-p-edit input'))
-      if (!focused) complaints.push('Enter on the length button: the input does not have the focus')
+      if (!(await focusOn(presenter, '.ar-p-edit input'))) complaints.push('Enter on the length button: the input does not have the focus')
+      await presenter.keyboard.type('20m')
+      await presenter.keyboard.press('Enter')
+      await shows(presenter, set, true, 'set to 20m from the keyboard')
+      if (!(await focusOn(presenter, '.ar-p-length'))) complaints.push('an apply from the keyboard: the focus is not on the length group')
+      await moves(presenter, ' ', 'Space after an apply from the keyboard')
+      if (await isOpen(presenter)) complaints.push('Space after an apply from the keyboard: the editor opened again')
+
+      // an invalid length shows its error and keeps the editor; Escape cancels, the focus on the
+      // length group again, and ArrowRight moves the slides
+      await presenter.locator('.ar-p-dur').focus()
+      await presenter.keyboard.press('Enter')
       await presenter.keyboard.type('abc')
       await presenter.keyboard.press('Enter')
-      const error = await presenter.locator('.ar-p-edit-msg.bad').textContent({ timeout: 2_000 }).catch(() => '')
-      const invalid = await presenter.locator('.ar-p-edit input[aria-invalid="true"]').count()
-      if (!error.includes('abc') || !invalid) complaints.push(`an invalid length: no inline error naming it (${JSON.stringify(error)})`)
+      await error(presenter, ['abc'], 'an invalid length')
       await presenter.keyboard.press('Escape')
-      if (await editor(presenter).count()) complaints.push('Escape: the editor is still open')
-      const back = await presenter.evaluate(() => document.activeElement?.matches('.ar-p-dur'))
-      if (!back) complaints.push('Escape: the focus is not back on the length button')
+      if (await isOpen(presenter)) complaints.push('Escape: the editor is still open')
+      if (!(await focusOn(presenter, '.ar-p-length'))) complaints.push('Escape: the focus is not on the length group')
       await shows(presenter, set, true, 'after an invalid length and Escape')
+      await moves(presenter, 'ArrowRight', 'ArrowRight after Escape')
+      await moves(presenter, 'Home', 'Home') // back to the start: the keys below would move it
+
+      // out of bounds (1 min – 24 h): an error each, nothing changes
+      await presenter.click('.ar-p-dur')
+      await input(presenter).fill('30s')
+      await presenter.keyboard.press('Enter')
+      await error(presenter, ['30s', '1 minuto'], 'a length under a minute')
+      await input(presenter).fill('25h')
+      await presenter.keyboard.press('Enter')
+      await error(presenter, ['25h', '24 horas'], 'a length over 24 hours')
+      if (!(await isOpen(presenter))) complaints.push('a length out of bounds: the editor closed')
+
+      // the focus on the editor's button (Tab from the field): no key moves the slides; Tab past
+      // its last button closes it, applying nothing
+      await input(presenter).focus()
+      await presenter.keyboard.press('Tab')
+      if (!(await focusOn(presenter, '.ar-p-edit button'))) complaints.push('Tab from the field: the focus is not on a button of the editor')
+      await still(presenter, () => presenter.keyboard.press('ArrowRight'), 'ArrowRight on the editor\'s button')
+      if (!(await isOpen(presenter))) complaints.push('ArrowRight on the editor\'s button: the editor closed')
+      for (let i = 0; i < 4 && (await presenter.evaluate(() => !!document.activeElement?.closest('.ar-p-edit'))); i++) await presenter.keyboard.press('Tab')
+      await pause(100)
+      if (await isOpen(presenter)) complaints.push('Tab out of the editor: it is still open')
+      await shows(presenter, set, true, 'after Tab out of the editor')
+
+      // a change from another presenter window while the editor is open: the field follows it
+      // while nothing was typed, typed text stays; a notice says so either way
+      const other = await open('&presenter', 'presenter 2')
+      const elsewhere = async (text) => {
+        await other.click('.ar-p-dur')
+        await input(other).fill(text)
+        await other.keyboard.press('Enter')
+      }
+      await presenter.click('.ar-p-dur')
+      await elsewhere('25m')
+      const follows = await presenter.waitForFunction(() => document.querySelector('.ar-p-edit input')?.value === '25:00'
+        && document.querySelector('.ar-p-edit-note')?.textContent.includes('25:00'), null, { timeout: 5_000 }).then(() => true, () => false)
+      if (!follows) complaints.push('a change elsewhere, nothing typed: the open field does not follow it with a notice')
+      await input(presenter).fill('40m')
+      await elsewhere('30m')
+      const keeps = await presenter.waitForFunction(() => document.querySelector('.ar-p-edit input')?.value === '40m'
+        && document.querySelector('.ar-p-edit-note')?.textContent.includes('30:00'), null, { timeout: 5_000 }).then(() => true, () => false)
+      if (!keeps) complaints.push('a change elsewhere over typed text: the field does not keep it with a notice')
+      await presenter.keyboard.press('Escape')
+      await other.close()
+      const later = 30 * 60000
+      await shows(presenter, later, true, 'set to 30m in another window')
 
       // a reload with no other window open keeps it; a new audience window takes it
       await audience.close()
       await presenter.reload()
       await presenter.waitForSelector('.ar-p-dur', { timeout: 30_000 })
-      await shows(presenter, set, true, 'reloaded alone')
+      await shows(presenter, later, true, 'reloaded alone')
       audience = await open('', 'audience')
-      await hears(audience, set, 'a new audience window')
+      await hears(audience, later, 'a new audience window')
 
       // back to the deck's
       await presenter.click('.ar-p-dur')
       await presenter.click('.ar-p-reset')
       await shows(presenter, DURATION, false, 'reset')
       await hears(audience, DURATION, 'reset')
-      console.log(`  dev duration: ${complaints.length ? 'problems below' : '15:00 → 20m in every window, kept on reload, reset to 15:00'}`)
+      await presenter.close()
+      await audience.close()
+
+      // a deck with no duration: none shown; one set adds the countdown, the reset removes it
+      const plain = await open('&presenter', 'presenter (no duration)', untimed)
+      await shows(plain, null, false, 'no duration: opened')
+      await plain.click('.ar-p-dur')
+      await input(plain).fill('10m')
+      await plain.keyboard.press('Enter')
+      await shows(plain, 10 * 60000, true, 'no duration: set to 10m')
+      await plain.click('.ar-p-dur')
+      const offer = (await plain.locator('.ar-p-reset').textContent({ timeout: 2_000 }).catch(() => '')).trim()
+      if (!offer.includes('Quitar')) complaints.push(`no duration: the reset offers ${JSON.stringify(offer)}`)
+      await plain.click('.ar-p-reset')
+      await shows(plain, null, false, 'no duration: reset')
+      console.log(`  dev duration: ${complaints.length ? 'problems below' : '15:00 → 1h30, 20m (keys), 30m (another window) in every window, kept on reload, reset to 15:00; none → 10m → none'}`)
     } finally {
       await context.close()
     }
@@ -473,6 +597,7 @@ try {
   }
 
   const second = basename(SECOND[0], '.vue').toLowerCase()
+  const untimed = basename(UNTIMED[0], '.vue').toLowerCase()
   for (const mode of ['dev', 'preview']) {
     log(`walking the decks under vite ${mode}`)
     const base = await serve(mode)

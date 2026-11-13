@@ -371,9 +371,10 @@ presenter UI is in Spanish.
 The talk's duration is set in the deck, `Deck(duration="45m")` (or `90`, `"1h30"`, `"45:00"`…). The
 same talk often gets another slot: change it live from the presenter view, without editing the
 deck. The duration button in the top bar (next to the timer's) opens a field that takes the same
-formats; `Enter` applies, `Esc` cancels. A deck without `duration` gets a countdown the same way.
-Every window of the deck takes the new duration, it survives reloading them, and the same field
-goes back to the deck's value.
+formats, from 1 minute to 24 hours; `Enter` applies, `Esc` cancels, and `Space` then moves the
+slides again at once. A deck without `duration` gets a countdown the same way. Every window of
+the deck takes the new duration, it survives reloading them, it wins over the deck until reset, and
+the same field goes back to the deck's value.
 
 ## Export to PDF
 
@@ -456,7 +457,8 @@ dist/               the build (npm run build): index.js, arao.css, themes/
 
 `scripts/smoke.mjs` checks the package the way a user gets it. It packs the library (or takes the
 tarball it is given), installs it into a new slides project in a temporary folder with the
-playground's decks, images and snippets (and a second, tiny deck of its own), and then:
+playground's decks, images and snippets (and two tiny decks of its own, the second with a duration
+and the third without), and then:
 
 1. runs `vite build`;
 2. opens every deck under the dev server (Vue's own warnings only show up in dev) and under
@@ -469,9 +471,14 @@ playground's decks, images and snippets (and a second, tiny deck of its own), an
    through its refs change nothing, `setTheme` of a name the deck has not gives one `[arao]`
    warning, and in the presenter view's preview no function acts;
 5. changes the talk's duration in the presenter view of the second deck (`duration="15m"`), under
-   the dev server: set to `20m`, the countdown follows and an audience window gets it; an invalid
-   value shows its error, and the keyboard alone opens and cancels the field; a reload keeps it,
-   a new audience window takes it, and going back restores the deck's 15:00 everywhere;
+   the dev server: `1h30` typed with real keys moves no slide and opens no jump menu, the
+   countdown follows and an audience window gets it; after an apply or `Esc` from the keyboard,
+   `Space` and `→` move the slides; an invalid value and one outside 1 minute – 24 hours show
+   their error; no key moves the slides with the focus on the field's button, and `Tab` out of
+   the field closes it; an open field follows a change made in another presenter window (or keeps
+   typed text) and says so; a reload keeps the duration, a new audience window takes it, and going
+   back restores the deck's 15:00 everywhere. On the third deck (no duration), one set adds the
+   countdown and going back removes it;
 6. rewrites the project's `src/main.js` (and once its `vite.config.js`) for createDeckApp's
    other cases, under the dev server: a project with one deck opens it at `/`;
    `createDeckApp({ deck: 'second' })` opens that deck at `/` while `?deck=<other>` still wins;

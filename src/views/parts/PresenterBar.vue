@@ -4,8 +4,10 @@
      passes the rest: title (of the slide on screen), setTimer(t), which replaces the timer
      (play/pause, reset), deckDuration (the deck's own length in ms, or null) and setDuration(ms),
      which sets the talk's length for every window of the deck (null: back to the deck's).
-     The length's button opens an editor: the same formats as Deck(duration), Enter applies, Escape
-     or a click elsewhere cancels; the focus goes back to the button if it came from there. -->
+     The length's button opens an editor: the same formats as Deck(duration), from 1 minute to 24
+     hours; Enter applies, Escape, a click elsewhere or the focus leaving it cancels. While the
+     focus is in it, no key of the deck acts. Closed from inside, it leaves the focus next to the
+     button, not on it, so Space and Enter move the slides again (below, close()). -->
 <template>
   <header class="ar-p-bar">
     <div class="ar-p-where">
@@ -35,54 +37,64 @@
       >
         <svg viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v4h4" /></svg>
       </button>
-      <button
-        ref="trigger"
-        class="ar-p-btn ar-p-dur"
-        :class="{ changed }"
-        @mousedown.prevent
-        @click="editing ? cancel() : edit()"
-        :aria-label="durationLabel"
-        :title="durationLabel"
-        aria-haspopup="dialog"
-        :aria-expanded="editing"
-        :aria-controls="editing ? ids.editor : null"
-      >
-        <svg viewBox="0 0 24 24"><path d="M6.5 3h11M6.5 21h11M8 3c0 4.5 4 5 4 9s-4 4.5-4 9M16 3c0 4.5-4 5-4 9s4 4.5 4 9" /></svg>
-        <span>{{ duration ? clock(duration) : 'duración' }}</span>
-      </button>
-      <form
-        v-if="editing"
-        ref="editor"
-        :id="ids.editor"
-        class="ar-p-edit"
-        role="dialog"
-        :aria-labelledby="ids.label"
-        @submit.prevent="apply"
-        @keydown.esc.stop.prevent="cancel"
-      >
-        <label :id="ids.label" :for="ids.input">Duración de la charla</label>
-        <div class="ar-p-edit-row">
-          <input
-            ref="input"
-            :id="ids.input"
-            v-model="text"
-            type="text"
-            autocomplete="off"
-            spellcheck="false"
-            placeholder="45m"
-            :aria-invalid="!!error"
-            :aria-describedby="ids.msg"
-            @input="error = ''"
-          />
-          <button class="ar-p-edit-btn ar-p-apply" type="submit">Aplicar</button>
-        </div>
-        <p :id="ids.msg" class="ar-p-edit-msg" :class="{ bad: error }" aria-live="polite">
-          {{ error || '90, 45m, 1h30, 45:00… · Intro aplica, Esc cancela' }}
-        </p>
-        <button v-if="changed" class="ar-p-edit-btn ar-p-reset" type="button" @click="reset">
-          {{ deckDuration ? `Volver a la de la presentación: ${clock(deckDuration)}` : 'Quitar la cuenta atrás' }}
+      <!-- where the focus rests when the editor closes from inside it: not a button, so Space
+           and Enter go back to the slides, and Tab reaches the length's button again -->
+      <div ref="group" class="ar-p-length" role="group" aria-label="Duración de la charla" tabindex="-1">
+        <button
+          ref="trigger"
+          class="ar-p-btn ar-p-dur"
+          :class="{ changed }"
+          @mousedown.prevent
+          @click="editing ? cancel() : edit()"
+          :aria-label="durationLabel"
+          :title="durationLabel"
+          aria-haspopup="dialog"
+          :aria-expanded="editing"
+          :aria-controls="editing ? ids.editor : null"
+        >
+          <svg viewBox="0 0 24 24"><path d="M6.5 3h11M6.5 21h11M8 3c0 4.5 4 5 4 9s-4 4.5-4 9M16 3c0 4.5-4 5-4 9s4 4.5 4 9" /></svg>
+          <span>{{ duration ? clock(duration) : 'duración' }}</span>
         </button>
-      </form>
+        <!-- data-ar-own-keys: no key of the deck acts while the focus is anywhere in it;
+             tabindex -1: a click on its padding keeps the focus in it (else the group takes it) -->
+        <form
+          v-if="editing"
+          ref="editor"
+          :id="ids.editor"
+          class="ar-p-edit"
+          role="dialog"
+          :aria-labelledby="ids.label"
+          tabindex="-1"
+          data-ar-own-keys
+          @submit.prevent="apply"
+          @keydown.esc.prevent="cancel"
+          @focusout="leaving"
+        >
+          <label :id="ids.label" :for="ids.input">Duración de la charla</label>
+          <div class="ar-p-edit-row">
+            <input
+              ref="input"
+              :id="ids.input"
+              v-model="text"
+              type="text"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="45m"
+              :aria-invalid="!!error"
+              :aria-describedby="`${ids.msg} ${ids.note}`"
+              @input="typing"
+            />
+            <button class="ar-p-edit-btn ar-p-apply" type="submit">Aplicar</button>
+          </div>
+          <p :id="ids.msg" class="ar-p-edit-msg" :class="{ bad: error }" aria-live="polite">
+            {{ error || '90, 45m, 1h30, 45:00… · Intro aplica, Esc cancela' }}
+          </p>
+          <p :id="ids.note" class="ar-p-edit-note" aria-live="polite">{{ notice }}</p>
+          <button v-if="changed" class="ar-p-edit-btn ar-p-reset" type="button" @click="reset">
+            {{ deckDuration ? `Volver a la de la presentación: ${clock(deckDuration)}` : 'Quitar la cuenta atrás' }}
+          </button>
+        </form>
+      </div>
     </div>
     <time class="ar-p-clock" title="Hora">{{ wall }}</time>
   </header>
@@ -91,7 +103,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
-import { IDLE, clock, elapsed, parseDuration, phase, toggle } from '../../core/timer'
+import { IDLE, MIN_DURATION, clock, elapsed, parseDuration, phase, toggle, withinBounds } from '../../core/timer'
 import { useDeck } from '../../state/deck'
 
 const props = defineProps({
@@ -131,48 +143,84 @@ const durationLabel = computed(() => {
   return changed.value ? `Duración de la charla: ${clock(d)}, cambiada (${own}). Cambiarla` : `Duración de la charla: ${clock(d)}. Cambiarla`
 })
 const id = useId()
-const ids = { editor: `${id}-editor`, label: `${id}-label`, input: `${id}-input`, msg: `${id}-msg` }
+const ids = { editor: `${id}-editor`, label: `${id}-label`, input: `${id}-input`, msg: `${id}-msg`, note: `${id}-note` }
 const editing = ref(false)
 const text = ref('')
 const error = ref('')
+const notice = ref('') // the length changed elsewhere while the editor was open
+let typed = false // something was typed in the field since it opened
+const group = ref()
 const trigger = ref()
 const editor = ref()
 const input = ref()
-let back = false // the button had the focus when the editor opened (the keyboard): it gets it back
+const shown = (ms) => (ms ? clock(ms) : '')
 
 async function edit() {
-  back = document.activeElement === trigger.value
-  text.value = duration.value ? clock(duration.value) : ''
-  error.value = ''
+  text.value = shown(duration.value)
+  typed = false
+  error.value = notice.value = ''
   editing.value = true
   await nextTick()
   input.value?.focus()
   input.value?.select()
 }
+function typing() {
+  typed = true
+  error.value = ''
+}
+// Closing from inside (Enter, Esc, the reset, the button again) leaves the focus on the group
+// around the button, not on the button: there Space and Enter are the deck's again (a focused
+// button keeps them, and would reopen the editor instead of moving the slides), and the next Tab
+// reaches the button. Closing because the focus left (focusout) or a press elsewhere leaves the
+// focus where it went.
 function close(refocus) {
   editing.value = false
-  if (refocus) trigger.value?.focus()
+  if (refocus) group.value?.focus({ preventScroll: true })
 }
 function apply() {
-  const typed = text.value.trim()
-  const ms = parseDuration(typed)
-  if (ms == null) {
-    error.value = typed ? `«${typed}» no es una duración: prueba 90, 45m, 1h30 o 45:00` : 'Escribe una duración: 90, 45m, 1h30 o 45:00'
+  const t = text.value.trim()
+  const ms = parseDuration(t)
+  if (ms == null || !withinBounds(ms)) {
+    error.value = !t ? 'Escribe una duración: 90, 45m, 1h30 o 45:00'
+      : ms == null ? `«${t}» no es una duración: prueba 90, 45m, 1h30 o 45:00`
+      : ms < MIN_DURATION ? `«${t}» es muy corta: de 1 minuto a 24 horas`
+      : `«${t}» es muy larga: de 1 minuto a 24 horas`
     input.value?.focus()
     return
   }
   props.setDuration(ms)
-  close(back)
+  close(true)
 }
 function reset() {
   props.setDuration(null)
-  close(back)
+  close(true)
 }
-const cancel = () => close(back)
-// a press anywhere else cancels (the button toggles it on its own)
+const cancel = () => close(true)
+// The focus left the editor (Tab past its last button, Shift+Tab to the length's button, a click
+// on something focusable): that cancels. The window losing the focus (another window or app)
+// does not: the focus comes back to the field with it. Read once the focus has landed.
+function leaving(e) {
+  if (editor.value?.contains(e.relatedTarget)) return
+  setTimeout(() => {
+    if (editing.value && document.hasFocus() && !editor.value?.contains(document.activeElement)) close(false)
+  })
+}
+// a press anywhere else cancels, a button that takes no focus included (the button toggles it on
+// its own)
 useEventListener(document, 'pointerdown', (e) => {
   if (editing.value && !editor.value?.contains(e.target) && !trigger.value?.contains(e.target)) close(false)
 }, true)
+// The length changed elsewhere (another window, an edit of the deck) while the editor is open:
+// the field follows it if nothing was typed in it, typed text stays; either way a notice says
+// so, so that Enter never overwrites the new value unknowingly.
+watch(duration, (ms) => {
+  if (!editing.value) return
+  notice.value = `Ha cambiado mientras editabas: ${ms ? `ahora ${clock(ms)}` : 'ya no hay cuenta atrás'}`
+  if (typed) return
+  text.value = shown(ms)
+  error.value = ''
+  if (document.activeElement === input.value) nextTick(() => input.value?.select())
+})
 </script>
 
 <style>
@@ -205,7 +253,11 @@ useEventListener(document, 'pointerdown', (e) => {
 .ar-p-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .ar-p-btn svg .fill { fill: currentColor; stroke: none; }
 
-/* the talk's length: its button (the accent while it is not the deck's) and its editor */
+/* the talk's length: its group (where the focus rests once the editor closes: no ring, it is
+   not a control, Tab goes on to the button), its button (the accent while it is not the deck's)
+   and its editor */
+.ar-p-length { display: flex; }
+.ar-p-length:focus, .ar-p-edit:focus { outline: none; }
 .ar-p-dur { grid-auto-flow: column; gap: 8px; width: auto; padding: 0 12px; font: inherit; font-size: 16px; font-weight: 600; }
 .ar-p-dur.changed { color: var(--p-accent); }
 .ar-p-edit {
@@ -232,6 +284,8 @@ useEventListener(document, 'pointerdown', (e) => {
 .ar-p-edit :is(input, .ar-p-edit-btn):focus-visible { outline: 2px solid var(--p-accent); outline-offset: 2px; }
 .ar-p-edit-msg { margin: 0; font-size: 13px; line-height: 1.4; color: var(--p-dim); }
 .ar-p-edit-msg.bad { color: var(--p-over); }
+.ar-p-edit-note { margin: 0; font-size: 13px; line-height: 1.4; color: var(--p-low); }
+.ar-p-edit-note:empty { display: none; }
 
 .ar-p-clock { justify-self: end; font-size: 40px; font-weight: 700; white-space: nowrap; }
 

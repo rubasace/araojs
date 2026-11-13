@@ -1,6 +1,6 @@
 import { computed, inject, provide, readonly, ref, shallowRef, toRef, watch } from 'vue'
 import { exportOptions } from '../core/exporter'
-import { IDLE, parseDuration, start } from '../core/timer'
+import { IDLE, clock, parseDuration, start, withinBounds } from '../core/timer'
 import { useDeckSync } from '../composables/useDeckSync'
 import { useFullscreen } from '../composables/useFullscreen'
 import { useHashRoute } from '../composables/useHashRoute'
@@ -24,7 +24,8 @@ import { ahead, createStage, titleOf, useStage } from './stage'
 //   timer, setTimer     the talk's timer (core/timer.js)
 //   duration            the talk's length in effect, in ms, or null: the presenter's, else the deck's
 //   deckDuration        the deck's own (its duration prop), in ms, or null
-//   setDuration(ms)     sets the presenter's length (ms); null goes back to the deck's
+//   setDuration(ms)     sets the presenter's length (ms); null goes back to the deck's. It wins
+//                       until reset, even over a new duration prop, unless that prop equals it
 //   viewport            the element fullscreen fills: the audience view's viewport (it sets it);
 //                       without one (the presenter window), the page. fullscreen is true while
 //                       anything in the window is fullscreen, and "f" then leaves it
@@ -65,8 +66,13 @@ export function createDeck(props) {
   // ---- the talk's timer and its length, kept by every window (useDeckSync shares both) --------
   // startTimer() starts the timer if it is idle (the deck's first move); a paused one stays paused.
   // The length is the deck's (its duration prop, in ms, or null; a value that is no length warns,
-  // once per value) unless the presenter set another: override, in ms, or null. setDuration(ms)
-  // sets it; null, or the deck's own value, goes back to the deck's (no override left).
+  // and so does one outside 1 min – 24 h, which still counts; once per value) unless the
+  // presenter set another: override, in ms, or null. setDuration(ms) sets it; null, or the deck's
+  // own value, goes back to the deck's (no override left).
+  // An override wins until it is reset, even over a new duration prop (an edit of the deck, HMR).
+  // One equal to the deck's value is dropped, as setting the deck's own value would be: when an
+  // edit of the deck reaches it, or when a window an edit remounted takes it back from
+  // sessionStorage (the drop is a change like any other: the other windows follow).
   const timer = shallowRef(IDLE)
   const setTimer = (t) => (timer.value = t)
   const deckDuration = computed(() => parseDuration(props.duration))
@@ -76,10 +82,16 @@ export function createDeck(props) {
   const setDuration = (ms) => setOverride(ms === deckDuration.value ? null : ms)
   const duration = computed(() => override.value ?? deckDuration.value)
   watch(() => props.duration, (v) => {
-    if (v != null && String(v).trim() && deckDuration.value == null) {
+    const ms = deckDuration.value
+    if (v != null && String(v).trim() && ms == null) {
       console.warn(`[arao] Deck duration="${v}" is not a length (90, "45m", "1h30", "45:00"…): the presenter view shows no countdown`)
+    } else if (ms != null && !withinBounds(ms)) {
+      console.warn(`[arao] Deck duration="${v}" is ${clock(ms)}, outside 1 min – 24 h: the presenter view counts it down anyway, but its field takes nothing outside them`)
     }
   }, { immediate: true })
+  watch([override, deckDuration], ([o, d]) => {
+    if (o != null && o === d) setOverride(null)
+  })
   function startTimer() {
     if (timer.value.state === 'idle') timer.value = start(timer.value, Date.now())
   }

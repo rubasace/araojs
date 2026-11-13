@@ -111,7 +111,7 @@ view and export mode. One per deck file (`src/decks/<Name>.vue`).
 | Prop | Type | Default | Notes |
 |---|---|---|---|
 | `themes` | Array of strings | `['default']` | the themes this deck can wear; the first is the default. Each must exist as a `[data-theme="<name>"]` token block imported in `src/main.js` (`araojs/themes/<name>.css` for the shipped ones). |
-| `duration` | String or Number | none | the talk's length, for the presenter's countdown. `90` / `"90"` / `"7.5"` (minutes), `"45m"`, `"45min"`, `"1h30m"`, `"1h 30m"`, `"1h30"`, `"90s"`, `"45:00"` (m:ss), `"1:30:00"` (h:mm:ss). Anything else warns and shows no countdown. It is the default: the presenter can change it live, without editing the deck ([Presenter view](#presenter-view)). |
+| `duration` | String or Number | none | the talk's length, for the presenter's countdown. `90` / `"90"` / `"7.5"` (minutes), `"45m"`, `"45min"`, `"1h30m"`, `"1h 30m"`, `"1h30"`, `"90s"`, `"45:00"` (m:ss), `"1:30:00"` (h:mm:ss). Anything else warns and shows no countdown; a length under 1 minute or over 24 hours warns and still counts. It is the default: the presenter can change it live, without editing the deck, and that change wins until it is reset ([Presenter view](#presenter-view)). |
 | `width` | Number | `1920` | canvas width in px |
 | `height` | Number | `1080` | canvas height in px |
 | `hideCursorAfter` | Number (ms) | `5000` | hide the mouse cursor after this long without movement; `0` never hides it |
@@ -673,7 +673,8 @@ Built into `Deck`; nothing to add. A floating panel at the bottom centre of the 
   `Enter`, `Esc`.
 - **Theme picker**: the deck's `themes`, each with a swatch from its tokens.
 - Keys (in any window of the deck): see the table below. Ctrl/Cmd/Alt combinations, and keys
-  typed into inputs, are ignored. `Space`/`Enter` on a focused button press the button.
+  typed into inputs or anywhere in the presenter's duration field (its buttons too), are ignored.
+  `Space`/`Enter` on a focused button press the button.
 - Letter keys are case-sensitive: only lowercase `g`, `t`, `f`, `p` act. With Caps Lock on, or
   with Shift held, they type `G`, `T`, `F`, `P` and do nothing. Shift does not stop the
   navigation keys: `Shift`+`→` still moves.
@@ -720,13 +721,23 @@ Duration:
 - Set in the deck with `Deck(duration="45m")`: the default, and the deck's own value.
 - Changed live from the bar, without editing the deck: its duration button (it shows the duration
   in effect, or `duración` when there is none) opens a field that takes the same formats as
-  `Deck(duration)` (`90`, `45m`, `1h30`, `45:00`…). `Enter` applies, `Esc` (or a click elsewhere)
-  cancels, an invalid value shows an inline error and changes nothing. Works without
-  `Deck(duration)` too: it adds a countdown. The button is keyboard reachable (`Tab`, then
-  `Enter`), and the focus goes back to it when the field closes.
+  `Deck(duration)` (`90`, `45m`, `1h30`, `45:00`…), from 1 minute to 24 hours. `Enter` applies;
+  `Esc`, a click elsewhere or moving the focus out of the field (`Tab` past it) cancels; an
+  invalid value, or one out of those bounds, shows an inline error and changes nothing. Works
+  without `Deck(duration)` too: it adds a countdown.
+- Keyboard: the button is reachable with `Tab` and opens with `Enter`. While the focus is in the
+  field (its buttons too), no deck key acts. Closed from inside (`Enter`, `Esc`, going back to the
+  deck's value), the focus rests next to the button, not on it: `Space` and `Enter` move the
+  slides again at once, and the next `Tab` reaches the button.
+- Changed in another window while the field is open: the field takes the new value if nothing was
+  typed in it, and keeps the typed text otherwise; a line under it says it changed either way, so
+  `Enter` does not overwrite the new value unknowingly.
 - A changed duration shows in the accent colour; the field then offers to go back to the deck's
   value (`Volver a la de la presentación: m:ss`, or `Quitar la cuenta atrás` when the deck has
   none). Setting the deck's own value is the same as going back.
+- A changed duration wins over the deck until it is reset, even when the deck's `duration` changes
+  (an edit of the deck while presenting with the dev server); if the deck's new value equals it,
+  the change is dropped, as if it had been reset.
 - Shared like the timer: every window of the deck takes it (`useDeck().duration`), and it is kept
   in `sessionStorage` (survives reloading the windows, not closing them). The elapsed time is not
   touched: only the countdown changes.
