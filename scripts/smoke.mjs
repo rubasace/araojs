@@ -23,15 +23,21 @@
 //   2. vite build                      must pass, and write dist/404.html, a copy of index.html;
 //      with a theme source that is a package not installed, one that gives no theme, one whose
 //      themes folder is outside it, or a bare name that is a root folder, it must stop with an
-//      [arao] error (the last one with the "./" hint); a name two sources give warns once, and a
-//      source named twice does not warn about itself; and it writes the files and @font-face (400
-//      and 700) of the web font THEME names (WEB_FONT; SKIPPED where the font provider is
-//      unreachable); with arao({ fonts: false }), and with system fonts only, no font files (and,
-//      the latter, no fontless output)
+//      [arao] error (the last one with the "./" hint); a name two sources give warns once (a
+//      project theme named like a built-in one too, saying its left-out tokens are the built-in's),
+//      and a source named twice (the library's own package included) does not warn about itself;
+//      a project theme named like a built-in one replaces it (a message says so, and the built-in
+//      file's CSS is not in the build); and it writes the files and @font-face (400 and 700) of the
+//      web font THEME names (WEB_FONT; SKIPPED where the font provider is unreachable); with
+//      arao({ fonts: false }), no font files; with system fonts only and builtinThemes: false, no
+//      font files and no word about fonts; with one built-in theme (builtinThemes: [name]), no
+//      @font-face but for that theme's families; with a name that is no built-in theme, the build
+//      stops
 //   3. every deck of src/decks, under the dev server (Vue's own warnings only exist in dev) and
 //      under vite preview (the production build): opened at /<name>, walked with ArrowRight
 //      until the hash stops changing; any console warning/error or page error fails, and so does
-//      a deck with no slides
+//      a deck with no slides; and the playground's deck (it lists no themes) walked the same in
+//      each of the library's built-in themes (BUILTIN: the installed package's themes/ folder)
 //   4. the deck selector, under both servers: / lists every deck, each card with its cover drawn
 //      in it (a .ar-slide), its title the file name in words (TITLES) from the list's first
 //      render (recorded before any cover is drawn) and the same once the covers are in, the
@@ -47,8 +53,10 @@
 //      the way down, setTheme refuses a name the deck has not (one [arao] warning), and in the
 //      presenter view's preview no function acts
 //   5b. themes, under the dev server, on the third deck (no themes listed): it wears 'default' and
-//      lists 'default', THEME, THEME-extra, ROOM, IMPORTED and LINKED (source after source); a theme
-//      added to the linked package (outside the root) while it runs is offered by the next page; t cycles to THEME, and ?theme=THEME wears it; the
+//      lists 'default', then THEME, THEME-extra, ROOM, IMPORTED and LINKED (source after source),
+//      then the other built-in themes; a theme added to the linked package (outside the root) while
+//      it runs is offered by the next page; t cycles to THEME, and ?theme=THEME wears it; each
+//      built-in theme is worn with ?theme=, with a background of its own; the
 //      defaults reach what is drawn outside every theme (the presenter view); a :root rule of the
 //      project's own wins over a default (and a default that is another token follows it), a
 //      theme wins over that rule, and the picker's swatch of 'default' shows it; :root
@@ -156,8 +164,9 @@ const SHORTCUTS = `import { defineShortcuts } from '${PKG}'
 export default defineShortcuts({ x: 'next', KeyQ: 'prev', q: 'next', End: 'first', PageUp: null })
 `
 // a web font THEME names in its font token: the build fetches it (vite/fonts.js, fontless) and
-// writes its files under dist/assets/_fonts, unless the machine cannot reach the font provider
-const WEB_FONT = 'Inter'
+// writes its files under dist/assets/_fonts, unless the machine cannot reach the font provider.
+// One no built-in theme names, so that its files are THEME's doing
+const WEB_FONT = 'Lora'
 const BRAND = ['brand.css', `/* the smoke project's own theme: a [data-theme] rule in src/themes, nothing to import */
 @import './parts/extra.css';
 [data-theme="${THEME}"] {
@@ -364,6 +373,13 @@ try {
   const decks = (await readdir(join(project, 'src', 'decks'))).filter((f) => f.endsWith('.vue')).map((f) => basename(f, '.vue'))
   if (decks.length < 2) throw new Error('the project needs two decks or more to test the selector')
   log(`decks: ${decks.join(', ')}`)
+  // the library's built-in themes, as the installed package ships them (themes/<name>.css, each
+  // file naming its theme): offered first, 'default' leading, the others by name
+  const builtins = async () => {
+    const names = (await readdir(join(project, 'node_modules', PKG, 'themes')).catch(() => []))
+      .filter((f) => f.endsWith('.css')).map((f) => basename(f, '.css')).sort()
+    return names.includes('default') ? ['default', ...names.filter((n) => n !== 'default')] : names
+  }
 
   log('npm install')
   await run('npm', ['install', '--no-audit', '--no-fund'], project)
@@ -383,9 +399,12 @@ try {
 
   // the web font THEME names: its files in the build (assets/_fonts), its @font-face in the CSS.
   // Only where the font provider can be reached (an offline machine builds without them: the
-  // check says SKIPPED). Then two builds of their own (into dist-fonts, removed after): with
-  // arao({ fonts: false }), and with a themes folder whose fonts are all system fonts: neither
-  // writes font files, and the second says nothing about fonts
+  // check says SKIPPED). Then builds of their own (into dist-fonts, removed after): with
+  // arao({ fonts: false }), which writes no font files; with a themes folder whose fonts are all
+  // system fonts (SYSTEM) and builtinThemes: false, which writes no font files and says nothing
+  // about fonts; with that folder and one built-in theme (builtinThemes: [name]), whose CSS has no
+  // @font-face but for that theme's families; and with a name that is no built-in theme, which
+  // stops
   async function webFonts() {
     const reachable = async () => {
       for (let i = 0; i < 3; i++) {
@@ -412,12 +431,29 @@ try {
     await run(process.execPath, [viteBin, 'build', '--config', 'vite.fonts.config.js'], project)
     if ((await fontFiles('dist-fonts')).length) fail('vite build with arao({ fonts: false }): font files in dist-fonts/assets/_fonts')
     await mkdir(join(project, 'src', 'themes-system'), { recursive: true })
-    await writeFile(join(project, 'src', 'themes-system', 'plain.css'), '[data-theme="plain"] { --ar-font-sans: Arial, Helvetica, "Segoe UI", sans-serif; --ar-font-mono: Menlo, Consolas, monospace; }\n')
-    await writeFile(join(project, 'vite.fonts.config.js'), config(`{ themes: 'src/themes-system' }`))
+    const SYSTEM = ['Arial', 'Helvetica', 'Segoe UI', 'Menlo', 'Consolas']
+    await writeFile(join(project, 'src', 'themes-system', 'plain.css'), `[data-theme="plain"] { --ar-font-sans: ${SYSTEM.slice(0, 3).map((f) => JSON.stringify(f)).join(', ')}, sans-serif; --ar-font-mono: ${SYSTEM.slice(3).join(', ')}, monospace; }\n`)
+    await writeFile(join(project, 'vite.fonts.config.js'), config(`{ themes: 'src/themes-system', builtinThemes: false }`))
     const { code, out, err } = await exec(process.execPath, [viteBin, 'build', '--config', 'vite.fonts.config.js'], project)
-    if (code !== 0) fail(`vite build with system fonts only exited with ${code}`)
-    if ((await fontFiles('dist-fonts')).length) fail('vite build with system fonts only: font files in dist-fonts/assets/_fonts')
-    if (/\[fontless\]/.test(out + err)) fail(`vite build with system fonts only: fontless said something:\n${(out + err).split('\n').filter((l) => l.includes('[fontless]')).join('\n')}`)
+    if (code !== 0) fail(`vite build with system fonts only and builtinThemes: false exited with ${code}`)
+    if ((await fontFiles('dist-fonts')).length) fail('vite build with system fonts only and builtinThemes: false: font files in dist-fonts/assets/_fonts')
+    if (/\[fontless\]|\[arao\] fonts/.test(out + err)) fail(`vite build with system fonts only and builtinThemes: false: something said about fonts:\n${(out + err).split('\n').filter((l) => /\[fontless\]|\[arao\] fonts/.test(l)).join('\n')}`)
+    // one built-in theme: no @font-face but for its families (the first of each of its --ar-font-*)
+    const one = (await builtins())[1]
+    const families = [...(await readFile(join(project, 'node_modules', PKG, 'themes', `${one}.css`), 'utf8')).matchAll(/--ar-font-[a-z]+:\s*"([^"]+)"/g)].map((m) => m[1])
+    await writeFile(join(project, 'vite.fonts.config.js'), config(`{ themes: 'src/themes-system', builtinThemes: [${JSON.stringify(one)}] }`))
+    const subset = await exec(process.execPath, [viteBin, 'build', '--config', 'vite.fonts.config.js'], project)
+    if (subset.code !== 0) fail(`vite build with builtinThemes: ["${one}"] exited with ${subset.code}`)
+    else {
+      const css = (await Promise.all((await readdir(join(project, 'dist-fonts', 'assets'))).filter((f) => f.endsWith('.css')).map((f) => readFile(join(project, 'dist-fonts', 'assets', f), 'utf8')))).join('\n')
+      const faces = new Set([...css.matchAll(/@font-face\s*{[^}]*?font-family:\s*["']?([^;"']+)["']?\s*;/g)].map((m) => m[1].trim()).filter((f) => !/Fallback/.test(f)))
+      const others = [...faces].filter((f) => !families.includes(f))
+      if (others.length) fail(`vite build with builtinThemes: ["${one}"]: @font-face for ${others.join(', ')}, which ${one} does not name`)
+      else console.log(`  builtinThemes: ["${one}"]: @font-face for ${[...faces].join(', ') || 'nothing (no network)'} only`)
+    }
+    await writeFile(join(project, 'vite.fonts.config.js'), config(`{ builtinThemes: ['nosuch'] }`))
+    const bad = await exec(process.execPath, [viteBin, 'build', '--config', 'vite.fonts.config.js'], project)
+    if (bad.code === 0 || !/\[arao\] builtinThemes: no built-in theme "nosuch"/.test(bad.out + bad.err)) fail(`vite build with builtinThemes: ['nosuch']: exited with ${bad.code}, without saying there is no such built-in theme`)
     await Promise.all(['vite.fonts.config.js', 'dist-fonts', 'src/themes-system'].map((p) => rm(join(project, p), { recursive: true, force: true })))
   }
 
@@ -449,14 +485,29 @@ try {
     await fake('arao-escape-themes', { arao: { themes: '../../src/themes' } }, '[data-theme="x"] {}\n')
     await mkdir(join(project, 'src', 'dupes'), { recursive: true })
     await writeFile(join(project, 'src', 'dupes', 'room.css'), `[data-theme="${ROOM}"] { --ar-accent: rgb(1, 1, 1); }\n`)
+    // a project theme named like a built-in one: it replaces it (the built-in file is not loaded),
+    // and a message says so; a project's own default says nothing (the built-in one sets no token)
+    const over = (await builtins())[1]
+    await mkdir(join(project, 'src', 'over'), { recursive: true })
+    await writeFile(join(project, 'src', 'over', 'mine.css'), `[data-theme="${over}"] { --ar-accent: rgb(2, 2, 2); }\n[data-theme="default"] { --ar-accent: rgb(3, 3, 3); }\n`)
     const cases = [
       { add: ['arao-no-such-themes'], says: /\[arao\] themes: no package "arao-no-such-themes" installed/ },
       { add: ['arao-empty-themes'], says: /\[arao\] themes: package "arao-empty-themes" gives no theme/ },
       { add: ['arao-escape-themes'], says: /\[arao\] themes: package "arao-escape-themes" names "\.\.\/\.\.\/src\/themes" .*must be a folder inside the package/ },
       { add: ['vendor'], says: /\[arao\] themes: "vendor" is read as a package's name.*There is a folder "vendor" at the root: write "\.\/vendor"/ },
       { add: ['./src/dupes', './src/themes'], passes: true, says: new RegExp(`\\[arao\\] theme "${ROOM}" is in src/venues and in \\./src/dupes: it is offered once; both apply`), not: /\[arao\] theme "sample/ },
+      // and the library's own package named as a source adds nothing (its folder is there already)
+      { add: ['./src/over', PKG], passes: true, says: new RegExp(`\\[arao\\] theme "${over}" of \\./src/over replaces the built-in one`), not: new RegExp(`\\[arao\\] theme "(?!${over}")`),
+        // the built-in file's own background is nowhere in the built CSS
+        check: async () => {
+          const bg = (await readFile(join(project, 'node_modules', PKG, 'themes', `${over}.css`), 'utf8')).match(/--ar-bg:\s*(#[0-9a-f]+)/i)?.[1]
+          const assets = join(project, 'dist', 'assets')
+          const css = (await Promise.all((await readdir(assets)).filter((f) => f.endsWith('.css')).map((f) => readFile(join(assets, f), 'utf8')))).join('\n')
+          return !bg ? `themes/${over}.css sets no --ar-bg to look for` : css.toLowerCase().includes(bg.toLowerCase()) ? `the built-in ${over}'s CSS (--ar-bg: ${bg}) is in the build` : null
+        } },
     ]
     try {
+      let problem
       for (const c of cases) {
         const what = `vite build with the theme sources + ${c.add.join(', ')}`
         await writeFile(join(project, 'vite.config.js'), config.replace(`'${HALL_PKG}'`, `'${HALL_PKG}', ${c.add.map((a) => `'${a}'`).join(', ')}`))
@@ -465,12 +516,14 @@ try {
         if (c.passes ? code !== 0 : code === 0) fail(`${what}: exited with ${code}`)
         else if (!c.says.test(said)) fail(`${what}: nothing matching ${c.says}`)
         else if (c.not?.test(said)) fail(`${what}: says ${c.not}`)
-        else console.log(`  theme sources + ${c.add.join(', ')}: ${c.passes ? 'builds, warning once' : 'the build stops, saying why'}`)
+        else if (c.check && (problem = await c.check())) fail(`${what}: ${problem}`)
+        else console.log(`  theme sources + ${c.add.join(', ')}: ${c.passes ? 'builds, saying so once' : 'the build stops, saying why'}`)
       }
     } finally {
       await writeFile(join(project, 'vite.config.js'), config)
       for (const p of ['arao-empty-themes', 'arao-escape-themes']) await rm(join(project, 'node_modules', p), { recursive: true, force: true })
       await rm(join(project, 'src', 'dupes'), { recursive: true, force: true })
+      await rm(join(project, 'src', 'over'), { recursive: true, force: true })
     }
     await run(process.execPath, [viteBin, 'build'], project) // the project's own build back in dist/
   }
@@ -534,14 +587,14 @@ try {
 
   // opens a deck and walks it to its end; reports what it saw, and keeps its counts in walked
   const walked = {} // deck → { slides, steps }, the last walk's
-  async function walk(base, deck, mode) {
+  async function walk(base, deck, mode, query = '') {
     const context = await browser.newContext({ viewport: { width: 1920, height: 1080 } })
     const page = await context.newPage()
     const complaints = []
     page.on('console', (m) => ['warning', 'error'].includes(m.type()) && complaints.push(`console ${m.type()}: ${m.text()}`))
     page.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
     try {
-      await page.goto(new URL(encodeURIComponent(deck), base).href)
+      await page.goto(new URL(encodeURIComponent(deck) + query, base).href)
       await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 }).catch(() => {})
       const slides = await page.locator('.ar-slide').count()
       if (!slides) complaints.push('no .ar-slide in the page')
@@ -564,14 +617,14 @@ try {
         note((at = next))
       }
       const per = Object.entries(steps).map(([i, s]) => `${i}:${s}`).join(' ')
-      console.log(`  ${mode} /${deck}: ${slides} slides, ended at ${at}; steps per slide ${per}`)
+      console.log(`  ${mode} /${deck}${query}: ${slides} slides, ended at ${at}; steps per slide ${per}`)
       if (slides && Object.keys(steps).length !== slides)
         complaints.push(`the walk visited ${Object.keys(steps).length} slides of ${slides}`)
-      walked[deck] = { slides, steps: Object.values(steps).reduce((a, b) => a + b, 0) }
+      if (!query) walked[deck] = { slides, steps: Object.values(steps).reduce((a, b) => a + b, 0) }
     } finally {
       await context.close()
     }
-    for (const c of complaints) fail(`${mode} /${deck}: ${c}`)
+    for (const c of complaints) fail(`${mode} /${deck}${query}: ${c}`)
   }
 
   // the deck selector: / lists every deck, a card each with its cover drawn in it (the page's URL
@@ -1106,7 +1159,8 @@ try {
       if (!plain.picker) complaints.push('no theme picker in the controls: the deck has one theme, not default and ' + THEME)
       // every theme there is: THEME-extra comes from a partial of brand.css (the plugin follows it)
       const offered = (await picker(page)).map((t) => t.name)
-      const all = ['default', THEME, `${THEME}-extra`, ROOM, IMPORTED, LINKED]
+      const builtin = await builtins()
+      const all = ['default', THEME, `${THEME}-extra`, ROOM, IMPORTED, LINKED, ...builtin.slice(1)]
       if (JSON.stringify(offered) !== JSON.stringify(all)) complaints.push(`the picker offers ${offered.join(', ') || 'nothing'}, not ${all.join(', ')}`)
       await page.keyboard.press('Escape')
       await page.keyboard.press('t')
@@ -1114,6 +1168,17 @@ try {
       const cycled = await look(page)
       if (cycled.theme !== THEME || cycled.bg !== SAMPLE.bg) complaints.push(`t: wears "${cycled.theme}" (background ${cycled.bg}), not ${THEME} (${SAMPLE.bg})`)
       await page.close()
+
+      // each built-in theme, asked for: worn, its background its own (default's is the defaults')
+      const backgrounds = new Map([[plain.bg, 'default']])
+      for (const name of builtin.slice(1)) {
+        page = await open(`&theme=${encodeURIComponent(name)}`)
+        const worn = await look(page)
+        if (worn.theme !== name) complaints.push(`?theme=${name}: wears "${worn.theme}"`)
+        else if (backgrounds.has(worn.bg)) complaints.push(`?theme=${name}: its background ${worn.bg} is ${backgrounds.get(worn.bg)}'s`)
+        backgrounds.set(worn.bg, name)
+        await page.close()
+      }
 
       page = await open(`&theme=${THEME}`)
       const asked = await look(page)
@@ -1187,7 +1252,7 @@ try {
       const hall = await look(page)
       if (hall.theme !== IMPORTED || hall.bg !== HALL.bg) complaints.push(`/${venue}: wears "${hall.theme}" (background ${hall.bg}), not ${IMPORTED} (${HALL.bg})`)
       await page.close()
-      console.log(`  dev themes: ${complaints.length ? 'problems below' : `${all.join(', ')} listed, t and ?theme= wear ${THEME}, defaults outside themes, :root wins over defaults (and reaches the docked controls and default's swatch), themes over :root, ${IMPORTED} (a theme package's) worn`}`)
+      console.log(`  dev themes: ${complaints.length ? 'problems below' : `${all.join(', ')} listed, t and ?theme= wear ${THEME}, ?theme= each built-in theme, defaults outside themes, :root wins over defaults (and reaches the docked controls and default's swatch), themes over :root, ${IMPORTED} (a theme package's) worn`}`)
     } finally {
       await context.close()
     }
@@ -1497,6 +1562,10 @@ try {
         await warm.close()
       }
       for (const deck of decks) await walk(base, deck, mode)
+      // the playground's deck lists no themes: it offers every built-in one, each walked
+      const builtin = await builtins()
+      if (builtin[0] !== 'default' || builtin.length < 2) fail(`the package's built-in themes are ${builtin.join(', ')}: not default and more`)
+      for (const name of builtin.slice(1)) await walk(base, 'playground', mode, `?theme=${encodeURIComponent(name)}`)
       await selector(base, mode)
       if (mode === 'dev') {
         await face(base)

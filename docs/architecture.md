@@ -15,7 +15,7 @@ this: [the docs](index.md) are their manual, [the Arao skill](../skills/arao/) t
 | `addons/` | drawn over every slide | `ProgressBar`, `SlideNumber` |
 | `i18n/` | the UI's words | the engine's own text, one catalogue per language (`en.ts`, `es.ts`, `de.ts`, `fr.ts`, `it.ts`, `pl.ts`, `ja.ts`, `zh-Hans.ts`), and `i18n.ts`, the lookup: `t(key, ...values)` and `lang` ([Interface language](#interface-language)) |
 | `env.d.ts` | types | the shapes of the virtual modules the Vite plugin gives the engine (`virtual:arao/decks`, `…/images`, `…/themes`…) |
-| `styles/` | CSS | only what is global: `tokens.css` (every token and its default: the `default` theme), `base.css` (the page, the viewport, the steps). Everything else comes with its component ([CSS](#css)); no theme ships with the engine ([Themes](#themes)) |
+| `styles/` | CSS | only what is global: `tokens.css` (every token and its default: the `default` theme), `base.css` (the page, the viewport, the steps). Everything else comes with its component ([CSS](#css)); the themes are not here but in the package's `themes/` folder, a theme source ([Themes](#themes)) |
 
 The rule: `components/` is what an author names or imports (registered by `plugin.ts` or exported
 by `index.ts`, explicitly, never by folder); `components/internal/` is the engine's components that
@@ -218,23 +218,35 @@ CSS; the library build fails if that import is not the entry's last, after `./ar
 
 ## Themes
 
-The `default` theme is the defaults in `tokens.css`, and has no file. The other themes are the
-CSS files directly in the folders of the theme sources (the plugin's `themes` option: folders and
-installed packages, in order; default `src/themes`), which the Vite plugin turns into two virtual
+Every theme is a CSS file directly in the folder of a theme source: the library's own `themes/`
+folder, at the package's root, one file per theme named as it (`default`, whose rule is empty, the
+defaults in `tokens.css` being its look, always loaded; the plugin stops if there is no
+`default.css`; and the built-in themes, those the `builtinThemes` option names, all by default),
+and the plugin's `themes` option, the project's (folders and installed packages, in order;
+default `src/themes`). `default` sets no token on purpose: the defaults sit at the root with zero
+specificity so that a project's own `:root` rule wins over them, which a theme's rule, applied
+on the element that wears it, would not let it do. The Vite plugin turns the sources into two virtual
 modules: `virtual:arao/theme-styles` imports them all, source after source (an eager glob per
-folder: Vite follows files added or removed), and `virtual:arao/themes` exports the names their
+folder: Vite follows files added or removed; for the library's folder, a glob of the built-in files
+to load, `{default,folio}.css`), and `virtual:arao/themes` exports the names their
 `[data-theme="<name>"]` selectors give, sorted (the plugin reads the files and the local partials
 they `@import`, skips selectors inside `:not(…)`, resolves CSS escapes and warns about names with
 white space; when an edit changes those names in the dev server, it reloads the module and the
-page), source after source, each name once (a name a later source gives again warns: both
-apply, at equal specificity the later wins). A package source is resolved at config time
+page), `default` first, then the project's sources, then the built-in themes, each name once (a
+name a later project source gives again warns: both apply, at equal specificity the later wins). A
+built-in theme a project source names too is not loaded at all: the project's replaces it, one
+owner per name (the plugin says so). What the built-in files to load are, and the names, are read
+again on every change of a theme file in the dev server; when either changes, both modules are
+reloaded with the page. A package source is resolved at config time
 (node_modules, from the root up, else Node's resolution; its `themes/` folder or the one inside it
 that its `package.json` names under `"arao"`), to its real path, and one not installed or giving
-no theme stops Vite. `state/theme.ts` resolves a deck's list: `Deck(:themes)` without the names that are no
-theme (one warning), or, without it, `default` and then every theme the sources give. Nothing
+no theme stops Vite. A built-in theme left out (`builtinThemes`) or replaced is in no module:
+neither its CSS nor, so, the fonts it names reach the build (fontless only sees the CSS imported). `state/theme.ts` resolves a deck's list: `Deck(:themes)` without the names that are no
+theme (one warning; a list left with none is the first theme there is, `default`), or, without
+it, every theme the sources give, in the plugin's order: it names no theme itself. Nothing
 is read from the page's stylesheets: a name the plugin does not know is no theme, and the export
-view, which checks `--theme` against the same list, refuses it. The library ships no theme and
-no `themes/` export.
+view, which checks `--theme` against the same list, refuses it. The built-in themes are no
+export of the package: a project names them, it never imports them.
 The deck selector, like the presenter view, sits in no theme: it reads its `--ar-selector-*`
 tokens at the root, and each cover wears its deck's theme.
 

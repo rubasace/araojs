@@ -83,8 +83,9 @@ small in it, its title and its path.
 ## CSS
 
 The engine's CSS (structure, layouts, controls, and the tokens' defaults, which are the
-`default` theme) comes with `'araojs'`; the project's themes are the CSS files of `src/themes/`,
-which the plugin loads with nothing to import ([Themes](themes.md)).
+`default` theme) comes with `'araojs'`; the plugin loads the [built-in themes](built-in-themes.md)
+(`arao({ builtinThemes })` says which) and the project's (the CSS files of `src/themes/`), with
+nothing to import ([Themes](themes.md)).
 
 ## An app shell of your own
 

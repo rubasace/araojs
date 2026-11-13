@@ -23,6 +23,7 @@ How to do things, with examples.
 | [Icons](guide/icons.md) | `Icon`: sets, how they get into the build, licences |
 | [Presenting](guide/presenting.md) | keys, controls, the interface language, speaker notes, the presenter view and its timer |
 | [Themes](guide/themes.md) | writing a theme, where themes are found, how tokens apply |
+| [Built-in themes](guide/built-in-themes.md) | the six themes the library ships: their character, fonts, colours and contrast |
 | [Export to PDF](guide/export.md) | `arao export`, export mode, printing |
 | [Hosting](guide/hosting.md) | serving a built project, under any path |
 | [Extending](guide/extending.md) | your own components and addons, `useDeck`, `useSlide` |

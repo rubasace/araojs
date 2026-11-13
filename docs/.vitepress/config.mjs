@@ -39,6 +39,7 @@ const guide = [
   ['Icons', 'icons'],
   ['Presenting', 'presenting'],
   ['Themes', 'themes'],
+  ['Built-in themes', 'built-in-themes'],
   ['Export to PDF', 'export'],
   ['Hosting', 'hosting'],
   ['Extending', 'extending'],

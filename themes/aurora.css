@@ -1,0 +1,48 @@
+/* aurora: vivid and dark. A deep indigo night lit by violet and pink glows (stronger on the cover,
+   with a touch of cyan), section slides in a violet-to-ember gradient, a hot pink accent, white
+   titles. Sora for headings, DM Sans for text, Fira Code for code (Catppuccin Mocha
+   colours, highlighted in a deeper pink that keeps every colour legible). */
+[data-theme="aurora"] {
+  --ar-letterbox: #07051a;
+  --ar-bg: #110d2b;
+  --ar-fg: #f5f2ff;
+  --ar-muted: #bdb5e6;
+  --ar-accent: #ff7ac8;
+  --ar-accent-fg: #ffffff;
+  --ar-font-heading: "Sora", system-ui, sans-serif;
+  --ar-font-sans: "DM Sans", system-ui, sans-serif;
+  --ar-font-mono: "Fira Code", ui-monospace, monospace;
+  --ar-text-base: 40px;
+  --ar-title: 100px;
+  --ar-radius: 18px;
+  --ar-list-gap: .25em;
+
+  --ar-slide-bg-image:
+    radial-gradient(70% 90% at 0% 0%, rgb(124 58 237 / .28), transparent 65%),
+    radial-gradient(60% 80% at 100% 100%, rgb(236 72 153 / .16), transparent 65%);
+  --ar-title-color: var(--ar-fg);
+
+  --ar-table-head-bg: rgb(255 255 255 / .06);
+  --ar-table-head-color: var(--ar-accent);
+  --ar-table-border: 2px solid rgb(245 242 255 / .1);
+  --ar-table-stripe: rgb(255 255 255 / .03);
+
+  --ar-code-theme: catppuccin-mocha;
+  --ar-code-bg: #1a1730;
+  --ar-code-bar: #241f40;
+  --ar-code-fg: #cdd6f4;
+  --ar-code-muted: #9399b2;
+  --ar-code-title: #cdd6f4;
+  --ar-code-hl: #ff2aa8;
+  --ar-code-radius: 22px;
+  --ar-code-shadow: 0 30px 80px rgb(4 2 20 / .6), 0 0 90px rgb(168 85 247 / .22), inset 0 0 0 1px rgb(255 255 255 / .08);
+}
+[data-theme="aurora"] .layout-cover {
+  --ar-slide-bg-image:
+    radial-gradient(55% 70% at 85% 10%, rgb(139 92 246 / .55), transparent 70%),
+    radial-gradient(50% 65% at 95% 95%, rgb(236 72 153 / .45), transparent 70%),
+    radial-gradient(40% 55% at 55% 55%, rgb(34 211 238 / .14), transparent 70%);
+}
+[data-theme="aurora"] .layout-section {
+  --ar-slide-bg-image: linear-gradient(125deg, #4c1d95 0%, #86198f 50%, #b4331a 100%);
+}

@@ -60,8 +60,8 @@ import Thumbnail from './internal/Thumbnail.vue'
 const props = defineProps({
   width: { type: Number, default: 1920 },
   height: { type: Number, default: 1080 },
-  // the themes it can wear, the first by default: 'default' (the engine's tokens) and the names of
-  // the project's themes (src/themes); without it, all of them, 'default' first (state/deck.ts)
+  // the themes it can wear, the first by default: names of the themes the theme sources give;
+  // without it, all of them: 'default', the project's, then the built-in ones (state/theme.ts)
   themes: Array as PropType<readonly string[]>,
   // hide the mouse cursor after this many ms without moving it (0 = never)
   hideCursorAfter: { type: Number, default: 5000 },

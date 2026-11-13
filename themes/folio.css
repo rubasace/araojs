@@ -1,0 +1,42 @@
+/* folio: editorial, on paper. Warm off-white, ink-black text and titles, one vermilion red for
+   the details and the section openers; serif throughout, as in print: Fraunces for headings,
+   Source Serif 4 for text, IBM Plex Mono for code, which sits in a paper window, highlighted as with
+   a marker pen. */
+[data-theme="folio"] {
+  --ar-letterbox: #1f1b16;
+  --ar-bg: #faf7f0;
+  --ar-fg: #1f1b16;
+  --ar-muted: #675e51;
+  --ar-accent: #a8321f;
+  --ar-accent-fg: #faf7f0;
+  --ar-font-heading: "Fraunces", Georgia, serif;
+  --ar-font-sans: "Source Serif 4", Georgia, serif;
+  --ar-font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --ar-text-base: 42px;
+  --ar-title: 100px;
+  --ar-radius: 2px;
+  --ar-list-gap: .2em;
+
+  --ar-title-color: var(--ar-fg);
+
+  --ar-table-head-color: var(--ar-fg);
+  --ar-table-head-bg: rgb(31 27 22 / .06);
+  --ar-table-border: 2px solid rgb(31 27 22 / .14);
+
+  --ar-code-theme: github-light-high-contrast;
+  --ar-code-bg: #fffcf5;
+  --ar-code-bar: #ede6d8;
+  --ar-code-fg: #1f1b16;
+  --ar-code-muted: #6f6656;
+  --ar-code-hl: #9a6700;
+  --ar-code-hl-bg: #fdf4dc;          /* a pale marker: every code colour keeps 4.5:1 on it */
+  --ar-code-title: #4a4236;
+  --ar-code-radius: 6px;
+  --ar-code-shadow: 0 24px 60px rgb(60 40 20 / .16), 0 2px 6px rgb(60 40 20 / .1), inset 0 0 0 1px rgb(31 27 22 / .1);
+  --ar-code-light-1: #d6cdbd;
+  --ar-code-light-2: #d6cdbd;
+  --ar-code-light-3: #d6cdbd;
+
+  /* the controls are dark glass: the red is lightened there */
+  --ar-controls-accent: #ff8f78;
+}

@@ -32,8 +32,10 @@
 // SVG stay sharp at any scale, but a photo is upscaled with the canvas, so for 4K a full-slide
 // background wants ~3840 px wide (twice its size in canvas px); prefer WebP/AVIF/JPEG for photos.
 //
-// Themes come only from their sources: arao({ themes }) is one source or a list of them, in order
-// (default 'src/themes'):
+// Themes come only from their sources: first the library's own (its themes/ folder, one file per
+// theme: `default`, the engine's defaults as they are, always; and the built-in themes, all of
+// them unless arao({ builtinThemes }) says false or which); then arao({ themes }), the project's,
+// one source or a list of them, in order (default 'src/themes'):
 //   a folder    a path, as the other folders ('src/themes', '../shared/themes', './themes': a
 //               folder at the root needs the "./", else it reads as a package's name)
 //   a package   a bare lowercase npm name ('arao-themes', '@acme/arao-themes'), installed:
@@ -44,11 +46,15 @@
 // to import (virtual:arao/theme-styles), source after source, and names the themes of its
 // [data-theme="<name>"] selectors (one file may hold several; comments, :not(…) and names with
 // white space do not count), and of the local partials it @import-s: virtual:arao/themes gives the
-// engine those names, which a Deck without themes offers after 'default' (the engine's own tokens,
-// no file), source after source. A file that names none is still loaded (shared rules, fonts) and
-// Vite says so. Subfolders hold what the themes use (pictures, @import-ed partials), and are not
-// loaded on their own. A name two sources give is offered once, where it comes first, and Vite
-// warns: both files are loaded and both apply; at equal specificity the later source wins.
+// engine those names, in the order a Deck without themes offers them: 'default' first, then the
+// project's, source after source, then the built-in ones. A file that names none is still loaded
+// (shared rules, fonts) and Vite says so. Subfolders hold what the themes use (pictures, @import-ed
+// partials), and are not loaded on their own. A name two of the project's sources give is offered
+// once, where it comes first, and Vite warns: both files are loaded and both apply; at equal
+// specificity the later source wins. A project theme named like a built-in one replaces it: the
+// built-in file is not loaded at all (nor its fonts), and Vite says so (but for 'default', which
+// sets nothing). A built-in theme turned off (builtinThemes) is not loaded either: its CSS, and so
+// its fonts, stay out of the build.
 // Sources are taken by their real folder (symlinks resolved: a linked package is watched where its
 // files are), and one named twice counts once.
 // A theme no source gives (a CSS file the project imports itself) is not one: a deck that lists it
@@ -59,12 +65,13 @@
 // virtual:arao/icons (icons.js). arao({ icons: ['lucide:rocket'] }) adds names the source
 // does not spell out (built at runtime).
 //
-// Fonts: a font family a theme names in --ar-font-sans / --ar-font-mono is fetched from a font
+// Fonts: a font family a theme names in a --ar-font-* token is fetched from a font
 // provider (Google Fonts, Bunny…) and served with the deck (fonts.js, fontless).
 // arao({ fonts: false }) turns it off; arao({ fonts: { … } }) passes fontless's options.
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { normalizePath, searchForWorkspaceRoot } from 'vite'
 import { fonts } from './fonts.js'
@@ -77,17 +84,24 @@ const { name: PACKAGE } = require('../package.json')
 
 /**
  * arao()'s options: the three content folders (paths from the Vite root, or absolute), the theme
- * sources (a folder or a package, or a list of them), icon names to include whatever the source
+ * sources (a folder or a package, or a list of them), the built-in themes to load (true: all,
+ * false: none but default, or their names), icon names to include whatever the source
  * says, the web fonts (fonts.js), and the options of Vue's own plugin (plugin-vue).
- * @typedef {{ decks?: string, snippets?: string, images?: string, themes?: string | string[], icons?: string[], fonts?: import('./fonts.js').FontsOption, vue?: import('@vitejs/plugin-vue').Options }} AraoOptions
+ * @typedef {{ decks?: string, snippets?: string, images?: string, themes?: string | string[], builtinThemes?: boolean | string[], icons?: string[], fonts?: import('./fonts.js').FontsOption, vue?: import('@vitejs/plugin-vue').Options }} AraoOptions
  * @typedef {'decks' | 'snippets' | 'images'} Folder
- * @typedef {{ spec: string, dir: string, pkg: string | null, label: string }} ThemeSource
+ * @typedef {{ spec: string, dir: string, pkg: string | null, label: string, files?: string[] }} ThemeSource
  */
 
 const IMAGES = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'svg']
 /** @type {Record<Folder, string>} */
 const DEFAULTS = { decks: 'src/decks', snippets: 'src/snippets', images: 'src/images' }
 const DEFAULT_THEMES = 'src/themes'
+// the library's own themes: the themes/ folder at the package's root, one file per theme, named
+// as the theme (<name>.css), read and loaded like a theme package's, always the first source. It
+// must hold DEFAULT_THEME, always loaded, which a Deck without themes offers first and a list left
+// with no theme falls back to (state/theme.ts); the others are loaded as builtinThemes says
+const BUILTIN_THEMES = fileURLToPath(new URL('../themes', import.meta.url))
+const DEFAULT_THEME = 'default'
 // a source that is a package's name, not a path: a bare lowercase npm name, 'name' or
 // '@scope/name' (npm's rules: lowercase letters, digits, - . _ ~); anything else, or a name
 // written with './', is a folder
@@ -190,8 +204,8 @@ function importedFile(path, from, root) {
 // they @import, followed all the way down), for the dev server to follow
 /** @param {string} a @param {string} b */
 const byName = (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }) || (a < b ? -1 : a > b ? 1 : 0)
-/** @param {string} folder @param {string} root */
-function themesIn(folder, root) {
+/** @param {string} folder @param {string} root @param {string[] | null} [only] the files to read (names without .css), else all */
+function themesIn(folder, root, only = null) {
   /** @type {Set<string>} */
   const names = new Set()
   /** @type {string[]} */
@@ -200,7 +214,7 @@ function themesIn(folder, root) {
   const spaced = []
   /** @type {Set<string>} */
   const sources = new Set()
-  for (const file of filesIn(folder, '.css').map((n) => `${n}.css`)) {
+  for (const file of filesIn(folder, '.css').filter((n) => !only || only.includes(n)).map((n) => `${n}.css`)) {
     /** @type {Set<string>} */
     const found = new Set()
     /** @type {Set<string>} */
@@ -230,11 +244,13 @@ function themesIn(folder, root) {
   return { names: [...names].sort(byName), unnamed, spaced, sources }
 }
 
-// The theme sources arao({ themes }) names, resolved: each a folder ({ spec, dir, pkg: null }) or
-// an installed package's themes folder ({ spec, dir, pkg: its name }), dir its real path (symlinks
-// resolved), each real folder once; label is how messages name it. A package is looked up as Node
-// does, in node_modules from the root up, else through Node's resolution (Yarn PnP); its folder is
-// themes/, or what its package.json says ("arao": { "themes": "<folder>" }, inside the package).
+// The theme sources, resolved: the library's own (BUILTIN_THEMES, a package source named after the
+// package; files, the built-in themes enabled), then the ones arao({ themes }) names, each a folder ({ spec, dir, pkg: null }) or an
+// installed package's themes folder ({ spec, dir, pkg: its name }); dir is its real path (symlinks
+// resolved), each real folder once (naming the library's own package adds nothing); label is how
+// messages name it. A package is looked up as Node does, in node_modules from the root up, else
+// through Node's resolution (Yarn PnP); its folder is themes/, or what its package.json says
+// ("arao": { "themes": "<folder>" }, inside the package).
 // Throws on a package not installed, or whose folder is not one.
 /** @param {string} p */
 const real = (p) => {
@@ -244,11 +260,13 @@ const real = (p) => {
     return p // not there (yet): as written
   }
 }
-/** @param {string[]} specs @param {string} root @returns {ThemeSource[]} */
-function resolveThemeSources(specs, root) {
+/** @param {string[]} specs @param {string} root @param {string[]} enabled @returns {ThemeSource[]} */
+function resolveThemeSources(specs, root, enabled) {
   /** @type {Set<string>} */
   const seen = new Set()
-  return specs.map((spec) => resolveThemeSource(spec, root)).filter((t) => !seen.has(t.dir) && seen.add(t.dir))
+  /** @type {ThemeSource} */
+  const builtin = { spec: PACKAGE, dir: real(BUILTIN_THEMES), pkg: PACKAGE, label: `${PACKAGE}'s built-in themes`, files: enabled }
+  return [builtin, ...specs.map((spec) => resolveThemeSource(spec, root))].filter((t) => !seen.has(t.dir) && seen.add(t.dir))
 }
 /** @param {string} spec @param {string} root @returns {ThemeSource} */
 function resolveThemeSource(spec, root) {
@@ -291,11 +309,17 @@ function resolveThemeSource(spec, root) {
     throw new Error(`[arao] themes: package "${spec}" has no ${folder}/ folder (${dir}): a theme package keeps its CSS in themes/, or names its folder in its package.json, "arao": { "themes": "<folder>" }`)
   return { spec, dir, pkg: spec, label: `${spec} (${folder}/)` }
 }
-// every source's themes, in order: their names, each once where it comes first (the names a later
-// source gives again: dupes, { name, first, then }), and the files that name none, the names
-// skipped and the files read, as themesIn gives them, the files by full path
+// every source's themes: the project's sources first (all but sources[0], the library's own), in
+// order, their names each once where it comes first (the names a later source gives again: dupes,
+// { name, first, then }); then the built-in themes enabled that no project source gives (loaded:
+// the files to load), a project theme of the same name replacing the built-in one (shadowed,
+// { name, by }; default left out: it sets nothing). The names in the order a Deck without themes
+// offers them: DEFAULT_THEME, the project's, the built-in ones. And the files that name none, the
+// names skipped and the files read, as themesIn gives them, the files by full path; perSource, the
+// names each source gives (by spec)
 /** @param {ThemeSource[]} sources @param {string} root */
 function themesOfSources(sources, root) {
+  const [builtin, ...project] = sources
   /** @type {string[]} */
   const names = []
   /** @type {Map<string, string>} */
@@ -310,8 +334,8 @@ function themesOfSources(sources, root) {
   const files = new Set()
   /** @type {Map<string, string[]>} */
   const perSource = new Map()
-  for (const source of sources) {
-    const got = themesIn(source.dir, root)
+  /** @param {ThemeSource} source @param {ReturnType<typeof themesIn>} got */
+  const take = (source, got) => {
     perSource.set(source.spec, got.names)
     for (const n of got.names) {
       const first = from.get(n)
@@ -324,7 +348,14 @@ function themesOfSources(sources, root) {
     spaced.push(...got.spaced)
     for (const file of got.sources) files.add(file)
   }
-  return { names, dupes, unnamed, spaced, sources: files, perSource }
+  for (const source of project) take(source, themesIn(source.dir, root))
+  const enabled = builtin.files ?? []
+  const shadowed = enabled.filter((n) => n !== DEFAULT_THEME && from.has(n)).map((n) => ({ name: n, by: /** @type {string} */ (from.get(n)) }))
+  const loaded = enabled.filter((n) => !from.has(n))
+  take(builtin, themesIn(builtin.dir, root, loaded))
+  const first = names.indexOf(DEFAULT_THEME)
+  if (first > 0) names.unshift(...names.splice(first, 1))
+  return { names, dupes, shadowed, loaded, unnamed, spaced, sources: files, perSource }
 }
 
 // glob syntax in a folder's name is literal: "talk (draft)", "[2024]"
@@ -336,7 +367,7 @@ const escapeGlob = (s) => s.replace(/[()[\]{}*?!+@|\\]/g, '\\$&')
  * @returns {import('vite').Plugin[]}
  */
 export default function arao(options = {}) {
-  const { vue: vueOptions = {}, icons: iconsOption, themes: themesOption, fonts: fontsOption, ...rest } = options
+  const { vue: vueOptions = {}, icons: iconsOption, themes: themesOption, builtinThemes = true, fonts: fontsOption, ...rest } = options
   const names = /** @type {Folder[]} */ (Object.keys(modules))
   /** @type {Record<Folder, string>} */
   const folders = { ...DEFAULTS }
@@ -351,6 +382,20 @@ export default function arao(options = {}) {
     return t.trim()
   })
   if (!themeSpecs.length) throw new Error('[arao] themes: the list is empty (leave it out for src/themes)')
+  // the built-in themes to load: all (true), none but default (false), or the ones named
+  const builtinNames = filesIn(BUILTIN_THEMES, '.css')
+  if (!builtinNames.includes(DEFAULT_THEME))
+    throw new Error(`[arao] the library's own themes folder (${BUILTIN_THEMES}) has no ${DEFAULT_THEME}.css: the package is incomplete, install it again`)
+  /** @type {string[]} */
+  let enabledBuiltins
+  if (builtinThemes === true) enabledBuiltins = builtinNames
+  else if (builtinThemes === false) enabledBuiltins = [DEFAULT_THEME]
+  else if (Array.isArray(builtinThemes)) {
+    const unknown = builtinThemes.filter((n) => typeof n !== 'string' || !builtinNames.includes(n))
+    if (unknown.length)
+      throw new Error(`[arao] builtinThemes: no built-in theme ${unknown.map((n) => JSON.stringify(n)).join(', ')} (there are: ${builtinNames.join(', ')})`)
+    enabledBuiltins = builtinNames.filter((n) => n === DEFAULT_THEME || builtinThemes.includes(n))
+  } else throw new Error(`[arao] builtinThemes must be true, false or a list of built-in themes' names, got ${JSON.stringify(builtinThemes)}`)
   /** @type {ThemeSource[]} */
   let themeSources = [] // resolved once the root is known (configResolved)
   let root = process.cwd()
@@ -366,13 +411,15 @@ export default function arao(options = {}) {
   const outside = () => [...names.map(dir), ...themeSources.map((t) => t.dir)].filter(isOutside)
   /** @param {string} name */
   const resolved = (name) => `\0virtual:arao/${name}`
-  /** @type {string[] | null} */
-  let themeNames = null // the names the themes module was last loaded with
+  /** @type {string | null} */
+  let themeNames = null // the names (and built-in files) the themes modules were last loaded with
   let themeFiles = new Set() // the files they were read from (the sources' files, and their partials)
   /** @param {string} file */
   const unnamedTheme = (file) => logger.warn(`[arao] ${normalizePath(relative(root, file))} names no theme (no [data-theme="<name>"] selector): it is loaded, but no deck can wear it`)
   /** @param {{ name: string, first: string, then: string }} d */
   const dupeTheme = ({ name, first, then }) => logger.warn(`[arao] theme "${name}" is in ${first} and in ${then}: it is offered once; both apply, and at equal specificity ${then} (loaded later) wins`)
+  /** @param {{ name: string, by: string }} d */
+  const shadowTheme = ({ name, by }) => logger.info(`[arao] theme "${name}" of ${by} replaces the built-in one of that name (${PACKAGE}'s ${name}.css is not loaded)`)
   /** @param {string} file */
   const inThemeFolder = (file) => file.endsWith('.css') && themeSources.some((t) => relative(t.dir, file) === basename(file))
   /** @param {{ file: string, name: string }} s */
@@ -380,7 +427,7 @@ export default function arao(options = {}) {
 
   // icons used in the source: src/ and the decks folder, but not the snippets and images folders
   // (their files are content, not source)
-  /** @type {Pick<import('vite').Logger, 'warn'>} */
+  /** @type {Pick<import('vite').Logger, 'warn' | 'info'>} */
   let logger = console
   const icons = createIcons({
     root: () => root,
@@ -414,7 +461,7 @@ export default function arao(options = {}) {
     },
     config(user) {
       root = resolve(user.root ?? process.cwd()) // as Vite resolves it
-      themeSources = resolveThemeSources(themeSpecs, root)
+      themeSources = resolveThemeSources(themeSpecs, root, enabledBuiltins)
       /** @type {import('vite').UserConfig} */
       const config = {
         // one Vue, the project's, also for this package when it is linked (npm link, file:)
@@ -444,9 +491,9 @@ export default function arao(options = {}) {
         if (rest[name] != null && !existsSync(dir(name)))
           config.logger.warn(`[arao] the ${name} folder "${folders[name]}" does not exist (${dir(name)}): ${modules[name].missing}`)
       }
-      themeSources = resolveThemeSources(themeSpecs, root)
+      themeSources = resolveThemeSources(themeSpecs, root, enabledBuiltins)
       const given = themesOfSources(themeSources, root)
-      for (const t of themeSources) {
+      for (const t of themeSources.slice(1)) {
         if (t.pkg) {
           if (!given.perSource.get(t.spec)?.length)
             throw new Error(`[arao] themes: package "${t.spec}" gives no theme: no .css file of ${t.dir} has a [data-theme="<name>"] selector`)
@@ -473,11 +520,15 @@ export default function arao(options = {}) {
       // gets wrong is reported here
       const isTheme = inThemeFolder(file)
       if (isTheme || themeFiles.has(normalizePath(file))) {
-        const { names, unnamed, spaced, sources } = themesOfSources(themeSources, root)
+        const { names, loaded, unnamed, spaced, sources } = themesOfSources(themeSources, root)
         themeFiles = sources
         const mod = this.environment.moduleGraph.getModuleById(resolved('themes'))
-        if (mod && JSON.stringify(names) !== JSON.stringify(themeNames)) {
+        if (mod && JSON.stringify([names, loaded]) !== themeNames) {
+          // the names changed, or the built-in files to load (a project theme now replaces one, or
+          // no longer does): both modules again
           this.environment.moduleGraph.invalidateModule(mod)
+          const styles = this.environment.moduleGraph.getModuleById(resolved('theme-styles'))
+          if (styles) this.environment.moduleGraph.invalidateModule(styles)
           this.environment.hot.send({ type: 'full-reload' })
           return []
         }
@@ -503,22 +554,26 @@ export default function arao(options = {}) {
     load(id) {
       if (id === resolved('icons')) return icons.load()
       if (id === resolved('themes')) {
-        const { names, dupes, unnamed, spaced, sources } = themesOfSources(themeSources, root)
+        const { names, dupes, shadowed, loaded, unnamed, spaced, sources } = themesOfSources(themeSources, root)
         for (const file of unnamed) unnamedTheme(file)
         for (const s of spaced) spacedTheme(s)
         for (const d of dupes) dupeTheme(d)
-        themeNames = names
+        for (const d of shadowed) shadowTheme(d)
+        themeNames = JSON.stringify([names, loaded])
         themeFiles = sources
         return `export const themes = ${JSON.stringify(names)}
 export const themeSources = ${JSON.stringify(themeSources.map((t) => t.label))}`
       }
       // the themes' CSS, each file imported for its styles alone, source after source (a folder
-      // missing gives nothing): globs from the root ("/../x" leaves it)
+      // missing gives nothing): globs from the root ("/../x" leaves it); of the library's own folder,
+      // only the built-in themes to load ({default,folio}.css)
       if (id === resolved('theme-styles')) {
-        return themeSources.map((t) => {
+        const { loaded } = themesOfSources(themeSources, root)
+        return themeSources.map((t, i) => {
           const rel = relative(root, t.dir).split(sep).join('/')
-          return `import.meta.glob(${JSON.stringify((rel ? `/${escapeGlob(rel)}/` : '/') + '*.css')}, { eager: true })`
-        }).join('\n')
+          const pick = i ? '*' : loaded.length > 1 ? `{${loaded.map(escapeGlob).join(',')}}` : loaded.map(escapeGlob)[0]
+          return pick ? `import.meta.glob(${JSON.stringify((rel ? `/${escapeGlob(rel)}/` : '/') + pick + '.css')}, { eager: true })` : ''
+        }).filter(Boolean).join('\n')
       }
       const name = names.find((n) => id === resolved(n))
       if (!name) return null

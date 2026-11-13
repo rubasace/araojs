@@ -20,7 +20,8 @@ export default defineConfig({
 | `decks` | `'src/decks'` | `createDeckApp()`, `arao export` | the `.vue` files directly in it (not in subfolders), one lazily loaded chunk each, each opened at `/<file name>` |
 | `snippets` | `'src/snippets'` | `Snippet(file)` | every file, as raw text, loaded lazily |
 | `images` | `'src/images'` | `Img(file)`, `Slide(bg)` | `png jpg jpeg gif webp avif svg` (any case), as URLs, eager |
-| `themes` | `'src/themes'` | `Deck(:themes)`, `?theme=`, `t` | the theme sources, one or a list, in order: a folder (`'src/themes'`, `'./themes'`) or an installed package's name (a bare lowercase name, `'arao-themes'`, `'@acme/arao-themes'`: its `themes/` folder, or the folder inside it that its `package.json` names in `"arao": { "themes": "<folder>" }`); anything that is not a bare lowercase name is a folder. Symlinks are resolved, and a folder named twice counts once. The `.css` files directly in each folder are loaded after the engine's CSS; their `[data-theme="<name>"]` selectors, and those of the local partials they `@import`, name the themes ([Themes](../guide/themes.md)). A package not installed, or one that gives no theme, stops the build |
+| `themes` | `'src/themes'` | `Deck(:themes)`, `?theme=`, `t` | the project's theme sources, one or a list, in order, beside the library's own (its `themes/` folder: the [built-in themes](../guide/built-in-themes.md), `builtinThemes`): a folder (`'src/themes'`, `'./themes'`) or an installed package's name (a bare lowercase name, `'arao-themes'`, `'@acme/arao-themes'`: its `themes/` folder, or the folder inside it that its `package.json` names in `"arao": { "themes": "<folder>" }`); anything that is not a bare lowercase name is a folder. Symlinks are resolved, and a folder named twice counts once. The `.css` files directly in each folder are loaded after the engine's CSS; their `[data-theme="<name>"]` selectors, and those of the local partials they `@import`, name the themes ([Themes](../guide/themes.md)). A package not installed, or one that gives no theme, stops the build |
+| `builtinThemes` | `true` | `Deck(:themes)`, `?theme=`, `t` | the [built-in themes](../guide/built-in-themes.md) to load: all (`true`), none but `default` (`false`), or their names (`['folio', 'carbon']`; a name that is none stops the build). One left out is not in the build: no CSS, no fonts, no name to offer. A project theme of the same name replaces a built-in one (its file is not loaded), with a message |
 | `icons` | `[]` | `Icon` | names (`'lucide:sun'`) built in even when the source does not spell them out (built at runtime); one that is in no installed set is reported when the module is built |
 | `fonts` | `true` | themes' font tokens | web fonts the CSS names (`font-family`, `--ar-font-*`) fetched at build time from Google Fonts, Bunny Fonts, Fontshare, Fontsource or an installed font package, and served with the deck: weights 400, 600 and 700, upright and italic; system fonts never ([Fonts](../guide/themes.md#fonts)). `false` turns it off; an object is passed to [fontless](https://github.com/unjs/fontaine/tree/main/packages/fontless#configuration) over those defaults (a font that cannot be fetched is a warning and the deck uses its fallback fonts; `throwOnError: true` fails the build instead) |
 | `vue` | `{}` | — | options for `@vitejs/plugin-vue`, passed through |
@@ -34,9 +35,9 @@ export default defineConfig({
 - Modules: `virtual:arao/decks` exports `decks` (file name → loader) and `decksDir`;
   `virtual:arao/snippets` exports `snippets` (path → loader) and `snippetsDir`;
   `virtual:arao/images` exports `images` (path → URL) and `imagesDir`;
-  `virtual:arao/themes` exports `themes` (the theme names, source after source, sorted in each)
-  and `themeSources` (the sources, as messages name them), and `virtual:arao/theme-styles`
-  imports every source's CSS files, in order;
+  `virtual:arao/themes` exports `themes` (the theme names, `default` first, then the project's,
+  source after source, then the built-in ones, sorted in each) and `themeSources` (the sources, as messages name
+  them), and `virtual:arao/theme-styles` imports every source's CSS files, in order;
   `virtual:arao/shortcuts` exports `shortcuts`, the key map in effect (key → command): the
   engine's keys with the project's optional `src/shortcuts.ts` (else `src/shortcuts.js`) over them,
   checked when Vite starts, which fails on a mistake naming the file

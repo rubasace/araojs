@@ -79,9 +79,9 @@ function themeStylesError(code) {
 }
 
 // The library's CSS comes with its JS: the entry imports it, so a project needs no import of its
-// own (it is built by Vite in any case: the virtual modules require the plugin). No theme ships
-// with it: the defaults in tokens.css are the default theme, and a project's themes are its own
-// (src/themes, loaded by the plugin, after it: themeStylesError above).
+// own (it is built by Vite in any case: the virtual modules require the plugin). The themes are
+// not in it: the built-in ones (themes/ at the package's root) and the project's are theme
+// sources, loaded by the plugin, after it (themeStylesError above).
 function css() {
   return {
     name: 'arao:css',

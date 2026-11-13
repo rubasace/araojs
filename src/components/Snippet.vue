@@ -270,7 +270,9 @@ const vars = computed(() => {
 }
 .ar-snippet-header {
   flex: none; height: 80px; padding: 0 30px;
-  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  /* the name centred, the lights' width (three 24px lights, 18px apart) kept on both sides and a
+     gap to them: in a narrow window (fit) the name never runs into the lights */
+  display: grid; grid-template-columns: minmax(108px, 1fr) auto minmax(108px, 1fr); column-gap: 24px; align-items: center;
   background: var(--sn-bar);
   font: 400 var(--ar-code-title-size)/1 var(--ar-font-sans);
   color: var(--ar-code-title);
@@ -313,14 +315,16 @@ const vars = computed(() => {
 
 /* steps */
 .ar-snippet-line.dim { opacity: .28; }
-.ar-snippet-line.hl .ar-snippet-tx { background: color-mix(in srgb, var(--sn-hl) 14%, transparent); }
+/* the highlight's background: --ar-code-hl-bg, else the highlight colour at 14 % (a line) or 22 % (a
+   word): tokens.css */
+.ar-snippet-line.hl .ar-snippet-tx { background: var(--_ar-code-hl-line); }
 /* a run of highlighted lines reads as one block */
 .ar-snippet-line.hl + .ar-snippet-line.hl .ar-snippet-tx { border-top-left-radius: 0; border-top-right-radius: 0; }
 .ar-snippet-line.hl:has(+ .ar-snippet-line.hl) .ar-snippet-tx { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 .ar-snippet-line.hl .ar-snippet-ln { color: var(--sn-hl); border-right-color: var(--sn-hl); }
 .ar-snippet-line.words .ar-snippet-tx .dim { opacity: .28; }
 .ar-snippet-line.words .ar-snippet-tx .hl {
-  background: color-mix(in srgb, var(--sn-hl) 22%, transparent); border-radius: .15em;
+  background: var(--_ar-code-hl-word); border-radius: .15em;
 }
 /* in speaker notes (Notes, wherever they are drawn: the presenter's panel, the export's notes
    pages), a box with no height of its own: the window takes its natural size, its full code at its

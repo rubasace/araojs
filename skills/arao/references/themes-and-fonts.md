@@ -47,17 +47,25 @@ A theme is a `[data-theme="<name>"] { --ar-…: …; }` block in a CSS file of `
 
 - Nothing to import: the plugin loads every CSS file there and takes the theme's name from the
   selector, not the file name. One file may hold several themes.
-- Every token has a default, and the defaults are the `default` theme (no file; always valid).
+- Every token has a default, and the defaults are the `default` theme (always there: the library
+  ships it, and it sets nothing over the defaults).
 - Title colour, size and gap, list spacing, table look, footer position: tokens
   (`--ar-title-*`, `--ar-list-gap`, `--ar-table-*`, `--ar-footer-*`), set in the theme.
 - A token whose default is another token follows it (`--ar-footer-color` defaults to
   `--ar-muted`): change the base one unless you mean to split them.
-- No theme ships with the package besides `default`; there is no `araojs/themes/…` to import.
+- The library ships six themes: `default`, `aurora`, `carbon`, `folio`, `meridian`, `terminal`
+  (`docs/guide/built-in-themes.md`: their look, fonts and contrast). The plugin loads them all
+  unless `arao({ builtinThemes: false })` (or a list of names, `['folio']`): nothing to import.
+  Before writing a theme, see whether one of them fits.
+- A project theme named like a built-in one replaces it (the built-in file is not loaded; Vite says
+  so). To start from one, copy `node_modules/araojs/themes/<name>.css` into `src/themes/`: same name
+  to replace it, another name to offer both.
 
 ## Choosing themes per deck
 
-- A deck without `themes` offers every theme: `default` first, then each source's, in order.
-- `Deck(:themes="['venue', 'default']")` picks some, in order; the first is the one it opens in.
+- A deck without `themes` offers every theme: `default` first, then the project's (each source's,
+  in order), then the other built-in ones.
+- `Deck(:themes="['venue', 'folio']")` picks some, in order; the first is the one it opens in.
   The colon matters: it is an array.
 - A name no theme source gives is skipped with an `[arao]` warning.
 - While presenting: `t` cycles themes, the controls' picker chooses one, `?theme=<name>` opens in
@@ -65,7 +73,8 @@ A theme is a `[data-theme="<name>"] { --ar-…: …; }` block in a CSS file of `
 
 ## Where themes come from
 
-Only from **theme sources**, `arao({ themes })` in `vite.config.js` (default `'src/themes'`):
+Only from **theme sources**: the library's own (the built-in themes), and the project's,
+`arao({ themes })` in `vite.config.js` (default `'src/themes'`):
 
 ```js
 arao({ themes: ['src/themes', 'src/styles/venues', 'arao-themes'] })
@@ -84,12 +93,13 @@ arao({ themes: ['src/themes', 'src/styles/venues', 'arao-themes'] })
 
 ## Fonts
 
-Fonts are fetched, not installed. A theme names a web font in `--ar-font-sans` / `--ar-font-mono`
-and the build downloads it (Google Fonts, Bunny, Fontshare, Fontsource, or an installed npm font
+Fonts are fetched, not installed. A theme names a web font in `--ar-font-sans` / `--ar-font-mono` /
+`--ar-font-heading` (the headings'; unset, they keep the text's font) and the build downloads it (Google Fonts, Bunny, Fontshare, Fontsource, or an installed npm font
 package) and serves it with the deck, with matched fallbacks:
 
 ```css
 [data-theme="venue"] {
+  --ar-font-heading: "Space Grotesk", sans-serif;
   --ar-font-sans: "Inter", sans-serif;
   --ar-font-mono: "JetBrains Mono", monospace;
 }
@@ -102,6 +112,9 @@ package) and serves it with the deck, with matched fallbacks:
   Offline or on a provider timeout the build still passes with an `[arao] fonts:` warning and the
   stack's fallback fonts. For CI that must fail instead: `arao({ fonts: { throwOnError: true } })`.
 - A font no provider has: write its own `@font-face` in the theme file, pointing at its files.
+- The built-in themes name web fonts too: with all of them loaded, every build fetches and ships
+  them (about 2.6 MB; a viewer downloads only the theme on screen's). `builtinThemes: false` or a
+  list of the ones the decks wear keeps the rest out.
 - `--ar-ui-font` (controls, presenter view) is not fetched: use a system font there.
 - Off: `arao({ fonts: false })`; per family: `fonts: { families: [{ name: 'Brand', provider: 'none' }] }`.
 

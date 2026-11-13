@@ -1,5 +1,5 @@
 import { computed, inject, provide, readonly, ref, toValue, watch, type InjectionKey, type MaybeRefOrGetter, type Ref } from 'vue'
-import { themes as projectThemes, themeSources } from 'virtual:arao/themes'
+import { themes as sourceThemes, themeSources } from 'virtual:arao/themes'
 
 // The theme a deck wears, and the ones it offers. One per Deck: the CSS of every theme is the
 // project's, shared by all its decks; which of them a deck offers (its themes prop) and which it
@@ -12,7 +12,8 @@ import { themes as projectThemes, themeSources } from 'virtual:arao/themes'
 //   useTheme()                       the controls, for the deck's controls (the themes list, "t")
 // The deck's themes: Deck(:themes), in its order, or without it every theme there is
 // (ALL_THEMES). A name that is no theme there is (none of the plugin's theme sources gives it) is
-// skipped, with one warning per list; a list left with none is ['default']. It wears the URL's
+// skipped, with one warning per list; a list left with none is the first theme there is
+// ('default'). It wears the URL's
 // theme, else the first of the list (a thumbnail: the first).
 // The controls (useTheme), a frozen object:
 //   theme               read-only ref: the theme worn
@@ -31,11 +32,12 @@ export interface ThemeControls {
 }
 const KEY: InjectionKey<ThemeControls> = Symbol('arao-theme')
 
-// Every theme there is: 'default' (the engine's own tokens, styles/tokens.css: no file), then the
-// ones the theme sources give, source after source, by name in each (each [data-theme="<name>"] of
-// a CSS file in a source's folder, src/themes by default, or in a local partial such a file
-// @import-s: the Vite plugin reads them and loads their CSS).
-const ALL_THEMES = Object.freeze(['default', ...projectThemes.filter((n) => n !== 'default')])
+// Every theme there is, in the plugin's order: 'default' (the library's themes/default.css), then
+// the project's, source after source, then the library's built-in themes (those arao({
+// builtinThemes }) loads, and no project theme replaces), by name in each (each [data-theme="<name>"]
+// of a CSS file in a source's folder, or in a local partial such a file @import-s: the Vite plugin
+// reads them and loads their CSS).
+const ALL_THEMES: readonly string[] = Object.freeze([...sourceThemes])
 
 // a name a deck can list: a theme there is (no stylesheet of the page is read: a theme comes from
 // a source of arao({ themes }) or it is none)
@@ -46,7 +48,7 @@ export function createTheme({ themes: prop, initial = null, warn = true }: { the
     const list = toValue(prop)
     if (list == null) return ALL_THEMES
     const known = [...new Set(list.filter(isTheme))]
-    return known.length ? known : ['default']
+    return known.length ? known : ALL_THEMES.slice(0, 1)
   })
   // (said where the deck is shown, not by each thumbnail of it)
   if (warn) {
