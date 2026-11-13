@@ -150,9 +150,29 @@ npm run export -- --deck mytalk        # exports/mytalk.pdf, one page per step
 
 More: [Export to PDF](guide/export.md).
 
+## With a coding agent
+
+Arao ships a skill for coding agents: Claude Code, Codex, Cursor and any other agent that reads
+[Agent Skills](https://github.com/vercel-labs/skills). It teaches the agent to set up a project,
+write decks the Arao way and check them. Install it in your slides project (it needs `araojs`
+0.5.0 or newer):
+
+```bash
+npx skills add rubasace/araojs
+```
+
+Then ask for what you want, and for it to be checked:
+
+> Create an Arao deck about our move to Kubernetes: a cover, three points revealed one by one,
+> and a code walkthrough with highlights. Then verify it.
+
+The skill includes a verification script: it walks every slide and step in a headless browser,
+counts the steps, reports console warnings and overflow, and saves a screenshot per step. Its
+source: [skills/arao](https://github.com/rubasace/araojs/tree/main/skills/arao).
+
 ## Next
 
 - [Concepts](guide/concepts.md): the canvas, zones, steps and themes in two minutes.
 - [Slides and layouts](guide/slides-and-layouts.md), [Steps](guide/steps.md),
   [Code](guide/code.md), [Themes](guide/themes.md).
-- Writing decks with an AI agent: give it [the Arao skill](../skills/arao/).
+- Writing decks with an agent: [With a coding agent](#with-a-coding-agent).
