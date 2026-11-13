@@ -1,4 +1,4 @@
-<!-- Internal. The list of a project's decks, which createDeckApp() (app.js) shows at / (the app's
+<!-- Internal. The list of a project's decks, which createDeckApp() (app.ts) shows at / (the app's
      base) when the project has more than one deck (or always, deckList: 'always'), and at a path
      that names no deck (missing). A plain page, not a canvas: a card per deck, with its cover
      drawn in it (components/internal/DeckCover.vue: the deck itself, small, still and inert, drawn once
@@ -15,7 +15,7 @@
      'default'), in the card's frame (a deck of another shape than the frame shows the frame
      around it, not its theme's letterbox). Until a cover is drawn, a soft sheen goes by in its
      frame (a still tint when the reader asks for reduced motion).
-     Its text is in the reader's language, like the rest of the engine's own UI (i18n/i18n.js),
+     Its text is in the reader's language, like the rest of the engine's own UI (i18n/i18n.ts),
      and says so (lang) whatever the page's <html lang>; the titles are the decks', in the page's. -->
 <template>
   <main class="ar-decks" :lang="lang">
@@ -32,7 +32,7 @@
       <ul class="ar-decks-grid" v-if="decks.length">
         <li class="ar-decks-card" v-for="d in decks" :key="d.name">
           <div class="ar-decks-preview">
-            <DeckCover :name="d.name" :load="d.load" @title="(title) => (titles[d.name] = title)" />
+            <DeckCover :name="d.name" :load="d.load" @title="(title: string) => (titles[d.name] = title)" />
           </div>
           <!-- the link covers the whole card (::after); the cover stays outside it, inert -->
           <a class="ar-decks-link" :href="d.href + query" :lang="deckLang">
@@ -52,8 +52,9 @@
   </main>
 </template>
 
-<script setup>
-import { reactive } from 'vue'
+<script setup lang="ts">
+import { reactive, type PropType } from 'vue'
+import type { DeckEntry } from '../app'
 import DeckCover from '../components/internal/DeckCover.vue'
 import { lang, t } from '../i18n/i18n'
 
@@ -61,20 +62,20 @@ defineProps({
   // { name, title, href, path, load } per deck: name is what its path takes, title what the card
   // shows (the file name in words), href its path as a link and path as the reader reads it (not
   // percent-encoded), load its loader
-  decks: { type: Array, required: true },
+  decks: { type: Array as PropType<DeckEntry[]>, required: true },
   // the name asked for that is no deck, if any
-  missing: { type: String, default: null },
+  missing: { type: String as PropType<string | null>, default: null },
   // the decks folder, for the page of a project with none
   dir: { type: String, default: '' },
 })
 
 // each deck's cover title, as its cover tells it (DeckCover); shown under the title unless it
 // says the same (letters and digits compared, whatever the case)
-const titles = reactive({})
+const titles = reactive<Record<string, string>>({})
 // a card's titles are the deck's: in the page's language
 const deckLang = document.documentElement.lang
-const bare = (s) => s.toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, '')
-const subtitle = (d) => {
+const bare = (s: string) => s.toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, '')
+const subtitle = (d: DeckEntry) => {
   const cover = titles[d.name] ?? ''
   return bare(cover) && bare(cover) !== bare(d.title) ? cover : ''
 }

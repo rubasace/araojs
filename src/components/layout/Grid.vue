@@ -5,10 +5,10 @@
        Grid(cols="4" gap="md")      4 columns
        Grid(ratio="2:1")            columns and rows chosen from the number of children
      cols:  a whole number of columns. Default 3.
-     ratio: the grid's shape, columns : rows ("2:1", "3/2", "1.5"; layout.js): 2:1 puts 6
+     ratio: the grid's shape, columns : rows ("2:1", "3/2", "1.5"; layout.ts): 2:1 puts 6
             children in 3 + 3, 5 in 3 + 2, 8 in 4 + 4, 3 in one row. An incomplete last row is
             centred under the others. Overrides cols. Not the track ratio of Cols/Rows ("2 1").
-     gap:   sm | md | lg, a number of px or a length in px, em or rem (layout.js). Default md;
+     gap:   sm | md | lg, a number of px or a length in px, em or rem (layout.ts). Default md;
             an invalid gap warns and keeps md.
      Overflow: widths hold, heights grow. A child is never wider than its cell and what is wider
      inside it is clipped at the cell's edge, so it never paints over its neighbour; rows grow to
@@ -20,20 +20,20 @@
      CSS: what every piece shares is in layout.css; its props reach its own rules (below) as
      custom properties. A render function: with ratio, the number of columns depends on the number
      of children. -->
-<script>
-import { Comment, Fragment, Text, h } from 'vue'
+<script lang="ts">
+import { Comment, Fragment, Text, defineComponent, h, type VNode } from 'vue'
 import { gapValue, gridShape, isGap, shapeValue } from './layout'
 
 // the element children a slot renders (v-for fragments flattened; v-if comments, blank text out)
-const elements = (nodes = []) => nodes.flatMap((n) =>
-  n.type === Fragment ? elements(n.children)
+const elements = (nodes: VNode[] = []): VNode[] => nodes.flatMap((n) =>
+  n.type === Fragment ? elements(n.children as VNode[])
     : n.type === Comment || (n.type === Text && !String(n.children).trim()) ? [] : [n])
 
-export default {
+export default defineComponent({
   name: 'Grid',
   props: {
-    cols: { type: [String, Number], default: 3, validator: (v) => Number.isInteger(Number(v)) && Number(v) >= 1 },
-    ratio: { type: [String, Number], validator: (v) => shapeValue(v) !== null },
+    cols: { type: [String, Number], default: 3, validator: (v: unknown) => Number.isInteger(Number(v)) && Number(v) >= 1 },
+    ratio: { type: [String, Number], validator: (v: unknown) => shapeValue(v) !== null },
     gap: { type: [String, Number], validator: isGap },
   },
   setup(p, { slots }) {
@@ -55,7 +55,7 @@ export default {
       }, children)
     }
   },
-}
+})
 </script>
 
 <style src="./layout.css"></style>

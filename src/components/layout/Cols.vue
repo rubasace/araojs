@@ -3,10 +3,10 @@
      container (the rest of the slide under its title, a zone, a cell of another piece) and takes
      v-step like any element. Sizes are canvas px.
        Cols(ratio="1 2" gap="md" align="center")
-     ratio: one entry per column, a share, auto or a px size (layout.js); an invalid ratio
+     ratio: one entry per column, a share, auto or a px size (layout.ts); an invalid ratio
             warns in development and is ignored. Without ratio: equal columns, one per child.
             Children beyond the ratio's entries start a new row.
-     gap:   sm | md | lg, a number of px or a length in px, em or rem (layout.js). Default md;
+     gap:   sm | md | lg, a number of px or a length in px, em or rem (layout.ts). Default md;
             an invalid gap warns and keeps md.
      align: start | center | end | stretch, vertical placement in each column. Default stretch.
             In a centred (or end-aligned) slide body the row is only as tall as its content and
@@ -23,16 +23,16 @@
   <div class="ar-cols" :style="style"><slot /></div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { gapValue, isGap, isRatio, tracks } from './layout'
 
 defineOptions({ name: 'Cols' })
 
 const props = defineProps({
-  ratio: { type: String, validator: (v) => isRatio(v) },
+  ratio: { type: String, validator: (v: string) => isRatio(v) },
   gap: { type: [String, Number], validator: isGap },
-  align: { type: String, validator: (v) => ['start', 'center', 'end', 'stretch'].includes(v) },
+  align: { type: String, validator: (v: string) => ['start', 'center', 'end', 'stretch'].includes(v) },
 })
 
 // the props as the custom properties its CSS reads (below); an unset one keeps the CSS default

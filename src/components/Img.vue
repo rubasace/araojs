@@ -23,7 +23,7 @@
      at any scale, but a photo is upscaled with the canvas, so on a 4K screen a full-slide picture
      wants ~3840 px wide (twice the size it shows at in canvas px); use WebP/AVIF/JPEG for photos.
      Until its picture has loaded (or failed) it carries data-ar-busy, set to its URL: the export
-     waits for it, and for a URL that never answers only once (exporter.js). -->
+     waits for it, and for a URL that never answers only once (exporter.ts). -->
 <template>
   <div
     class="ar-img"
@@ -42,7 +42,7 @@
       draggable="false"
       decoding="async"
       @load="loaded"
-      @error="failed = url"
+      @error="failed = url ?? null"
     />
     <span class="ar-img-name" v-else>
       <span class="ar-img-alt" v-if="alt">{{ alt }}</span>
@@ -51,15 +51,15 @@
   </div>
 </template>
 
-<script setup>
-import { computed, ref, watchEffect } from 'vue'
+<script setup lang="ts">
+import { computed, ref, watchEffect, type PropType } from 'vue'
 import { blurStyle, blurValue, fileUrl, imagesDir, isBlur, isOpacity, opacityValue, warnOnce, withBase } from '../core/image'
 
 const props = defineProps({
   file: String, // path inside the images folder
   src: String, // any URL, instead of file
   alt: { type: String, default: '' },
-  fit: { type: String, validator: (v) => ['cover', 'contain'].includes(v) },
+  fit: { type: String as PropType<'cover' | 'contain'>, validator: (v: string) => ['cover', 'contain'].includes(v) },
   position: String,
   opacity: { type: [Number, String], validator: isOpacity },
   blur: { type: [Number, String], validator: isBlur },
@@ -68,7 +68,7 @@ const props = defineProps({
 
 const path = computed(() => props.file?.trim().replace(/^\.?\/+/, ''))
 const url = computed(() => (path.value ? fileUrl(path.value) : withBase(props.src?.trim())))
-const failed = ref(null) // the URL that did not load, if it is still the current one
+const failed = ref<string | null>(null) // the URL that did not load, if it is still the current one
 const missing = computed(() => !url.value || failed.value === url.value)
 
 // the label of the placeholder: the file as written, or the last part of the URL
@@ -85,19 +85,19 @@ watchEffect(() => {
 })
 
 // the picture's own shape, once known: what sizes it where nothing else does (a plain block)
-const ratio = ref(null)
-const shown = ref(null) // the URL that has loaded
-function loaded(e) {
-  shown.value = url.value
-  const { naturalWidth: w, naturalHeight: h } = e.target
+const ratio = ref<number | null>(null)
+const shown = ref<string | null>(null) // the URL that has loaded
+function loaded(e: Event) {
+  shown.value = url.value ?? null
+  const { naturalWidth: w, naturalHeight: h } = e.target as HTMLImageElement
   ratio.value = w > 0 && h > 0 ? w / h : null
 }
 
-const radius = (r) => {
+const radius = (r: boolean | string | number) => {
   if (r === true || r === '') return 'var(--ar-radius)'
   if (r === 'full') return '50%'
-  if (typeof r === 'number' || /^\d*\.?\d+$/.test(r)) return `${Number(r)}px`
-  return r || undefined // a CSS length: "1em", "12px"
+  if (typeof r === 'number' || (typeof r === 'string' && /^\d*\.?\d+$/.test(r))) return `${Number(r)}px`
+  return typeof r === 'string' ? r || undefined : undefined // a CSS length: "1em", "12px"
 }
 const box = computed(() => ({
   borderRadius: radius(props.rounded),

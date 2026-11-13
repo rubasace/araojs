@@ -3,10 +3,10 @@
      rest of the slide under its title, a zone, a cell of another piece) and takes v-step like any
      element. Sizes are canvas px.
        Rows(ratio="auto 1" gap="md")
-     ratio: one entry per row, a share, auto or a px size (layout.js); an invalid ratio warns
+     ratio: one entry per row, a share, auto or a px size (layout.ts); an invalid ratio warns
             in development and is ignored. Without ratio: equal rows, one per child. Children
             beyond the ratio's entries get equal rows.
-     gap:   sm | md | lg, a number of px or a length in px, em or rem (layout.js). Default md;
+     gap:   sm | md | lg, a number of px or a length in px, em or rem (layout.ts). Default md;
             an invalid gap warns and keeps md.
      Overflow: widths hold, heights grow. A child is never wider than the piece and what is wider
      inside it is clipped at its edge; rows grow to fit their content, so rows never overlap; if
@@ -19,14 +19,14 @@
   <div class="ar-rows" :style="style"><slot /></div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { gapValue, isGap, isRatio, tracks } from './layout'
 
 defineOptions({ name: 'Rows' })
 
 const props = defineProps({
-  ratio: { type: String, validator: (v) => isRatio(v) },
+  ratio: { type: String, validator: (v: string) => isRatio(v) },
   gap: { type: [String, Number], validator: isGap },
 })
 

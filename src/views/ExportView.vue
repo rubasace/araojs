@@ -1,59 +1,62 @@
-<!-- The export view (?export, core/exporter.js): once the deck has mounted, its stage is walked
+<!-- The export view (?export, core/exporter.ts): once the deck has mounted, its stage is walked
      page by page into the book, and the result is reported for the export CLI, with the name of
      the deck it printed (deck: the app's, null without one), so the CLI can tell a wrong one.
      No controls, no keyboard, no mouse or touch, no cursor hiding; the deck joins no other window
-     (state/deck.js).
+     (state/deck.ts).
        options   exportOptions(query): { perStep, notes }
      The Notes of the slide on screen are drawn in a box that is never shown (their outlet,
-     state/notes.js): the book copies them after the slide's page(s), every step of them shown.
-     deck: createDeck() (state/deck.js): the stage and the export options. -->
+     state/notes.ts): the book copies them after the slide's page(s), every step of them shown.
+     deck: createDeck() (state/deck.ts): the stage and the export options. -->
 <template>
   <div class="ar-viewport ar-export" ref="viewport" :data-theme="theme" :class="{ 'ar-export-done': done }" :style="stepLabels">
     <Stage :stage="deck.stage" :width="width" :height="height">
       <slot />
     </Stage>
     <!-- the notes of the slide on screen, copied into the book after its page(s); never shown -->
-    <div class="ar-export-notes" v-if="deck.exporting.notes" ref="notesOutlet"></div>
-    <!-- filled by exporter.js, not by Vue -->
+    <div class="ar-export-notes" v-if="options.notes" ref="notesOutlet"></div>
+    <!-- filled by exporter.ts, not by Vue -->
     <div class="ar-book" ref="book"></div>
   </div>
 </template>
 
-<script setup>
-import { onMounted, ref } from 'vue'
+<script setup lang="ts">
+import { onMounted, ref, type PropType } from 'vue'
 import { buildBook, reportReady } from '../core/exporter'
 import { titleOf } from '../state/stage'
-import { useDeck } from '../state/deck'
+import { useDeck, type Deck } from '../state/deck'
 import { useNotesOutlet } from '../state/notes'
 import Stage from '../components/internal/Stage.vue'
 import { t } from '../i18n/i18n'
 
 const props = defineProps({
-  deck: { type: Object, required: true }, // createDeck()
+  deck: { type: Object as PropType<Deck>, required: true }, // createDeck()
   width: { type: Number, required: true }, // of the canvas
   height: { type: Number, required: true },
 })
 const { theme, themes } = useDeck()
-const { stage, exporting: options } = props.deck
+// the export view is only drawn in export mode, where the options are read from the URL
+const { stage } = props.deck
+const options = props.deck.exporting!
 
-const viewport = ref()
-const book = ref()
+const viewport = ref<HTMLElement>()
+const book = ref<HTMLElement>()
 const notesOutlet = useNotesOutlet()
 // true once the book is complete
 const done = ref(false)
 
 // the labels of a step's notes on paper, in the reader's language (the CSS below draws them
 // around the step's number, attr(data-ar-step)): what each message says before and after it
-const around = (key) => t(key, '\u0000').split('\u0000').map((s) => JSON.stringify(s))
+// (the message is called with a marker instead of its number, to split it around the number)
+const around = (key: 'fromStep' | 'atStep') => (t as (k: string, ...v: unknown[]) => string)(key, '\u0000').split('\u0000').map((s) => JSON.stringify(s))
 const [fromBefore, fromAfter] = around('fromStep')
 const [atBefore, atAfter] = around('atStep')
 const stepLabels = { '--_ar-from-step-before': fromBefore, '--_ar-from-step-after': fromAfter, '--_ar-at-step-before': atBefore, '--_ar-at-step-after': atAfter }
 
 // every report says which deck it is of
-const report = (value) => reportReady({ ...value, deck: props.deck.name })
+const report = (value: Record<string, unknown>) => reportReady({ ...value, deck: props.deck.name })
 
 async function run() {
-  // the deck's themes, as state/deck.js resolves them: a listed theme from outside the themes
+  // the deck's themes, as state/deck.ts resolves them: a listed theme from outside the themes
   // folder (imported by hand) is one of them, so arao export --theme takes it
   const list = themes.value
   if (!list.includes(theme.value))
@@ -61,10 +64,10 @@ async function run() {
   try {
     const result = await buildBook({
       stage,
-      canvas: viewport.value.querySelector(':scope > .ar-stage > .ar-canvas'),
-      book: book.value,
+      canvas: viewport.value!.querySelector<HTMLElement>(':scope > .ar-stage > .ar-canvas')!,
+      book: book.value!,
       notes: options.notes ? notesOutlet.value : null,
-      title: (i) => titleOf(stage.list[i]),
+      title: (i: number) => titleOf(stage.list[i]),
       perStep: options.perStep,
       width: props.width,
       height: props.height,
@@ -73,14 +76,14 @@ async function run() {
     report({ ...result, theme: theme.value })
   } catch (e) {
     console.error('[arao] export failed', e)
-    report({ error: String(e?.message || e) })
+    report({ error: String((e as Error)?.message || e) })
   }
 }
 onMounted(run)
 </script>
 
 <style>
-/* Export mode (?export, core/exporter.js): a book of pages, each exactly the canvas size (inline
+/* Export mode (?export, core/exporter.ts): a book of pages, each exactly the canvas size (inline
    width/height; @page gets the same size), in document order, for printing. */
 html:has(.ar-export), html:has(.ar-export) body, html:has(.ar-export) #app { height: auto; }
 .ar-viewport.ar-export { position: static; overflow: visible; background: none; }
@@ -118,7 +121,7 @@ html:has(.ar-export), html:has(.ar-export) body, html:has(.ar-export) #app { hei
 }
 .ar-notes-body .ar-note { margin-bottom: 28px; }
 .ar-notes-body .ar-note > :first-child { margin-top: 0; }
-/* on paper every step of the notes shows, each labelled with its step (v-step, directives/step.js) */
+/* on paper every step of the notes shows, each labelled with its step (v-step, directives/step.ts) */
 .ar-notes-body .ar-step-hidden { opacity: 1 !important; }
 .ar-notes-body .ar-step-collapsed { display: revert !important; }
 .ar-notes-body :is([data-ar-step]:not([data-ar-step="1"]), [data-ar-step-only])::before {

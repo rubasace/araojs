@@ -22,7 +22,7 @@ function keepImportMeta() {
     name: 'arao:keep-import-meta',
     enforce: 'pre',
     transform(code, id) {
-      if (id.includes('/node_modules/') || !/\.(js|vue)$/.test(id.split('?')[0])) return null
+      if (id.includes('/node_modules/') || !/\.(ts|js|vue)$/.test(id.split('?')[0])) return null
       return code.replace(used, 'import.meta.__arao_$1')
     },
     renderChunk(code) {
@@ -32,7 +32,7 @@ function keepImportMeta() {
 }
 
 // CSS order guard. Where two rules of the same specificity meet on one element, the later one in
-// arao.css wins, and the import order in src/plugin.js is what puts it later (its header says
+// arao.css wins, and the import order in src/plugin.ts is what puts it later (its header says
 // why), or, within a component, the order of its style blocks. Each entry: the rule that must come
 // first, the rule that must follow it, what breaks otherwise. A rule no longer in arao.css fails
 // too, so that the guard cannot go stale unseen.
@@ -58,7 +58,7 @@ function cssOrderError(css) {
   for (const [first, then, why] of CSS_ORDER) {
     const a = ruleAt(css, first), b = ruleAt(css, then)
     if (a < 0 || b < 0) return `no rule \`${a < 0 ? first : then} {\` in ${CSS}: update CSS_ORDER in vite.config.js`
-    if (a > b) return `\`${first}\` must come before \`${then}\` in ${CSS} (${why}): fix the import order in src/plugin.js (or a component's style blocks)`
+    if (a > b) return `\`${first}\` must come before \`${then}\` in ${CSS} (${why}): fix the import order in src/plugin.ts (or a component's style blocks)`
   }
   return null
 }
@@ -66,7 +66,7 @@ function cssOrderError(css) {
 // The project's themes go after all of the engine's CSS, so that a theme's rule wins over an
 // engine rule of the same specificity: in the project's build, CSS is in import order, and the
 // entry imports ./arao.css first and virtual:arao/theme-styles (the themes folder's CSS) last. The
-// bundler hoists every import to the top of the chunk, in the order the modules run (src/index.js
+// bundler hoists every import to the top of the chunk, in the order the modules run (src/index.ts
 // imports the themes last for that): the theme styles must be the last import, after ./arao.css.
 const THEME_STYLES = 'virtual:arao/theme-styles'
 function themeStylesError(code) {
@@ -95,20 +95,27 @@ function css() {
         if (order) this.error(`CSS order: ${order}`)
         entry.code = `import './${CSS}'\n${entry.code}`
         const themes = themeStylesError(entry.code)
-        if (themes) this.error(`theme styles: ${themes}: keep their import last in src/index.js`)
+        if (themes) this.error(`theme styles: ${themes}: keep their import last in src/index.ts`)
       },
     },
   }
 }
 
 // The engine's UI text: one catalogue per language in src/i18n/, each with exactly the keys of
-// English (en.js, what a missing key would fall back to unseen), each a string where English has
+// English (en.ts, what a missing key would fall back to unseen), each a string where English has
 // a string and a function where it has one (a message that takes values).
 const I18N = here('src/i18n/')
 async function catalogueError() {
-  const files = (await readdir(I18N)).filter((f) => f.endsWith('.js') && f !== 'i18n.js')
-  const load = async (f) => (await import(pathToFileURL(I18N + f).href)).default
-  const en = await load('en.js')
+  const files = (await readdir(I18N)).filter((f) => f.endsWith('.ts') && f !== 'i18n.ts')
+  // Node strips the catalogues' types itself (22.18 or newer)
+  const load = async (f) => {
+    try {
+      return (await import(pathToFileURL(I18N + f).href)).default
+    } catch (e) {
+      throw new Error(`cannot load src/i18n/${f} (building the library needs Node 22.18 or newer, which runs TypeScript): ${e.message}`)
+    }
+  }
+  const en = await load('en.ts')
   for (const f of files) {
     const other = await load(f)
     const missing = Object.keys(en).filter((k) => !(k in other))
@@ -116,7 +123,7 @@ async function catalogueError() {
     const kind = Object.keys(en).filter((k) => k in other && typeof other[k] !== typeof en[k])
     if (missing.length) return `${f} has no ${missing.join(', ')}`
     if (extra.length) return `${f} has keys English has not: ${extra.join(', ')}`
-    if (kind.length) return `${f}: ${kind.join(', ')} must be a ${kind.map((k) => typeof en[k]).join(', ')}, as in en.js`
+    if (kind.length) return `${f}: ${kind.join(', ')} must be a ${kind.map((k) => typeof en[k]).join(', ')}, as in en.ts`
   }
   return null
 }
@@ -139,7 +146,7 @@ export default defineConfig(({ command }) => command === 'build'
         emptyOutDir: true,
         copyPublicDir: false,
         minify: false, // a library: the project's build minifies it along with everything else
-        lib: { entry: here('src/index.js'), formats: ['es'], fileName: 'index', cssFileName: CSS.replace(/\.css$/, '') },
+        lib: { entry: here('src/index.ts'), formats: ['es'], fileName: 'index', cssFileName: CSS.replace(/\.css$/, '') },
         // dependencies stay imports, resolved in the project: vue (a peer), VueUse, Shiki
         rolldownOptions: { external: [/^vue(\/|$)/, /^@vueuse\//, /^shiki(\/|$)/, /^virtual:arao\//] },
       },
@@ -148,7 +155,7 @@ export default defineConfig(({ command }) => command === 'build'
       root: here('playground'),
       plugins: [arao()],
       resolve: {
-        alias: [{ find: /^araojs$/, replacement: here('src/index.js') }],
+        alias: [{ find: /^araojs$/, replacement: here('src/index.ts') }],
       },
       server: {
         host: '127.0.0.1',

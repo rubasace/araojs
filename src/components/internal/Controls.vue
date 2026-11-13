@@ -2,15 +2,15 @@
      presenter view). Its buttons, its two lists (the jump list, the themes) and the deck's keys.
      docked: always shown, in the flow of the page (the presenter view places it under the slide).
      auto-hide: shown for 2.5 s after the mouse moves anywhere in the window, then hidden; a tap
-       in the middle of the window shows it for 4 s, another hides it (composables/useAutoHide.js);
+       in the middle of the window shows it for 4 s, another hides it (composables/useAutoHide.ts);
        the pointer over it or a list open keeps it shown. Read once, when it mounts: it does not
        change afterwards. Without auto-hide (and not docked) it is always shown.
      Where the deck is and what it does come from useDeck() (the slides' titles too); the themes
      from useTheme(). Which list is open and what is typed in it are its own.
-     Its own keys (composables/useKeyboard.js), on the window, wherever the focus is: g opens or
+     Its own keys (composables/useKeyboard.ts), on the window, wherever the focus is: g opens or
      closes the jump list, a digit opens it with that number typed, Escape closes any list. The
      deck's other keys (moves, theme, fullscreen, presenter) are its shortcuts
-     (composables/useShortcuts.js, Deck.vue). Keys never show the panel: only the mouse does. -->
+     (composables/useShortcuts.ts, Deck.vue). Keys never show the panel: only the mouse does. -->
 <template>
   <nav
     class="ar-controls"
@@ -129,11 +129,11 @@
   </nav>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useDeck } from '../../state/deck'
 import { useTheme } from '../../state/theme'
-import { useKeyboard } from '../../composables/useKeyboard'
+import { useKeyboard, type KeyHandlers } from '../../composables/useKeyboard'
 import { useAutoHide } from '../../composables/useAutoHide'
 import { lang, t } from '../../i18n/i18n'
 
@@ -147,9 +147,10 @@ const { theme, themes, setTheme } = useTheme()
 // the slides' titles are the deck's: in the page's language, not the controls'
 const deckLang = document.documentElement.lang
 
-const root = ref()
+type List = 'slides' | 'themes'
+const root = ref<HTMLElement>()
 const hovering = ref(false)
-const open = ref(null) // null | 'slides' | 'themes'
+const open = ref<List | null>(null)
 const atStart = computed(() => deck.index.value === 0 && deck.step.value === 1)
 const atEnd = computed(() => deck.index.value === deck.total.value - 1 && deck.step.value === deck.steps.value)
 
@@ -160,10 +161,10 @@ const visible = computed(() => props.docked || !shown || shown.value || hovering
 // ---- jump list --------------------------------------------------------------
 const query = ref('')
 const sel = ref(0)
-const search = ref()
-const listEl = ref()
+const search = ref<HTMLInputElement>()
+const listEl = ref<HTMLElement>()
 // every slide's title, read when the list opens
-const titles = ref([])
+const titles = ref<string[]>([])
 // a number matches by slide number prefix; text matches the title
 const matches = computed(() => {
   const q = query.value.trim().toLowerCase()
@@ -172,8 +173,8 @@ const matches = computed(() => {
   if (/^\d+$/.test(q)) return all.filter((m) => String(m.i + 1).startsWith(q))
   return all.filter((m) => m.t.toLowerCase().includes(q))
 })
-watch(query, () => (sel.value = 0))
-function move(d) {
+watch(query, () => { sel.value = 0 })
+function move(d: number) {
   const n = matches.value.length
   if (!n) return
   sel.value = (sel.value + d + n) % n
@@ -188,35 +189,36 @@ async function openSlides(initial = '') {
   search.value?.focus()
   listEl.value?.querySelector(initial ? '.sel' : '.current')?.scrollIntoView({ block: 'center' })
 }
-function jump(i) {
+function jump(i: number) {
   deck.go(i)
   close()
 }
 
 // ---- themes -----------------------------------------------------------------
-function pickTheme(name) {
+function pickTheme(name: string) {
   setTheme(name)
   close()
 }
 
 // ---- open / close -----------------------------------------------------------
-function toggle(which) {
+function toggle(which: List) {
   if (open.value === which) return close()
-  which === 'slides' ? openSlides() : (open.value = which)
+  if (which === 'slides') openSlides()
+  else open.value = which
 }
 function close() {
   open.value = null
   search.value?.blur()
 }
 // a press anywhere outside the controls (a click, a tap) closes any open list
-function onPointerDown(e) {
-  if (open.value && !root.value?.contains(e.target)) close()
+function onPointerDown(e: PointerEvent) {
+  if (open.value && !root.value?.contains(e.target as Node)) close()
 }
 onMounted(() => document.addEventListener('pointerdown', onPointerDown, true))
 onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown, true))
 
-// ---- its own keys: g, a digit, Escape (the deck's other keys: composables/useShortcuts.js) ----
-const keys = { g: () => toggle('slides'), Escape: close }
+// ---- its own keys: g, a digit, Escape (the deck's other keys: composables/useShortcuts.ts) ----
+const keys: KeyHandlers = { g: () => toggle('slides'), Escape: close }
 for (const d of '0123456789') keys[d] = openSlides
 useKeyboard(keys)
 </script>

@@ -1,5 +1,5 @@
 <!-- Internal. One deck's cover in the list of decks (views/DeckSelectorView.vue): the deck itself,
-     drawn as a thumbnail (state/deck.js provideThumbnail, components/internal/Thumbnail.vue), filling the
+     drawn as a thumbnail (state/deck.ts provideThumbnail, components/internal/Thumbnail.vue), filling the
      positioned box it is placed in. It mounts once its box comes near the viewport
      (IntersectionObserver, 400 px ahead) and stays mounted; until then, and while the deck's code
      loads, it is empty (the box shows through). A deck that fails to load or to draw says so
@@ -14,13 +14,13 @@
   </div>
 </template>
 
-<script setup>
-import { defineAsyncComponent, onBeforeUnmount, onErrorCaptured, onMounted, ref, watch } from 'vue'
+<script setup lang="ts">
+import { defineAsyncComponent, onBeforeUnmount, onErrorCaptured, onMounted, ref, watch, type AsyncComponentLoader, type PropType } from 'vue'
 import { provideThumbnail } from '../../state/deck'
 import { t } from '../../i18n/i18n'
 
 const props = defineProps({
-  load: { type: Function, required: true },
+  load: { type: Function as PropType<AsyncComponentLoader>, required: true },
   name: { type: String, required: true },
 })
 const emit = defineEmits(['title'])
@@ -33,23 +33,23 @@ watch(title, (t) => emit('title', t))
 
 const failed = ref(false)
 onErrorCaptured((e) => {
-  if (!failed.value) console.warn(`[arao] the list of decks cannot draw the cover of "${props.name}": ${e?.message ?? e}`)
+  if (!failed.value) console.warn(`[arao] the list of decks cannot draw the cover of "${props.name}": ${(e as Error)?.message ?? e}`)
   failed.value = true
   return false
 })
 
 // near the viewport: mounted once, for good
-const root = ref()
+const root = ref<HTMLElement>()
 const near = ref(false)
-let io = null
+let io: IntersectionObserver | null = null
 onMounted(() => {
   if (typeof IntersectionObserver !== 'function') return void (near.value = true)
   io = new IntersectionObserver((entries) => {
     if (!entries.some((e) => e.isIntersecting)) return
     near.value = true
-    io.disconnect()
+    io?.disconnect()
   }, { rootMargin: '400px 0px' })
-  io.observe(root.value)
+  if (root.value) io.observe(root.value)
 })
 onBeforeUnmount(() => io?.disconnect())
 </script>

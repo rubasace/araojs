@@ -9,7 +9,7 @@
   <div class="ar-center"><slot /></div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 defineOptions({ name: 'Center' })
 </script>
 

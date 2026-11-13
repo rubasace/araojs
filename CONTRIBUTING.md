@@ -6,12 +6,20 @@ with it, start at the [docs](docs/index.md); how the engine is built is in
 
 ## Development
 
-Node 20.19 or newer.
+Node 20.19 or newer to use the library; 22.18 or newer to build it (the build loads the UI
+catalogues, `src/i18n/*.ts`, with Node's own TypeScript support).
+
+The library is TypeScript, strict (`tsconfig.json`): `src/` is `.ts`, and its components are
+`<script setup lang="ts">`. The code Node runs unbuilt, `vite/` (the Vite plugin) and `bin/`
+(the CLI), stays JavaScript, typed with JSDoc and checked by the same `tsconfig.json`. Props keep
+their runtime declarations (`type: String as PropType<…>`, with their validators), so that a wrong
+value still warns in the browser, not only in the editor.
 
 | Script | What it does |
 |---|---|
 | `npm run dev` | the playground, on the library's source, on 127.0.0.1:5173 (`ARAO_PUBLIC_HOST` allows a tunnel host) |
-| `npm run build` | the library into `dist/`: `index.js` (ESM, imports its CSS) and `arao.css`; also run by `npm pack` / `npm publish`. Fails if a UI catalogue (`src/i18n/`) does not have exactly the keys of `en.js` |
+| `npm run typecheck` | `vue-tsc --noEmit`: the whole repository's types (`src/`, `vite/`, `bin/`) |
+| `npm run build` | the type check, then the library into `dist/`: `index.js` (ESM, imports its CSS) and `arao.css`, and the public types in `dist/types/` (`tsconfig.build.json`: the library's and the Vite plugin's); also run by `npm pack` / `npm publish`. Fails if a UI catalogue (`src/i18n/`) does not have exactly the keys of `en.ts` |
 | `npm run smoke [-- <file.tgz>]` | the packaged-consumer smoke test (below) |
 | `npm run docs:dev` / `npm run docs:build` | the docs site (VitePress on `docs/`), live or built into `docs/.vitepress/dist` with an `llms.txt` |
 | `npm run shots` | the screenshots of `docs/examples/` into `docs/assets/shots/`, and their source into the `<!-- example:… -->` blocks of the README and the guides |
@@ -21,18 +29,18 @@ Node 20.19 or newer.
 
 ```
 src/
-  index.js          what 'araojs' exports (the only barrel: every other module imports a file)
-  plugin.js         the Vue plugin: global components and directives, the global CSS (in CSS order)
-  app.js            createDeckApp
+  index.ts          what 'araojs' exports (the only barrel: every other module imports a file)
+  plugin.ts         the Vue plugin: global components and directives, the global CSS (in CSS order)
+  app.ts            createDeckApp
   state/            the deck, its stages, its slides, the talk's timer: createDeck/useDeck, createStage/useStage, createSlide/useSlide, createTimer/useTimer
   composables/      the effects (internal): useDeckSync, usePresenterWindow, useShortcuts, useKeyboard, useTouchGestures, useAutoHide, useFullscreen
   core/             plain modules: sync, exporter, image, icons, flip
   views/            full screens: AudienceView, PresenterView, ExportView; DeckSelectorView (createDeckApp's list of decks)
-  components/       what authors write: Deck, Slide, Img, Icon, Snippet, Notes; layout/: Cols, Rows, Grid, Center, layout.js (their props' parsers), layout.css
+  components/       what authors write: Deck, Slide, Img, Icon, Snippet, Notes; layout/: Cols, Rows, Grid, Center, layout.ts (their props' parsers), layout.css
     internal/       the engine's components, which no author names: Stage (the scaled canvas), Controls, PresenterBar, Thumbnail, DeckCover (a deck's cover in the list)
-  directives/       v-step and v-step-from (step.js)
+  directives/       v-step and v-step-from (step.ts)
   addons/           ProgressBar, SlideNumber: things drawn over every slide
-  i18n/             the engine's UI text: one catalogue per language (en.js the reference), i18n.js the lookup
+  i18n/             the engine's UI text: one catalogue per language (en.ts the reference), i18n.ts the lookup
   styles/           only what is global: tokens.css (every token and its default: the default theme),
                     base.css (page, viewport, steps); every component brings its own CSS in its .vue file
 vite/               the Vite plugin (araojs/vite; icons.js resolves the icons)
@@ -45,7 +53,7 @@ docs/               the user docs (shipped in the package, and the source of the
   examples/         small decks behind the docs' pictures (with their snippets and theme)
   assets/           the pictures: shots/ (npm run shots), hero.gif (npm run hero-gif)
   .vitepress/       the docs site's config (its cache and build are not committed)
-dist/               the build (npm run build): index.js, arao.css
+dist/               the build (npm run build): index.js, arao.css, types/ (the .d.ts the package exports)
 ```
 
 ## Docs

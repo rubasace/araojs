@@ -28,7 +28,7 @@
      bottom padding: the body (split's and image-*'s zones too) ends where the footer begins.
      ratio="2 1" sizes the two zones left to right, whichever holds the image (default "1 1").
        Two entries, each a share (proportions: "2 1" = "0.5 0.25"), auto or a px size, as in
-       Cols (layout/layout.js); an invalid ratio warns in development and the zones stay "1 1".
+       Cols (layout/layout.ts); an invalid ratio warns in development and the zones stay "1 1".
      A zone keeps its width: content wider than it is clipped at its edge, never painted over
      the other zone; heights do not clip.
      Title: put it first. A #title slot renders first in every layout, then the default slot.
@@ -36,7 +36,7 @@
      in image-* it is the text side, so the title tops the text column, never the image.
      Background: a layer under the content, as big as the slide, never in the pointer's way.
        Slide(bg="city.jpg" bg-opacity="0.15" bg-position="center 30%" bg-blur="4" bg-fit="cover")
-     bg is, tried in this order (image.js):
+     bg is, tried in this order (image.ts):
        a URL         https://…, data:…, /from-public.jpg (served under Vite's base)
        a file        in the images folder, by its name there: city.jpg, team/ana.png, "photo (1).jpg";
                      a name ending in an extension that is not there shows as missing, and warns
@@ -54,7 +54,7 @@
      counts as none), the slide shows the theme's default background, if the theme sets one
      (--ar-slide-bg-* tokens, below), and the bg-* props tune that one.
      Headings in the background or the footer are not the slide's title (the jump menu skips them).
-     Speaker notes: Notes anywhere inside the slide (notes.js); only the presenter view shows them. -->
+     Speaker notes: Notes anywhere inside the slide (notes.ts); only the presenter view shows them. -->
 <template>
   <Transition name="ar-slide" :css="!still">
     <!-- export mode switches slides at once (no CSS transition): the book copies the slide on screen -->
@@ -116,8 +116,8 @@
   </Transition>
 </template>
 
-<script setup>
-import { Comment, Fragment, Text, cloneVNode, computed, h, onMounted, ref, useSlots, watch, watchEffect } from 'vue'
+<script setup lang="ts">
+import { Comment, Fragment, Text, cloneVNode, computed, h, onMounted, ref, useSlots, watch, watchEffect, type FunctionalComponent, type PropType, type Slot, type VNode } from 'vue'
 import { useDeck } from '../state/deck'
 import { createSlide } from '../state/slide'
 import { isRatio, tracks } from './layout/layout'
@@ -125,7 +125,8 @@ import { bgKind, blurStyle, blurValue, imagesDir, isBlur, isOpacity, opacityValu
 import Notes from './Notes.vue'
 import Img from './Img.vue'
 
-const ALIGN = ['start', 'center', 'end']
+type Align = 'start' | 'center' | 'end'
+const ALIGN: readonly string[] = ['start', 'center', 'end']
 // layouts without zones: content centred, and no footer unless the slide asks for it
 const FLAT = ['cover', 'section']
 
@@ -134,17 +135,17 @@ const props = defineProps({
   // shown in the jump menu; defaults to the slide's first heading
   title: String,
   // vertical place of the body (default layout): start | center | end; default --ar-body-align
-  align: { type: String, validator: (v) => ['start', 'center', 'end'].includes(v) },
+  align: { type: String as PropType<Align>, validator: (v: string) => ['start', 'center', 'end'].includes(v) },
   // the deck's footer on this slide: false hides it, true shows it on cover and section too
   footer: { type: Boolean, default: undefined },
   // zone sizes for split / image-left / image-right, left to right: "2 1", "72 28"
-  ratio: { type: String, default: '1 1', validator: (v) => isRatio(v, 2) },
+  ratio: { type: String, default: '1 1', validator: (v: string) => isRatio(v, 2) },
   // background: an image file, a URL, a colour or a gradient (see above), and how it shows
   bg: String,
   bgOpacity: { type: [Number, String], validator: isOpacity },
   bgPosition: String,
   bgBlur: { type: [Number, String], validator: isBlur },
-  bgFit: { type: String, validator: (v) => ['cover', 'contain'].includes(v) },
+  bgFit: { type: String as PropType<'cover' | 'contain'>, validator: (v: string) => ['cover', 'contain'].includes(v) },
 })
 const slots = useSlots()
 
@@ -152,7 +153,7 @@ const slots = useSlots()
 const kind = computed(() => bgKind(props.bg))
 const picture = computed(() => (kind.value === 'file' || kind.value === 'url'
   ? {
-      [kind.value === 'file' ? 'file' : 'src']: props.bg.trim(),
+      [kind.value === 'file' ? 'file' : 'src']: props.bg!.trim(),
       fit: props.bgFit || 'cover',
       position: props.bgPosition,
       opacity: props.bgOpacity,
@@ -160,7 +161,7 @@ const picture = computed(() => (kind.value === 'file' || kind.value === 'url'
     }
   : null))
 const fill = computed(() => ({
-  background: kind.value === 'css' ? props.bg.trim() : undefined,
+  background: kind.value === 'css' ? props.bg!.trim() : undefined,
   backgroundPosition: props.bgPosition,
   backgroundSize: props.bgFit,
   opacity: opacityValue(props.bgOpacity),
@@ -169,34 +170,34 @@ const fill = computed(() => ({
 if (import.meta.env.DEV) {
   watchEffect(() => {
     const v = props.bg?.trim()
-    if (kind.value === 'css' && !CSS.supports('background', v))
+    if (kind.value === 'css' && v && !CSS.supports('background', v))
       console.warn(`[arao] Slide: bg="${v}" is none of the three: no file "${v}" in ${imagesDir}, not a URL (https://…, /…), and not a valid CSS background`)
   })
 }
 
 // whether a slot renders anything: an empty #background, or one whose content is all v-if'd
 // away, leaves the theme's default background in place
-const content = (nodes) => nodes.some((n) =>
+const content = (nodes: VNode[]): boolean => nodes.some((n) =>
   n.type === Comment ? false
-  : n.type === Fragment ? Array.isArray(n.children) && content(n.children)
-  : n.type === Text ? n.children.trim() !== ''
+  : n.type === Fragment ? Array.isArray(n.children) && content(n.children as VNode[])
+  : n.type === Text ? String(n.children).trim() !== ''
   : true)
-const renders = (slot, scope) => !!slot && content(slot(scope))
+const renders = (slot: Slot | undefined, scope?: Record<string, unknown>) => !!slot && content(slot(scope))
 
 const image = computed(() => props.layout === 'image-left' || props.layout === 'image-right')
 const flat = computed(() => FLAT.includes(props.layout))
 const zones = computed(() => ({ gridTemplateColumns: tracks(isRatio(props.ratio, 2) ? props.ratio : '1 1', 0) }))
 
 const deck = useDeck()
-const el = ref(null)
+const el = ref<HTMLElement | null>(null)
 // its place in the stage, its step; still: export mode or a thumbnail, no transition; drawn:
-// whether its content is (state/slide.js)
+// whether its content is (state/slide.ts)
 const { id, index, active, drawn, step, still, total, footer: footerSlot } = createSlide({ el, title: computed(() => props.title) })
 
 // ---- zones: header, body, footer ------------------------------------------------------------
 // Slot content rendered by this component's own render (VNodes only places it), so a change in
 // it re-renders the slide as before, and onUpdated still sweeps v-step.
-const VNodes = (p) => p.nodes
+const VNodes: FunctionalComponent<{ nodes: VNode[] }> = (p) => p.nodes
 VNodes.props = ['nodes']
 
 // The title: the heading(s) a slot's content starts with, h1 or h2: one title, a title and its
@@ -204,9 +205,9 @@ VNodes.props = ['nodes']
 // blank text and Notes (they draw nothing) do not count. In a #title slot, which is all header,
 // the headings may come after something else (a kicker line). → [first, end): the title is
 // nodes[first] up to nodes[end - 1]; first = -1 when there is none.
-const blank = (n) => n.type === Comment || n.type === Notes || (n.type === Text && !String(n.children).trim())
-const heading = (n) => n.type === 'h1' || n.type === 'h2'
-function titleRun(nodes, anywhere = false) {
+const blank = (n: VNode) => n.type === Comment || n.type === Notes || (n.type === Text && !String(n.children).trim())
+const heading = (n: VNode) => n.type === 'h1' || n.type === 'h2'
+function titleRun(nodes: VNode[], anywhere = false): [number, number] {
   let i = 0
   while (i < nodes.length && (blank(nodes[i]) || (anywhere && !heading(nodes[i])))) i++
   if (i === nodes.length || !heading(nodes[i])) return [-1, -1]
@@ -214,9 +215,10 @@ function titleRun(nodes, anywhere = false) {
   for (let j = end; j < nodes.length && (blank(nodes[j]) || heading(nodes[j])); j++) if (heading(nodes[j])) end = j + 1
   return [i, end]
 }
-const marked = (nodes) => nodes.map((n) => (heading(n) ? cloneVNode(n, { class: 'ar-title' }) : n))
+const marked = (nodes: VNode[]) => nodes.map((n) => (heading(n) ? cloneVNode(n, { class: 'ar-title' }) : n))
 // the nodes with their title marked .ar-title, in place; { nodes, tag } (its first heading's tag)
-function mark(nodes, anywhere) {
+type Marked = { nodes: VNode[]; tag: VNode['type'] | null }
+function mark(nodes: VNode[], anywhere?: boolean): Marked {
   const [first, end] = titleRun(nodes, anywhere)
   if (first < 0) return { nodes, tag: null }
   return { nodes: [...nodes.slice(0, first), ...marked(nodes.slice(first, end)), ...nodes.slice(end)], tag: nodes[first].type }
@@ -232,7 +234,7 @@ function titled() {
 function zoned() {
   const scope = { step: step.value }
   const content = slots.default?.(scope) ?? []
-  let head = null
+  let head: Marked | null = null
   let body = content
   if (slots.title) {
     head = mark(slots.title(scope), true)
@@ -243,11 +245,11 @@ function zoned() {
       body = [...content.slice(0, first), ...content.slice(end)]
     }
   }
-  const zones = []
+  const zones: VNode[] = []
   if (head) {
     zones.push(h('div', {
       key: 'ar-header',
-      class: ['ar-header', head.tag && `ar-header-${head.tag}`, { 'ar-header-band': band.value }],
+      class: ['ar-header', head.tag && `ar-header-${String(head.tag)}`, { 'ar-header-band': band.value }],
     }, head.nodes))
   }
   // a body of nothing visible (only Notes, v-if comments) gets no box; its Notes still mount

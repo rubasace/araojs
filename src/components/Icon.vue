@@ -39,13 +39,13 @@
   ></span>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, watchEffect } from 'vue'
 import { iconData, uniqueIds, warnMissing } from '../core/icons'
 
 const props = defineProps({
   name: { type: String, required: true }, // prefix:name
-  size: { type: [Number, String], validator: (v) => /^\d*\.?\d+(px)?$/.test(String(v).trim()) }, // px, the height
+  size: { type: [Number, String], validator: (v: unknown) => /^\d*\.?\d+(px)?$/.test(String(v).trim()) }, // px, the height
   label: String,
 })
 
@@ -58,7 +58,7 @@ watchEffect(() => {
 // height: size px, else 1em; width from the icon's shape
 const box = computed(() => {
   const ratio = icon.value ? Math.round((icon.value.width / icon.value.height) * 1e4) / 1e4 : 1
-  const size = props.size != null && props.size !== '' ? parseFloat(props.size) : null
+  const size = props.size != null && props.size !== '' ? parseFloat(String(props.size)) : null
   return size ? { width: `${size * ratio}px`, height: `${size}px` } : { width: `${ratio}em`, height: '1em' }
 })
 
