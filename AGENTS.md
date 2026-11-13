@@ -8,7 +8,7 @@ Overview: [README.md](README.md).
 ## Mental model
 
 - A deck is one file, `src/decks/<Name>.vue`, opened at `/<name>` (case-insensitive); how it
-  shows is the query (`/<name>?presenter`, `?theme=vigojug`, `?export`), where it stands the
+  shows is the query (`/<name>?presenter`, `?theme=acme`, `?export`), where it stands the
   hash (`#/5/2`). `/` alone lists the project's decks, each with its cover drawn in a card (with
   only one, it opens it; `createDeckApp({ deckList: 'always' })` lists it anyway). The old
   `/?deck=<name>` still works and turns into `/<name>`. Under a Vite `base` (`/talks/`) every
@@ -30,7 +30,8 @@ Overview: [README.md](README.md).
 - **A content slide has three zones**: the header (the `h1`/`h2` the slide starts with), the body
   (everything else, **centred vertically by default**) and the deck's footer (`Deck`'s `#footer`
   slot, on every slide but covers and sections). No template needed for the title.
-- Look comes from the theme (`--ar-*` tokens). Slides say *what*, themes say *how it looks*.
+- Look comes from the theme (`--ar-*` tokens). Slides say *what*, themes say *how it looks*. Every
+  token has a default, and the defaults are the `default` theme; a project theme changes some.
 - Globally available: `Deck Slide Img Icon Snippet Notes Cols Rows Grid Center`, `v-step` and `v-step-from`. Addons
   (`ProgressBar`, `SlideNumber`) and composables (`useDeck`, `useSlide`) are imported from
   `'araojs'` in `<script setup>`.
@@ -41,13 +42,13 @@ Overview: [README.md](README.md).
 package.json       depends on araojs; scripts dev (vite), build (vite build), export (arao export)
 vite.config.js     plugins: [arao()], from 'araojs/vite' (Vue, Pug and the folders below)
 index.html         <div id="app"> and /src/main.js
-src/main.js        createDeckApp().mount('#app'), after the theme imports
+src/main.js        createDeckApp().mount('#app')
 src/decks/         one .vue file per deck (/<file name>)
 src/decks/<talk>/  components only that talk uses
 src/slides/        components several decks share
 src/snippets/      code files, by name, for Snippet(file="…")
 src/images/        pictures, by name, for Img(file="…") and Slide(bg="…")
-src/themes/        the project's own themes, if any
+src/themes/        the project's themes, if any: CSS files, loaded by the plugin (no import)
 ```
 
 The engine is the library: nothing of it is copied into the project.
@@ -115,10 +116,13 @@ Don't:
   `Icon(:name="it.icon")` is fine). A name put together at runtime (`` `lucide:${kind}` ``) is not:
   it shows a dashed box and warns. List such names in the source, or in `arao({ icons: [...] })`
   in `vite.config.js`. Another set than Lucide or Simple Icons needs `npm install -D @iconify-json/<prefix>`.
-- **A new theme** is `src/themes/<name>.css` holding one `[data-theme="<name>"] { --ar-…: …; }`
-  block, imported in `src/main.js` and listed in `Deck(:themes)`. The shipped themes are imported
-  the same way, from the package: `import 'araojs/themes/vigojug.css'`. If the file is not imported or
-  the selector does not match the name, the slides render unstyled and nothing warns.
+- **A new theme** is a `[data-theme="<name>"] { --ar-…: …; }` block in a CSS file of
+  `src/themes/` (`src/themes/<name>.css`), declaring only the tokens it changes over the defaults.
+  Nothing to import: the plugin loads every CSS file there and takes the theme's name from the
+  selector, not from the file (one file may hold several themes). A deck without `themes` offers
+  every theme, `default` first; `Deck(:themes="['venue', 'default']")` picks some, in order. A
+  name in that list that no selector gives is skipped with an `[arao]` warning. No theme ships
+  with the package besides `default` (the defaults); there is no `araojs/themes/…` to import.
 - **Headings inside `#background` are ignored for the slide's title** (jump menu, presenter,
   notes pages). Put the heading in the content, or use `Slide(title="…")`.
 - **The list of decks (`/`) draws each deck's cover.** Its card is titled by the file name in
@@ -139,7 +143,7 @@ Don't:
 
 ```pug
 <template lang="pug">
-Deck(:themes="['default', 'vigojug']" duration="30m")
+Deck(duration="30m")
   ProgressBar
   SlideNumber
 
@@ -155,7 +159,7 @@ The same template in HTML (same `<script setup>`):
 
 ```vue
 <template>
-  <Deck :themes="['default', 'vigojug']" duration="30m">
+  <Deck duration="30m">
     <ProgressBar />
     <SlideNumber />
 
@@ -291,7 +295,7 @@ Slide(align="start")
 
 Footer on every slide, with the slide number:
 ```pug
-Deck(:themes="['default']")
+Deck
   template(#footer="{ number, total }")
     span ACME · DevConf 2026
     span {{ number }} / {{ total }}
@@ -347,5 +351,5 @@ Slide
 - How the engine is built (only for a change to Arao itself): [docs/architecture.md](docs/architecture.md).
 - Working examples: the project's own decks; `playground/` in the Arao repository, a tiny
   project set up like any other.
-- Themes: the shipped ones in `node_modules/araojs/dist/themes/*.css`, the project's in
-  `src/themes/*.css`.
+- Themes: the defaults (the `default` theme) in the Theme tokens table of
+  [docs/reference.md](docs/reference.md#theme-tokens); the project's in `src/themes/*.css`.
