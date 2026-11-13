@@ -838,7 +838,7 @@ try {
       await pause(300)
       return page
     }
-    // ms as the bar writes it (core/timer.js clock): 1:30:00, 20:00
+    // ms as the bar writes it (state/timer.js clock): 1:30:00, 20:00
     const clock = (ms) => {
       const t = Math.floor(ms / 1000)
       const [h, m, sec] = [Math.floor(t / 3600), Math.floor(t / 60) % 60, String(t % 60).padStart(2, '0')]

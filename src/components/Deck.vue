@@ -13,7 +13,7 @@
      Every window of the same deck in the same browser stays in step (core/sync.js): moving in any of
      them moves the others, and so does a theme change; the last move wins. A window that opens
      takes the position of the ones already open (and their theme, unless its URL names one).
-     duration="45m" is the talk's length (formats: core/timer.js parseDuration): the presenter view
+     duration="45m" is the talk's length (formats: state/timer.js parseDuration): the presenter view
      counts down to it, and its bar can change it live for every window (the prop stays the
      default; the change wins until reset, even over an edit of the prop that differs from it).
      The timer starts with the first move of the deck, in any window; timer and changed length
