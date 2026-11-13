@@ -320,4 +320,10 @@ const vars = computed(() => {
 .ar-snippet-line.words .ar-snippet-tx .hl {
   background: color-mix(in srgb, var(--sn-hl) 22%, transparent); border-radius: .15em;
 }
+/* in speaker notes (Notes, wherever they are drawn: the presenter's panel, the export's notes
+   pages), a box with no height of its own: the window takes its natural size, its full code at its
+   size */
+.ar-note .ar-snippet { container-type: inline-size; flex: none; margin: .4em 0 .8em; }
+.ar-note .ar-snippet-window { width: 100%; height: auto; }
+.ar-note .ar-snippet-code { font-size: var(--sn-size-std); }
 </style>

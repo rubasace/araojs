@@ -31,7 +31,7 @@ import { ahead, createStage, headingOf, titleOf, useStage } from './stage'
 //   stage, preview      the stages (state/stage.js): the one that moves, and in the presenter view
 //                       the copy that follows it one step ahead (null elsewhere)
 //   next                where one more press leads: { index, step } or { end: true }
-//   notes, titles()     the Notes of the slide on screen; every slide's title (jump menu)
+//   titles()            every slide's title (jump menu)
 //   theme, setTheme, cycleTheme, themes()   themes() is the deck's list, resolved (below)
 //   timer, setTimer     the talk's timer (core/timer.js)
 //   duration            the talk's length in effect, in ms, or null: the presenter's, else the deck's
@@ -139,7 +139,6 @@ export function createDeck(props) {
     : createStage({ onMove: moved, role: mode })
   const next = computed(() => ahead(stage))
   const preview = mode === 'presenter' ? createStage({ follow: () => next.value, role: 'preview' }) : null
-  const notes = computed(() => stage.current.value?.notes ?? [])
   const titles = () => stage.list.map(titleOf)
   if (thumbnail?.title) {
     watchPostEffect(() => {
@@ -260,7 +259,7 @@ export function createDeck(props) {
   provide(KEY, face)
 
   return {
-    name: route?.name ?? null, mode, exporting, face, stage, preview, next, notes, titles,
+    name: route?.name ?? null, mode, exporting, face, stage, preview, next, titles,
     theme, setTheme, cycleTheme, themes: () => themes.value,
     timer, setTimer, duration, deckDuration, setDuration,
     viewport, presenterWindow,

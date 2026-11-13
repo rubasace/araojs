@@ -44,6 +44,11 @@
 //      { --ar-controls-accent } reaches the presenter view's docked controls, and its length
 //      editor's shadow follows :root { --ar-presenter-bg }. On the fifth deck, IMPORTED (not in
 //      src/themes) is worn with no warning
+//   5c. speaker notes, under the dev server, on the third deck: the v-steps inside Notes add no step
+//      (the slide has two in the audience and in the presenter view), the presenter's panel shows
+//      the notes of the slide on screen only (none from the preview), each step's own, and marks
+//      what the step brings; a slide without notes says so; the export's notes pages print every
+//      step of them, labelled
 //   6. the talk's length, under the dev server, on the second deck (duration="15m"), in the
 //      presenter's bar: 1h30 typed with real keys moves no slide and opens no jump menu, and the
 //      countdown follows in an audience window too (useDeck()); after an apply from the keyboard,
@@ -170,7 +175,8 @@ const Faces = { setup: () => ((window.__faces ??= []).push(useDeck()), () => nul
 `]
 
 // a third deck of the smoke project only, with no duration (the countdown the presenter adds) and
-// no themes listed (every theme there is)
+// no themes listed (every theme there is); its second slide has notes with steps, one of them at a
+// step the slide does not reach
 const UNTIMED = ['Untimed.vue', `<template lang="pug">
 Deck
   Slide(layout="cover" title="Untimed")
@@ -178,6 +184,10 @@ Deck
   Slide
     h2 No countdown
     p(v-step="2") Until the presenter sets one.
+    Notes
+      p.n1 Say there is no countdown.
+      p.n2(v-step="2") Then set one.
+      p.n3(v-step.collapse="3") Never shown: the slide has two steps.
 </template>
 `]
 
@@ -636,6 +646,68 @@ try {
     for (const c of complaints) fail(`dev useDeck() face: ${c}`)
   }
 
+  // speaker notes, on the third deck (5c above); any console warning, error or page error fails
+  async function notes(base) {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 720 } })
+    const page = await context.newPage()
+    const complaints = []
+    page.on('console', (m) => ['warning', 'error'].includes(m.type()) && complaints.push(`console ${m.type()}: ${m.text()}`))
+    page.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
+    const open = async (query) => {
+      await page.goto(new URL(`${untimed}${query}`, base).href)
+      await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
+      await pause(400)
+    }
+    const panel = () => page.evaluate(() => {
+      const out = document.querySelector('.ar-notes-target')
+      const shown = (c) => { const el = out?.querySelector(c); return !!el && !el.closest('.ar-step-hidden, .ar-step-collapsed') }
+      return {
+        notes: out?.querySelectorAll('.ar-note').length ?? -1,
+        n1: shown('.n1'), n2: shown('.n2'), n3: shown('.n3'),
+        fresh: [...(out?.querySelectorAll('.ar-note-fresh') ?? [])].map((e) => e.className.split(' ')[0]),
+        empty: getComputedStyle(document.querySelector('.ar-p-empty')).display !== 'none',
+        steps: document.querySelector('.ar-p-notes .ar-p-detail')?.textContent.trim() ?? '',
+      }
+    })
+    try {
+      // the audience: two steps on the second slide
+      await open('#/2/1')
+      await page.keyboard.press('ArrowRight'); await pause(200)
+      await page.keyboard.press('ArrowRight'); await pause(200)
+      const after = await page.evaluate(() => location.hash)
+      if (after !== '#/2/2') complaints.push(`audience: two presses from #/2/1 lead to ${after}, not #/2/2 (a v-step in Notes added a step?)`)
+      await open('?presenter#/2/1')
+      const one = await panel()
+      if (one.notes !== 1) complaints.push(`presenter #/2/1: ${one.notes} notes in the panel, not 1 (the preview's?)`)
+      if (!one.n1 || one.n2 || one.n3) complaints.push(`presenter #/2/1: shown n1 ${one.n1}, n2 ${one.n2}, n3 ${one.n3}; want only n1`)
+      if (one.steps !== 'Paso 1 de 2') complaints.push(`presenter #/2/1: the panel says "${one.steps}", not "Paso 1 de 2"`)
+      await page.keyboard.press('ArrowRight'); await pause(400)
+      const two = await panel()
+      if (!two.n1 || !two.n2 || two.n3) complaints.push(`presenter #/2/2: shown n1 ${two.n1}, n2 ${two.n2}, n3 ${two.n3}; want n1 and n2`)
+      if (two.fresh.join() !== 'n2') complaints.push(`presenter #/2/2: marked as new: [${two.fresh}], not [n2]`)
+      await open('?presenter#/1/1')
+      const cover = await panel()
+      if (cover.notes !== 0 || !cover.empty) complaints.push(`presenter on the cover (no notes): ${cover.notes} notes, empty notice ${cover.empty}`)
+      // the export's notes pages: one, for the second slide, every step of its notes, labelled
+      await open('?export&notes')
+      await page.waitForSelector('.ar-export-done', { timeout: 60_000 })
+      const pages = await page.evaluate(() => [...document.querySelectorAll('.ar-notes-page')].map((pg) => ({
+        head: pg.querySelector('.ar-notes-head')?.textContent ?? '',
+        shown: ['.n1', '.n2', '.n3'].map((c) => { const el = pg.querySelector(c); return !!el && getComputedStyle(el).display !== 'none' && getComputedStyle(el).opacity === '1' }),
+        label: getComputedStyle(pg.querySelector('.n2'), '::before').content,
+      })))
+      if (pages.length !== 1 || !pages[0].head.startsWith('Diapositiva 2')) complaints.push(`export: notes pages [${pages.map((p) => p.head)}], want one for slide 2`)
+      else {
+        if (pages[0].shown.some((v) => !v)) complaints.push(`export: notes shown [${pages[0].shown}], want every step`)
+        if (!pages[0].label.includes('Desde el paso')) complaints.push(`export: the step-2 note is labelled ${pages[0].label}`)
+      }
+      console.log(`  dev speaker notes: ${complaints.length ? 'problems below' : 'their steps follow the slide, drawn in the presenter and the notes pages'}`)
+    } finally {
+      await context.close()
+    }
+    for (const c of complaints) fail(`dev speaker notes: ${c}`)
+  }
+
   // themes, on the third deck (no themes listed) and the fifth (IMPORTED first), each check in a
   // page of its own; any console warning, error or page error fails
   async function themes(base) {
@@ -1054,6 +1126,7 @@ try {
       if (mode === 'dev') {
         await face(base)
         await themes(base)
+        await notes(base)
         await duration(base)
         await presenter(base)
         await apart(base)

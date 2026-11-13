@@ -22,7 +22,7 @@ import Cols from './components/layout/Cols.vue'
 import Rows from './components/layout/Rows.vue'
 import Grid from './components/layout/Grid.vue'
 import Center from './components/layout/Center.vue'
-import { Notes } from './components/Notes'
+import Notes from './components/Notes.vue'
 import step, { stepFrom } from './directives/step'
 import './styles/base.css'
 

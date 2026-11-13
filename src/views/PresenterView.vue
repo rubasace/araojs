@@ -7,7 +7,7 @@
      there, so its side effects run twice in this window and its element ids repeat (useDeck().role
      is 'preview' in that copy, 'presenter' in the current one).
      Where the deck is comes from useDeck(); deck (state/deck.js) brings the internals: the stages,
-     where one more press leads, the notes, the titles, the timer's setter, and the talk's length as
+     where one more press leads, the titles, the timer's setter, and the talk's length as
      the deck sets it with its setter (the bar edits it for every window). The presenter window
      listens to no mouse or touch of its own: only its controls and the keys (Deck.vue) move it. -->
 <template>
@@ -49,15 +49,9 @@
             <span class="ar-p-detail" v-if="steps > 1">Paso {{ step }} de {{ steps }}</span>
           </header>
           <div class="ar-p-notes-body" ref="body">
-            <div
-              class="ar-p-note"
-              v-for="n in shown" :key="n.id"
-              :class="{ fresh: n.step > 1 && n.step === step }"
-              :data-step="n.step"
-            >
-              <NoteBody :note="n" />
-            </div>
-            <p class="ar-p-empty" v-if="!shown.length">Sin notas en esta diapositiva</p>
+            <!-- the Notes of the slide on screen render themselves here (Teleport) -->
+            <div class="ar-notes-target" ref="notesOutlet" :style="{ '--_ar-notes-zoom': notesZoom }"></div>
+            <p class="ar-p-empty">Sin notas en esta diapositiva</p>
           </div>
         </section>
       </div>
@@ -66,9 +60,9 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useDeck } from '../state/deck'
-import { NoteBody } from '../components/Notes'
+import { useNotesOutlet } from '../state/notes'
 import Controls from './parts/Controls.vue'
 import PresenterBar from './parts/PresenterBar.vue'
 import Stage from './parts/Stage.vue'
@@ -80,8 +74,22 @@ const props = defineProps({
 })
 const { index, step, steps, theme } = useDeck()
 const ratio = computed(() => `${props.width} / ${props.height}`)
-// next: { index, step, end }, where one more press leads; notes: the slide's Notes, { id, step, slots }
-const { next, notes } = props.deck
+// next: { index, step, end }, where one more press leads
+const { next } = props.deck
+
+// the notes panel is the outlet of the Notes of the slide on screen (state/notes.js)
+const notesOutlet = useNotesOutlet()
+// Notes are slide content: what they hold is sized in canvas px (a Snippet, an Icon size). Their
+// box is NOTES_WIDTH canvas px wide, zoomed to the width of the panel; their text keeps the size
+// of the panel (it is divided by the zoom).
+const NOTES_WIDTH = 1000
+const notesZoom = ref(0.5)
+let resize
+onMounted(() => {
+  resize = new ResizeObserver(([e]) => { notesZoom.value = Math.max(0.1, e.contentRect.width / NOTES_WIDTH) })
+  resize.observe(body.value)
+})
+onBeforeUnmount(() => resize?.disconnect())
 
 // every slide's title, for the jump menu, re-read on every move; the title of the slide on screen
 const titles = computed(() => {
@@ -104,9 +112,6 @@ onMounted(() => {
   if (!document.title.startsWith(TITLE)) document.title = TITLE + document.title
 })
 
-// notes show from their step on, as v-step
-const shown = computed(() => notes.value.filter((n) => n.step <= step.value))
-
 const nextDetail = computed(() => {
   const { index: at, step: s, end } = next.value
   if (end) return ''
@@ -114,17 +119,27 @@ const nextDetail = computed(() => {
   return `Diapositiva ${at + 1}`
 })
 
-// A new slide starts its notes from the top; a step brings the notes it starts into view. Only
-// the notes box scrolls (scrollIntoView would also scroll the page of a narrow window).
+// A new slide starts its notes from the top. A step marks what its v-steps bring into the notes
+// (those of that very step, the directive's record on the element: directives/step.js) and
+// scrolls it into view. Only the notes box scrolls (scrollIntoView would also scroll the page of
+// a narrow window).
+const FRESH = 'ar-note-fresh'
 const body = ref()
 watch(() => index.value, () => body.value && (body.value.scrollTop = 0))
-watch(() => step.value, async () => {
+watch(() => step.value, async (s) => {
   await nextTick()
   const box = body.value
-  const note = box?.querySelector('.ar-p-note.fresh')
-  if (!note) return
-  const top = note.offsetTop // the box is their offsetParent
-  const h = note.offsetHeight + parseFloat(getComputedStyle(box).paddingBottom)
+  const outlet = notesOutlet.value
+  if (!box || !outlet) return
+  outlet.querySelectorAll('.' + FRESH).forEach((el) => el.classList.remove(FRESH))
+  const fresh = [...outlet.querySelectorAll('*')].filter((el) => el.__phStep?.n === s && s > 1)
+  fresh.forEach((el) => el.classList.add(FRESH))
+  if (!fresh.length) return
+  // in the box's own px (the notes are zoomed): rects, not offsets
+  const at = box.getBoundingClientRect().top - box.scrollTop
+  const rects = fresh.map((el) => el.getBoundingClientRect())
+  const top = Math.min(...rects.map((r) => r.top)) - at
+  const h = Math.max(...rects.map((r) => r.bottom)) - at - top + parseFloat(getComputedStyle(box).paddingBottom)
   const to = top < box.scrollTop ? top
     : top + h > box.scrollTop + box.clientHeight ? Math.min(top, top + h - box.clientHeight)
     : null
@@ -175,18 +190,24 @@ watch(() => step.value, async () => {
   color: var(--ar-presenter-dim); font-size: calc(var(--ar-ui-text) * 1.25);
 }
 
+.ar-notes-target:not(:empty) + .ar-p-empty { display: none; }
+.ar-notes-target { width: 1000px; zoom: var(--_ar-notes-zoom); font-size: calc(var(--ar-presenter-notes-size) / var(--_ar-notes-zoom)); }
 .ar-p-notes-body {
-  position: relative; flex: 1; min-height: 0; overflow-y: auto; padding: 0 20px 20px;
+  position: relative; flex: 1; min-height: 0; overflow-y: auto; padding: 0 20px 20px; contain: inline-size;
   font-size: var(--ar-presenter-notes-size); line-height: 1.5;
   scrollbar-width: thin; scrollbar-color: var(--ar-presenter-scrollbar) transparent;
 }
-.ar-p-note { padding: .15em 0 .15em .75em; margin: 0 0 .5em -.75em; border-left: 4px solid transparent; border-radius: 2px; }
-.ar-p-note.fresh { border-left-color: var(--ar-presenter-accent); }
-.ar-p-note > :first-child { margin-top: 0; }
-.ar-p-note :is(p, ul, ol) { margin: 0 0 .5em; }
-.ar-p-note :is(ul, ol) { padding-left: 1.2em; }
-.ar-p-note strong { color: var(--ar-presenter-strong); }
-.ar-p-note code {
+.ar-notes-target .ar-note { margin: 0 0 .5em; }
+.ar-notes-target .ar-note > :first-child { margin-top: 0; }
+.ar-notes-target .ar-note :is(p, ul, ol) { margin: 0 0 .5em; }
+.ar-notes-target .ar-note :is(ul, ol) { padding-left: 1.2em; }
+.ar-notes-target .ar-note strong { color: var(--ar-presenter-strong); }
+/* what the step on screen has just brought */
+.ar-notes-target .ar-note-fresh {
+  border-radius: 4px; background: color-mix(in srgb, var(--ar-presenter-accent) 16%, transparent);
+  box-shadow: 0 0 0 .2em color-mix(in srgb, var(--ar-presenter-accent) 16%, transparent);
+}
+.ar-notes-target .ar-note code {
   font: .9em var(--ar-ui-mono); background: var(--ar-presenter-code-bg); padding: .05em .35em;
   border-radius: calc(var(--ar-presenter-radius) * .5);
 }

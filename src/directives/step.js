@@ -5,7 +5,8 @@ import { flip, snapshot } from '../core/flip'
 // v-step.only="n"  → visible only at step n
 // .collapse         → while hidden it takes no space (default: it keeps its place);
 //                     when it appears or disappears, the elements around it glide (FLIP)
-// The element may live in any nested component: it finds its slide through the DOM.
+// The element may live in any nested component: it finds its slide through the DOM. Inside Notes
+// it works the same, but adds no step to its slide.
 //
 // v-step-from="n" on any element or component shifts every v-step (and useSlide) inside it:
 // their numbers become relative, 1 = step n of the slide. Scopes nest and add up. This lets a
@@ -44,7 +45,15 @@ function attach(el, binding) {
   const n = Number(binding.value) + stepOffset(el, host)
   const only = !!binding.modifiers.only
   const cls = binding.modifiers.collapse ? COLLAPSED : HIDDEN
-  const unregister = slide.registerStep(n)
+  // inside Notes (data-ar-notes) it follows the slide's steps and adds none: the notes are drawn
+  // in the presenter view only, and the audience must count the same steps. It says its step on
+  // the element, for the export's notes pages (they print every step of the notes, labelled)
+  const inNotes = !!el.closest('[data-ar-notes]')
+  const unregister = inNotes ? () => {} : slide.registerStep(n)
+  if (inNotes) {
+    el.dataset.arStep = n
+    if (only) el.dataset.arStepOnly = ''
+  }
   const rec = { n, only, cls, host, slide, binding }
   let first = true
   const runner = effect(() => {
@@ -61,6 +70,8 @@ function attach(el, binding) {
       unregister()
       slide.elements.delete(el)
       el.classList.remove(cls)
+      delete el.dataset.arStep
+      delete el.dataset.arStepOnly
     },
   })
 }

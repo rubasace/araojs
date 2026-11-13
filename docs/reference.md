@@ -647,18 +647,22 @@ Slide
 
 ## Notes
 
-Speaker notes, anywhere inside a `Slide`. Never drawn on the slide: no room, no step, no title.
-The presenter view shows them; `npm run export -- --notes` prints them.
+Speaker notes, anywhere inside a `Slide`: one per slide. Never drawn on the slide: no room, no
+step, no title. The presenter view shows them in its notes panel; `npm run export -- --notes`
+prints them. No props.
 
-| Prop | Type | Default | Notes |
-|---|---|---|---|
-| `step` | Number or String | `1` | the note shows from step `n` of the slide on (like `v-step`); the presenter marks notes that start at the step on screen |
+Slot: default, anything a slide holds (paragraphs, lists, tables, `Icon`, `Snippet`, your own
+components). Sizes inside are canvas px: the panel draws the notes 1000 px wide, scaled to fit
+it, with its own text size.
 
-Slot: default, any markup (paragraphs, lists, `strong`, `code`), rendered as written.
-
-- Several per slide are fine; they show in the order written (one brought in later by `v-if` goes
-  last).
-- `v-step` and `useSlide()` do not work inside notes.
+- **Steps**: `v-step`, `.only`, `.collapse` and `v-step-from` work inside, on the slide's step
+  numbers. They follow the slide's steps but add none (nor does a `Snippet`'s highlights or
+  `useSlide().requireSteps` there): the audience counts the same steps as the presenter. A note at
+  a step the slide does not reach never shows.
+- The presenter panel marks what the step on screen has just brought into the notes and scrolls
+  to it. The export's notes pages print every step of the notes, each labelled ("Desde el paso
+  2", "En el paso 3" for `.only`).
+- Several `Notes` in one slide follow one another in the order written.
 - Outside a `Slide` it warns and shows nowhere.
 
 ```pug
@@ -667,8 +671,7 @@ Slide
   p(v-step="2") Three tiers
   Notes
     p Start with the story of the first customer.
-  Notes(step="2")
-    p Tiers: say why there are exactly three.
+    p(v-step="2") Tiers: say why there are exactly three.
 ```
 
 ---

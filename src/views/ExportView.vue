@@ -4,9 +4,8 @@
      No controls, no keyboard, no mouse or touch, no cursor hiding; the deck joins no other window
      (state/deck.js).
        options   exportOptions(query): { perStep, notes }
-     The notes of the slide on screen (those the presenter view would show at this step) are
-     drawn in a box that is never shown: the book copies them after the slide's page(s), at its
-     last step.
+     The Notes of the slide on screen are drawn in a box that is never shown (their outlet,
+     state/notes.js): the book copies them after the slide's page(s), every step of them shown.
      deck: createDeck() (state/deck.js): the stage and the export options. -->
 <template>
   <div class="ar-viewport ar-export" ref="viewport" :data-theme="theme" :class="{ 'ar-export-done': done }">
@@ -14,22 +13,18 @@
       <slot />
     </Stage>
     <!-- the notes of the slide on screen, copied into the book after its page(s); never shown -->
-    <div class="ar-export-notes" v-if="deck.exporting.notes" ref="notesBox">
-      <div class="ar-note" v-for="n in shownNotes" :key="n.id" :data-step="n.step">
-        <NoteBody :note="n" />
-      </div>
-    </div>
+    <div class="ar-export-notes" v-if="deck.exporting.notes" ref="notesOutlet"></div>
     <!-- filled by exporter.js, not by Vue -->
     <div class="ar-book" ref="book"></div>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { buildBook, reportReady } from '../core/exporter'
 import { titleOf } from '../state/stage'
 import { useDeck } from '../state/deck'
-import { NoteBody } from '../components/Notes'
+import { useNotesOutlet } from '../state/notes'
 import Stage from './parts/Stage.vue'
 
 const props = defineProps({
@@ -42,11 +37,9 @@ const { stage, exporting: options } = props.deck
 
 const viewport = ref()
 const book = ref()
-const notesBox = ref()
+const notesOutlet = useNotesOutlet()
 // true once the book is complete
 const done = ref(false)
-// the notes the presenter view would show at this step (the book takes them at the slide's last step)
-const shownNotes = computed(() => (stage.current.value?.notes ?? []).filter((n) => n.step <= stage.step.value))
 
 // every report says which deck it is of
 const report = (value) => reportReady({ ...value, deck: props.deck.name })
@@ -62,7 +55,7 @@ async function run() {
       stage,
       canvas: viewport.value.querySelector(':scope > .ar-stage > .ar-canvas'),
       book: book.value,
-      notes: options.notes ? notesBox.value : null,
+      notes: options.notes ? notesOutlet.value : null,
       title: (i) => titleOf(stage.list[i]),
       perStep: options.perStep,
       width: props.width,
@@ -117,10 +110,14 @@ html:has(.ar-export), html:has(.ar-export) body, html:has(.ar-export) #app { hei
 }
 .ar-notes-body .ar-note { margin-bottom: 28px; }
 .ar-notes-body .ar-note > :first-child { margin-top: 0; }
-.ar-notes-body .ar-note[data-step]:not([data-step="1"])::before {
-  content: "Desde el paso " attr(data-step); display: block; margin-bottom: 6px;
+/* on paper every step of the notes shows, each labelled with its step (v-step, directives/step.js) */
+.ar-notes-body .ar-step-hidden { opacity: 1 !important; }
+.ar-notes-body .ar-step-collapsed { display: revert !important; }
+.ar-notes-body :is([data-ar-step]:not([data-ar-step="1"]), [data-ar-step-only])::before {
+  content: "Desde el paso " attr(data-ar-step); display: block; margin-bottom: 6px;
   font-size: var(--ar-notes-page-step-size); font-weight: 600; color: var(--ar-notes-page-step);
 }
+.ar-notes-body [data-ar-step][data-ar-step-only]::before { content: "En el paso " attr(data-ar-step); }
 /* on screen (?export opened in a browser), the pages one under the other */
 @media screen {
   .ar-viewport.ar-export { background: var(--ar-export-bg); }
