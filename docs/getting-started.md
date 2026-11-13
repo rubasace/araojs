@@ -154,4 +154,4 @@ More: [Export to PDF](guide/export.md).
 - [Concepts](guide/concepts.md): the canvas, zones, steps and themes in two minutes.
 - [Slides and layouts](guide/slides-and-layouts.md), [Steps](guide/steps.md),
   [Code](guide/code.md), [Themes](guide/themes.md).
-- Writing decks with an AI agent: point it at `node_modules/araojs/AGENTS.md`.
+- Writing decks with an AI agent: give it [the Arao skill](../skills/arao/).

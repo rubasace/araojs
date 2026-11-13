@@ -234,13 +234,13 @@ One command, one PDF: a page per step (or per slide), text kept as text.
 
 **Ready for your coding agent**
 
-Write slides yourself, or ask your agent: [AGENTS.md](AGENTS.md) ships with the package and
-teaches it to write decks the Arao way.
+Write slides yourself, or ask your agent: Arao comes with a skill for coding agents. Install it,
+and your agent writes and checks decks the Arao way.
 
-[AGENTS.md](AGENTS.md)
+[The Arao skill](skills/arao/)
 
 </td>
-<td width="400"><img src="docs/assets/features/agents.png" alt="AGENTS.md open, and a prompt asking a coding agent for a deck" width="380" /></td>
+<td width="400"><img src="docs/assets/features/agents.png" alt="The Arao skill's SKILL.md open, and a prompt asking a coding agent for a deck" width="380" /></td>
 </tr>
 </table>
 
@@ -251,7 +251,7 @@ teaches it to write decks the Arao way.
 | [Getting started](docs/getting-started.md) | from an empty folder to a deck on the screen and in a PDF |
 | [Guides](docs/index.md#guides) | layouts, steps, code, icons, themes, presenting, export, hosting, extending |
 | [Reference](docs/index.md#reference) | every component, directive, composable, token, plugin option, CLI flag and URL |
-| [AGENTS.md](AGENTS.md) | the guide for AI agents writing decks (`node_modules/araojs/AGENTS.md` in a project) |
+| [The Arao skill](skills/arao/) | the skill for coding agents writing decks: rules, recipes, how to check a deck |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | developing, testing, documenting and releasing Arao |
 
 ## License

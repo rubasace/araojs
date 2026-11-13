@@ -7,7 +7,7 @@ import llmstxt from 'vitepress-plugin-llms'
 const REPO = 'https://github.com/rubasace/araojs'
 
 // A relative link to something that is no page of the site (a file outside docs/, such as
-// ../AGENTS.md, or a file of docs/ that is not Markdown, such as examples/grid.vue) points to
+// ../skills/arao/SKILL.md, or a file of docs/ that is not Markdown, such as examples/grid.vue) points to
 // the repository on GitHub instead, so that the same Markdown works on GitHub and here.
 function repoLinks(md) {
   md.core.ruler.push('arao-repo-links', (state) => {

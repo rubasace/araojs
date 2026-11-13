@@ -444,20 +444,22 @@ function canvasPage() {
 `
 }
 
-// Written with an agent: AGENTS.md (what ships in the package), and a prompt to a coding agent.
+// Written with an agent: the Arao skill (skills/arao/SKILL.md), and a prompt to a coding agent.
 async function agents() {
   const tab = await browser.newPage({ viewport: { width: W, height: H + BAR }, locale: LOCALE })
   await tab.setContent(agentsPage())
   await tab.evaluate(() => document.fonts.ready)
   await tab.screenshot({ path: join(OUT, "agents.png") })
   await tab.close()
-  report("agents.png", "AGENTS.md and a prompt")
+  report("agents.png", "the skill and a prompt")
 }
 
 function agentsPage() {
   const md = [
-    ["h", "# AGENTS.md — writing decks with Arao"],
-    ["", ""],
+    ["c", "---"],
+    ["c", "name: arao"],
+    ["c", "description: Write, edit and check Arao decks…"],
+    ["c", "---"],
     ["h", "## Rules"],
     ["", "- Start every slide with its heading (`h2`)."],
     ["", "- One idea per slide. Reveal with steps."],
@@ -478,7 +480,7 @@ function agentsPage() {
   .msg { font: 500 17px/1.35 Inter, sans-serif; color: #1b2a3a; }
   .done { margin-top: 9px; font: 14px/1 "DejaVu Sans Mono", monospace; color: #2f7d4f; }
 </style>
-<div class="bar">${DOTS}<div class="url"><b>node_modules/araojs/</b>AGENTS.md</div></div>
+<div class="bar">${DOTS}<div class="url"><b>skills/arao/</b>SKILL.md</div></div>
 <div class="doc">${md.map(([k, t]) => `<div class="${k}">${t.replace(/&/g, "&amp;").replace(/</g, "&lt;") || " "}</div>`).join("")}</div>
 <div class="chat"><div class="who">You → your coding agent</div><div class="msg">Make me a 10-minute deck about our new API, with the code shown step by step.</div><div class="done">✓ src/decks/new-api.vue</div></div>
 `
