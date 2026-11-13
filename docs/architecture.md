@@ -237,3 +237,9 @@ view, which checks `--theme` against the same list, refuses it. The library ship
 no `themes/` export.
 The deck selector, like the presenter view, sits in no theme: it reads its `--ar-selector-*`
 tokens at the root, and each cover wears its deck's theme.
+
+Web fonts are the Vite plugin's too (`vite/fonts.js`): it includes fontless, which reads the
+families in the CSS the project loads (`font-family`, and the `--ar-font-*` tokens through
+`processCSSVariables: 'ar-font'`), fetches the ones that are not system fonts from the providers at
+build time, and writes them and their `@font-face` (with metric fallbacks) into the build. The
+engine itself knows nothing of it: a theme's tokens name families, and the CSS does the rest.

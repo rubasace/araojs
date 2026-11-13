@@ -167,24 +167,60 @@ A theme names its fonts in its tokens, and the build fetches them:
 
 The [Vite plugin](../reference/vite-plugin.md) reads the families in `font-family` declarations
 and in the `--ar-font-*` tokens. For a family that no stylesheet declares with `@font-face` and
-that is not a system font (Georgia, Arial, `system-ui`…), it asks the font providers in turn
-(Google Fonts, Bunny Fonts, Fontshare, Fontsource), puts the files in the build
-(`assets/_fonts`), and adds the `@font-face` rules plus fallbacks with matched metrics, so the
-text does not jump when the font arrives. The dev server serves the same files, and the PDF export
-waits for them. This is [fontless](https://github.com/unjs/fontaine/tree/main/packages/fontless),
-the engine of Nuxt Fonts.
+that is not a system font, it asks the font providers in turn: **Google Fonts, Bunny Fonts,
+Fontshare, Fontsource** and **npm** (a font package the project installed). It puts the files in
+the build (`assets/_fonts`) and adds the `@font-face` rules, plus fallbacks with matched metrics
+so the text does not jump when the font arrives. The dev server serves the same files, and the PDF
+export waits for them. This is [fontless](https://github.com/unjs/fontaine/tree/main/packages/fontless), the engine of Nuxt Fonts.
+
+It is on by default: a theme that already names a web font (Inter, Roboto…) now gets it, where
+before the text fell back to a font of the machine.
+
+What it fetches: weights 400, 600 and 700, each upright and italic, in every subset the provider
+splits the font into (the browser downloads only the subsets a page uses). With a variable font,
+one file covers the weights.
+
+System fonts are never fetched: fontless's own list (Georgia, Helvetica, Times New Roman,
+Segoe UI, Menlo, Courier New, Verdana, Tahoma…) and the plugin's (Arial, Calibri, Futura,
+Gill Sans, Palatino, Trebuchet MS, SF Pro… in `vite/fonts.js`). Generic names (`sans-serif`,
+`system-ui`, `ui-monospace`) never are either.
+
+**Limits**
 
 - **Only families a provider has.** For another font, write its `@font-face` in the theme file,
-  pointing at its files (a family declared with `@font-face` is left alone).
-- **The first build needs the network.** The files are then cached
-  (`node_modules/.cache/fontless`) and later builds work offline. Without network and without a
-  cache, the build still passes with a warning, and the text uses the family's next fonts.
-- **`--ar-ui-font`** (the controls and the presenter view) is not fetched: use a system font, or
-  one the theme declares with `@font-face`.
+  pointing at its files: a family declared with `@font-face` is left alone.
+- **The build asks the providers.** Each family name goes to Google, Bunny, Fontshare and
+  Fontsource at build time (the deck's viewers never contact them: the files are served with the
+  deck). Turn it off for a family, or altogether, below.
+- **Network at build time.** The files are cached in `node_modules/.cache/fontless`, but the
+  providers' catalogues are cached for a week only (and again on a new version), and a fresh
+  install (`npm ci` in CI) starts empty. Offline, a build still passes: fontless warns (the
+  plugin cannot quiet it, not even `arao export`), and the text uses the family's next fonts. To
+  fail the build instead (CI), set `fonts: { throwOnError: true }`.
+- **Behind a proxy** (`HTTPS_PROXY`), fetching goes through it on Node 22.19 or later only (the
+  proxy support needs a newer `undici` than Node 20 runs; npm may warn about its engine on
+  install). On older Node a build behind a proxy gets no fonts, as offline.
+- **`--ar-ui-font`** (the controls and the presenter view) is not read: use a system font, or
+  name the family in `families` with `global: true` (`fonts: { families: [{ name: 'Inter', global: true }] }`),
+  which loads it on every page.
 - **The licence is the font's.** The providers above serve open fonts.
-- `arao({ fonts: false })` turns it off; `arao({ fonts: { … } })` passes
-  [fontless's options](https://github.com/unjs/fontaine/tree/main/packages/fontless#configuration)
-  (providers, priority, weights and subsets, families…).
+
+**Options**: `arao({ fonts: false })` turns it off. An object is passed to
+[fontless](https://github.com/unjs/fontaine/tree/main/packages/fontless#configuration), over the plugin's defaults, key by key: `defaults`
+(`weights`, `styles`, `subsets`), `providers`, `priority`, `families`, `throwOnError`…
+
+```js
+arao({
+  fonts: {
+    defaults: { weights: [400, 700] },
+    families: [
+      { name: 'Brand Sans', provider: 'none' },     // never fetched (its @font-face is ours)
+      { name: 'Inter', provider: 'bunny' },          // from Bunny only
+    ],
+    throwOnError: true,                              // a font that cannot be fetched fails the build
+  },
+})
+```
 
 ## Sizes
 

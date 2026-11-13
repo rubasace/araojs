@@ -24,8 +24,10 @@
 //      with a theme source that is a package not installed, one that gives no theme, one whose
 //      themes folder is outside it, or a bare name that is a root folder, it must stop with an
 //      [arao] error (the last one with the "./" hint); a name two sources give warns once, and a
-//      source named twice does not warn about itself; and it writes the files and @font-face of the
-//      web font THEME names (WEB_FONT; skipped where the font provider is unreachable)
+//      source named twice does not warn about itself; and it writes the files and @font-face (400
+//      and 700) of the web font THEME names (WEB_FONT; SKIPPED where the font provider is
+//      unreachable); with arao({ fonts: false }), and with system fonts only, no font files (and,
+//      the latter, no fontless output)
 //   3. every deck of src/decks, under the dev server (Vue's own warnings only exist in dev) and
 //      under vite preview (the production build): opened at /<name>, walked with ArrowRight
 //      until the hash stops changing; any console warning/error or page error fails, and so does
@@ -380,18 +382,43 @@ try {
   const { chromium } = need('playwright-core')
 
   // the web font THEME names: its files in the build (assets/_fonts), its @font-face in the CSS.
-  // Without a way to the provider (an offline machine) the build passes without them: skipped
+  // Only where the font provider can be reached (an offline machine builds without them: the
+  // check says SKIPPED). Then two builds of their own (into dist-fonts, removed after): with
+  // arao({ fonts: false }), and with a themes folder whose fonts are all system fonts: neither
+  // writes font files, and the second says nothing about fonts
   async function webFonts() {
-    const assets = join(project, 'dist', 'assets')
-    const files = await readdir(join(assets, '_fonts')).catch(() => [])
-    if (!files.some((f) => f.endsWith('.woff2'))) {
-      const online = await fetch('https://fonts.google.com/metadata/fonts', { method: 'HEAD', signal: AbortSignal.timeout(10000) }).then((r) => r.ok, () => false)
-      if (online) fail(`vite build: no web font files for "${WEB_FONT}" in dist/assets/_fonts`)
-      else log(`web fonts: skipped, the font provider cannot be reached from here`)
-      return
+    const reachable = async () => {
+      for (let i = 0; i < 3; i++) {
+        const ok = await fetch('https://fonts.google.com/metadata/fonts', { method: 'HEAD', signal: AbortSignal.timeout(10000) }).then((r) => r.ok, () => false)
+        if (ok) return true
+        await new Promise((r) => setTimeout(r, 2000))
+      }
+      return false
     }
-    const css = (await Promise.all((await readdir(assets)).filter((f) => f.endsWith('.css')).map((f) => readFile(join(assets, f), 'utf8')))).join('\n')
-    if (!new RegExp(`@font-face\\s*{[^}]*font-family:\\s*["']?${WEB_FONT}["']?\\s*;`).test(css)) fail(`vite build: no @font-face for "${WEB_FONT}" in the built CSS`)
+    const fontFiles = async (dist) => (await readdir(join(project, dist, 'assets', '_fonts')).catch(() => [])).filter((f) => f.endsWith('.woff2'))
+    const assets = join(project, 'dist', 'assets')
+    if (!(await fontFiles('dist')).length) {
+      if (await reachable()) fail(`vite build: no web font files for "${WEB_FONT}" in dist/assets/_fonts`)
+      else log('web fonts: SKIPPED: no network (the font provider cannot be reached from here)')
+    } else {
+      const css = (await Promise.all((await readdir(assets)).filter((f) => f.endsWith('.css')).map((f) => readFile(join(assets, f), 'utf8')))).join('\n')
+      if (!new RegExp(`@font-face\\s*{[^}]*font-family:\\s*["']?${WEB_FONT}["']?\\s*;`).test(css)) fail(`vite build: no @font-face for "${WEB_FONT}" in the built CSS`)
+      for (const weight of [400, 700]) {
+        if (!new RegExp(`@font-face\\s*{[^}]*font-family:\\s*["']?${WEB_FONT}["']?\\s*;[^}]*font-weight:\\s*${weight}\\b`).test(css)) fail(`vite build: no ${weight} weight of "${WEB_FONT}" (bold would be faked)`)
+      }
+    }
+    const config = (options) => `import { defineConfig } from 'vite'\nimport arao from '${PKG}/vite'\n\nexport default defineConfig({ plugins: [arao(${options})], build: { outDir: 'dist-fonts' } })\n`
+    await writeFile(join(project, 'vite.fonts.config.js'), config('{ fonts: false }'))
+    await run(process.execPath, [viteBin, 'build', '--config', 'vite.fonts.config.js'], project)
+    if ((await fontFiles('dist-fonts')).length) fail('vite build with arao({ fonts: false }): font files in dist-fonts/assets/_fonts')
+    await mkdir(join(project, 'src', 'themes-system'), { recursive: true })
+    await writeFile(join(project, 'src', 'themes-system', 'plain.css'), '[data-theme="plain"] { --ar-font-sans: Arial, Helvetica, "Segoe UI", sans-serif; --ar-font-mono: Menlo, Consolas, monospace; }\n')
+    await writeFile(join(project, 'vite.fonts.config.js'), config(`{ themes: 'src/themes-system' }`))
+    const { code, out, err } = await exec(process.execPath, [viteBin, 'build', '--config', 'vite.fonts.config.js'], project)
+    if (code !== 0) fail(`vite build with system fonts only exited with ${code}`)
+    if ((await fontFiles('dist-fonts')).length) fail('vite build with system fonts only: font files in dist-fonts/assets/_fonts')
+    if (/\[fontless\]/.test(out + err)) fail(`vite build with system fonts only: fontless said something:\n${(out + err).split('\n').filter((l) => l.includes('[fontless]')).join('\n')}`)
+    await Promise.all(['vite.fonts.config.js', 'dist-fonts', 'src/themes-system'].map((p) => rm(join(project, p), { recursive: true, force: true })))
   }
 
   // the build's 404.html: a copy of its index.html (static hosts answer a deck's path with it)

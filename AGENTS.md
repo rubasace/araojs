@@ -130,6 +130,11 @@ Don't:
   (their `themes/` folder). Never import theme CSS by hand: a `[data-theme]` in a stylesheet
   that is no source is not a theme a deck can wear. No theme ships with the package besides
   `default` (the defaults); there is no `araojs/themes/…` to import.
+- **Fonts are fetched, not installed.** A theme names a web font in `--ar-font-sans` /
+  `--ar-font-mono` (`"Inter", sans-serif`) and the build downloads it from Google Fonts, Bunny,
+  Fontshare or Fontsource and serves it with the deck: no `@font-face`, no font files, no `<link>`.
+  System fonts (Georgia, Arial, Menlo…) are never fetched. The first build needs the network.
+  A font no provider has: its own `@font-face` in the theme file.
 - **Headings inside `#background` are ignored for the slide's title** (jump menu, presenter,
   notes pages). Put the heading in the content, or use `Slide(title="…")`.
 - **The list of decks (`/`) draws each deck's cover.** Its card is titled by the file name in
