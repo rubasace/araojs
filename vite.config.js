@@ -1,7 +1,6 @@
 // Two jobs:
-//   npm run build   the library: dist/index.js (ESM) + dist/arao.css + dist/themes/*.css
+//   npm run build   the library: dist/index.js (ESM) + dist/arao.css
 //   npm run dev     the playground (playground/), a tiny slides project on the library's source
-import { readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
@@ -54,11 +53,12 @@ function cssOrderError(css) {
 }
 
 // The library's CSS comes with its JS: the entry imports it, so a project needs no import of its
-// own (it is built by Vite in any case: the virtual modules require the plugin). The themes are
-// copied as they are, one file each, for the project to import the ones its decks wear.
-function cssAndThemes() {
+// own (it is built by Vite in any case: the virtual modules require the plugin). No theme ships
+// with it: the defaults in tokens.css are the default theme, and a project's themes are its own
+// (src/themes, loaded by the plugin).
+function css() {
   return {
-    name: 'arao:css-and-themes',
+    name: 'arao:css',
     generateBundle: {
       order: 'post', // after Vite has put the CSS in the bundle
       handler(_, bundle) {
@@ -68,8 +68,6 @@ function cssAndThemes() {
         const order = cssOrderError(typeof source === 'string' ? source : new TextDecoder().decode(source))
         if (order) this.error(`CSS order: ${order}`)
         entry.code = `import './${CSS}'\n${entry.code}`
-        for (const f of readdirSync(here('src/themes')).filter((f) => f.endsWith('.css')))
-          this.emitFile({ type: 'asset', fileName: `themes/${f}`, source: readFileSync(here(`src/themes/${f}`), 'utf8') })
       },
     },
   }
@@ -78,7 +76,7 @@ function cssAndThemes() {
 export default defineConfig(({ command }) => command === 'build'
   ? {
       // the virtual modules stay imports: the project's plugin resolves them
-      plugins: [keepImportMeta(), vue(), cssAndThemes()],
+      plugins: [keepImportMeta(), vue(), css()],
       build: {
         outDir: here('dist'),
         emptyOutDir: true,
@@ -93,10 +91,7 @@ export default defineConfig(({ command }) => command === 'build'
       root: here('playground'),
       plugins: [arao()],
       resolve: {
-        alias: [
-          { find: /^araojs$/, replacement: here('src/index.js') },
-          { find: /^araojs\/themes\/(.*)$/, replacement: `${here('src/themes')}/$1` },
-        ],
+        alias: [{ find: /^araojs$/, replacement: here('src/index.js') }],
       },
       server: {
         host: '127.0.0.1',

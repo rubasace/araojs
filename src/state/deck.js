@@ -1,10 +1,11 @@
-import { computed, inject, provide, readonly, ref, shallowRef, toRef, watch, watchPostEffect } from 'vue'
+import { computed, inject, provide, readonly, ref, shallowRef, watch, watchPostEffect } from 'vue'
 import { exportOptions } from '../core/exporter'
 import { IDLE, clock, parseDuration, start, withinBounds } from '../core/timer'
 import { useDeckSync } from '../composables/useDeckSync'
 import { useFullscreen } from '../composables/useFullscreen'
 import { useHashRoute } from '../composables/useHashRoute'
 import { usePresenterWindow } from '../composables/usePresenterWindow'
+import { themes as projectThemes, themesDir } from 'virtual:arao/themes'
 import { ahead, createStage, headingOf, titleOf, useStage } from './stage'
 
 // The deck's state: where it stands, the theme it wears, the talk's timer, fullscreen, the
@@ -31,7 +32,7 @@ import { ahead, createStage, headingOf, titleOf, useStage } from './stage'
 //                       the copy that follows it one step ahead (null elsewhere)
 //   next                where one more press leads: { index, step } or { end: true }
 //   notes, titles()     the Notes of the slide on screen; every slide's title (jump menu)
-//   theme, setTheme, cycleTheme, themes()
+//   theme, setTheme, cycleTheme, themes()   themes() is the deck's list, resolved (below)
 //   timer, setTimer     the talk's timer (core/timer.js)
 //   duration            the talk's length in effect, in ms, or null: the presenter's, else the deck's
 //   deckDuration        the deck's own (its duration prop), in ms, or null
@@ -56,6 +57,11 @@ export function provideDeckRoute(app, { name, path }) {
 export function provideThumbnail(cover) {
   provide(THUMBNAIL, cover)
 }
+
+// Every theme there is: 'default' (the engine's own tokens, styles/tokens.css: no file), then the
+// project's, by name (each [data-theme="<name>"] of a CSS file in its themes folder, src/themes by
+// default: the Vite plugin reads them and loads their CSS).
+const ALL_THEMES = Object.freeze(['default', ...projectThemes.filter((n) => n !== 'default')])
 
 export function createDeck(props) {
   // a thumbnail reads nothing of the URL: the page it is drawn in is not its own
@@ -86,9 +92,27 @@ export function createDeck(props) {
   }
 
   // ---- the theme: ?theme=<name> in the URL, else the first of its themes ------------------
+  // The deck's themes: Deck(:themes), in its order, or without it every theme there is
+  // (ALL_THEMES). A name that is no theme is skipped, with one warning per list (said where the
+  // deck is shown, not by each thumbnail of it); a list left with none is ['default']. A thumbnail
+  // wears the first of the list.
   // setTheme(name) wears a theme and writes it in the URL (replacing the history entry);
   // cycleTheme() wears the next one of the list ("t").
-  const theme = ref(query.get('theme') || props.themes[0])
+  const themes = computed(() => {
+    if (props.themes == null) return ALL_THEMES
+    const known = [...new Set(props.themes.filter((n) => ALL_THEMES.includes(n)))]
+    return known.length ? known : ['default']
+  })
+  if (!thumbnail) {
+    watch(() => props.themes, (list) => {
+      const unknown = (list ?? []).filter((n) => !ALL_THEMES.includes(n))
+      if (unknown.length) {
+        const names = unknown.map((n) => JSON.stringify(n)).join(', ')
+        console.warn(`[arao] Deck themes: no theme ${names} (there are: ${ALL_THEMES.join(', ')}; a theme is a [data-theme="<name>"] rule in a CSS file of ${themesDir}): skipped`)
+      }
+    }, { immediate: true })
+  }
+  const theme = ref(query.get('theme') || themes.value[0])
   function setTheme(name) {
     theme.value = name
     const url = new URL(location.href)
@@ -96,7 +120,7 @@ export function createDeck(props) {
     history.replaceState(null, '', url)
   }
   function cycleTheme() {
-    const list = props.themes
+    const list = themes.value
     setTheme(list[(list.indexOf(theme.value) + 1) % list.length])
   }
 
@@ -162,13 +186,13 @@ export function createDeck(props) {
   const face = Object.freeze({
     ...stage.view,
     theme: readonly(theme),
-    themes: readonly(toRef(props, 'themes')),
+    themes: readonly(themes),
     fullscreen: readonly(fullscreen),
     timer: readonly(timer),
     duration,
     setTheme(name) {
-      if (props.themes.includes(name)) setTheme(name)
-      else console.warn(`[arao] setTheme("${name}"): not one of the deck's themes (${props.themes.join(', ')}); ignored`)
+      if (themes.value.includes(name)) setTheme(name)
+      else console.warn(`[arao] setTheme("${name}"): not one of the deck's themes (${themes.value.join(', ')}); ignored`)
     },
     toggleFullscreen,
     openPresenter: presenterWindow?.open,
@@ -178,7 +202,7 @@ export function createDeck(props) {
 
   return {
     name: route?.name ?? null, mode, exporting, face, stage, preview, next, notes, titles,
-    theme, setTheme, cycleTheme, themes: () => props.themes,
+    theme, setTheme, cycleTheme, themes: () => themes.value,
     timer, setTimer, duration, deckDuration, setDuration,
     viewport, presenterWindow,
   }
@@ -190,7 +214,8 @@ export function createDeck(props) {
 //                                         (1-based), the slide count, its step count, and the
 //                                         progress over every step of the deck (0..1)
 //   next(), prev(), go(i, step)           move it
-//   theme, themes                         the theme worn, the deck's list (read-only refs);
+//   theme, themes                         the theme worn, the deck's list (read-only refs; the
+//                                         list is its themes prop, or every theme there is);
 //                                         setTheme(name) wears another of the list (any other
 //                                         name warns and is ignored)
 //   fullscreen, toggleFullscreen()        read-only ref; enters or leaves fullscreen

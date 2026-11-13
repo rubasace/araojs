@@ -1,7 +1,7 @@
 /* Tokens: every custom property the engine reads, each with its default, declared here and nowhere
    else. Together the defaults are the `default` theme, which has no file of its own: a theme
-   ([data-theme="x"] { --ar-…: …; }, themes/*.css or a CSS file of the project) declares only what
-   it changes, over them; slides and components only read them.
+   ([data-theme="x"] { --ar-…: …; }, in a CSS file of the project's src/themes, which the Vite
+   plugin loads) declares only what it changes, over them; slides and components only read them.
 
    Where they apply:
    - At the root, with zero specificity (:where(:root)): they reach everything Arao draws, inside a
@@ -25,7 +25,9 @@
    em lengths, unitless line heights, colour-mix percentages over a token, the opacity of a
    disabled or dimmed state); font weights; and the inner geometry of a part, in px (the paddings,
    gaps and offsets of the controls, the presenter view, the code window, the addons; button and
-   glyph boxes; the cover's bar). A part's inner radii are proportions of its radius token.
+   glyph boxes; the cover's bar; the 2px radius of a mark, as the step dot's). A part's inner
+   radii are proportions of its radius token. One file is left out for now: the deck selector
+   (views/DeckSelector.vue) keeps its own font sizes.
 
    Not declared here: --ar-scale, the canvas's scale, set by the engine (Stage.vue; 1 in the
    export's book, ExportView.vue). */

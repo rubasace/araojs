@@ -1,0 +1,27 @@
+/* A project theme, as any slides project would write one: a [data-theme="<name>"] rule in a CSS
+   file of src/themes, which the plugin finds and loads (nothing to import), declaring only the
+   tokens it changes over the defaults (the `default` theme). This one is the engine's former
+   default look: dark, Inter, an orange accent and a dark code window. */
+[data-theme="dark"] {
+  --ar-letterbox: #000;
+  --ar-bg: #0f1115;
+  --ar-fg: #e8e8ea;
+  --ar-muted: #9aa0a6;
+  --ar-accent: #ff6a3d;
+  --ar-accent-fg: #0f1115;
+  --ar-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ar-font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --ar-text-base: 40px;
+  --ar-title: 88px;
+  --ar-pad: 96px 120px;
+  --ar-radius: 16px;
+  /* code windows */
+  --ar-code-theme: material-theme-darker;
+  --ar-code-size: 44px;
+  --ar-code-bg: #2b2b2b;
+  --ar-code-bar: #383a40;
+  --ar-code-fg: #eeffff;
+  --ar-code-muted: #8a8f98;
+  --ar-code-title: rgba(255, 255, 255, .92);
+  --ar-code-radius: 22px;
+}

@@ -8,10 +8,12 @@
 // Without a tarball it packs one itself (npm pack, which builds the library first).
 // The project is made in a temporary folder outside the repository: package.json depending on the
 // tarball (vite and vue at the versions of the library's devDependencies), vite.config.js with the
-// arao() plugin, index.html, src/main.js with the default and vigojug themes, the playground's
-// decks, images and snippets as content, and three tiny decks of its own (so that the project has
-// several and / lists them; the second has a duration, the third none, the fourth a file name and
-// a cover heading far too long for its card). Then, in order:
+// arao() plugin, index.html, src/main.js (createDeckApp, nothing else), a theme of its own in
+// src/themes (THEME, in a file of another name: the plugin names it by its selector), the
+// playground's decks, images and snippets as content, and three tiny decks of its own (so that the
+// project has several and / lists them; the second has a duration and lists its themes, the third
+// neither: it gets every theme there is; the fourth a file name and a cover heading far too long
+// for its card). Then, in order:
 //   1. npm install
 //   2. vite build                      must pass, and write dist/404.html, a copy of index.html
 //   3. every deck of src/decks, under the dev server (Vue's own warnings only exist in dev) and
@@ -31,6 +33,11 @@
 //   5. useDeck()'s face, under the dev server, on the second deck: frozen, its refs read-only all
 //      the way down, setTheme refuses a name the deck has not (one [arao] warning), and in the
 //      presenter view's preview no function acts
+//   5b. themes, under the dev server, on the third deck (no themes listed): it wears 'default' and
+//      lists 'default' and THEME; t cycles to THEME, and ?theme=THEME wears it; the defaults reach
+//      what is drawn outside every theme (the presenter view); a :root rule of the project's own
+//      wins over a default (and a default that is another token follows it), and a theme wins
+//      over that rule
 //   6. the talk's length, under the dev server, on the second deck (duration="15m"), in the
 //      presenter's bar: 1h30 typed with real keys moves no slide and opens no jump menu, and the
 //      countdown follows in an audience window too (useDeck()); after an apply from the keyboard,
@@ -50,9 +57,11 @@
 //      / and at its path, and windows at / and /<second> move together, either way, / staying /
 //      ("p" at / opens /<second>?presenter); createDeckApp({ deckList: 'always' }) lists it at /,
 //      with its cover; createDeckApp({ deckList: 'sometimes' }) opens it, with one [arao]
-//      warning. On a decks folder of 14 decks, at 390x844: the covers far below the screen are not
-//      drawn until scrolled to; a deck that throws as it is drawn says "Sin vista previa" (one
-//      [arao] warning); /café is shown as such, not percent-encoded
+//      warning. On a decks folder holding a deck that lists a theme there is not: it opens in the
+//      next one it lists, with one [arao] warning. On a decks folder of 14 decks, at 390x844: the
+//      covers far below the screen are not drawn until scrolled to; a deck that throws as it is
+//      drawn says "Sin vista previa" (one [arao] warning); /café is shown as such, not
+//      percent-encoded
 //  10. <bin> export                    no --deck: every deck, one PDF each, at its default name
 //                                      (exports/<deck>.pdf); each PDF must have (its pages counted
 //                                      in the file itself) as many pages as its summary line says
@@ -71,11 +80,11 @@
 //      rewritten for each, and put back), with --out <folder> and several decks:
 //        --url <vite preview of a site built under /talks/, with a deck Talks>: a warning (the
 //        base is named like a deck), and every deck exported;
-//        --theme vigojug over a deck that lists it and one that does not (a symlink, next to a
-//        dotfile deck that must not count): <deck>-vigojug.pdf and <other>.pdf, whose line says it
+//        --theme THEME over a deck that lists it and one that does not (a symlink, next to a
+//        dotfile deck that must not count): <deck>-THEME.pdf and <other>.pdf, whose line says it
 //        fell back; --theme no deck lists: exit 1 and no PDF; a deck that throws at runtime: the
-//        others exported, exit 1; decks that resolve to one file (Alpha in vigojug and
-//        alpha-vigojug, Beta and beta): the first kept, the second failed, a warning on the case
+//        others exported, exit 1; decks that resolve to one file (Alpha in THEME and
+//        alpha-THEME, Beta and beta): the first kept, the second failed, a warning on the case
 // The package name and the CLI's name are read from package.json: nothing here names them.
 //
 // Environment:
@@ -104,9 +113,21 @@ const CONTENT = ['decks', 'images', 'snippets'] // from the playground's src/
 // drawing of the deck) in window.__faces, for the face check and the duration check (15 min:
 // DURATION, in ms).
 const MARK = 'A second deck'
+// the smoke project's own theme, in src/themes/brand.css: the file's name is not the theme's (the
+// plugin takes the names of its [data-theme="…"] selectors); its colours, as computed styles give
+// them back, for the theme check
+const THEME = 'sample'
+const SAMPLE = { bg: 'rgb(16, 32, 48)', accent: 'rgb(233, 30, 99)' }
+const BRAND = ['brand.css', `/* the smoke project's own theme: a [data-theme] rule in src/themes, nothing to import */
+[data-theme="${THEME}"] {
+  --ar-bg: ${SAMPLE.bg};
+  --ar-fg: rgb(240, 240, 240);
+  --ar-accent: ${SAMPLE.accent};
+}
+`]
 const DURATION = 15 * 60000
 const SECOND = ['Second.vue', `<template lang="pug">
-Deck(:themes="['default', 'vigojug']" duration="15m")
+Deck(:themes="['default', '${THEME}']" duration="15m")
   Faces
   Slide(layout="cover" title="Second")
     h1 ${MARK}
@@ -121,9 +142,10 @@ const Faces = { setup: () => ((window.__faces ??= []).push(useDeck()), () => nul
 </script>
 `]
 
-// a third deck of the smoke project only, with no duration (the countdown the presenter adds)
+// a third deck of the smoke project only, with no duration (the countdown the presenter adds) and
+// no themes listed (every theme there is)
 const UNTIMED = ['Untimed.vue', `<template lang="pug">
-Deck(:themes="['default']")
+Deck
   Slide(layout="cover" title="Untimed")
     h1 A deck without duration
   Slide
@@ -232,7 +254,8 @@ try {
     }, null, 2),
     'vite.config.js': `import { defineConfig } from 'vite'\nimport arao from '${PKG}/vite'\n\nexport default defineConfig({ plugins: [arao()] })\n`,
     'index.html': `<!doctype html>\n<html lang="en">\n  <head><meta charset="UTF-8" /><title>smoke</title></head>\n  <body>\n    <div id="app"></div>\n    <script type="module" src="/src/main.js"></script>\n  </body>\n</html>\n`,
-    'src/main.js': `import { createDeckApp } from '${PKG}'\nimport '${PKG}/themes/vigojug.css'\n\ncreateDeckApp().mount('#app')\n`,
+    'src/main.js': `import { createDeckApp } from '${PKG}'\n\ncreateDeckApp().mount('#app')\n`,
+    [`src/themes/${BRAND[0]}`]: BRAND[1],
   }
   for (const [name, text] of Object.entries(files)) {
     await mkdir(dirname(join(project, name)), { recursive: true })
@@ -474,18 +497,18 @@ try {
         }
       }
       // the links keep the query, not the hash; the covers stay covers
-      const query = 'theme=vigojug&presenter'
+      const query = `theme=${THEME}&presenter`
       await page.goto(new URL(`?${query}#/2/1`, base).href)
       await listed(`${site}?${query}#/2/1`, `?${query}`)
       await covers(`${site}?${query}#/2/1`)
       // the old form: moved to the path, with the rest of the query and the hash (and the name as
       // the list writes it)
-      const old = `?deck=${second.toUpperCase()}&theme=vigojug#/2/1`
+      const old = `?deck=${second.toUpperCase()}&theme=${THEME}#/2/1`
       await page.goto(new URL(old, base).href)
       await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 }).catch(() => {})
       await pause(300)
       const moved = await page.evaluate(() => location.pathname + location.search + location.hash)
-      const meant = `${site}${second}?theme=vigojug#/2/1`
+      const meant = `${site}${second}?theme=${THEME}#/2/1`
       if (moved !== meant) complaints.push(`${site}${old}: at ${moved}, not ${meant}`)
       const heading = await page.locator('.ar-slide:visible h2').first().textContent({ timeout: 5_000 }).catch(() => '')
       if (!heading.includes('Picked from the list')) complaints.push(`${site}${old}: not on the second deck's slide 2 (${heading || 'no heading'})`)
@@ -558,6 +581,81 @@ try {
       await context.close()
     }
     for (const c of complaints) fail(`dev useDeck() face: ${c}`)
+  }
+
+  // themes, on the third deck (no themes listed), each check in a page of its own; any console
+  // warning, error or page error fails
+  async function themes(base) {
+    const context = await browser.newContext({ viewport: { width: 1920, height: 1080 } })
+    const complaints = []
+    const open = async (query, style) => {
+      const page = await context.newPage()
+      page.on('console', (m) => ['warning', 'error'].includes(m.type()) && complaints.push(`${query}: console ${m.type()}: ${m.text()}`))
+      page.on('pageerror', (e) => complaints.push(`${query}: page error: ${e.message}`))
+      await page.goto(new URL(`${untimed}${query.replace(/^&/, '?')}`, base).href)
+      if (style) await page.addStyleTag({ content: style })
+      await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
+      await pause(300)
+      return page
+    }
+    // the theme worn (the viewport's), the canvas's background, the title colour of slide 2 (an
+    // h2: its default is the accent), and the root's --ar-bg (a default)
+    const look = (page) => page.evaluate(() => {
+      const css = (el, p) => (el ? getComputedStyle(el).getPropertyValue(p).trim() : null)
+      const title = document.querySelectorAll('.ar-slide')[1]?.querySelector('h2')
+      return {
+        theme: document.querySelector('.ar-viewport')?.dataset.theme,
+        bg: css(document.querySelector('.ar-canvas'), 'background-color'),
+        title: css(title, 'color'),
+        root: css(document.documentElement, '--ar-bg'),
+        picker: document.querySelectorAll('.ar-controls .ar-btn[title^="Tema"]').length,
+      }
+    })
+    try {
+      let page = await open('')
+      const plain = await look(page)
+      if (plain.theme !== 'default') complaints.push(`no ?theme=: wears "${plain.theme}", not default`)
+      if (!plain.root) complaints.push('no default --ar-bg at the root')
+      if (!plain.picker) complaints.push('no theme picker in the controls: the deck has one theme, not default and ' + THEME)
+      await page.keyboard.press('t')
+      await page.waitForFunction((t) => document.querySelector('.ar-viewport')?.dataset.theme === t, THEME, { timeout: 5_000 }).catch(() => {})
+      const cycled = await look(page)
+      if (cycled.theme !== THEME || cycled.bg !== SAMPLE.bg) complaints.push(`t: wears "${cycled.theme}" (background ${cycled.bg}), not ${THEME} (${SAMPLE.bg})`)
+      await page.close()
+
+      page = await open(`&theme=${THEME}`)
+      const asked = await look(page)
+      if (asked.theme !== THEME || asked.bg !== SAMPLE.bg || asked.title !== SAMPLE.accent)
+        complaints.push(`?theme=${THEME}: wears "${asked.theme}" (background ${asked.bg}, h2 ${asked.title}), not ${THEME} (${SAMPLE.bg}, ${SAMPLE.accent})`)
+      await page.close()
+
+      // outside every theme: the presenter view (its notes, its controls) still reads the defaults
+      page = await open('&presenter')
+      const outside = await page.evaluate(() => {
+        const box = document.querySelector('.ar-p-notes-body') ?? document.querySelector('.ar-presenter')
+        const css = (p) => getComputedStyle(box).getPropertyValue(p).trim()
+        return { placeholder: css('--ar-placeholder'), bg: css('--ar-bg'), root: getComputedStyle(document.documentElement).getPropertyValue('--ar-bg').trim() }
+      })
+      if (outside.placeholder !== 'currentColor' || !outside.bg || outside.bg !== outside.root)
+        complaints.push(`presenter view, outside every theme: --ar-placeholder "${outside.placeholder}", --ar-bg "${outside.bg}" (the root's: "${outside.root}")`)
+      await page.close()
+
+      // a :root rule of the project's own wins over a default, and the h2 title (whose default is
+      // the accent) follows it; a theme's own value wins over the rule
+      const MINE = 'rgb(1, 2, 3)'
+      page = await open('', `:root { --ar-accent: ${MINE}; }`)
+      const mine = await look(page)
+      if (mine.title !== MINE) complaints.push(`:root { --ar-accent: ${MINE} }: the h2 title is ${mine.title}, not ${MINE}`)
+      await page.close()
+      page = await open(`&theme=${THEME}`, `:root { --ar-accent: ${MINE}; }`)
+      const over = await look(page)
+      if (over.title !== SAMPLE.accent) complaints.push(`:root { --ar-accent } and ?theme=${THEME}: the h2 title is ${over.title}, not the theme's ${SAMPLE.accent}`)
+      await page.close()
+      console.log(`  dev themes: ${complaints.length ? 'problems below' : `default and ${THEME} listed, t and ?theme= wear ${THEME}, defaults outside themes, :root wins over defaults, themes over :root`}`)
+    } finally {
+      await context.close()
+    }
+    for (const c of complaints) fail(`dev themes: ${c}`)
   }
 
   // the talk's length, on the second deck (duration="15m") and the third (none): edited in the
@@ -861,6 +959,7 @@ try {
       await selector(base, mode)
       if (mode === 'dev') {
         await face(base)
+        await themes(base)
         await duration(base)
         await presenter(base)
         await apart(base)
@@ -893,10 +992,12 @@ throw new Error('smoke: this deck throws as it is drawn')
 
   // createDeckApp's other cases: the project's own files rewritten for each one, the dev server
   // started on them (Vue's warnings only exist in dev, and no build is needed), and put back.
-  // Each visit opens a path and expects the second deck (`deck`) or the list (`list`: so many
-  // decks, each with its cover); `warns`: the one [arao] warning the page must give. Each check
-  // is a function of its own, given the site's URL.
+  // Each visit opens a path and expects the second deck (`deck`; `theme`: the theme it must wear)
+  // or the list (`list`: so many decks, each with its cover); `warns`: the one [arao] warning the
+  // page must give. Each check is a function of its own, given the site's URL.
   const solo = 'src/solo' // a decks folder holding the second deck alone
+  const listed = 'src/listed' // a decks folder holding a deck that lists a theme there is not
+  const LISTED = ['Listed.vue', SECOND[1].replace(`:themes="['default', '${THEME}']"`, `:themes="['nosuch', '${THEME}']"`)]
   const crowd = 'src/crowd' // a decks folder of many decks, one of which cannot be drawn
   const asIs = { 'src/main.js': files['src/main.js'], 'vite.config.js': files['vite.config.js'] }
   const alone = asIs['vite.config.js'].replace('arao()', `arao({ decks: '${solo}' })`)
@@ -1001,9 +1102,11 @@ throw new Error('smoke: this deck throws as it is drawn')
       visits: [{ path: '', deck: true, warns: 'deckList' }] },
     { name: 'a long list', files: { 'vite.config.js': asIs['vite.config.js'].replace('arao()', `arao({ decks: '${crowd}' })`) },
       checks: [lazy] },
+    { name: `Deck(:themes="['nosuch', '${THEME}']")`, files: { 'vite.config.js': asIs['vite.config.js'].replace('arao()', `arao({ decks: '${listed}' })`) },
+      visits: [{ path: '', deck: true, theme: THEME, warns: '"nosuch"' }] },
   ]
 
-  async function visit(base, variant, { path, deck, list, warns }) {
+  async function visit(base, variant, { path, deck, list, warns, theme }) {
     const context = await browser.newContext({ viewport: { width: 1920, height: 1080 } })
     const page = await context.newPage()
     const complaints = []
@@ -1021,6 +1124,8 @@ throw new Error('smoke: this deck throws as it is drawn')
         const isSecond = (await page.locator('.ar-slide h1', { hasText: MARK }).count()) > 0
         if (!slides || (await page.locator('.ar-decks').count())) complaints.push('no deck opened')
         else if (!isSecond) complaints.push('opened another deck, not the second')
+        const worn = await page.evaluate(() => document.querySelector('.ar-viewport')?.dataset.theme)
+        if (theme && worn !== theme) complaints.push(`wears the theme "${worn}", not ${theme}`)
       } else {
         await page.locator('.ar-decks-card').first().waitFor({ timeout: 30_000 }).catch(() => {})
         const cards = await page.locator('.ar-decks-card').count()
@@ -1043,6 +1148,8 @@ throw new Error('smoke: this deck throws as it is drawn')
   await writeFile(join(project, solo, SECOND[0]), SECOND[1])
   await mkdir(join(project, crowd), { recursive: true })
   for (const [name, text] of Object.entries(crowded)) await writeFile(join(project, crowd, name), text)
+  await mkdir(join(project, listed), { recursive: true })
+  await writeFile(join(project, listed, LISTED[0]), LISTED[1])
   try {
     for (const variant of variants) {
       for (const [name, text] of Object.entries({ ...asIs, ...variant.files })) await writeFile(join(project, name), text)
@@ -1058,6 +1165,7 @@ throw new Error('smoke: this deck throws as it is drawn')
     for (const [name, text] of Object.entries(asIs)) await writeFile(join(project, name), text)
     await rm(join(project, solo), { recursive: true, force: true })
     await rm(join(project, crowd), { recursive: true, force: true })
+    await rm(join(project, listed), { recursive: true, force: true })
   }
 
   // the summary line of a PDF: "<path>: <pages> pages (<slides> slides, <steps> steps), …"
@@ -1178,24 +1286,24 @@ throw new Error('smoke: this deck throws as it is drawn')
       code: 0, pdfs: { 'talks.pdf': 3, 'second.pdf': 3 },
       lines: [/^talks\/talks\.pdf: /m, /^2 of 2 decks exported, 6 pages$/m],
       errs: [/--url http:\/\/\S+\/talks\/ ends in the name of the deck "Talks"\. If it is that deck's own URL, give the site's base instead, --url http:\/\/\S+\/ .*if the site's base is named like the deck, nothing to do/] },
-    { name: 'theme', args: ['--theme', 'vigojug'],
-      files: { 'Second.vue': tiny('Second', ['default']), '.Hidden.vue': tiny('Hidden', ['default', 'vigojug']) },
-      link: { 'Third.vue': tiny('Third', ['default', 'vigojug']) },
-      code: 0, pdfs: { 'third-vigojug.pdf': 3, 'second.pdf': 3 },
-      lines: [/^theme\/second\.pdf: .*theme default \(it does not list vigojug/m, /^theme\/third-vigojug\.pdf: .*theme vigojug$/m, /^2 of 2 decks exported, 6 pages$/m] },
+    { name: 'theme', args: ['--theme', THEME],
+      files: { 'Second.vue': tiny('Second', ['default']), '.Hidden.vue': tiny('Hidden', ['default', THEME]) },
+      link: { 'Third.vue': tiny('Third', ['default', THEME]) },
+      code: 0, pdfs: { [`third-${THEME}.pdf`]: 3, 'second.pdf': 3 },
+      lines: [new RegExp(`^theme/second\\.pdf: .*theme default \\(it does not list ${THEME}`, 'm'), new RegExp(`^theme/third-${THEME}\\.pdf: .*theme ${THEME}$`, 'm'), /^2 of 2 decks exported, 6 pages$/m] },
     { name: 'typo', args: ['--theme', 'nosuch'],
-      files: { 'Second.vue': tiny('Second', ['default']), 'Third.vue': tiny('Third', ['default', 'vigojug']) },
+      files: { 'Second.vue': tiny('Second', ['default']), 'Third.vue': tiny('Third', ['default', THEME]) },
       code: 1, pdfs: {}, errs: [/no deck lists the theme "nosuch"/] },
     { name: 'partial', args: [],
       files: { 'Broken.vue': tiny('Broken', ['default'], THROWS), 'Second.vue': tiny('Second', ['default']), 'Third.vue': tiny('Third', ['default']) },
       code: 1, pdfs: { 'second.pdf': 3, 'third.pdf': 3 },
       lines: [/^2 of 3 decks exported, 6 pages; failed: Broken$/m], errs: [/Broken: the deck threw before its pages were ready: .*smoke: this deck throws/] },
-    { name: 'clash', args: ['--theme', 'vigojug'],
-      files: { 'Alpha.vue': tiny('Alpha', ['default', 'vigojug']), 'alpha-vigojug.vue': tiny('Not Alpha', ['default']),
+    { name: 'clash', args: ['--theme', THEME],
+      files: { 'Alpha.vue': tiny('Alpha', ['default', THEME]), [`alpha-${THEME}.vue`]: tiny('Not Alpha', ['default']),
         'Beta.vue': tiny('Beta', ['default']), 'beta.vue': tiny('Beta again', ['default']) },
-      code: 1, pdfs: { 'alpha-vigojug.pdf': 3, 'beta.pdf': 3 },
-      lines: [/^clash\/alpha-vigojug\.pdf: .*theme vigojug$/m, /^2 of 4 decks exported, 6 pages; failed: alpha-vigojug, beta$/m],
-      errs: [/differ only in case.*Beta and beta/, /alpha-vigojug: clash\/alpha-vigojug\.pdf is Alpha's, written in this run: not overwritten/, /beta: clash\/beta\.pdf is Beta's/] },
+      code: 1, pdfs: { [`alpha-${THEME}.pdf`]: 3, 'beta.pdf': 3 },
+      lines: [new RegExp(`^clash/alpha-${THEME}\\.pdf: .*theme ${THEME}$`, 'm'), new RegExp(`^2 of 4 decks exported, 6 pages; failed: alpha-${THEME}, beta$`, 'm')],
+      errs: [/differ only in case.*Beta and beta/, new RegExp(`alpha-${THEME}: clash/alpha-${THEME}\\.pdf is Alpha's, written in this run: not overwritten`), /beta: clash\/beta\.pdf is Beta's/] },
   ]
   try {
     for (const c of cases) {

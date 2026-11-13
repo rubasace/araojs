@@ -60,7 +60,9 @@ import ThumbnailView from '../views/ThumbnailView.vue'
 const props = defineProps({
   width: { type: Number, default: 1920 },
   height: { type: Number, default: 1080 },
-  themes: { type: Array, default: () => ['default'] },
+  // the themes it can wear, the first by default: 'default' (the engine's tokens) and the names of
+  // the project's themes (src/themes); without it, all of them, 'default' first (state/deck.js)
+  themes: Array,
   // hide the mouse cursor after this many ms without moving it (0 = never)
   hideCursorAfter: { type: Number, default: 5000 },
   // the talk's length, for the presenter view's countdown: 90 or "90" (minutes), "45m", "1h30m",

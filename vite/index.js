@@ -4,11 +4,12 @@
 // It brings @vitejs/plugin-vue along (with Pug for the templates), so the project adds neither;
 // Vue's options go in arao({ vue: { … } }). Do not add vue() as well: the plugin would run twice.
 //
-// It exposes three project folders as virtual modules, so slides name files and need no imports:
+// It exposes four project folders as virtual modules, so slides name files and need no imports:
 //   decks     /talk                       default src/decks      (each .vue file directly in it)
 //   snippets  <Snippet file="App.java">   default src/snippets   (source text, loaded lazily)
 //   images    <Img file="team.jpg">       default src/images     (URLs; subfolders allowed)
-//   arao({ decks: 'src/decks', snippets: 'src/snippets', images: 'src/images' })
+//   themes    Deck(:themes="['venue']")   default src/themes     (each .css file directly in it)
+//   arao({ decks: 'src/decks', snippets: 'src/snippets', images: 'src/images', themes: 'src/themes' })
 // A folder is a path relative to the Vite root, or an absolute path. One outside the root
 // ("../shared/images") works the same: the dev server is allowed to serve it (server.fs.allow)
 // and watches it. A folder that was set but does not exist is reported when Vite starts.
@@ -30,13 +31,20 @@
 // SVG stay sharp at any scale, but a photo is upscaled with the canvas, so for 4K a full-slide
 // background wants ~3840 px wide (twice its size in canvas px); prefer WebP/AVIF/JPEG for photos.
 //
+// Themes: every .css file directly in the folder is loaded, after the engine's own CSS, with nothing
+// to import (virtual:arao/theme-styles), and names the themes of its [data-theme="<name>"]
+// selectors (one file may hold several; comments do not count): virtual:arao/themes gives the
+// engine those names, which a Deck without themes offers after 'default' (the engine's own tokens,
+// no file). A file that names none is still loaded (shared rules, fonts) and Vite says so.
+// Subfolders hold what the themes use (pictures, @import-ed partials), and are not loaded.
+//
 // Icons: <Icon name="lucide:rocket"> draws an icon of an installed Iconify set (@iconify-json/<prefix>),
 // resolved here, at build time: the source is read for the names it uses and only those go into
 // virtual:arao/icons (icons.js). arao({ icons: ['lucide:rocket'] }) adds names the source
 // does not spell out (built at runtime).
-import { existsSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import vue from '@vitejs/plugin-vue'
 import { searchForWorkspaceRoot } from 'vite'
 import { createIcons, forced } from './icons.js'
@@ -46,18 +54,20 @@ const require = createRequire(import.meta.url)
 const { name: PACKAGE } = require('../package.json')
 
 const IMAGES = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'svg']
-const DEFAULTS = { decks: 'src/decks', snippets: 'src/snippets', images: 'src/images' }
+const DEFAULTS = { decks: 'src/decks', snippets: 'src/snippets', images: 'src/images', themes: 'src/themes' }
 
 // what each folder's glob takes, and how; and what a missing folder means
 const modules = {
   decks: { pattern: '*.vue', options: '{}', missing: 'createDeckApp() has no deck to open' },
   snippets: { pattern: '**/*', options: "{ query: '?raw', import: 'default' }", missing: 'files named in slides will show as missing' },
   images: { pattern: `**/*.{${IMAGES}}`, options: "{ query: '?url', import: 'default', eager: true, caseSensitive: false }", missing: 'files named in slides will show as missing' },
+  // its own two modules (load, below): the names, and the styles
+  themes: { pattern: '*.css', missing: "decks can only wear 'default'" },
 }
 
-// the decks in a folder, by name: what import.meta.glob takes for the decks' '*.vue' (files directly
-// in it or symlinks to files, not dotfiles, case-sensitive)
-function decksIn(folder) {
+// the files of a folder with an extension, by name without it: what import.meta.glob takes for
+// '*<ext>' (files directly in it or symlinks to files, not dotfiles, case-sensitive)
+function filesIn(folder, ext) {
   let entries
   try {
     entries = readdirSync(folder, { withFileTypes: true })
@@ -65,10 +75,41 @@ function decksIn(folder) {
     return []
   }
   return entries
-    .filter((e) => !e.name.startsWith('.') && e.name.endsWith('.vue')
+    .filter((e) => !e.name.startsWith('.') && e.name.endsWith(ext)
       && (e.isFile() || (e.isSymbolicLink() && statSync(join(folder, e.name), { throwIfNoEntry: false })?.isFile())))
-    .map((e) => e.name.slice(0, -'.vue'.length))
+    .map((e) => e.name.slice(0, -ext.length))
     .sort()
+}
+const decksIn = (folder) => filesIn(folder, '.vue')
+
+// the themes a stylesheet names: its [data-theme="<name>"] selectors (quoted or not, any case
+// flag), not [data-theme^="…"] and the like, nor what its comments say
+const THEME_SELECTOR = /\[\s*data-theme\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'\]]+))\s*(?:[is]\s*)?\]/gi
+function themesOf(css) {
+  const names = new Set()
+  for (const m of css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(THEME_SELECTOR)) {
+    const name = (m[1] ?? m[2] ?? m[3]).trim()
+    if (name) names.add(name)
+  }
+  return names
+}
+// the themes folder: every name its files give, sorted (the reader's alphabetical order, code-point
+// order between names that differ only in case), and the files that give none
+const byName = (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }) || (a < b ? -1 : a > b ? 1 : 0)
+function themesIn(folder) {
+  const names = new Set()
+  const unnamed = []
+  for (const file of filesIn(folder, '.css').map((n) => `${n}.css`)) {
+    let found
+    try {
+      found = themesOf(readFileSync(join(folder, file), 'utf8'))
+    } catch {
+      continue
+    }
+    if (!found.size) unnamed.push(file)
+    for (const n of found) names.add(n)
+  }
+  return { names: [...names].sort(byName), unnamed }
 }
 
 // glob syntax in a folder's name is literal: "talk (draft)", "[2024]"
@@ -92,6 +133,8 @@ export default function arao(options = {}) {
   }
   const outside = () => Object.keys(modules).map(dir).filter(isOutside)
   const resolved = (name) => `\0virtual:arao/${name}`
+  let themeNames = null // the names the themes module was last loaded with
+  const unnamedTheme = (file) => logger.warn(`[arao] ${folders.themes}/${file} names no theme (no [data-theme="<name>"] selector): it is loaded, but no deck can wear it`)
 
   // icons used in the source: src/ and the decks folder, but not the snippets and images folders
   // (their files are content, not source)
@@ -162,12 +205,27 @@ export default function arao(options = {}) {
     },
     resolveId(id) {
       const name = id.startsWith('virtual:arao/') && id.slice('virtual:arao/'.length)
-      return name in modules || name === 'icons' ? resolved(name) : null
+      return name in modules || name === 'icons' || name === 'theme-styles' ? resolved(name) : null
     },
     // a saved file that uses an icon the module lacks: the module goes first in the same update,
     // so its new data is in place when the file's own update renders the Icon
     async hotUpdate({ type, file, read, modules: changed }) {
-      if (this.environment.name !== 'client' || !(await icons.update(type, file, read))) return
+      if (this.environment.name !== 'client') return
+      // a theme file added, removed or edited: if the names the folder gives changed, the names
+      // module is loaded again (which reports the files that name none) and the page reloads; else
+      // it is a plain CSS update (the styles module's glob follows the files on its own), and a
+      // file that names no theme is reported here
+      if (file.endsWith('.css') && relative(dir('themes'), file) === basename(file)) {
+        const { names, unnamed } = themesIn(dir('themes'))
+        const mod = this.environment.moduleGraph.getModuleById(resolved('themes'))
+        if (mod && JSON.stringify(names) !== JSON.stringify(themeNames)) {
+          this.environment.moduleGraph.invalidateModule(mod)
+          this.environment.hot.send({ type: 'full-reload' })
+          return []
+        }
+        if (type !== 'delete' && unnamed.includes(basename(file))) unnamedTheme(basename(file))
+      }
+      if (!(await icons.update(type, file, read))) return
       const mod = this.environment.moduleGraph.getModuleById(resolved('icons'))
       return mod ? [mod, ...changed.filter((m) => m !== mod)] : undefined
     },
@@ -183,13 +241,23 @@ export default function arao(options = {}) {
     },
     load(id) {
       if (id === resolved('icons')) return icons.load()
-      const name = Object.keys(modules).find((n) => id === resolved(n))
+      if (id === resolved('themes')) {
+        const { names, unnamed } = themesIn(dir('themes'))
+        for (const file of unnamed) unnamedTheme(file)
+        themeNames = names
+        return `export const themes = ${JSON.stringify(names)}
+export const themesDir = ${JSON.stringify(folders.themes)}`
+      }
+      const styles = id === resolved('theme-styles')
+      const name = styles ? 'themes' : Object.keys(modules).find((n) => id === resolved(n))
       if (!name) return null
       // globs starting with "/" are relative to the root ("/../shared" leaves it); Vite keys
       // each file by its path from the root, so the folder's part is cut off the keys
       const rel = relative(root, dir(name)).split(sep).join('/')
       const prefix = rel ? `/${rel}/` : '/'
       const glob = (rel ? `/${escapeGlob(rel)}/` : '/') + modules[name].pattern
+      // the themes' CSS, each file imported for its styles alone
+      if (styles) return `import.meta.glob(${JSON.stringify(glob)}, { eager: true })`
       return `const files = import.meta.glob(${JSON.stringify(glob)}, ${modules[name].options})
 const prefix = ${JSON.stringify(prefix)}
 // no prototype: a file named "constructor" or "toString" is looked up, not an Object method
