@@ -33,7 +33,7 @@ const H = 360
 const HOLD = 16 // frames a state stays on screen
 const FADE = 4 // frames of a crossfade
 
-const FEATURES = { canvas, steps, layouts, code, icons, images, themes, presenter, decks, jump, export: exportPdf }
+const FEATURES = { canvas, steps, layouts, code, icons, images, themes, presenter, decks, jump, export: exportPdf, agents }
 
 const only = process.argv.slice(2)
 for (const name of only) if (!FEATURES[name]) throw new Error(`no feature ${name} (there are: ${Object.keys(FEATURES).join(', ')})`)
@@ -441,6 +441,46 @@ function canvasPage() {
     document.querySelector('.win .url').style.display = w < 300 ? 'none' : ''
   }
 </script>
+`
+}
+
+// Written with an agent: AGENTS.md (what ships in the package), and a prompt to a coding agent.
+async function agents() {
+  const tab = await browser.newPage({ viewport: { width: W, height: H + BAR }, locale: LOCALE })
+  await tab.setContent(agentsPage())
+  await tab.evaluate(() => document.fonts.ready)
+  await tab.screenshot({ path: join(OUT, "agents.png") })
+  await tab.close()
+  report("agents.png", "AGENTS.md and a prompt")
+}
+
+function agentsPage() {
+  const md = [
+    ["h", "# AGENTS.md — writing decks with Arao"],
+    ["", ""],
+    ["h", "## Rules"],
+    ["", "- Start every slide with its heading (`h2`)."],
+    ["", "- One idea per slide. Reveal with steps."],
+    ["", "- Name files, never import them:"],
+    ["c", "  Snippet(file=\"App.java\")"],
+    ["", "- Style through tokens, not colours."],
+  ]
+  return `<!doctype html>
+<meta charset="utf-8">
+<style>${CHROME}
+  body { width: ${W}px; height: ${H + BAR}px; background: #f6f3ec; display: flex; flex-direction: column; font-family: Inter, sans-serif; }
+  .bar { flex: none; }
+  .doc { flex: 1; padding: 18px 26px 0; font: 15px/1.55 "DejaVu Sans Mono", ui-monospace, monospace; color: #1b2a3a; white-space: pre; }
+  .doc .h { color: #2a7de1; font-weight: 700; }
+  .doc .c { color: #5b6877; }
+  .chat { flex: none; margin: 0 22px 20px; padding: 14px 16px; background: #fff; border: 1px solid #1b2a3a22; border-radius: 12px; box-shadow: 0 6px 18px #1b2a3a1f; }
+  .who { font: 600 12px/1 Inter, sans-serif; color: #5b6877; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 7px; }
+  .msg { font: 500 17px/1.35 Inter, sans-serif; color: #1b2a3a; }
+  .done { margin-top: 9px; font: 14px/1 "DejaVu Sans Mono", monospace; color: #2f7d4f; }
+</style>
+<div class="bar">${DOTS}<div class="url"><b>node_modules/araojs/</b>AGENTS.md</div></div>
+<div class="doc">${md.map(([k, t]) => `<div class="${k}">${t.replace(/&/g, "&amp;").replace(/</g, "&lt;") || " "}</div>`).join("")}</div>
+<div class="chat"><div class="who">You → your coding agent</div><div class="msg">Make me a 10-minute deck about our new API, with the code shown step by step.</div><div class="done">✓ src/decks/new-api.vue</div></div>
 `
 }
 

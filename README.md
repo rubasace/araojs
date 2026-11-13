@@ -193,12 +193,12 @@ step with every window.
 <td width="400"><img src="docs/assets/features/presenter.gif" alt="The presenter view following key presses: next step, notes, timer running" width="380" /></td>
 </tr>
 <tr>
-<td width="400"><img src="docs/assets/features/decks.gif" alt="The list of decks with their covers; one is opened at its own URL" width="380" /></td>
+<td width="400"><img src="docs/assets/features/decks.gif" alt="The list of decks, each shown by its cover; one is opened" width="380" /></td>
 <td width="340">
 
-**A URL per deck**
+**All your talks in one project**
 
-Every talk is one file and one address. `/` lists them all, each by its cover.
+Keep every deck side by side, sharing components, code and pictures. Open the project and pick a talk by its cover.
 
 [The project](docs/guide/project.md#the-list-of-decks)
 
@@ -229,14 +229,17 @@ One command, one PDF: a page per step (or per slide), text kept as text.
 </td>
 </tr>
 <tr>
-<td colspan="2" align="center">
+<td width="340">
 
-**Written by people or by agents**
+**Ready for your coding agent**
 
-[AGENTS.md](AGENTS.md) ships with the package: point your coding agent at it and it writes decks
-the way this README shows them.
+Write slides yourself, or ask your agent: [AGENTS.md](AGENTS.md) ships with the package and
+teaches it to write decks the Arao way.
+
+[AGENTS.md](AGENTS.md)
 
 </td>
+<td width="400"><img src="docs/assets/features/agents.png" alt="AGENTS.md open, and a prompt asking a coding agent for a deck" width="380" /></td>
 </tr>
 </table>
 
