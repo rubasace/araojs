@@ -19,8 +19,12 @@ this: [reference.md](reference.md) is their API, [../AGENTS.md](../AGENTS.md) th
 `plugin.js` is the Vue plugin, `app.js` is `createDeckApp`: it renders the deck the URL's path
 names (the first segment after Vite's base), or `views/DeckSelector.vue` (a plain page, outside
 every `Deck`) when there is no deck to open. It is the one place that reads the path: it puts the
-URL in its one form first (`?deck=x` → `/x`, `/X/` → `/x`, with `history.replaceState`), so
-everything after it (the sync key, the presenter window's URL) reads `location.pathname` as it is.
+URL in its one form first (`?deck=x` → `/x`, `/X/` → `/x`, with `history.replaceState`), and
+tells the deck which one it is (`provideDeckRoute(app, { name, path })`, state/deck.js): its file
+name and its path as the list writes it. The sync key and the presenter window's URL use that path,
+not the address bar's, so a project's only deck, which opens at `/` and stays `/` there, is one
+deck with its `/<name>` windows; the export view reports the name, which the CLI checks. An app of
+its own (`createApp(MyApp).use(Arao)`) provides no route: then `location.pathname`, and no name.
 
 ## Views
 
@@ -51,7 +55,7 @@ slide 1, step 1, and it skips every effect: no hash route, no sync, no keys, no 
 no duration warning; its face's actions are the preview's no-ops. Its slides other than the cover
 register (so the order is known) but draw no content (`drawn`, state/slide.js), so a card mounts
 one slide's pictures and snippets, not the deck's. The deck fills `title` with its cover's first
-heading (else its title prop), which the card shows.
+heading (else its title prop), which the card shows under the deck's title (its file name in words).
 
 ## Provide / inject channels
 
@@ -59,6 +63,7 @@ heading (else its title prop), which the card shows.
 |---|---|---|---|
 | deck | `createDeck` (in `Deck`) | `useDeck()` | the public face (below), never the internals |
 | thumbnail | `provideThumbnail` (in `DeckCover`) | `createDeck` | that the deck inside is a thumbnail, and the ref its cover's title goes in |
+| route | `provideDeckRoute` (`createDeckApp`, on the app) | `createDeck` (not in a thumbnail) | the deck's file name and path: the sync key, the presenter window's URL, the name the export reports |
 | stage | `provideStage` (in the `Stage` part) | `useStage()`: `createSlide`, and `useDeck()` (which merges the stage's position into the face) | the stage a component is drawn in |
 | slide | `createSlide` (in `Slide`) | `useSlide()`, `useSlideNotes()` (Notes) | the slide's step, its step registry, its notes |
 | footer | `provideFooter` (in `Deck`) | `createSlide` | the Deck's `#footer` slot, drawn by every slide |

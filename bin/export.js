@@ -10,8 +10,10 @@
 // per step of every slide (or, --per-slide, one page per slide, each slide as it stands at its
 // last step), every page the canvas size (1920x1080 px, which a PDF measures as 1440x810 pt),
 // text as text. Needs no dev server running.
-// Each PDF is checked (one page per page of the deck) and put in place only once complete: an
-// export that fails or is stopped leaves no half file, and an earlier PDF at its place as it was.
+// Each PDF is checked (one page per page of the deck, and of the deck asked for: the page says
+// which deck it printed) and put in place only once complete: an export that fails or is stopped
+// leaves no half file, and an earlier PDF at its place as it was. --url is the site's base: one
+// that ends in a deck's name (a deck's own URL, /renovate) is refused before anything opens.
 // A build error stops the run. A deck that fails once the site is up (it does not render, throws
 // before its pages are ready, crashes its page, cannot be printed or written) is reported and
 // does not stop the others; the exit code is 1 if any failed. Two decks of one run never write the
@@ -47,7 +49,7 @@ const HELP = `Usage: arao export [options]     (in a project: npm run export -- 
                   With several decks it is always a folder: a path ending in .pdf is an error
   --url <url>     print from a server already running instead of building the site: the
                   site's URL, its base (npm run dev: http://127.0.0.1:5173/; under a base,
-                  http://127.0.0.1:5173/talks/); each deck opens at <url><deck>
+                  http://127.0.0.1:5173/talks/), not a deck's; each deck opens at <url><deck>
   -h, --help      this help
 
 Run it in the slides project: its folder is the current directory, its decks folder the one its
@@ -130,6 +132,22 @@ if (args.deck != null) {
   }
 }
 const several = decks.length > 1
+// --url is where / lists the decks: a path that ends in a deck's name is that deck's URL, which
+// would print it under every other deck's name. Refused, with the base it most likely meant.
+if (args.url != null) {
+  const u = new URL(args.url)
+  const segments = u.pathname.split('/').filter(Boolean)
+  let last = segments.at(-1) ?? ''
+  try {
+    last = decodeURIComponent(last)
+  } catch {}
+  const named = all.find((d) => d.toLowerCase() === last.trim().toLowerCase())
+  if (named) {
+    const meant = new URL(`/${segments.slice(0, -1).map((s) => `${s}/`).join('')}`, u.origin).href
+    console.error(`export: --url ${args.url} is the URL of the deck "${named}", not the site's: give the site's base, --url ${meant} (each deck opens at <url><deck>)`)
+    process.exit(1)
+  }
+}
 // a deck's path is case-insensitive, and so are the file names: such decks open as one, and only
 // the first gets its file
 const byName = new Map()
@@ -216,6 +234,7 @@ for (const [signal, code] of [['SIGINT', 130], ['SIGTERM', 143], ['SIGHUP', 129]
 const CRASHED = 'the page crashed (its renderer died: out of memory?)'
 const why = (e, timedOut) => (/crash/i.test(e?.message ?? '') ? CRASHED : e?.name === 'TimeoutError' ? timedOut : String(e?.message ?? e).split('\n')[0])
 
+let unnamed = false // said once: a page that does not name the deck it printed
 // renders one deck of the site at base in a page of its own; resolves to what the deck reported,
 // and the PDF (none when the deck reported an error). Until the deck is ready, an error the page
 // throws fails it at once, and so does a crash, at any point.
@@ -237,11 +256,21 @@ async function render(base, deck, theme) {
     page.on('console', (m) => ['warning', 'error'].includes(m.type()) && console.warn(`  page ${m.type()}: ${m.text()}`))
     // not until "load": a picture that never answers would hold it; the deck says when it is ready
     await guard(page.goto(url, { waitUntil: 'domcontentloaded' }).catch((e) => fail(`cannot open ${url}: ${why(e, 'no answer in time')}`)))
-    // a deck that does not even mount fails here, not after the long wait
-    await guard(page.waitForSelector('.ar-slide', { state: 'attached', timeout: 60_000 })
+    // a deck that does not even mount fails here, not after the long wait; so does a page that
+    // shows the list of decks (the URL names no deck), whose covers are slides too
+    const drawn = await guard(page.waitForSelector('.ar-export .ar-slide, .ar-decks', { state: 'attached', timeout: 60_000 })
       .catch((e) => fail(`the deck did not render at ${url}: ${why(e, 'no slide in 60 s')}`)))
+    if (await drawn.evaluate((el) => !!el.closest('.ar-decks')))
+      fail(`${url} shows the list of decks, not ${deck}: the site does not open its decks at <base><deck>${args.url ? ' (is --url the site\'s base?)' : ''}`)
     ready = await guard(page.waitForFunction(() => window.__araoReady, null, { timeout: 10 * 60_000, polling: 200 })
       .then((h) => h.jsonValue(), (e) => fail(why(e, 'the deck did not finish its pages in 10 minutes'))))
+    // the deck printed is the one asked for, or nothing is written
+    if (typeof ready.deck === 'string' && ready.deck.toLowerCase() !== deck.toLowerCase())
+      fail(`${url} printed the deck "${ready.deck}", not ${deck}: nothing written${args.url ? ` (is --url ${args.url} the site's base?)` : ''}`)
+    if (typeof ready.deck !== 'string' && !unnamed) {
+      unnamed = true
+      console.warn('  the page does not say which deck it printed (an app of its own, not createDeckApp?): not checked against the deck asked for')
+    }
     if (ready.error) return { ready }
     // whatever else is still on its way, for a moment (not when something is known not to come)
     if (!ready.stalled?.length) await guard(page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {}))

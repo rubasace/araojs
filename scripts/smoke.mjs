@@ -18,8 +18,9 @@
 //      until the hash stops changing; any console warning/error or page error fails, and so does
 //      a deck with no slides
 //   4. the deck selector, under both servers: / lists every deck, each card with its cover drawn
-//      in it (a .ar-slide, the second deck's titled by its cover's heading) and the page's URL left
-//      as it was; each link (the first followed with the keyboard) opens its deck; the links keep
+//      in it (a .ar-slide), its title (the file name in words) unchanged once the covers are in,
+//      the second deck's cover heading under its title, its path as its link's (decoded), every
+//      card as tall as the others, and the page's URL left as it was; each link (the first followed with the keyboard) opens its deck; the links keep
 //      the page's query, and the covers stay covers on /?presenter; ?deck=<name> is moved to
 //      /<name>, keeping the rest of the query and the hash; an unknown path, and an unknown
 //      ?deck=, show the list with a notice and one warning
@@ -38,21 +39,30 @@
 //      deck (no duration): none shown, one set adds the countdown, the reset removes it
 //   7. the presenter window, under the dev server: "p" on /<second> opens /<second>?presenter,
 //      and the two windows move together, either way; a window of the other deck does not
-//   8. createDeckApp's other cases, under the dev server, on a decks folder holding the second deck
-//      alone (vite.config.js and src/main.js rewritten for each, and then put back): it opens at /
-//      and at its path; createDeckApp({ deckList: 'always' }) lists it at /, with its cover;
-//      createDeckApp({ deckList: 'sometimes' }) opens it, with one [arao] warning
-//   8. <bin> export                    no --deck: every deck, one PDF each, at its default name
+//   8. a deck's window beside the list, under the dev server: /<second>#/2/1 keeps its hash and
+//      its timer while / is opened, and reloaded, in another window of the same browser
+//   9. createDeckApp's other cases, under the dev server (vite.config.js and src/main.js rewritten
+//      for each, and then put back). On a decks folder holding the second deck alone: it opens at
+//      / and at its path, and windows at / and /<second> move together, either way, / staying /
+//      ("p" at / opens /<second>?presenter); createDeckApp({ deckList: 'always' }) lists it at /,
+//      with its cover; createDeckApp({ deckList: 'sometimes' }) opens it, with one [arao]
+//      warning. On a decks folder of 14 decks, at 390x844: the covers far below the screen are not
+//      drawn until scrolled to; a deck that throws as it is drawn says "Sin vista previa" (one
+//      [arao] warning); /café is shown as such, not percent-encoded
+//  10. <bin> export                    no --deck: every deck, one PDF each, at its default name
 //                                      (exports/<deck>.pdf); each PDF must have (its pages counted
 //                                      in the file itself) as many pages as its summary line says
 //                                      and as the walk counted steps (per step is the default), and
 //                                      a total line all the decks
-//   9. <bin> export --deck <name> --per-slide   the one PDF (exports/<deck>-slides.pdf), with as
+//  11. <bin> export --deck <name> --per-slide   the one PDF (exports/<deck>-slides.pdf), with as
 //                                      many pages as slides
-//  10. a site under a sub-path (vite.config.js with base: '/sub/', then put back): vite build writes
+//  12. <bin> export --url <a deck's URL>, against vite preview: refused before anything opens,
+//      naming the base meant; --url <a URL under which the second deck opens>: fails on the deck
+//      printed (the page says which); both exit 1 and write nothing
+//  13. a site under a sub-path (vite.config.js with base: '/sub/', then put back): vite build writes
 //      404.html; under vite preview /sub/ lists every deck at /sub/<name>, /sub/?deck=<name> is
 //      moved to /sub/<name>, and the deck opens there; <bin> export --deck <name> prints it
-//  11. the CLI's other cases, each on a decks folder of tiny decks of its own (vite.config.js
+//  14. the CLI's other cases, each on a decks folder of tiny decks of its own (vite.config.js
 //      rewritten for each, and put back), with --out <folder> and several decks:
 //        --theme vigojug over a deck that lists it and one that does not (a symlink, next to a
 //        dotfile deck that must not count): <deck>-vigojug.pdf and <other>.pdf, whose line says it
@@ -321,18 +331,32 @@ try {
         complaints.push(`${where}: the list links to ${hrefs.join(', ') || 'nothing'}, not to ${want.join(', ')}`)
       return hrefs
     }
-    // every card has its deck's cover drawn in it, the second deck's card is titled by its cover's
-    // heading, and the page is where it was
+    // every card has its deck's cover drawn in it; its title, the file name in words, is the one
+    // it had before (no title changes under the reader), and the second deck's card shows its
+    // cover's heading under it; each path shown is its link's, decoded; every card is as tall as
+    // the others; and the page is where it was
     const covers = async (where) => {
       const was = await page.evaluate(() => location.href)
+      const first = await page.locator('.ar-decks-title').allTextContents()
       const drawn = await page.waitForFunction((n) => {
         const cards = [...document.querySelectorAll('.ar-decks-card')]
         return cards.length === n && cards.every((c) => c.querySelector('.ar-thumb .ar-slide'))
       }, decks.length, { timeout: 30_000 }).then(() => true, () => false)
       if (!drawn) complaints.push(`${where}: not every card has its cover drawn in it (.ar-thumb .ar-slide)`)
-      const titled = await page.waitForFunction((mark) => [...document.querySelectorAll('.ar-decks-title')].some((t) => t.textContent.trim() === mark), MARK, { timeout: 10_000 })
+      const titled = await page.waitForFunction((mark) => [...document.querySelectorAll('.ar-decks-sub')].some((t) => t.textContent.trim() === mark), MARK, { timeout: 10_000 })
         .then(() => true, () => false)
-      if (!titled) complaints.push(`${where}: no card titled "${MARK}", the second deck's cover heading (${(await page.locator('.ar-decks-title').allTextContents()).join(', ')})`)
+      if (!titled) complaints.push(`${where}: no card shows "${MARK}", the second deck's cover heading, under its title (${(await page.locator('.ar-decks-sub').allTextContents()).join(', ')})`)
+      const last = await page.locator('.ar-decks-title').allTextContents()
+      if (JSON.stringify(first) !== JSON.stringify(last)) complaints.push(`${where}: the titles changed from ${first.join(', ')} to ${last.join(', ')}`)
+      const shape = await page.evaluate(() => {
+        const cards = [...document.querySelectorAll('.ar-decks-card')]
+        const heights = cards.map((c) => Math.round(c.getBoundingClientRect().height * 10) / 10)
+        const paths = cards.map((c) => [c.querySelector('.ar-decks-path').textContent.trim(), decodeURIComponent(c.querySelector('a').getAttribute('href').split('?')[0])])
+        return { heights, wrong: paths.filter(([shown, link]) => shown !== link) }
+      })
+      // (a pixel apart at most: the grid's columns round their widths, and so their covers' heights)
+      if (Math.max(...shape.heights) - Math.min(...shape.heights) > 1) complaints.push(`${where}: the cards are not as tall as each other (${shape.heights.join(', ')} px)`)
+      for (const [shown, link] of shape.wrong) complaints.push(`${where}: a card shows the path ${shown}, its link goes to ${link}`)
       if (await page.locator('.ar-decks :is(.ar-presenter, .ar-controls, .ar-export)').count()) complaints.push(`${where}: a cover is drawn as something else than a thumbnail`)
       await pause(300)
       const is = await page.evaluate(() => location.href)
@@ -698,6 +722,43 @@ try {
     for (const c of complaints) fail(`dev presenter window: ${c}`)
   }
 
+  // a deck's window, open at /<second>#/2/1, stays where it is (its hash, and its timer, idle)
+  // while the list is opened in another window of the same browser and reloaded there: the
+  // covers drawn in the list join no deck's windows
+  async function apart(base) {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+    const complaints = []
+    context.on('page', (p) => {
+      p.on('console', (m) => ['warning', 'error'].includes(m.type()) && complaints.push(`console ${m.type()}: ${m.text()}`))
+      p.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
+    })
+    try {
+      const deck = await context.newPage()
+      await deck.goto(new URL(`${second}#/2/1`, base).href)
+      await deck.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
+      await pause(300)
+      const state = () => deck.evaluate(() => JSON.stringify({ hash: location.hash, timer: window.__faces[0].timer.value }))
+      const was = await state()
+      if (JSON.parse(was).hash !== '#/2/1') complaints.push(`/${second}#/2/1 opened at ${JSON.parse(was).hash}`)
+      const list = await context.newPage()
+      for (const how of ['opened', 'reloaded']) {
+        await (how === 'opened' ? list.goto(base) : list.reload())
+        const drawn = await list.waitForFunction((n) => {
+          const cards = [...document.querySelectorAll('.ar-decks-card')]
+          return cards.length === n && cards.every((c) => c.querySelector('.ar-thumb .ar-slide'))
+        }, decks.length, { timeout: 30_000 }).then(() => true, () => false)
+        if (!drawn) complaints.push(`the list ${how}: not every cover drawn`)
+        await pause(500)
+        const is = await state()
+        if (is !== was) complaints.push(`the list ${how} in another window: /${second} went from ${was} to ${is}`)
+      }
+      console.log(`  dev list beside a deck: ${complaints.length ? 'problems below' : `/${second}#/2/1 stays put, its timer as it was, while / opens and reloads`}`)
+    } finally {
+      await context.close()
+    }
+    for (const c of complaints) fail(`dev list beside a deck: ${c}`)
+  }
+
   const second = basename(SECOND[0], '.vue').toLowerCase()
   const untimed = basename(UNTIMED[0], '.vue').toLowerCase()
   const other = decks.find((d) => d.toLowerCase() !== second && d.toLowerCase() !== untimed)
@@ -719,27 +780,144 @@ try {
         await face(base)
         await duration(base)
         await presenter(base)
+        await apart(base)
       }
     } finally {
       await stop()
     }
   }
 
+  // tiny decks, for the decks folders of the cases below: a cover and a slide of two steps
+  const tiny = (title, themes, script = '') => `<template lang="pug">
+Deck(:themes="${JSON.stringify(themes).replace(/"/g, "'")}")
+  Slide(layout="cover" title="${title}")
+    h1 ${title}
+  Slide
+    h2 Two steps
+    p(v-step="2") The second.
+</template>
+${script}`
+  // a deck that throws once it runs (the export's case), and one that throws as it is drawn
+  // (its setup: the list's case)
+  const THROWS = `<script setup>
+setTimeout(() => { throw new Error('smoke: this deck throws at runtime') })
+</script>
+`
+  const THROWS_DRAWN = `<script setup>
+throw new Error('smoke: this deck throws as it is drawn')
+</script>
+`
+
   // createDeckApp's other cases: the project's own files rewritten for each one, the dev server
   // started on them (Vue's warnings only exist in dev, and no build is needed), and put back.
   // Each visit opens a path and expects the second deck (`deck`) or the list (`list`: so many
-  // decks, each with its cover); `warns`: the one [arao] warning the page must give.
+  // decks, each with its cover); `warns`: the one [arao] warning the page must give. Each check
+  // is a function of its own, given the site's URL.
   const solo = 'src/solo' // a decks folder holding the second deck alone
+  const crowd = 'src/crowd' // a decks folder of many decks, one of which cannot be drawn
   const asIs = { 'src/main.js': files['src/main.js'], 'vite.config.js': files['vite.config.js'] }
   const alone = asIs['vite.config.js'].replace('arao()', `arao({ decks: '${solo}' })`)
   const withOptions = (o) => asIs['src/main.js'].replace('createDeckApp()', `createDeckApp(${o})`)
+  const crowded = { 'Broken.vue': tiny('Broken', ['default'], THROWS_DRAWN), 'Café.vue': tiny('Café', ['default']) }
+  for (let i = 1; i <= 12; i++) crowded[`Deck${String(i).padStart(2, '0')}.vue`] = tiny(`Deck ${i}`, ['default'])
+
+  // a project's only deck opens at / and at /<second>: the two windows are one deck's, in step
+  // either way, / staying / in the address bar; "p" at / opens the presenter at /<second>?presenter
+  async function together(base, variant) {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+    const complaints = []
+    context.on('page', (p) => {
+      p.on('console', (m) => ['warning', 'error'].includes(m.type()) && complaints.push(`console ${m.type()}: ${m.text()}`))
+      p.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
+    })
+    const at = (p) => p.evaluate(() => location.hash || '#/1/1')
+    const reaches = (p, hash) => p.waitForFunction((h) => (location.hash || '#/1/1') === h, hash, { timeout: 5_000 }).then(() => true, () => false)
+    const opened = async (path) => {
+      const p = await context.newPage()
+      await p.goto(new URL(path, base).href)
+      await p.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
+      await pause(300)
+      return p
+    }
+    try {
+      const root = await opened('')
+      const named = await opened(second)
+      await root.keyboard.press('ArrowRight')
+      const one = await at(root)
+      if (one === '#/1/1') complaints.push('ArrowRight did not move /')
+      else if (!(await reaches(named, one))) complaints.push(`/${second} did not follow / to ${one} (at ${await at(named)})`)
+      await named.keyboard.press('ArrowRight')
+      const two = await at(named)
+      if (two === one) complaints.push(`ArrowRight did not move /${second}`)
+      else if (!(await reaches(root, two))) complaints.push(`/ did not follow /${second} to ${two} (at ${await at(root)})`)
+      const path = await root.evaluate(() => location.pathname)
+      if (path !== new URL(base).pathname) complaints.push(`/ became ${path}`)
+      const [win] = await Promise.all([context.waitForEvent('page', { timeout: 10_000 }), root.keyboard.press('p')])
+      await win.waitForSelector('.ar-presenter', { timeout: 30_000 })
+      const url = new URL(win.url())
+      if (url.pathname !== new URL(second, base).pathname || !url.searchParams.has('presenter'))
+        complaints.push(`"p" at / opened ${url.pathname}${url.search}, not /${second}?presenter`)
+      else if (!(await reaches(win, two))) complaints.push(`the presenter window is at ${await at(win)}, not ${two}`)
+      console.log(`  dev ${variant.name}: / and /${second} in step both ways, / kept; "p" opens ${url.pathname}${url.search}`)
+    } finally {
+      await context.close()
+    }
+    for (const c of complaints) fail(`dev ${variant.name}, / and /${second}: ${c}`)
+  }
+
+  // a long list on a phone (390x844): the covers far below the screen are not drawn until they
+  // are scrolled to; a deck that cannot be drawn says "Sin vista previa" (with one [arao]
+  // warning) and the rest of the list goes on; a path is shown as written (/café), not encoded
+  async function lazy(base, variant) {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
+    const page = await context.newPage()
+    const complaints = []
+    let expected = 'broken' // the one warning the page may give
+    page.on('console', (m) => {
+      if (!['warning', 'error'].includes(m.type())) return
+      if (expected && m.type() === 'warning' && m.text().startsWith('[arao]') && m.text().includes(`"${expected}"`)) return void (expected = null)
+      complaints.push(`console ${m.type()}: ${m.text()}`)
+    })
+    page.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
+    const card = (name) => page.locator(`.ar-decks-card:has(a[href$="/${encodeURIComponent(name)}"])`)
+    try {
+      await page.goto(base)
+      const count = Object.keys(crowded).length
+      await page.locator('.ar-decks-card').nth(count - 1).waitFor({ state: 'attached', timeout: 30_000 }).catch(() => {})
+      const cards = await page.locator('.ar-decks-card').count()
+      if (cards !== count) complaints.push(`the list has ${cards} decks, not ${count}`)
+      const failed = await card('broken').locator('.ar-cover-failed').waitFor({ timeout: 30_000 }).then(() => true, () => false)
+      const says = failed ? (await card('broken').locator('.ar-cover-failed').textContent()).trim() : null
+      if (says !== 'Sin vista previa') complaints.push(`the deck that throws shows ${says == null ? 'no failure' : JSON.stringify(says)}, not "Sin vista previa"`)
+      const firstDrawn = await card('café').locator('.ar-thumb .ar-slide').first().waitFor({ state: 'attached', timeout: 30_000 }).then(() => true, () => false)
+      if (!firstDrawn) complaints.push('the cards on screen have no cover drawn')
+      const shown = (await card('café').locator('.ar-decks-path').textContent().catch(() => '')).trim()
+      if (shown !== `${new URL(base).pathname}café`) complaints.push(`the path of Café is shown as ${shown}`)
+      await pause(1000)
+      const last = card('deck12')
+      const early = await last.locator('.ar-slide').count()
+      if (early) complaints.push('the last card, far below the screen, has its cover drawn before it is scrolled to')
+      await last.scrollIntoViewIfNeeded()
+      const later = await last.locator('.ar-thumb .ar-slide').first().waitFor({ state: 'attached', timeout: 30_000 }).then(() => true, () => false)
+      if (!later) complaints.push('the last card has no cover once scrolled to')
+      await pause(300)
+      if (expected) complaints.push('no [arao] console warning naming "broken"')
+      console.log(`  dev ${variant.name}: ${cards} cards at 390x844; the last drawn only once scrolled to; Broken: ${says}`)
+    } finally {
+      await context.close()
+    }
+    for (const c of complaints) fail(`dev ${variant.name}: ${c}`)
+  }
+
   const variants = [
     { name: 'one deck', files: { 'vite.config.js': alone },
-      visits: [{ path: '', deck: true }, { path: second, deck: true }] },
+      visits: [{ path: '', deck: true }, { path: second, deck: true }], checks: [together] },
     { name: `one deck, createDeckApp({ deckList: 'always' })`, files: { 'vite.config.js': alone, 'src/main.js': withOptions(`{ deckList: 'always' }`) },
       visits: [{ path: '', list: 1 }, { path: second, deck: true }] },
     { name: `one deck, createDeckApp({ deckList: 'sometimes' })`, files: { 'vite.config.js': alone, 'src/main.js': withOptions(`{ deckList: 'sometimes' }`) },
       visits: [{ path: '', deck: true, warns: 'deckList' }] },
+    { name: 'a long list', files: { 'vite.config.js': asIs['vite.config.js'].replace('arao()', `arao({ decks: '${crowd}' })`) },
+      checks: [lazy] },
   ]
 
   async function visit(base, variant, { path, deck, list, warns }) {
@@ -780,12 +958,15 @@ try {
   log(`createDeckApp's other cases under vite dev`)
   await mkdir(join(project, solo), { recursive: true })
   await writeFile(join(project, solo, SECOND[0]), SECOND[1])
+  await mkdir(join(project, crowd), { recursive: true })
+  for (const [name, text] of Object.entries(crowded)) await writeFile(join(project, crowd, name), text)
   try {
     for (const variant of variants) {
       for (const [name, text] of Object.entries({ ...asIs, ...variant.files })) await writeFile(join(project, name), text)
       const base = await serve('dev')
       try {
-        for (const v of variant.visits) await visit(base, variant, v)
+        for (const v of variant.visits ?? []) await visit(base, variant, v)
+        for (const check of variant.checks ?? []) await check(base, variant)
       } finally {
         await stop()
       }
@@ -793,6 +974,7 @@ try {
   } finally {
     for (const [name, text] of Object.entries(asIs)) await writeFile(join(project, name), text)
     await rm(join(project, solo), { recursive: true, force: true })
+    await rm(join(project, crowd), { recursive: true, force: true })
   }
 
   // the summary line of a PDF: "<path>: <pages> pages (<slides> slides, <steps> steps), …"
@@ -845,10 +1027,37 @@ try {
     fail(`export --per-slide of ${one}: ${e.message}`)
   }
 
+  // --url is the site's base, never a deck's: a deck's own URL is refused before anything opens,
+  // naming the base it meant; a URL under which another deck opens fails on the deck printed (the
+  // page says which); either way exit 1 and nothing written. Against vite preview of the build
+  const deckName = basename(SECOND[0], '.vue')
+  log(`${BIN} export --url <a deck's URL> --deck ${other}`)
+  try {
+    const base = await serve('preview')
+    const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const tries = [
+      { url: new URL(second, base).href, re: new RegExp(`is the URL of the deck "${deckName}", not the site's: give the site's base, --url ${esc(base)} `) },
+      { url: new URL(`${second}/x/`, base).href, re: new RegExp(`printed the deck "${deckName}", not ${esc(other)}: nothing written`) },
+    ]
+    try {
+      for (const t of tries) {
+        const { code, err } = await exec('npx', ['--no-install', BIN, 'export', '--url', t.url, '--deck', other, '--out', 'guard/'], project)
+        const what = `export --url ${t.url} --deck ${other}`
+        if (code !== 1) fail(`${what}: exited with ${code}, not 1`)
+        if (!t.re.test(err)) fail(`${what}: no message matching ${t.re} on its stderr`)
+        const made = await readdir(join(project, 'guard')).catch(() => [])
+        if (made.length) fail(`${what}: wrote ${made.join(', ')}`)
+      }
+    } finally {
+      await stop()
+    }
+  } catch (e) {
+    fail(`export --url guard: ${e.message}`)
+  }
+
   // a site under a sub-path: the same project with base '/sub/', built and served by vite
   // preview there, its list, a deck and its export
   log(`a site under /sub/: vite build, vite preview, ${BIN} export`)
-  const deckName = basename(SECOND[0], '.vue')
   await writeFile(join(project, 'vite.config.js'), asIs['vite.config.js'].replace('defineConfig({', "defineConfig({ base: '/sub/',"))
   try {
     await run(process.execPath, [viteBin, 'build'], project)
@@ -874,19 +1083,6 @@ try {
 
   // the CLI's other cases: each a decks folder of tiny decks (src/cases/<case>), vite.config.js
   // pointed at it, one export into a folder of its own (--out <case>/)
-  const tiny = (title, themes, script = '') => `<template lang="pug">
-Deck(:themes="${JSON.stringify(themes).replace(/"/g, "'")}")
-  Slide(layout="cover" title="${title}")
-    h1 ${title}
-  Slide
-    h2 Two steps
-    p(v-step="2") The second.
-</template>
-${script}`
-  const THROWS = `<script setup>
-setTimeout(() => { throw new Error('smoke: this deck throws at runtime') })
-</script>
-`
   const cases = [
     { name: 'theme', args: ['--theme', 'vigojug'],
       files: { 'Second.vue': tiny('Second', ['default']), '.Hidden.vue': tiny('Hidden', ['default', 'vigojug']) },

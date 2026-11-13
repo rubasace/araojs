@@ -57,12 +57,17 @@ createDeckApp().mount('#app')
 - `createDeckApp(options?)` creates the Vue app with the engine installed and renders the deck
   the URL's path names, `/<name>` ([URLs](#urls)). At `/` it lists the decks: a card per deck,
   in alphabetical order, with the deck's cover (its first slide at step 1, in its first theme)
-  drawn live and small in it, its title and its path. The title is the cover's first heading once
-  the cover is drawn (else its `Slide(title)`), and until then the file name in words. A cover is
-  drawn when its card nears the viewport, and is a picture: nothing in it reacts, nothing plays,
+  drawn live and small in it, its title and its path. The title is the file name in words
+  (`my-talk` → "My talk", `MyTalk` → "My Talk"), there from the start; under it, once the cover
+  is drawn, its first heading (else its `Slide(title)`), unless it says the same. Title, heading
+  and path take one line each (cut with an ellipsis), so every card has the same height. A deck
+  whose canvas is not 16:9 shows in the card's frame, letterboxed in the frame's colour. A cover
+  is drawn when its card nears the viewport, and is a picture: nothing in it reacts, nothing plays,
   it touches neither the URL nor other windows (`useDeck().role` is `'thumbnail'` there; only
   the cover slide draws its content, but code a deck runs when it mounts runs there too). The
-  page has its own dark look, like the presenter view. Each card is a link that keeps the page's
+  page has its own dark look, like the presenter view (its colours are its own: a theme does not
+  restyle it). A deck that cannot be drawn (its code fails to load, or throws as it is drawn)
+  shows "Sin vista previa" in its card, with one console warning. Each card is a link that keeps the page's
   query, not its hash: on `/?presenter&theme=vigojug` they lead to
   `/<name>?presenter&theme=vigojug`. A path that names no deck warns in the console and shows
   the list, with a notice. Two deck files whose names differ only in case (`Talk.vue`,
@@ -72,6 +77,9 @@ createDeckApp().mount('#app')
   | Option | Default | Meaning |
   |---|---|---|
   | `deckList` | `'auto'` | `'auto'`: a project with one deck opens it at `/`, with several `/` lists them. `'always'`: `/` lists the decks even when there is one |
+
+  A project's only deck, opened at `/`, stays `/` in the address bar, and is the same deck as at
+  `/<name>`: windows at either stay in step, and its presenter window opens at `/<name>?presenter`.
 
   Any other option, or a value that is none of these, warns in the console and is ignored.
 - The engine's CSS (structure, layouts, controls) comes with `'araojs'`; themes are imported
@@ -149,8 +157,10 @@ Behaviour:
   in `themes` is applied anyway in the normal view (no tokens match: the slides look unstyled) and
   is an error in export mode.
 - All windows of the same deck in the same browser stay in step (position, theme, timer, the
-  duration set in the presenter view) through a `BroadcastChannel` keyed by the page path and
-  query, ignoring `presenter` and `theme`. A new window takes the position and theme of those
+  duration set in the presenter view) through a `BroadcastChannel` keyed by the deck's path and
+  the page's query, ignoring `presenter` and `theme`. The deck's path is the one the list links
+  to (`/<name>`), even where the deck opens at `/` (a project with one deck); with an app shell
+  of your own, the page's path. A new window takes the position and theme of those
   already open, unless its URL names a theme.
 
 ```pug
@@ -803,7 +813,13 @@ print as placeholders and are listed.
   `http://127.0.0.1:5173/talks/`). Each deck opens at `<url><deck>?export…`: the URL's own
   query and hash are dropped, and its path is taken as a folder (`/talks` is `/talks/`). The decks (the `--deck` name, or every
   deck) are still read from the project's decks folder before anything opens, so the server must
-  serve the same decks.
+  serve the same decks. A URL whose path ends in a deck's name (`http://127.0.0.1:5173/renovate`,
+  a deck's own URL) is an error, before anything opens, naming the base it meant; so a base named
+  like one of the decks cannot be given here (export without `--url`).
+- Whatever the URL, a PDF is written only of the deck asked for: the export page says which deck
+  it printed, and a different one (a URL under which another deck opens) fails that deck, writing
+  nothing; so does a page that shows the list of decks. An app shell of your own does not say
+  which deck it printed: the CLI warns once that it cannot check.
 - `-h`, `--help`: prints the usage and exits. An unknown option prints the error and the usage,
   and exits with code 1.
 

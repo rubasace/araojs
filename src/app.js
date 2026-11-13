@@ -12,10 +12,14 @@
 // The URL is put in its one form, without a reload (history.replaceState), keeping the query and
 // the hash: the old ?deck=<name> becomes /<name>, and a deck's path is written as the list writes
 // it (/Talk/ → /talk), so every window of a deck has the same path (core/sync.js keys on it).
+// A project's only deck stays at / in the address bar: the deck is told its path
+// (provideDeckRoute), so its windows at / and at /talk are in step, and its presenter window
+// opens at /talk?presenter.
 // A project with its own app shell installs the engine instead: createApp(MyApp).use(Arao).
 import { createApp, defineAsyncComponent, h } from 'vue'
 import { decks, decksDir } from 'virtual:arao/decks'
 import Arao from './plugin'
+import { provideDeckRoute } from './state/deck'
 import DeckSelector from './views/DeckSelector.vue'
 
 // file names without ".vue", case-insensitive and in the reader's alphabetical order (the order of
@@ -30,8 +34,8 @@ for (const name of Object.keys(decks).map((f) => f.slice(0, -'.vue'.length)).sor
 }
 const find = (wanted) => names.find((n) => n.toLowerCase() === wanted.toLowerCase())
 
-// the title the list shows for a deck until its cover tells: its file name in words
-// ("my-talk" → "My talk", "MyTalk" → "My Talk")
+// the title the list shows for a deck: its file name in words ("my-talk" → "My talk", "MyTalk" →
+// "My Talk"); its cover's heading goes under it, once drawn
 const humanise = (name) => {
   const words = name.replace(/([a-z\d])([A-Z])/g, '$1 $2').replace(/[-_\s]+/g, ' ').trim()
   return words.charAt(0).toUpperCase() + words.slice(1)
@@ -101,7 +105,9 @@ export function createDeckApp(options) {
   const base = baseOf()
   const { name, missing } = pick(base, deckList)
   const deck = name && defineAsyncComponent(decks[`${name}.vue`])
-  const list = names.map((n) => ({ name: n.toLowerCase(), title: humanise(n), href: pathOf(base, n), load: decks[`${n}.vue`] }))
+  const list = names.map((n) => ({ name: n.toLowerCase(), title: humanise(n), href: pathOf(base, n), path: decode(pathOf(base, n)), load: decks[`${n}.vue`] }))
   const render = deck ? () => h(deck) : () => h(DeckSelector, { decks: list, missing, dir: decksDir })
-  return createApp({ name: 'AraoDeckApp', render }).use(Arao)
+  const app = createApp({ name: 'AraoDeckApp', render }).use(Arao)
+  if (name) provideDeckRoute(app, { name, path: pathOf(base, name) })
+  return app
 }

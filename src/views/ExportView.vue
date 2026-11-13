@@ -1,6 +1,8 @@
 <!-- The export view (?export, core/exporter.js): once the deck has mounted, its stage is walked
-     page by page into the book, and the result is reported for the export CLI. No controls, no
-     keyboard, no mouse or touch, no cursor hiding; the deck joins no other window (state/deck.js).
+     page by page into the book, and the result is reported for the export CLI, with the name of
+     the deck it printed (deck: the app's, null without one), so the CLI can tell a wrong one.
+     No controls, no keyboard, no mouse or touch, no cursor hiding; the deck joins no other window
+     (state/deck.js).
        options   exportOptions(query): { perStep, notes }
      The notes of the slide on screen (those the presenter view would show at this step) are
      drawn in a box that is never shown: the book copies them after the slide's page(s), at its
@@ -46,10 +48,13 @@ const done = ref(false)
 // the notes the presenter view would show at this step (the book takes them at the slide's last step)
 const shownNotes = computed(() => (stage.current.value?.notes ?? []).filter((n) => n.step <= stage.step.value))
 
+// every report says which deck it is of
+const report = (value) => reportReady({ ...value, deck: props.deck.name })
+
 async function run() {
   const list = themes.value
   if (!list.includes(theme.value))
-    return reportReady({ error: `theme "${theme.value}" is not one of the deck's themes: ${list.join(', ')}`, code: 'theme-not-listed', themes: list })
+    return report({ error: `theme "${theme.value}" is not one of the deck's themes: ${list.join(', ')}`, code: 'theme-not-listed', themes: list })
   try {
     const result = await buildBook({
       stage,
@@ -62,10 +67,10 @@ async function run() {
       height: props.height,
     })
     done.value = true
-    reportReady({ ...result, theme: theme.value })
+    report({ ...result, theme: theme.value })
   } catch (e) {
     console.error('[arao] export failed', e)
-    reportReady({ error: String(e?.message || e) })
+    report({ error: String(e?.message || e) })
   }
 }
 onMounted(run)

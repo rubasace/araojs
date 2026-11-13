@@ -20,7 +20,13 @@ import { ahead, createStage, headingOf, titleOf, useStage } from './stage'
 // window, no presenter window, and every action of its face does nothing.
 //   provideThumbnail({ title })    title: a ref the deck fills with its cover's title (its first
 //                                  heading, else its title prop), '' if it has neither
+// Which deck it is: provideDeckRoute(app, { name, path }), from the app that picked it (app.js):
+// its file name and its path as the list writes it (/talk, under the app's base). Its windows
+// sync on that path (core/sync.js deckKey) and its presenter window opens there, whatever the
+// address bar shows: a project's only deck opens at / too, and / and /talk are one deck. Without
+// one (an app of its own, createApp(MyApp).use(Arao)), the address bar's path, and no name.
 // Internals (on the returned deck, not on the face):
+//   name                the deck's file name (provideDeckRoute), or null: the export reports it
 //   stage, preview      the stages (state/stage.js): the one that moves, and in the presenter view
 //                       the copy that follows it one step ahead (null elsewhere)
 //   next                where one more press leads: { index, step } or { end: true }
@@ -40,7 +46,12 @@ import { ahead, createStage, headingOf, titleOf, useStage } from './stage'
 // in a thumbnail.
 const KEY = Symbol('arao-deck')
 const THUMBNAIL = Symbol('arao-thumbnail')
+const ROUTE = Symbol('arao-route')
 const COVER = Object.freeze({ index: 0, step: 1 })
+
+export function provideDeckRoute(app, { name, path }) {
+  app.provide(ROUTE, Object.freeze({ name, path }))
+}
 
 export function provideThumbnail(cover) {
   provide(THUMBNAIL, cover)
@@ -53,6 +64,9 @@ export function createDeck(props) {
   // ?export wins over ?presenter: the window prints the deck, nothing else
   const exporting = exportOptions(query)
   const mode = thumbnail ? 'thumbnail' : exporting ? 'export' : query.has('presenter') ? 'presenter' : 'audience'
+  // which deck this is, and the path its windows share (a thumbnail has neither)
+  const route = thumbnail ? null : inject(ROUTE, null)
+  const path = route?.path ?? location.pathname
 
   // ---- slides ------------------------------------------------------------
   // The audience's stage; the presenter view adds a second rendering of the deck that stands one
@@ -125,13 +139,13 @@ export function createDeck(props) {
   // ---- fullscreen, the presenter window ----------------------------------------------------
   const viewport = shallowRef(null)
   const { fullscreen, toggle: toggleFullscreen } = useFullscreen(viewport)
-  const presenterWindow = thumbnail ? null : usePresenterWindow()
+  const presenterWindow = thumbnail ? null : usePresenterWindow(path)
 
   // ---- the URL, the other windows (not while exporting, nor in a thumbnail) ----------------
   let sync = null
   if (mode === 'audience' || mode === 'presenter') {
     useHashRoute(stage) // first: the position the URL gives is in place before the windows sync
-    sync = useDeckSync(stage, { theme, setTheme, adoptTheme: !query.has('theme'), timer, setTimer, override, setOverride })
+    sync = useDeckSync(stage, { path, theme, setTheme, adoptTheme: !query.has('theme'), timer, setTimer, override, setOverride })
   }
   // A move made here (keys, controls, an addon, the URL; not a position received, nor the deck
   // renumbering its slides after an edit): the other windows follow, and the first one starts the
@@ -163,7 +177,7 @@ export function createDeck(props) {
   provide(KEY, face)
 
   return {
-    mode, exporting, face, stage, preview, next, notes, titles,
+    name: route?.name ?? null, mode, exporting, face, stage, preview, next, notes, titles,
     theme, setTheme, cycleTheme, themes: () => props.themes,
     timer, setTimer, duration, deckDuration, setDuration,
     viewport, presenterWindow,

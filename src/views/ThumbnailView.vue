@@ -1,6 +1,7 @@
 <!-- The thumbnail view (a deck inside something that called provideThumbnail, state/deck.js):
      the deck's cover, its first slide at step 1 in its first theme, on the canvas scaled to fit
-     the box it is placed in (a positioned box: it fills it, letterboxed). A picture of the deck:
+     the box it is placed in (a positioned box: it fills it, letterboxed in the theme's
+     --ar-letterbox, unless the place it is in paints .ar-thumb's background). A picture of the deck:
      no controls, no keys, no pointer, nothing in it is focused or read out (inert), nothing
      moves (no transitions or animations, as in the export), and it looks as the deck does in its
      own window, whatever the page around it.

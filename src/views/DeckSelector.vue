@@ -2,12 +2,19 @@
      base) when the project has more than one deck (or always, deckList: 'always'), and at a path
      that names no deck (missing). A plain page, not a canvas: a card per deck, with its cover
      drawn in it (views/parts/DeckCover.vue: the deck itself, small, still and inert, drawn once
-     the card nears the viewport), its title (the cover's first heading once drawn, else the file
-     name in words) and its path. Each card is one link, to the deck's path; it keeps the page's
-     query, not its hash (/?presenter&theme=x links to /<name>?presenter&theme=x).
+     the card nears the viewport), its title (the file name in words: there from the start, so
+     it never changes under the reader), under it the cover's first heading once the cover tells
+     it (on a line kept for it, so nothing moves; left empty when it says the same as the title),
+     and its path, as the reader reads it (not percent-encoded). Every card has the same shape
+     (one line each, cut with an ellipsis), so the cards of a row are as tall as each other with
+     no gap inside any. Each card is one link, to the deck's path; it keeps the page's query, not
+     its hash (/?presenter&theme=x links to /<name>?presenter&theme=x).
      Its own dark look, as the presenter view's and the controls', whatever the decks' themes: each
-     cover wears its deck's first theme. Its text is in Spanish, like the rest of the engine's own
-     UI, and says so (lang="es") whatever the page's <html lang>. -->
+     cover wears its deck's first theme, in the card's frame (a deck of another shape than the
+     frame shows the frame around it, not its theme's letterbox). Until a cover is drawn, a soft
+     sheen goes by in its frame (a still tint when the reader asks for reduced motion).
+     Its text is in Spanish, like the rest of the engine's own UI, and says so (lang="es")
+     whatever the page's <html lang>. -->
 <template>
   <main class="ar-decks" lang="es">
     <div class="ar-decks-page">
@@ -27,9 +34,10 @@
           </div>
           <!-- the link covers the whole card (::after); the cover stays outside it, inert -->
           <a class="ar-decks-link" :href="d.href + query">
-            <span class="ar-decks-title">{{ titles[d.name] || d.title }}</span>
+            <span class="ar-decks-title">{{ d.title }}</span>
+            <span class="ar-decks-sub">{{ subtitle(d) }}</span>
             <span class="ar-decks-foot">
-              <code class="ar-decks-path">{{ d.href }}</code>
+              <code class="ar-decks-path">{{ d.path }}</code>
               <svg class="ar-decks-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
             </span>
           </a>
@@ -47,8 +55,9 @@ import { reactive } from 'vue'
 import DeckCover from './parts/DeckCover.vue'
 
 defineProps({
-  // { name, title, href, load } per deck: name is what its path takes, title what the card shows
-  // until the cover gives its own, href its path, load its loader
+  // { name, title, href, path, load } per deck: name is what its path takes, title what the card
+  // shows (the file name in words), href its path as a link and path as the reader reads it (not
+  // percent-encoded), load its loader
   decks: { type: Array, required: true },
   // the name asked for that is no deck, if any
   missing: { type: String, default: null },
@@ -56,8 +65,14 @@ defineProps({
   dir: { type: String, default: '' },
 })
 
-// each deck's cover title, as its cover tells it (DeckCover)
+// each deck's cover title, as its cover tells it (DeckCover); shown under the title unless it
+// says the same (letters and digits compared, whatever the case)
 const titles = reactive({})
+const bare = (s) => s.toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, '')
+const subtitle = (d) => {
+  const t = titles[d.name] ?? ''
+  return bare(t) && bare(t) !== bare(d.title) ? t : ''
+}
 
 // the page's query, written back as it came: a flag stays a flag (&presenter, not &presenter=);
 // the hash stays behind
@@ -76,7 +91,8 @@ const query = kept.length ? `?${kept.join('&')}` : ''
   --ar-decks-line: #2b2f39;
   --ar-decks-line-hover: #3c4252;
   --ar-decks-edge: rgba(255, 255, 255, .08);
-  --ar-decks-sheen: rgba(255, 255, 255, .045);
+  --ar-decks-sheen: rgba(255, 255, 255, .11);
+  --ar-decks-still: rgba(255, 255, 255, .05);
   --ar-decks-fg: #eceef2;
   --ar-decks-dim: #949bab;
   --ar-decks-accent: #5b9dff;
@@ -136,7 +152,8 @@ const query = kept.length ? `?${kept.join('&')}` : ''
 }
 
 /* the cover's frame: 16:9, its own edge drawn over it; empty (a soft sheen going by) until the
-   cover is drawn in it, or says it cannot be */
+   cover is drawn in it, or says it cannot be. A cover of another shape is letterboxed in the
+   frame's own colour */
 .ar-decks-preview {
   position: relative; overflow: hidden; color: var(--ar-decks-dim);
   aspect-ratio: 16 / 9; margin: 7px 7px 0;
@@ -149,25 +166,24 @@ const query = kept.length ? `?${kept.join('&')}` : ''
 }
 .ar-decks-preview:not(:has(.ar-thumb, .ar-cover-failed))::before {
   content: ''; position: absolute; inset: 0;
-  background: linear-gradient(100deg, transparent 30%, var(--ar-decks-sheen) 50%, transparent 70%);
-  animation: ar-decks-sheen 1.6s ease-in-out infinite;
+  background: linear-gradient(100deg, transparent 20%, var(--ar-decks-sheen) 50%, transparent 80%);
+  animation: ar-decks-sheen 1.4s ease-in-out infinite;
 }
 @keyframes ar-decks-sheen { from { translate: -100% 0; } to { translate: 100% 0; } }
-.ar-decks-preview .ar-thumb { animation: ar-decks-in .3s ease both; }
+.ar-decks-preview .ar-thumb { background: none; animation: ar-decks-in .3s ease both; }
 @keyframes ar-decks-in { from { opacity: 0; } }
 
 .ar-decks-link {
-  flex: 1; display: flex; flex-direction: column; gap: 10px;
+  flex: 1; display: flex; flex-direction: column; gap: 4px;
   padding: 14px 16px 16px;
   color: inherit; text-decoration: none; outline: none;
 }
 .ar-decks-link::after { content: ''; position: absolute; inset: 0; z-index: 2; border-radius: inherit; }
-.ar-decks-title {
-  font-size: 17px; font-weight: 650; line-height: 1.3;
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
-  overflow: hidden; overflow-wrap: anywhere;
-}
-.ar-decks-foot { margin-top: auto; display: flex; align-items: center; gap: 12px; }
+/* title, cover heading, path: one line each, whatever their length, so every card has one shape */
+.ar-decks-title, .ar-decks-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ar-decks-title { font-size: 17px; font-weight: 650; line-height: 22px; height: 22px; }
+.ar-decks-sub { font-size: 14px; line-height: 20px; height: 20px; color: var(--ar-decks-dim); }
+.ar-decks-foot { margin-top: 6px; display: flex; align-items: center; gap: 12px; }
 .ar-decks-path {
   flex: 1; min-width: 0;
   font: 13px/1.3 ui-monospace, "SFMono-Regular", Menlo, monospace; color: var(--ar-decks-dim);
@@ -185,6 +201,8 @@ const query = kept.length ? `?${kept.join('&')}` : ''
 @media (prefers-reduced-motion: reduce) {
   .ar-decks-card, .ar-decks-go { transition: none; }
   .ar-decks-card:hover, .ar-decks-card:is(:hover, :has(.ar-decks-link:focus-visible)) .ar-decks-go { translate: none; }
-  .ar-decks-preview::before, .ar-decks-preview .ar-thumb { animation: none; }
+  .ar-decks-preview .ar-thumb { animation: none; }
+  /* no sheen going by, a still tint (the same selector as the sheen's, to win over it) */
+  .ar-decks-preview:not(:has(.ar-thumb, .ar-cover-failed))::before { animation: none; background: var(--ar-decks-still); }
 }
 </style>

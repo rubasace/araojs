@@ -200,7 +200,7 @@ Then `npm run dev` and open `http://localhost:5173/`:
 
 | URL | What it opens |
 |---|---|
-| `/` | the list of the project's decks: a card each, with its cover drawn in it (a project with one deck opens it) |
+| `/` | the list of the project's decks: a card each, with its cover drawn in it (a project with one deck opens it, and `/` and `/mytalk` are then the same deck to every window) |
 | `/mytalk` | the deck `src/decks/MyTalk.vue` (the name is case-insensitive) |
 | `/mytalk?theme=vigojug` | the same deck with another of its themes |
 | `/mytalk#/5/2` | slide 5, step 2 (the hash follows you as you move) |
@@ -471,8 +471,10 @@ and the third without), and then:
 2. opens every deck at its path under the dev server (Vue's own warnings only show up in dev) and
    under `vite preview`, and walks each one with ArrowRight to its last step. Any console warning
    or error, any page error, or a deck with no slides fails the test;
-3. opens `/` under both servers: it must list every deck, each card with its cover drawn in it
-   (the second deck's titled by its cover's heading) and the page's URL untouched; each link must
+3. opens `/` under both servers: it must list every deck, each card with its cover drawn in it,
+   its title (the file name in words) unchanged once the covers are in, the second deck's cover
+   heading under its title, its path shown as its link's (decoded), every card as tall as the
+   others, and the page's URL untouched; each link must
    open its deck (the first one followed with the keyboard) and keep the page's query, and the
    covers stay covers on `/?presenter`; `?deck=<name>` must move to `/<name>` keeping the rest of
    the query and the hash; an unknown path, and an unknown `?deck=`, must show the list with a
@@ -492,18 +494,27 @@ and the third without), and then:
 6. presses `p` on the second deck under the dev server: the presenter window must open at
    `/<second>?presenter` and move with the audience's window, either way, while a window of the
    other deck stays put;
-7. rewrites the project's `vite.config.js` and `src/main.js` for createDeckApp's other cases, on
-   a decks folder holding one deck, under the dev server: it opens at `/` and at its path;
-   `createDeckApp({ deckList: 'always' })` lists it at `/`, with its cover;
-   `createDeckApp({ deckList: 'sometimes' })` opens it, with one `[arao]` warning;
-7. runs `<bin> export` with no `--deck` and checks one PDF per deck at its default name, each with
+7. opens the second deck at `/<second>#/2/1`, under the dev server, and `/` in another window of
+   the same browser, then reloads `/`: the deck's window must keep its hash and its timer;
+8. rewrites the project's `vite.config.js` and `src/main.js` for createDeckApp's other cases,
+   under the dev server. On a decks folder holding one deck: it opens at `/` and at its path,
+   and windows at `/` and `/<second>` move together, either way, `/` staying `/` (`p` there
+   opens `/<second>?presenter`); `createDeckApp({ deckList: 'always' })` lists it at `/`, with
+   its cover; `createDeckApp({ deckList: 'sometimes' })` opens it, with one `[arao]` warning. On a
+   decks folder of 14 decks, at 390x844: the covers far below the screen are not drawn until
+   scrolled to, a deck that throws as it is drawn shows "Sin vista previa" (one `[arao]`
+   warning), and `/café` is shown as such;
+9. runs `<bin> export` with no `--deck` and checks one PDF per deck at its default name, each with
    as many pages (counted in the PDF itself) as steps, as its summary line says and as the walk
    counted, plus the total line; then `<bin> export --deck <name> --per-slide`, whose PDF must
    have as many pages as slides;
-8. builds the project under a sub-path (`base: '/sub/'`): `dist/404.html` again; under `vite
+10. runs `<bin> export --deck <other> --url` against `vite preview`: with a deck's own URL it must
+   refuse before opening anything, naming the base meant; with a URL under which the second deck
+   opens, it must fail on the deck printed; both exit 1 and write nothing;
+11. builds the project under a sub-path (`base: '/sub/'`): `dist/404.html` again; under `vite
    preview` the list at `/sub/` (the same checks as in 3), a deck at `/sub/<name>`, and
    `<bin> export --deck <name>` printing it;
-9. runs the CLI's other cases on small decks folders of their own, into `--out <folder>`:
+12. runs the CLI's other cases on small decks folders of their own, into `--out <folder>`:
    `--theme` over a deck that lists it and one that falls back (a symlinked deck, next to a dotfile
    that must not count), a theme no deck lists (exit 1, nothing written), a deck that throws at
    runtime (the others exported, exit 1), and decks that resolve to the same file (the second fails).

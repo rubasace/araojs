@@ -121,8 +121,9 @@ Don't:
   the selector does not match the name, the slides render unstyled and nothing warns.
 - **Headings inside `#background` are ignored for the slide's title** (jump menu, presenter,
   notes pages). Put the heading in the content, or use `Slide(title="…")`.
-- **The list of decks (`/`) draws each deck's cover.** Its card is titled by the cover's first
-  heading (the `h1`), so give the cover the talk's name as its heading. A deck's code that runs
+- **The list of decks (`/`) draws each deck's cover.** Its card is titled by the file name in
+  words (`my-talk.vue` → "My talk"), with the cover's first heading (the `h1`) under it: name the
+  file after the talk, and give the cover the talk's name as its heading. A deck's code that runs
   when it mounts runs there too: anything that plays or fetches checks `useDeck().role`
   (`'thumbnail'` in the list; `onMounted(() => deck.role === 'audience' && video.value.play())`).
 - **The body is centred, but what fills stays full height.** `Img`, `Snippet`, an element with
@@ -322,7 +323,8 @@ Slide
 
 1. `npm run dev` and open `http://127.0.0.1:5173/<name>`; walk it with `→`. Check
    `#/<slide>/<step>` in the URL and the step dots (move the mouse to show the controls). Open
-   `http://127.0.0.1:5173/` too: the deck's card shows its cover, titled by its heading.
+   `http://127.0.0.1:5173/` too: the deck's card shows its cover, its file name in words and,
+   under it, the cover's heading.
 2. Headless check (Playwright / `playwright-core`), at a 1920x1080 viewport:
    - collect `console` messages of type `warning`/`error` and `pageerror`: expect none. They come
      in two kinds: Vue's own, `[Vue warn]: Invalid prop: …`, when a prop fails its type or its
