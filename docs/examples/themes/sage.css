@@ -1,0 +1,14 @@
+/* docs/examples/themes/sage.css: a light, quiet venue */
+[data-theme="sage"] {
+  --ar-bg: #f1f3ee;
+  --ar-fg: #1f2b25;
+  --ar-muted: #65716a;
+  --ar-accent: #3d7a5b;
+  --ar-accent-fg: #f1f3ee;
+  --ar-letterbox: #1f2b25;
+  --ar-font-sans: "Inter", system-ui, sans-serif;
+  --ar-radius: 18px;
+  --ar-code-theme: github-light;
+  --ar-code-bg: #fbfcfa;
+  --ar-code-bar: #e1e6de;
+}

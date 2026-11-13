@@ -20,7 +20,7 @@
 // (npx playwright-core install chromium), or ARAO_CHROMIUM=/path/to/chrome.
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { extname, join, relative } from 'node:path'
-import { launchChromium, REPO, settle, startDecksServer } from './docs-server.mjs'
+import { launchChromium, LOCALE, REPO, settle, startDecksServer } from './docs-server.mjs'
 
 const EXAMPLES = join(REPO, 'docs/examples')
 const SHOTS = join(REPO, 'docs/assets/shots')
@@ -39,7 +39,7 @@ async function takeShots(names) {
   const browser = await launchChromium()
   const problems = []
   try {
-    const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 0.5 })
+    const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 0.5, locale: LOCALE })
     for (const name of names) {
       const source = readFileSync(join(EXAMPLES, `${name}.vue`), 'utf8')
       const steps = source.match(SHOTS_RE)?.[1].trim().split(/\s+/).map(Number) ?? [Infinity]

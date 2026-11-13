@@ -12,12 +12,12 @@ in a slides project, `src/themes/ocean.css`), with a deck that wears it:
 ```css
 /* docs/examples/themes/ocean.css: a theme declares only the tokens it changes */
 [data-theme="ocean"] {
-  --ar-bg: #0b1f2a;
-  --ar-fg: #e6f1f5;
-  --ar-muted: #8fb3c2;
-  --ar-accent: #4fd1c5;
-  --ar-accent-fg: #0b1f2a;
-  --ar-letterbox: #06141b;
+  --ar-bg: #1b2a3a;
+  --ar-fg: #edf1f4;
+  --ar-muted: #9aabbb;
+  --ar-accent: #6aaee8;
+  --ar-accent-fg: #1b2a3a;
+  --ar-letterbox: #111c27;
   --ar-font-sans: "Inter", system-ui, sans-serif;
   --ar-title-align: center;
   --ar-footer-color: var(--ar-accent);
@@ -30,7 +30,7 @@ in a slides project, `src/themes/ocean.css`), with a deck that wears it:
 
 ```vue
 <template lang="pug">
-Deck(:themes="['ocean', 'sunset', 'midnight', 'default']")
+Deck(:themes="['ocean', 'sage', 'midnight', 'default']")
   template(#footer="{ number, total }")
     span ACME · DevConf 2026
     span {{ number }} / {{ total }}

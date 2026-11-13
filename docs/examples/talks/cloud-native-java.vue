@@ -9,15 +9,14 @@ Deck(:themes="['ocean']")
     h2 The path
     Cols(gap="lg")
       Center(v-for="t in tech" :key="t.icon")
-        Icon(:name="t.icon" size="140" :label="t.label" :style="{ color: t.color }")
+        Icon(:name="t.icon" size="140" :label="t.label")
         p {{ t.label }}
 </template>
 
 <script setup>
-// brand colours for logos (simpleicons.org): see docs/examples/icons.vue
 const tech = [
-  { icon: 'simple-icons:springboot', label: 'Spring Boot', color: '#6DB33F' },
-  { icon: 'simple-icons:docker', label: 'Docker', color: '#2496ED' },
-  { icon: 'simple-icons:kubernetes', label: 'Kubernetes', color: '#326CE5' },
+  { icon: 'simple-icons:springboot', label: 'Spring Boot' },
+  { icon: 'simple-icons:docker', label: 'Docker' },
+  { icon: 'simple-icons:kubernetes', label: 'Kubernetes' },
 ]
 </script>
