@@ -8,12 +8,13 @@
 // Without a tarball it packs one itself (npm pack, which builds the library first).
 // The project is made in a temporary folder outside the repository: package.json depending on the
 // tarball (vite and vue at the versions of the library's devDependencies), vite.config.js with the
-// arao() plugin, index.html, src/main.js (createDeckApp, nothing else), a theme of its own in
-// src/themes (THEME, in a file of another name: the plugin names it by its selector), the
-// playground's decks, images and snippets as content, and three tiny decks of its own (so that the
+// arao() plugin, index.html, src/main.js (createDeckApp, and a theme it imports by hand from
+// src/styles: IMPORTED), a theme of its own in src/themes (THEME, in a file of another name: the
+// plugin names it by its selector; and THEME-extra, in a partial that file @import-s), the
+// playground's decks, images and snippets as content, and four tiny decks of its own (so that the
 // project has several and / lists them; the second has a duration and lists its themes, the third
 // neither: it gets every theme there is; the fourth a file name and a cover heading far too long
-// for its card). Then, in order:
+// for its card; the fifth lists IMPORTED first). Then, in order:
 //   1. npm install
 //   2. vite build                      must pass, and write dist/404.html, a copy of index.html
 //   3. every deck of src/decks, under the dev server (Vue's own warnings only exist in dev) and
@@ -34,10 +35,13 @@
 //      the way down, setTheme refuses a name the deck has not (one [arao] warning), and in the
 //      presenter view's preview no function acts
 //   5b. themes, under the dev server, on the third deck (no themes listed): it wears 'default' and
-//      lists 'default' and THEME; t cycles to THEME, and ?theme=THEME wears it; the defaults reach
-//      what is drawn outside every theme (the presenter view); a :root rule of the project's own
-//      wins over a default (and a default that is another token follows it), and a theme wins
-//      over that rule
+//      lists 'default', THEME and THEME-extra; t cycles to THEME, and ?theme=THEME wears it; the
+//      defaults reach what is drawn outside every theme (the presenter view); a :root rule of the
+//      project's own wins over a default (and a default that is another token follows it), a
+//      theme wins over that rule, and the picker's swatch of 'default' shows it; :root
+//      { --ar-controls-accent } reaches the presenter view's docked controls, and its length
+//      editor's shadow follows :root { --ar-presenter-bg }. On the fifth deck, IMPORTED (not in
+//      src/themes) is worn with no warning
 //   6. the talk's length, under the dev server, on the second deck (duration="15m"), in the
 //      presenter's bar: 1h30 typed with real keys moves no slide and opens no jump menu, and the
 //      countdown follows in an audience window too (useDeck()); after an apply from the keyboard,
@@ -66,7 +70,7 @@
 //                                      (exports/<deck>.pdf); each PDF must have (its pages counted
 //                                      in the file itself) as many pages as its summary line says
 //                                      and as the walk counted steps (per step is the default), and
-//                                      a total line all the decks
+//                                      a total line all the decks; the fifth deck's says IMPORTED
 //  11. <bin> export --deck <name> --per-slide   the one PDF (exports/<deck>-slides.pdf), with as
 //                                      many pages as slides
 //  12. <bin> export --url <a deck's URL>, against vite preview: a warning naming the base meant,
@@ -84,7 +88,8 @@
 //        dotfile deck that must not count): <deck>-THEME.pdf and <other>.pdf, whose line says it
 //        fell back; --theme no deck lists: exit 1 and no PDF; a deck that throws at runtime: the
 //        others exported, exit 1; decks that resolve to one file (Alpha in THEME and
-//        alpha-THEME, Beta and beta): the first kept, the second failed, a warning on the case
+//        alpha-THEME, Beta and beta): the first kept, the second failed, a warning on the case;
+//        --theme IMPORTED (imported by hand, not in src/themes) over a deck that lists it
 // The package name and the CLI's name are read from package.json: nothing here names them.
 //
 // Environment:
@@ -119,10 +124,23 @@ const MARK = 'A second deck'
 const THEME = 'sample'
 const SAMPLE = { bg: 'rgb(16, 32, 48)', accent: 'rgb(233, 30, 99)' }
 const BRAND = ['brand.css', `/* the smoke project's own theme: a [data-theme] rule in src/themes, nothing to import */
+@import './parts/extra.css';
 [data-theme="${THEME}"] {
   --ar-bg: ${SAMPLE.bg};
   --ar-fg: rgb(240, 240, 240);
   --ar-accent: ${SAMPLE.accent};
+}
+`]
+// a partial brand.css @import-s, with a theme of its own: the plugin follows the @import
+const EXTRA = [`parts/extra.css`, `[data-theme="${THEME}-extra"] { --ar-accent: rgb(0, 150, 136); }
+`]
+// a theme imported by hand (src/main.js), from outside src/themes: a deck that lists it wears it
+const IMPORTED = 'hall'
+const HALL = { bg: 'rgb(40, 20, 10)' }
+const STYLES = ['styles/hall.css', `/* a theme of the smoke project's own, imported by src/main.js: not in src/themes */
+[data-theme="${IMPORTED}"] {
+  --ar-bg: ${HALL.bg};
+  --ar-fg: rgb(250, 240, 230);
 }
 `]
 const DURATION = 15 * 60000
@@ -167,6 +185,17 @@ Deck(:themes="['default']")
 </template>
 `]
 
+// a fifth deck of the smoke project only: it lists IMPORTED, a theme from outside src/themes, first
+const VENUE = ['Venue.vue', `<template lang="pug">
+Deck(:themes="['${IMPORTED}', 'default']")
+  Slide(layout="cover" title="Venue")
+    h1 A deck in a theme imported by hand
+  Slide
+    h2 From src/styles
+    p(v-step="2") Listed, so worn.
+</template>
+`]
+
 // the title each deck's card must show, its file name in words, written out (not worked out the
 // way the engine does): words split at a lower-to-upper case change and at - and _, the first
 // letter upper case
@@ -174,6 +203,7 @@ const TITLES = {
   Playground: 'Playground',
   Second: 'Second',
   Untimed: 'Untimed',
+  Venue: 'Venue',
   [basename(LONG[0], '.vue')]: 'The Deck Whose File Name is so long that no card of the list could ever hold it on one line',
 }
 
@@ -254,8 +284,10 @@ try {
     }, null, 2),
     'vite.config.js': `import { defineConfig } from 'vite'\nimport arao from '${PKG}/vite'\n\nexport default defineConfig({ plugins: [arao()] })\n`,
     'index.html': `<!doctype html>\n<html lang="en">\n  <head><meta charset="UTF-8" /><title>smoke</title></head>\n  <body>\n    <div id="app"></div>\n    <script type="module" src="/src/main.js"></script>\n  </body>\n</html>\n`,
-    'src/main.js': `import { createDeckApp } from '${PKG}'\n\ncreateDeckApp().mount('#app')\n`,
+    'src/main.js': `import { createDeckApp } from '${PKG}'\nimport './${STYLES[0]}'\n\ncreateDeckApp().mount('#app')\n`,
+    [`src/${STYLES[0]}`]: STYLES[1],
     [`src/themes/${BRAND[0]}`]: BRAND[1],
+    [`src/themes/${EXTRA[0]}`]: EXTRA[1],
   }
   for (const [name, text] of Object.entries(files)) {
     await mkdir(dirname(join(project, name)), { recursive: true })
@@ -269,6 +301,7 @@ try {
   await writeFile(join(project, 'src', 'decks', SECOND[0]), SECOND[1])
   await writeFile(join(project, 'src', 'decks', UNTIMED[0]), UNTIMED[1])
   await writeFile(join(project, 'src', 'decks', LONG[0]), LONG[1])
+  await writeFile(join(project, 'src', 'decks', VENUE[0]), VENUE[1])
   const decks = (await readdir(join(project, 'src', 'decks'))).filter((f) => f.endsWith('.vue')).map((f) => basename(f, '.vue'))
   if (decks.length < 2) throw new Error('the project needs two decks or more to test the selector')
   log(`decks: ${decks.join(', ')}`)
@@ -583,16 +616,16 @@ try {
     for (const c of complaints) fail(`dev useDeck() face: ${c}`)
   }
 
-  // themes, on the third deck (no themes listed), each check in a page of its own; any console
-  // warning, error or page error fails
+  // themes, on the third deck (no themes listed) and the fifth (IMPORTED first), each check in a
+  // page of its own; any console warning, error or page error fails
   async function themes(base) {
     const context = await browser.newContext({ viewport: { width: 1920, height: 1080 } })
     const complaints = []
-    const open = async (query, style) => {
+    const open = async (query, style, deck = untimed) => {
       const page = await context.newPage()
-      page.on('console', (m) => ['warning', 'error'].includes(m.type()) && complaints.push(`${query}: console ${m.type()}: ${m.text()}`))
-      page.on('pageerror', (e) => complaints.push(`${query}: page error: ${e.message}`))
-      await page.goto(new URL(`${untimed}${query.replace(/^&/, '?')}`, base).href)
+      page.on('console', (m) => ['warning', 'error'].includes(m.type()) && complaints.push(`${deck}${query}: console ${m.type()}: ${m.text()}`))
+      page.on('pageerror', (e) => complaints.push(`${deck}${query}: page error: ${e.message}`))
+      await page.goto(new URL(`${deck}${query.replace(/^&/, '?')}`, base).href)
       if (style) await page.addStyleTag({ content: style })
       await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
       await pause(300)
@@ -611,12 +644,26 @@ try {
         picker: document.querySelectorAll('.ar-controls .ar-btn[title^="Tema"]').length,
       }
     })
+    // the theme picker, opened: each theme's name and its swatch (its painted gradient)
+    const picker = async (page) => {
+      await page.evaluate(() => document.querySelector('.ar-controls .ar-btn[title^="Tema"]')?.click())
+      await page.waitForSelector('.ar-themes .swatch', { timeout: 5_000 }).catch(() => {})
+      return page.evaluate(() => [...document.querySelectorAll('.ar-themes .ar-item')].map((item) => ({
+        name: item.querySelector('.t')?.textContent.trim(),
+        swatch: getComputedStyle(item.querySelector('.swatch')).backgroundImage,
+      })))
+    }
     try {
       let page = await open('')
       const plain = await look(page)
       if (plain.theme !== 'default') complaints.push(`no ?theme=: wears "${plain.theme}", not default`)
       if (!plain.root) complaints.push('no default --ar-bg at the root')
       if (!plain.picker) complaints.push('no theme picker in the controls: the deck has one theme, not default and ' + THEME)
+      // every theme there is: THEME-extra comes from a partial of brand.css (the plugin follows it)
+      const offered = (await picker(page)).map((t) => t.name)
+      const all = ['default', THEME, `${THEME}-extra`]
+      if (JSON.stringify(offered) !== JSON.stringify(all)) complaints.push(`the picker offers ${offered.join(', ') || 'nothing'}, not ${all.join(', ')}`)
+      await page.keyboard.press('Escape')
       await page.keyboard.press('t')
       await page.waitForFunction((t) => document.querySelector('.ar-viewport')?.dataset.theme === t, THEME, { timeout: 5_000 }).catch(() => {})
       const cycled = await look(page)
@@ -629,15 +676,31 @@ try {
         complaints.push(`?theme=${THEME}: wears "${asked.theme}" (background ${asked.bg}, h2 ${asked.title}), not ${THEME} (${SAMPLE.bg}, ${SAMPLE.accent})`)
       await page.close()
 
-      // outside every theme: the presenter view (its notes, its controls) still reads the defaults
-      page = await open('&presenter')
-      const outside = await page.evaluate(() => {
+      // outside every theme: the presenter view (its notes, its controls) still reads the defaults;
+      // on slide 2 (two steps), its docked controls show the step dots, the first one in their accent
+      const presenter = (page) => page.evaluate(() => {
         const box = document.querySelector('.ar-p-notes-body') ?? document.querySelector('.ar-presenter')
         const css = (p) => getComputedStyle(box).getPropertyValue(p).trim()
-        return { placeholder: css('--ar-placeholder'), bg: css('--ar-bg'), root: getComputedStyle(document.documentElement).getPropertyValue('--ar-bg').trim() }
+        const dot = document.querySelector('.ar-controls.docked .ar-dot.on')
+        const root = getComputedStyle(document.documentElement)
+        return { placeholder: css('--ar-placeholder'), bg: css('--ar-bg'), root: root.getPropertyValue('--ar-bg').trim(),
+          dot: dot && getComputedStyle(dot).backgroundColor, shadow: root.getPropertyValue('--ar-presenter-shadow') }
       })
+      page = await open('&presenter#/2/1')
+      const outside = await presenter(page)
       if (outside.placeholder !== 'currentColor' || !outside.bg || outside.bg !== outside.root)
         complaints.push(`presenter view, outside every theme: --ar-placeholder "${outside.placeholder}", --ar-bg "${outside.bg}" (the root's: "${outside.root}")`)
+      const FG = 'rgba(255, 255, 255, 0.94)' // --ar-controls-fg, the docked controls' accent unless set
+      if (outside.dot !== FG) complaints.push(`presenter view: the docked controls' step dot is ${outside.dot}, not their text colour ${FG}`)
+      await page.close()
+      // :root rules reach the presenter view: the docked controls' accent, and the length editor's
+      // shadow, which follows the presenter's background
+      const ACCENT = 'rgb(4, 5, 6)'
+      const PBG = 'rgb(7, 8, 9)'
+      page = await open('&presenter#/2/1', `:root { --ar-controls-accent: ${ACCENT}; --ar-presenter-bg: ${PBG}; }`)
+      const set = await presenter(page)
+      if (set.dot !== ACCENT) complaints.push(`:root { --ar-controls-accent: ${ACCENT} }: the docked controls' step dot is ${set.dot}`)
+      if (!set.shadow.includes(PBG)) complaints.push(`:root { --ar-presenter-bg: ${PBG} }: --ar-presenter-shadow is "${set.shadow.trim()}", not drawn from it`)
       await page.close()
 
       // a :root rule of the project's own wins over a default, and the h2 title (whose default is
@@ -646,12 +709,22 @@ try {
       page = await open('', `:root { --ar-accent: ${MINE}; }`)
       const mine = await look(page)
       if (mine.title !== MINE) complaints.push(`:root { --ar-accent: ${MINE} }: the h2 title is ${mine.title}, not ${MINE}`)
+      // the picker's swatches: default's shows the rule (what default wears), THEME's its own accent
+      const swatches = Object.fromEntries((await picker(page)).map((t) => [t.name, t.swatch]))
+      if (!swatches.default?.includes(MINE)) complaints.push(`:root { --ar-accent: ${MINE} }: the swatch of default is ${swatches.default}`)
+      if (!swatches[THEME]?.includes(SAMPLE.accent)) complaints.push(`:root { --ar-accent: ${MINE} }: the swatch of ${THEME} is ${swatches[THEME]}, not its own accent ${SAMPLE.accent}`)
       await page.close()
       page = await open(`&theme=${THEME}`, `:root { --ar-accent: ${MINE}; }`)
       const over = await look(page)
       if (over.title !== SAMPLE.accent) complaints.push(`:root { --ar-accent } and ?theme=${THEME}: the h2 title is ${over.title}, not the theme's ${SAMPLE.accent}`)
       await page.close()
-      console.log(`  dev themes: ${complaints.length ? 'problems below' : `default and ${THEME} listed, t and ?theme= wear ${THEME}, defaults outside themes, :root wins over defaults, themes over :root`}`)
+
+      // a theme imported by hand, from outside src/themes, and listed: worn, with no warning
+      page = await open('', null, venue)
+      const hall = await look(page)
+      if (hall.theme !== IMPORTED || hall.bg !== HALL.bg) complaints.push(`?deck=${venue}: wears "${hall.theme}" (background ${hall.bg}), not ${IMPORTED} (${HALL.bg})`)
+      await page.close()
+      console.log(`  dev themes: ${complaints.length ? 'problems below' : `${all.join(', ')} listed, t and ?theme= wear ${THEME}, defaults outside themes, :root wins over defaults (and reaches the docked controls and default's swatch), themes over :root, ${IMPORTED} (imported by hand) worn`}`)
     } finally {
       await context.close()
     }
@@ -943,6 +1016,7 @@ try {
   const second = basename(SECOND[0], '.vue').toLowerCase()
   const untimed = basename(UNTIMED[0], '.vue').toLowerCase()
   const other = decks.find((d) => d.toLowerCase() !== second && d.toLowerCase() !== untimed)
+  const venue = basename(VENUE[0], '.vue').toLowerCase()
   for (const mode of ['dev', 'preview']) {
     log(`walking the decks under vite ${mode}`)
     const base = await serve(mode)
@@ -1199,6 +1273,8 @@ throw new Error('smoke: this deck throws as it is drawn')
       else if (!(pages > 0) || pages !== got.pages || pages !== got.steps) fail(`export of every deck: ${file} has ${pages} pages (its line says ${got.pages}) for ${got.steps} steps`)
       else if (walked[deck] && pages !== walked[deck].steps) fail(`export of every deck: ${file} has ${pages} pages, the walk counted ${walked[deck].steps} steps`)
     }
+    const line = said.split('\n').find((l) => l.startsWith(`exports/${venue}.pdf: `))
+    if (line && !line.endsWith(`theme ${IMPORTED}`)) fail(`export of every deck: ${venue} is not printed in ${IMPORTED}, its first theme: ${line}`)
     if (!new RegExp(`^${decks.length} of ${decks.length} decks exported, \\d+ pages`, 'm').test(said))
       fail(`export of every deck: no total line for ${decks.length} decks`)
   }
@@ -1304,6 +1380,10 @@ throw new Error('smoke: this deck throws as it is drawn')
       code: 1, pdfs: { [`alpha-${THEME}.pdf`]: 3, 'beta.pdf': 3 },
       lines: [new RegExp(`^clash/alpha-${THEME}\\.pdf: .*theme ${THEME}$`, 'm'), new RegExp(`^2 of 4 decks exported, 6 pages; failed: alpha-${THEME}, beta$`, 'm')],
       errs: [/differ only in case.*Beta and beta/, new RegExp(`alpha-${THEME}: clash/alpha-${THEME}\\.pdf is Alpha's, written in this run: not overwritten`), /beta: clash\/beta\.pdf is Beta's/] },
+    { name: 'imported', args: ['--theme', IMPORTED],
+      files: { 'Gamma.vue': tiny('Gamma', ['default', IMPORTED]), 'Second.vue': tiny('Second', ['default']) },
+      code: 0, pdfs: { [`gamma-${IMPORTED}.pdf`]: 3, 'second.pdf': 3 },
+      lines: [new RegExp(`^imported/gamma-${IMPORTED}\\.pdf: .*theme ${IMPORTED}$`, 'm'), /^2 of 2 decks exported, 6 pages$/m] },
   ]
   try {
     for (const c of cases) {
