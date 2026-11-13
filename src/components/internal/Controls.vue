@@ -18,37 +18,38 @@
     :class="{ visible, docked }"
     @mouseenter="hovering = true"
     @mouseleave="hovering = false"
-    aria-label="Controles de la presentación"
+    :aria-label="t('controls')"
+    :lang="lang"
   >
-    <button class="ar-btn ar-edge" @mousedown.prevent @click="deck.go(0)" :disabled="atStart" title="Primera (Inicio)">
+    <button class="ar-btn ar-edge" @mousedown.prevent @click="deck.go(0)" :disabled="atStart" :title="t('first')">
       <svg viewBox="0 0 24 24"><path d="M18 17l-5-5 5-5M11 17l-5-5 5-5" /></svg>
     </button>
-    <button class="ar-btn" @mousedown.prevent @click="deck.prev()" :disabled="atStart" title="Anterior (←)">
+    <button class="ar-btn" @mousedown.prevent @click="deck.prev()" :disabled="atStart" :title="t('previous')">
       <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg>
     </button>
 
     <div class="ar-ctl-mid">
-      <button class="ar-counter" @mousedown.prevent @click="toggle('slides')" :class="{ active: open === 'slides' }" title="Ir a… (g)">
+      <button class="ar-counter" @mousedown.prevent @click="toggle('slides')" :class="{ active: open === 'slides' }" :title="t('goTo')">
         <span class="cur">{{ deck.index.value + 1 }}</span>
         <span class="sep">/</span>
         <span class="tot">{{ deck.total.value }}</span>
       </button>
-      <div class="ar-dots" v-if="deck.steps.value > 1" :aria-label="`Paso ${deck.step.value} de ${deck.steps.value}`">
+      <div class="ar-dots" v-if="deck.steps.value > 1" :aria-label="t('stepOf', deck.step.value, deck.steps.value)">
         <button
           class="ar-dot"
           v-for="s in deck.steps.value" :key="s"
           :class="{ on: s <= deck.step.value }"
           @mousedown.prevent
           @click="deck.go(deck.index.value, s)"
-          :title="`Paso ${s}`"
+          :title="t('step', s)"
         ></button>
       </div>
     </div>
 
-    <button class="ar-btn" @mousedown.prevent @click="deck.next()" :disabled="atEnd" title="Siguiente (→)">
+    <button class="ar-btn" @mousedown.prevent @click="deck.next()" :disabled="atEnd" :title="t('next')">
       <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" /></svg>
     </button>
-    <button class="ar-btn ar-edge" @mousedown.prevent @click="deck.go(deck.total.value - 1, Infinity)" :disabled="atEnd" title="Última (Fin)">
+    <button class="ar-btn ar-edge" @mousedown.prevent @click="deck.go(deck.total.value - 1, Infinity)" :disabled="atEnd" :title="t('last')">
       <svg viewBox="0 0 24 24"><path d="M6 17l5-5-5-5M13 17l5-5-5-5" /></svg>
     </button>
 
@@ -58,7 +59,7 @@
       v-if="themes.length > 1"
       @mousedown.prevent @click="toggle('themes')"
       :class="{ active: open === 'themes' }"
-      :title="`Tema: ${theme} (t)`"
+      :title="t('themeButton', theme)"
     >
       <!-- palette -->
       <svg viewBox="0 0 24 24">
@@ -69,25 +70,25 @@
         <circle class="fill" cx="17" cy="10.5" r="1.3" />
       </svg>
     </button>
-    <button class="ar-btn" v-if="!docked" @mousedown.prevent @click="openPresenter()" title="Vista del presentador (p)">
+    <button class="ar-btn" v-if="!docked" @mousedown.prevent @click="openPresenter()" :title="t('presenterView')">
       <!-- a screen with notes under it -->
       <svg viewBox="0 0 24 24">
         <rect x="3" y="3.5" width="18" height="11" rx="2" />
         <path d="M7 18.5h10M9 21h6" />
       </svg>
     </button>
-    <button class="ar-btn" @mousedown.prevent @click="toggleFullscreen()" :title="fullscreen ? 'Salir de pantalla completa (f)' : 'Pantalla completa (f)'">
+    <button class="ar-btn" @mousedown.prevent @click="toggleFullscreen()" :title="t(fullscreen ? 'exitFullscreen' : 'fullscreen')">
       <svg v-if="!fullscreen" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg>
       <svg v-else viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" /></svg>
     </button>
 
     <Transition name="ar-pop">
-      <div class="ar-panel ar-slides" v-if="open === 'slides'" role="dialog" aria-label="Ir a slide">
+      <div class="ar-panel ar-slides" v-if="open === 'slides'" role="dialog" :aria-label="t('goToSlide')">
         <input
           class="ar-search"
           ref="search"
           v-model="query"
-          placeholder="Número o título…"
+          :placeholder="t('numberOrTitle')"
           @keydown.down.prevent="move(1)"
           @keydown.up.prevent="move(-1)"
           @keydown.enter.prevent="matches[sel] && jump(matches[sel].i)"
@@ -102,26 +103,26 @@
             @mousemove="sel = k"
           >
             <span class="n">{{ m.i + 1 }}</span>
-            <span class="t">{{ m.t || 'Sin título' }}</span>
+            <span class="t" :lang="m.t ? deckLang : undefined">{{ m.t || t('untitled') }}</span>
           </button>
-          <div class="ar-empty" v-if="!matches.length">Nada coincide</div>
+          <div class="ar-empty" v-if="!matches.length">{{ t('noMatch') }}</div>
         </div>
       </div>
     </Transition>
 
     <Transition name="ar-pop">
-      <div class="ar-panel ar-themes" v-if="open === 'themes'" role="menu" aria-label="Tema">
+      <div class="ar-panel ar-themes" v-if="open === 'themes'" role="menu" :aria-label="t('theme')">
         <button
           class="ar-item"
-          v-for="t in themes" :key="t"
-          :class="{ current: t === theme }"
+          v-for="name in themes" :key="name"
+          :class="{ current: name === theme }"
           @mousedown.prevent
-          @click="pickTheme(t)"
-          role="menuitemradio" :aria-checked="t === theme"
+          @click="pickTheme(name)"
+          role="menuitemradio" :aria-checked="name === theme"
         >
-          <span class="swatch" :data-theme="t" data-ar-theme-root></span>
-          <span class="t">{{ t }}</span>
-          <svg class="check" v-if="t === theme" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10" /></svg>
+          <span class="swatch" :data-theme="name" data-ar-theme-root></span>
+          <span class="t">{{ name }}</span>
+          <svg class="check" v-if="name === theme" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10" /></svg>
         </button>
       </div>
     </Transition>
@@ -134,6 +135,7 @@ import { useDeck } from '../../state/deck'
 import { useTheme } from '../../state/theme'
 import { useKeyboard } from '../../composables/useKeyboard'
 import { useAutoHide } from '../../composables/useAutoHide'
+import { lang, t } from '../../i18n/i18n'
 
 const props = defineProps({
   docked: Boolean,
@@ -142,6 +144,8 @@ const props = defineProps({
 const deck = useDeck()
 const { fullscreen, toggleFullscreen, openPresenter } = deck
 const { theme, themes, setTheme } = useTheme()
+// the slides' titles are the deck's: in the page's language, not the controls'
+const deckLang = document.documentElement.lang
 
 const root = ref()
 const hovering = ref(false)
@@ -190,8 +194,8 @@ function jump(i) {
 }
 
 // ---- themes -----------------------------------------------------------------
-function pickTheme(t) {
-  setTheme(t)
+function pickTheme(name) {
+  setTheme(name)
   close()
 }
 

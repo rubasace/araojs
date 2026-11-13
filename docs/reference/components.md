@@ -227,8 +227,8 @@ it, with its own text size.
   `useSlide().requireSteps` there): the audience counts the same steps as the presenter. A note at
   a step the slide does not reach never shows.
 - The presenter panel marks what the step on screen has just brought into the notes and scrolls
-  to it. The export's notes pages print every step of the notes, each labelled ("Desde el paso
-  2", "En el paso 3" for `.only`).
+  to it. The export's notes pages print every step of the notes, each labelled ("From step 2",
+  "At step 3" for `.only`, in [the interface language](../guide/presenting.md#interface-language)).
 - Several `Notes` in one slide follow one another in the order written.
 - Outside a `Slide` it warns and shows nowhere.
 

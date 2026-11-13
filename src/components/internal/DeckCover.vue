@@ -3,13 +3,13 @@
      positioned box it is placed in. It mounts once its box comes near the viewport
      (IntersectionObserver, 400 px ahead) and stays mounted; until then, and while the deck's code
      loads, it is empty (the box shows through). A deck that fails to load or to draw says so
-     instead ("Sin vista previa"), with one warning: the rest of the list goes on.
+     instead ("No preview", in the reader's language), with one warning: the rest of the list goes on.
        load    the deck's loader (virtual:arao/decks)
        name    the deck's name, for the warning
        @title  the cover's title once it is drawn (its first heading, else its title prop), or '' -->
 <template>
   <div class="ar-cover" ref="root">
-    <p class="ar-cover-failed" v-if="failed">Sin vista previa</p>
+    <p class="ar-cover-failed" v-if="failed">{{ t('noPreview') }}</p>
     <DeckFile v-else-if="near" />
   </div>
 </template>
@@ -17,6 +17,7 @@
 <script setup>
 import { defineAsyncComponent, onBeforeUnmount, onErrorCaptured, onMounted, ref, watch } from 'vue'
 import { provideThumbnail } from '../../state/deck'
+import { t } from '../../i18n/i18n'
 
 const props = defineProps({
   load: { type: Function, required: true },

@@ -11,11 +11,11 @@
      (useTimer, state/timer.js). The presenter window
      listens to no mouse or touch of its own: only its controls and their keys (Controls.vue) move it. -->
 <template>
-  <div class="ar-presenter">
+  <div class="ar-presenter" :lang="lang">
     <PresenterBar :title="title" />
     <div class="ar-p-main">
-      <section class="ar-p-current" aria-label="Diapositiva actual">
-        <div class="ar-p-screen" :style="{ aspectRatio: ratio }">
+      <section class="ar-p-current" :aria-label="t('currentSlide')">
+        <div class="ar-p-screen" :style="{ aspectRatio: ratio }" :lang="deckLang">
           <Stage :stage="deck.stage" :width="width" :height="height" :theme="theme">
             <slot />
           </Stage>
@@ -25,28 +25,28 @@
         </div>
       </section>
       <div class="ar-p-side">
-        <section class="ar-p-panel ar-p-next" aria-label="Siguiente">
+        <section class="ar-p-panel ar-p-next" :aria-label="t('upNext')">
           <header class="ar-p-label">
-            <span>Siguiente</span>
+            <span>{{ t('upNext') }}</span>
             <span class="ar-p-detail">{{ nextDetail }}</span>
           </header>
           <!-- a copy of the deck: kept away from the pointer, the keyboard and screen readers -->
-          <div class="ar-p-screen" :style="{ aspectRatio: ratio }" aria-hidden="true" inert>
+          <div class="ar-p-screen" :style="{ aspectRatio: ratio }" aria-hidden="true" inert :lang="deckLang">
             <Stage :stage="deck.preview" :width="width" :height="height" :theme="theme">
               <slot />
             </Stage>
-            <div class="ar-p-end" v-if="next.end">Fin de la presentación</div>
+            <div class="ar-p-end" v-if="next.end" :lang="lang">{{ t('endOfDeck') }}</div>
           </div>
         </section>
-        <section class="ar-p-panel ar-p-notes" aria-label="Notas">
+        <section class="ar-p-panel ar-p-notes" :aria-label="t('notes')">
           <header class="ar-p-label">
-            <span>Notas</span>
-            <span class="ar-p-detail" v-if="steps > 1">Paso {{ step }} de {{ steps }}</span>
+            <span>{{ t('notes') }}</span>
+            <span class="ar-p-detail" v-if="steps > 1">{{ t('stepOf', step, steps) }}</span>
           </header>
           <div class="ar-p-notes-body" ref="body">
             <!-- the Notes of the slide on screen render themselves here (Teleport) -->
-            <div class="ar-notes-target" ref="notesOutlet" :style="{ '--_ar-notes-zoom': notesZoom }"></div>
-            <p class="ar-p-empty">Sin notas en esta diapositiva</p>
+            <div class="ar-notes-target" ref="notesOutlet" :lang="deckLang" :style="{ '--_ar-notes-zoom': notesZoom }"></div>
+            <p class="ar-p-empty">{{ t('noNotes') }}</p>
           </div>
         </section>
       </div>
@@ -58,6 +58,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useDeck } from '../state/deck'
 import { useNotesOutlet } from '../state/notes'
+import { lang, t } from '../i18n/i18n'
 import Controls from '../components/internal/Controls.vue'
 import PresenterBar from '../components/internal/PresenterBar.vue'
 import Stage from '../components/internal/Stage.vue'
@@ -69,6 +70,8 @@ const props = defineProps({
 })
 const { index, step, steps, theme } = useDeck()
 const ratio = computed(() => `${props.width} / ${props.height}`)
+// the slides and their notes are the deck's: in the page's language, not the presenter view's
+const deckLang = document.documentElement.lang
 // next: { index, step, end }, where one more press leads
 const { next } = props.deck
 
@@ -93,7 +96,7 @@ const title = computed(() => {
 })
 
 // the window says what it is, in its title (once: a remount after an edit does not add it again)
-const TITLE = 'Presentador · '
+const TITLE = `${t('presenterTitle')} · `
 onMounted(() => {
   if (!document.title.startsWith(TITLE)) document.title = TITLE + document.title
 })
@@ -101,8 +104,8 @@ onMounted(() => {
 const nextDetail = computed(() => {
   const { index: at, step: s, end } = next.value
   if (end) return ''
-  if (at === index.value) return `Paso ${s} de ${steps.value}`
-  return `Diapositiva ${at + 1}`
+  if (at === index.value) return t('stepOf', s, steps.value)
+  return t('slide', at + 1)
 })
 
 // A new slide starts its notes from the top. A step marks what its v-steps bring into the notes

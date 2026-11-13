@@ -13,6 +13,7 @@ this: [the docs](index.md) are their manual, [../AGENTS.md](../AGENTS.md) their 
 | `views/` | full screens | what a window shows: the deck's `AudienceView`, `PresenterView` and `ExportView`, and `DeckSelectorView`, the list of decks `createDeckApp` shows at `/` |
 | `components/` | what deck authors write | `Deck`, `Slide`, `Img`, `Icon`, `Snippet`, `Notes`; `internal/` holds the engine's own components, which no author names: `Stage` (the scaled canvas), `Controls`, `PresenterBar`, `Thumbnail` (a deck drawn as its cover) and `DeckCover` (a cover in the list); `layout/` holds the layout components (`Cols`, `Rows`, `Grid`, `Center`), the parsers of their props (`layout.js`: ratio, gap, grid shape; Slide's zones use it too) and the CSS they share (`layout.css`), `directives/` holds `v-step` and `v-step-from` |
 | `addons/` | drawn over every slide | `ProgressBar`, `SlideNumber` |
+| `i18n/` | the UI's words | the engine's own text, one catalogue per language (`en.js`, `es.js`, `de.js`, `fr.js`, `it.js`, `pl.js`, `ja.js`, `zh-Hans.js`), and `i18n.js`, the lookup: `t(key, ...values)` and `lang` ([Interface language](#interface-language)) |
 | `styles/` | CSS | only what is global: `tokens.css` (every token and its default: the `default` theme), `base.css` (the page, the viewport, the steps). Everything else comes with its component ([CSS](#css)); no theme ships with the engine ([Themes](#themes)) |
 
 The rule: `components/` is what an author names or imports (registered by `plugin.js` or exported
@@ -67,6 +68,23 @@ warning; its face's actions are the preview's no-ops. Its slides other than the 
 register (so the order is known) but draw no content (`drawn`, state/slide.js), so a card mounts
 one slide's pictures and snippets, not the deck's. The deck fills `title` with its cover's first
 heading (else its title prop), which the card shows under the deck's title (its file name in words).
+
+## Interface language
+
+Every word the engine itself shows (titles, aria-labels, placeholders, the toast, the presenter
+view, the list of decks, the notes pages' heads and step labels) comes from `t(key, ...values)`
+(`i18n/i18n.js`), never from a literal in a component. The language is picked once, when the
+module loads, from `navigator.languages`: the first with a catalogue (matched by its language
+subtag; Chinese by its script, so `zh-CN` is `zh-Hans` and `zh-TW` is skipped), else English. No
+option, no switcher, no reactivity. A catalogue is a plain object: a string per key, or a
+function of the message's values (word order and plurals are the language's own). English
+(`en.js`) is the reference: a key missing elsewhere would fall back to it unseen, so the library
+build fails when a catalogue lacks one of its keys, has one it has not, or has a string where it
+has a function (`vite.config.js`, `catalogueError`). The engine's UI says its language (`lang`
+on the controls, the presenter view, the toast, the list of decks), and gives back the page's
+(`document.documentElement.lang`) to what is the deck's inside it: the slides, the notes, the
+titles. The notes pages' step labels are CSS (`content`): ExportView sets the message's parts
+before and after the number as private custom properties (`--_ar-from-step-before`…).
 
 ## Provide / inject channels
 

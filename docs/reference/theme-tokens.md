@@ -187,7 +187,7 @@ Export (`?export`; canvas px for the notes pages):
 | `--ar-export-bg` | `#2a2a2e` | behind the pages, on screen |
 | `--ar-notes-page-bg` / `-fg` | `#fff` / `#1c1c22` | a notes page (`&notes`) |
 | `--ar-notes-page-muted` / `-line` | `#5c5c66` / `#d4d4da` | its head (the slide's number and title) and the rule under it |
-| `--ar-notes-page-step` | `#8a5a00` | "Desde el paso n" over a step's notes |
+| `--ar-notes-page-step` | `#8a5a00` | "From step n" over a step's notes |
 | `--ar-notes-page-text` / `-head-size` / `-step-size` | `34px` / `28px` / `24px` | its text sizes |
 
 Set by the engine, read-only: `--ar-scale` (the stage's current scale factor; `1` in export).

@@ -49,6 +49,11 @@
 //      the notes of the slide on screen only (none from the preview), each step's own, and marks
 //      what the step brings; a slide without notes says so; the export's notes pages print every
 //      step of them, labelled
+//   5d. the UI's language, under the dev server, on the third deck and the list: every other page
+//      is opened in English (locale en-US); in a browser set to German, Japanese or Simplified
+//      Chinese (zh-CN) the controls, the presenter view (its window title too), the notes pages
+//      (the step labels, before and after the number) and the list of decks speak it and say so
+//      (lang); in one set to a language with no catalogue (pt-BR), English
 //   6. the talk's length, under the dev server, on the second deck (duration="15m"), in the
 //      presenter's bar: 1h30 typed with real keys moves no slide and opens no jump menu, and the
 //      countdown follows in an audience window too (useDeck()); after an apply from the keyboard,
@@ -73,7 +78,7 @@
 //      in default; each opens in that theme, with one [arao] warning. On a decks folder of 14
 //      decks, at 390x844: the
 //      covers far below the screen are not drawn until scrolled to; a deck that throws as it is
-//      drawn says "Sin vista previa" (one [arao] warning); /café is shown as such, not
+//      drawn says "No preview" (one [arao] warning); /café is shown as such, not
 //      percent-encoded
 //  10. <bin> export                    no --deck: every deck, one PDF each, at its default name
 //                                      (exports/<deck>.pdf); each PDF must have (its pages counted
@@ -350,6 +355,16 @@ try {
   await notFoundPage('vite build')
 
   browser = await chromium.launch({ executablePath: process.env.ARAO_CHROMIUM || undefined })
+  // every page in English (the engine's UI text follows the browser's language, i18n/i18n.js),
+  // whatever the machine's, unless a context asks for another locale (5d)
+  const newContext = browser.newContext.bind(browser)
+  browser.newContext = (options = {}) => newContext({ locale: 'en-US', ...options })
+  browser.newPage = async (options = {}) => {
+    const context = await browser.newContext(options)
+    const page = await context.newPage()
+    page.on('close', () => context.close().catch(() => {}))
+    return page
+  }
 
   // starts the dev server or vite preview; resolves to the site's URL (at the base, if the config
   // has one: sub, 'sub/') once it answers
@@ -765,7 +780,7 @@ try {
       const one = await panel()
       if (one.notes !== 1) complaints.push(`presenter #/2/1: ${one.notes} notes in the panel, not 1 (the preview's?)`)
       if (!one.n1 || one.n2 || one.n3) complaints.push(`presenter #/2/1: shown n1 ${one.n1}, n2 ${one.n2}, n3 ${one.n3}; want only n1`)
-      if (one.steps !== 'Paso 1 de 2') complaints.push(`presenter #/2/1: the panel says "${one.steps}", not "Paso 1 de 2"`)
+      if (one.steps !== 'Step 1 of 2') complaints.push(`presenter #/2/1: the panel says "${one.steps}", not "Step 1 of 2"`)
       await page.keyboard.press('ArrowRight'); await pause(400)
       const two = await panel()
       if (!two.n1 || !two.n2 || two.n3) complaints.push(`presenter #/2/2: shown n1 ${two.n1}, n2 ${two.n2}, n3 ${two.n3}; want n1 and n2`)
@@ -781,16 +796,80 @@ try {
         shown: ['.n1', '.n2', '.n3'].map((c) => { const el = pg.querySelector(c); return !!el && getComputedStyle(el).display !== 'none' && getComputedStyle(el).opacity === '1' }),
         label: getComputedStyle(pg.querySelector('.n2'), '::before').content,
       })))
-      if (pages.length !== 1 || !pages[0].head.startsWith('Diapositiva 2')) complaints.push(`export: notes pages [${pages.map((p) => p.head)}], want one for slide 2`)
+      if (pages.length !== 1 || !pages[0].head.startsWith('Slide 2')) complaints.push(`export: notes pages [${pages.map((p) => p.head)}], want one for slide 2`)
       else {
         if (pages[0].shown.some((v) => !v)) complaints.push(`export: notes shown [${pages[0].shown}], want every step`)
-        if (!pages[0].label.includes('Desde el paso')) complaints.push(`export: the step-2 note is labelled ${pages[0].label}`)
+        if (!pages[0].label.includes('From step')) complaints.push(`export: the step-2 note is labelled ${pages[0].label}`)
       }
       console.log(`  dev speaker notes: ${complaints.length ? 'problems below' : 'their steps follow the slide, drawn in the presenter and the notes pages'}`)
     } finally {
       await context.close()
     }
     for (const c of complaints) fail(`dev speaker notes: ${c}`)
+  }
+
+  // the engine's UI text in the browser's language (5d above), each language in a context of its
+  // own: the controls, the presenter view, the list of decks and the notes pages; any console
+  // warning, error or page error fails
+  async function languages(base) {
+    const complaints = []
+    const LANGS = [
+      // locale, the lang the UI says, the first button's title, the "next" panel, the presenter's
+      // window title, the list's heading, a step's label on the notes pages (its two halves)
+      { locale: 'de-DE', lang: 'de', first: 'Erste (Pos1)', next: 'Als Nächstes', window: 'Referent · ', heading: 'Präsentationen', head: 'Folie 2', label: ['Ab Schritt ', ''] },
+      { locale: 'ja-JP', lang: 'ja', first: '最初へ (Home)', next: '次', window: '発表者 · ', heading: 'プレゼンテーション', head: 'スライド 2', label: ['ステップ ', ' から'] },
+      { locale: 'zh-CN', lang: 'zh-Hans', first: '第一页 (Home)', next: '下一步', window: '演讲者 · ', heading: '演示文稿', head: '第 2 张幻灯片', label: ['从第 ', ' 步起'] },
+      // no catalogue: English
+      { locale: 'pt-BR', lang: 'en', first: 'First (Home)', next: 'Next', window: 'Presenter · ', heading: 'Decks', head: 'Slide 2', label: ['From step ', ''] },
+    ]
+    for (const want of LANGS) {
+      const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, locale: want.locale })
+      const page = await context.newPage()
+      const said = (what) => `${want.locale}: ${what}`
+      page.on('console', (m) => ['warning', 'error'].includes(m.type()) && complaints.push(said(`console ${m.type()}: ${m.text()}`)))
+      page.on('pageerror', (e) => complaints.push(said(`page error: ${e.message}`)))
+      const open = async (path) => {
+        await page.goto(new URL(path, base).href)
+        await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
+        await pause(400)
+      }
+      try {
+        await open(untimed)
+        const audience = await page.evaluate(() => ({
+          lang: document.querySelector('.ar-controls')?.lang,
+          first: document.querySelector('.ar-controls .ar-btn')?.title,
+        }))
+        if (audience.lang !== want.lang || audience.first !== want.first)
+          complaints.push(said(`the controls say lang "${audience.lang}", first button "${audience.first}"; want "${want.lang}", "${want.first}"`))
+        await open(`${untimed}?presenter`)
+        const presenter = await page.evaluate(() => ({
+          lang: document.querySelector('.ar-presenter')?.lang,
+          next: document.querySelector('.ar-p-next .ar-p-label span')?.textContent.trim(),
+          title: document.title,
+        }))
+        if (presenter.lang !== want.lang || presenter.next !== want.next || !presenter.title.startsWith(want.window))
+          complaints.push(said(`the presenter view says lang "${presenter.lang}", "${presenter.next}", window "${presenter.title}"; want "${want.lang}", "${want.next}", "${want.window}…"`))
+        await open(`${untimed}?export&notes`)
+        await page.waitForSelector('.ar-export-done', { timeout: 60_000 })
+        const notes = await page.evaluate(() => {
+          const pg = document.querySelector('.ar-notes-page')
+          return { head: pg?.querySelector('.ar-notes-head')?.textContent ?? '', label: pg ? getComputedStyle(pg.querySelector('.n2'), '::before').content : '' }
+        })
+        // the label of the note at step 2, as drawn (its computed content: one string)
+        const label = JSON.stringify(want.label.join('2'))
+        if (!notes.head.startsWith(want.head) || notes.label !== label)
+          complaints.push(said(`the notes page heads "${notes.head}", labels a step ${notes.label}; want "${want.head}…", ${label}`))
+        await page.goto(base)
+        const list = await page.locator('.ar-decks-heading').textContent({ timeout: 30_000 }).catch(() => null)
+        const listLang = await page.evaluate(() => document.querySelector('.ar-decks')?.lang)
+        if (list?.trim() !== want.heading || listLang !== want.lang)
+          complaints.push(said(`the list of decks is headed "${list}", lang "${listLang}"; want "${want.heading}", "${want.lang}"`))
+      } finally {
+        await context.close()
+      }
+    }
+    console.log(`  dev UI language: ${complaints.length ? 'problems below' : `${LANGS.map((l) => `${l.locale} → ${l.lang}`).join(', ')}`}`)
+    for (const c of complaints) fail(`dev UI language: ${c}`)
   }
 
   // themes, on the third deck (no themes listed) and the fifth (IMPORTED first), each check in a
@@ -818,12 +897,12 @@ try {
         bg: css(document.querySelector('.ar-canvas'), 'background-color'),
         title: css(title, 'color'),
         root: css(document.documentElement, '--ar-bg'),
-        picker: document.querySelectorAll('.ar-controls .ar-btn[title^="Tema"]').length,
+        picker: document.querySelectorAll('.ar-controls .ar-btn[title^="Theme"]').length,
       }
     })
     // the theme picker, opened: each theme's name and its swatch (its painted gradient)
     const picker = async (page) => {
-      await page.evaluate(() => document.querySelector('.ar-controls .ar-btn[title^="Tema"]')?.click())
+      await page.evaluate(() => document.querySelector('.ar-controls .ar-btn[title^="Theme"]')?.click())
       await page.waitForSelector('.ar-themes .swatch', { timeout: 5_000 }).catch(() => {})
       return page.evaluate(() => [...document.querySelectorAll('.ar-themes .ar-item')].map((item) => ({
         name: item.querySelector('.t')?.textContent.trim(),
@@ -930,19 +1009,19 @@ try {
       return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`
     }
     // the presenter's bar shows the length on its button, the time left under the timer, and
-    // marks a length that is not the deck's (.changed); no length (ms null): "duración" and no
+    // marks a length that is not the deck's (.changed); no length (ms null): "length" and no
     // time left. Waits for it, says what it saw otherwise
     const shows = async (page, ms, changed, when) => {
-      const want = { button: ms ? clock(ms) : 'duración', left: ms ? `quedan ${clock(ms)}` : null, changed }
+      const want = { button: ms ? clock(ms) : 'length', left: ms ? `${clock(ms)} left` : null, changed }
       const read = () => page.evaluate(() => ({
         button: document.querySelector('.ar-p-dur')?.textContent.trim(),
-        left: document.querySelector('.ar-p-sub')?.textContent.match(/quedan [\d:]+/)?.[0] ?? null,
+        left: document.querySelector('.ar-p-sub')?.textContent.match(/[\d:]+ left/)?.[0] ?? null,
         changed: !!document.querySelector('.ar-p-dur.changed'),
       }))
       const ok = await page.waitForFunction((w) => {
         const b = document.querySelector('.ar-p-dur')
         const sub = document.querySelector('.ar-p-sub')?.textContent ?? ''
-        return b?.textContent.trim() === w.button && (w.left ? sub.includes(w.left) : !sub.includes('quedan'))
+        return b?.textContent.trim() === w.button && (w.left ? sub.includes(w.left) : !sub.includes(' left'))
           && b.classList.contains('changed') === w.changed
       }, want, { timeout: 5_000 }).then(() => true, () => false)
       if (!ok) complaints.push(`${when}: the bar shows ${JSON.stringify(await read())}, not ${JSON.stringify(want)}`)
@@ -1029,10 +1108,10 @@ try {
       await presenter.click('.ar-p-dur')
       await input(presenter).fill('30s')
       await presenter.keyboard.press('Enter')
-      await error(presenter, ['30s', '1 minuto'], 'a length under a minute')
+      await error(presenter, ['30s', '1 minute'], 'a length under a minute')
       await input(presenter).fill('25h')
       await presenter.keyboard.press('Enter')
-      await error(presenter, ['25h', '24 horas'], 'a length over 24 hours')
+      await error(presenter, ['25h', '24 hours'], 'a length over 24 hours')
       if (!(await isOpen(presenter))) complaints.push('a length out of bounds: the editor closed')
 
       // the focus on the editor's button (Tab from the field): no key moves the slides; Tab past
@@ -1095,7 +1174,7 @@ try {
       await shows(plain, 10 * 60000, true, 'no duration: set to 10m')
       await plain.click('.ar-p-dur')
       const offer = (await plain.locator('.ar-p-reset').textContent({ timeout: 2_000 }).catch(() => '')).trim()
-      if (!offer.includes('Quitar')) complaints.push(`no duration: the reset offers ${JSON.stringify(offer)}`)
+      if (!offer.includes('Remove')) complaints.push(`no duration: the reset offers ${JSON.stringify(offer)}`)
       await plain.click('.ar-p-reset')
       await shows(plain, null, false, 'no duration: reset')
       console.log(`  dev duration: ${complaints.length ? 'problems below' : '15:00 → 1h30, 20m (keys), 30m (another window) in every window, kept on reload, reset to 15:00; none → 10m → none'}`)
@@ -1217,6 +1296,7 @@ try {
         await themes(base)
         await controls(base)
         await notes(base)
+        await languages(base)
         await duration(base)
         await presenter(base)
         await apart(base)
@@ -1313,7 +1393,7 @@ throw new Error('smoke: this deck throws as it is drawn')
   }
 
   // a long list on a phone (390x844): the covers far below the screen are not drawn until they
-  // are scrolled to; a deck that cannot be drawn says "Sin vista previa" (with one [arao]
+  // are scrolled to; a deck that cannot be drawn says "No preview" (with one [arao]
   // warning) and the rest of the list goes on; a path is shown as written (/café), not encoded
   async function lazy(base, variant) {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
@@ -1335,7 +1415,7 @@ throw new Error('smoke: this deck throws as it is drawn')
       if (cards !== count) complaints.push(`the list has ${cards} decks, not ${count}`)
       const failed = await card('broken').locator('.ar-cover-failed').waitFor({ timeout: 30_000 }).then(() => true, () => false)
       const says = failed ? (await card('broken').locator('.ar-cover-failed').textContent()).trim() : null
-      if (says !== 'Sin vista previa') complaints.push(`the deck that throws shows ${says == null ? 'no failure' : JSON.stringify(says)}, not "Sin vista previa"`)
+      if (says !== 'No preview') complaints.push(`the deck that throws shows ${says == null ? 'no failure' : JSON.stringify(says)}, not "No preview"`)
       const firstDrawn = await card('café').locator('.ar-thumb .ar-slide').first().waitFor({ state: 'attached', timeout: 30_000 }).then(() => true, () => false)
       if (!firstDrawn) complaints.push('the cards on screen have no cover drawn')
       const shown = (await card('café').locator('.ar-decks-path').textContent().catch(() => '')).trim()

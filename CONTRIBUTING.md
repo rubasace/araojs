@@ -11,7 +11,7 @@ Node 20.19 or newer.
 | Script | What it does |
 |---|---|
 | `npm run dev` | the playground, on the library's source, on 127.0.0.1:5173 (`ARAO_PUBLIC_HOST` allows a tunnel host) |
-| `npm run build` | the library into `dist/`: `index.js` (ESM, imports its CSS) and `arao.css`; also run by `npm pack` / `npm publish` |
+| `npm run build` | the library into `dist/`: `index.js` (ESM, imports its CSS) and `arao.css`; also run by `npm pack` / `npm publish`. Fails if a UI catalogue (`src/i18n/`) does not have exactly the keys of `en.js` |
 | `npm run smoke [-- <file.tgz>]` | the packaged-consumer smoke test (below) |
 | `npm run docs:dev` / `npm run docs:build` | the docs site (VitePress on `docs/`), live or built into `docs/.vitepress/dist` with an `llms.txt` |
 | `npm run shots` | the screenshots of `docs/examples/` into `docs/assets/shots/`, and their source into the `<!-- example:… -->` blocks of the README and the guides |
@@ -32,6 +32,7 @@ src/
     internal/       the engine's components, which no author names: Stage (the scaled canvas), Controls, PresenterBar, Thumbnail, DeckCover (a deck's cover in the list)
   directives/       v-step and v-step-from (step.js)
   addons/           ProgressBar, SlideNumber: things drawn over every slide
+  i18n/             the engine's UI text: one catalogue per language (en.js the reference), i18n.js the lookup
   styles/           only what is global: tokens.css (every token and its default: the default theme),
                     base.css (page, viewport, steps); every component brings its own CSS in its .vue file
 vite/               the Vite plugin (araojs/vite; icons.js resolves the icons)

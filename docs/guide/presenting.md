@@ -44,7 +44,16 @@ Built into `Deck`; nothing to add. A floating panel at the bottom centre of the 
 | `f` | fullscreen |
 | `p` | open or bring forward the presenter window (not in the presenter itself) |
 
-UI labels are in Spanish.
+### Interface language
+
+The engine's own text (the controls' tooltips, the jump menu, the presenter view, the list of
+decks, the notes pages of the export) follows the browser's language: the first of the reader's
+preferred languages (`navigator.languages`) among English, Spanish, German, French, Italian,
+Polish, Japanese and Simplified Chinese, else English. A regional variant counts as its language
+(`es-MX` is Spanish; `zh-CN` and `zh-SG` are Simplified Chinese, while `zh-TW` falls through
+to the next preferred language). There is no option and no switcher. What the slides say is
+yours: nothing in a deck is translated. `arao export` prints the notes pages in the language of
+the machine it runs on (its headless Chromium's).
 
 ## Speaker notes
 
@@ -72,21 +81,21 @@ Layout (its own dark look, whatever the deck theme, from the `--ar-presenter-*` 
   play/pause and reset buttons and the talk's duration (a button); the wall clock.
 - **Current slide**, large, with the controls docked under it (always visible).
 - **Next**: a live preview of what one more press shows (the next step, or the next slide at step
-  1); "Fin de la presentación" at the end.
+  1); "End of the deck" at the end.
 - **Notes** of the slide on screen, those whose `step` has been reached; the ones starting at
   the current step have an accent bar and are scrolled into view.
 
 Timer:
 - Idle until the first move of the deck in any window; then running. Pause/resume and reset
   (back to idle: starts again with the next move).
-- With a duration: shows `quedan m:ss`, turns amber when the time left is at most 10 % of the
-  duration and at most 5 minutes, red with `m:ss de más` when over.
+- With a duration: shows `m:ss left`, turns amber when the time left is at most 10 % of the
+  duration and at most 5 minutes, red with `m:ss over` when over.
 - Kept in `sessionStorage`: survives reloading the windows, not closing them.
 
 Duration:
 - Set in the deck with `Deck(duration="45m")`: the default, and the deck's own value.
 - Changed live from the bar, without editing the deck: its duration button (it shows the duration
-  in effect, or `duración` when there is none) opens a field that takes the same formats as
+  in effect, or `length` when there is none) opens a field that takes the same formats as
   `Deck(duration)` (`90`, `45m`, `1h30`, `45:00`…), from 1 minute to 24 hours. `Enter` applies;
   `Esc`, a click elsewhere or moving the focus out of the field (`Tab` past it) cancels; an
   invalid value, or one out of those bounds, shows an inline error and changes nothing. Works
@@ -99,8 +108,7 @@ Duration:
   typed in it, and keeps the typed text otherwise; a line under it says it changed either way, so
   `Enter` does not overwrite the new value unknowingly.
 - A changed duration shows in the accent colour; the field then offers to go back to the deck's
-  value (`Volver a la de la presentación: m:ss`, or `Quitar la cuenta atrás` when the deck has
-  none). Setting the deck's own value is the same as going back.
+  value (`Back to the deck's: m:ss`, or `Remove the countdown` when the deck has none). Setting the deck's own value is the same as going back.
 - A changed duration wins over the deck until it is reset, even when the deck's `duration` changes
   (an edit of the deck while presenting with the dev server); if the deck's new value equals it,
   the change is dropped, as if it had been reset.

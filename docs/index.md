@@ -21,7 +21,7 @@ How to do things, with examples.
 | [Code](guide/code.md) | `Snippet`: the code window and its highlights per step |
 | [Images and backgrounds](guide/images-and-backgrounds.md) | `Img`, slide backgrounds |
 | [Icons](guide/icons.md) | `Icon`: sets, how they get into the build, licences |
-| [Presenting](guide/presenting.md) | keys, controls, speaker notes, the presenter view and its timer |
+| [Presenting](guide/presenting.md) | keys, controls, the interface language, speaker notes, the presenter view and its timer |
 | [Themes](guide/themes.md) | writing a theme, where themes are found, how tokens apply |
 | [Export to PDF](guide/export.md) | `arao export`, export mode, printing |
 | [Hosting](guide/hosting.md) | serving a built project, under any path |
