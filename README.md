@@ -338,7 +338,10 @@ declares only what it changes; the plugin finds the file and loads it, with noth
 The theme's name is the one in its selector (`acme`), not the file's: one file may hold several
 themes. A deck without `themes` offers all of them, `default` first and then the project's in
 alphabetical order; `Deck(:themes="['acme', 'default']")` picks some, in its order (the first is
-the one it opens in). Tokens cover colours, fonts, sizes, title and body placement, footer,
+the one it opens in). A theme from anywhere else (a CSS file the project imports itself from
+`src/styles`, a package, a `.scss` file) is worn by a deck that lists it in `themes`, but not
+offered by one without a list ([Themes](docs/reference.md#themes)). Tokens cover colours, fonts,
+sizes, title and body placement, footer,
 tables, code, and the deck's own interface (controls, presenter view, export notes)
 ([Theme tokens](docs/reference.md#theme-tokens)). No theme ships with the package but the
 defaults. In a slide, style through tokens (`color: var(--ar-accent)`) rather than fixed colours.
@@ -468,9 +471,11 @@ dist/               the build (npm run build): index.js, arao.css
 
 `scripts/smoke.mjs` checks the package the way a user gets it. It packs the library (or takes the
 tarball it is given), installs it into a new slides project in a temporary folder with the
-playground's decks, images and snippets, a theme of its own in `src/themes` (and three tiny decks
-of its own: the second with a duration and a list of themes, the third with neither, the fourth
-with a file name and a cover heading far too long for a card), and then:
+playground's decks, images and snippets, a theme of its own in `src/themes` (with a second one in a
+partial it `@import`s), another imported by hand from `src/styles` (and four tiny decks of its
+own: the second with a duration and a list of themes, the third with neither, the fourth with a
+file name and a cover heading far too long for a card, the fifth listing the hand-imported theme
+first), and then:
 
 1. runs `vite build`, which must also write `dist/404.html`, a copy of `dist/index.html`;
 2. opens every deck at its path under the dev server (Vue's own warnings only show up in dev) and
@@ -488,9 +493,11 @@ with a file name and a cover heading far too long for a card), and then:
 4. checks `useDeck()` on the second deck, under the dev server: the object is frozen, writes
    through its refs change nothing, `setTheme` of a name the deck has not gives one `[arao]`
    warning, and in the presenter view's preview no function acts; and the themes, on the third
-   deck: it lists `default` and the project's theme, `t` and `?theme=` wear the latter, the
+   deck: it lists `default` and the project's two themes, `t` and `?theme=` wear the first, the
    defaults reach the presenter view (outside every theme), and a `:root` rule of the project's
-   wins over a default while a theme wins over that rule;
+   wins over a default (`default`'s swatch shows it, and `--ar-controls-accent` reaches the
+   docked controls) while a theme wins over that rule; the fifth deck wears the hand-imported
+   theme with no warning;
 5. changes the talk's duration in the presenter view of the second deck (`duration="15m"`), under
    the dev server: `1h30` typed with real keys moves no slide and opens no jump menu, the
    countdown follows and an audience window gets it; after an apply or `Esc` from the keyboard,
@@ -516,7 +523,8 @@ with a file name and a cover heading far too long for a card), and then:
    vista previa" (one `[arao]` warning), and `/café` is shown as such;
 9. runs `<bin> export` with no `--deck` and checks one PDF per deck at its default name, each with
    as many pages (counted in the PDF itself) as steps, as its summary line says and as the walk
-   counted, plus the total line; then `<bin> export --deck <name> --per-slide`, whose PDF must
+   counted, plus the total line (the fifth deck's line says it is printed in the hand-imported
+   theme); then `<bin> export --deck <name> --per-slide`, whose PDF must
    have as many pages as slides;
 10. runs `<bin> export --deck <other> --url` against `vite preview`: with a deck's own URL it must
    warn, naming the base meant, and then fail on the deck printed; with a URL under which the
@@ -530,7 +538,8 @@ with a file name and a cover heading far too long for a card), and then:
    which warns and exports every deck; `--theme` over a deck that lists it and one that falls back
    (a symlinked deck, next to a dotfile that must not count), a theme no deck lists (exit 1,
    nothing written), a deck that throws at runtime (the others exported, exit 1), and decks that
-   resolve to the same file (the second fails).
+   resolve to the same file (the second fails), and `--theme` with the hand-imported theme over a
+   deck that lists it.
 
 The package name and the CLI's name come from `package.json`. CI runs it on every pull request and
 on every push to `main`. To run it locally:

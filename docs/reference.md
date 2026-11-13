@@ -127,7 +127,7 @@ view and export mode. One per deck file (`src/decks/<Name>.vue`).
 
 | Prop | Type | Default | Notes |
 |---|---|---|---|
-| `themes` | Array of strings | every theme there is: `default`, then the project's in alphabetical order | the themes this deck can wear, in this order; the first is the one it opens in. Each is `default` (the defaults) or the name of a project theme, a `[data-theme="<name>"]` rule in a CSS file of `src/themes` ([Themes](#themes)); any other name warns once (`[arao]`) and is skipped (a list left empty is `['default']`). |
+| `themes` | Array of strings | every theme there is: `default`, then the project's in alphabetical order | the themes this deck can wear, in this order; the first is the one it opens in. Each is `default` (the defaults), the name of a project theme (a `[data-theme="<name>"]` rule in a CSS file of `src/themes`), or the name of a theme the project imports itself from anywhere else, whose rule is in a stylesheet the page has loaded ([Themes](#themes)); any other name warns once (`[arao]`) and is skipped (a list left empty is `['default']`). |
 | `duration` | String or Number | none | the talk's length, for the presenter's countdown. `90` / `"90"` / `"7.5"` (minutes), `"45m"`, `"45min"`, `"1h30m"`, `"1h 30m"`, `"1h30"`, `"90s"`, `"45:00"` (m:ss), `"1:30:00"` (h:mm:ss). Anything else warns and shows no countdown; a length under 1 minute or over 24 hours warns and still counts. It is the default: the presenter can change it live, without editing the deck, and that change wins until it is reset ([Presenter view](#presenter-view)). |
 | `width` | Number | `1920` | canvas width in px |
 | `height` | Number | `1080` | canvas height in px |
@@ -690,8 +690,8 @@ Built into `Deck`; nothing to add. A floating panel at the bottom centre of the 
 - **Jump menu** (`g`, a digit, or the counter): a search box over the slide list; a number
   filters by slide number prefix, text by title (`Slide(title)` or its first heading). `↑`/`↓`,
   `Enter`, `Esc`.
-- **Theme picker**: the deck's `themes`, each with a swatch from its tokens (`default`'s are the
-  defaults).
+- **Theme picker**: the deck's `themes`, each with a swatch of its background and accent, as the
+  deck would wear them (`default`'s: the defaults with the project's `:root` rules over them).
 - Its look is the `--ar-controls-*` tokens ([Interface](#interface)).
 - Keys (in any window of the deck): see the table below. Ctrl/Cmd/Alt combinations, and keys
   typed into inputs or anywhere in the presenter's duration field (its buttons too), are ignored.
@@ -1012,7 +1012,7 @@ export default defineConfig({
 | `decks` | `'src/decks'` | `createDeckApp()`, `arao export` | the `.vue` files directly in it (not in subfolders), one lazily loaded chunk each, each opened at `/<file name>` |
 | `snippets` | `'src/snippets'` | `Snippet(file)` | every file, as raw text, loaded lazily |
 | `images` | `'src/images'` | `Img(file)`, `Slide(bg)` | `png jpg jpeg gif webp avif svg` (any case), as URLs, eager |
-| `themes` | `'src/themes'` | `Deck(:themes)`, `?theme=`, `t` | the `.css` files directly in it (not in subfolders), loaded after the engine's CSS; their `[data-theme="<name>"]` selectors name the themes ([Themes](#themes)) |
+| `themes` | `'src/themes'` | `Deck(:themes)`, `?theme=`, `t` | the `.css` files directly in it (not in subfolders), loaded after the engine's CSS; their `[data-theme="<name>"]` selectors, and those of the local partials they `@import`, name the themes ([Themes](#themes)) |
 | `icons` | `[]` | `Icon` | names (`'lucide:sun'`) built in even when the source does not spell them out (built at runtime); one that is in no installed set is reported when the module is built |
 | `vue` | `{}` | — | options for `@vitejs/plugin-vue`, passed through |
 
@@ -1053,15 +1053,38 @@ selectors:
   count;
 - a file that names no theme is still loaded (shared rules, `@font-face`) and Vite warns about
   it;
-- subfolders hold what the themes use (pictures, `@import`-ed partials) and are not loaded;
-- a file added, removed or renamed while `npm run dev` runs is picked up (the page reloads when
-  the theme names change).
+- a selector inside `:not(…)` names no theme; a name is read as the browser reads it (CSS escapes
+  resolved, nothing trimmed), and one with white space in it is no theme's (Vite warns and it is
+  skipped);
+- subfolders hold what the themes use (pictures, `@import`-ed partials) and are not loaded on
+  their own. The plugin follows a file's `@import` of a local partial (a path relative to the file,
+  or from the project's root, `/styles/x.css`), all the way down, and its selectors name themes
+  too; an `@import` of a package or a URL is not followed;
+- a file added, removed or renamed while `npm run dev` runs is picked up, and so is an edit of a
+  partial it imports (the page reloads when the theme names change).
+
+**Where a theme can come from.** Two places:
+
+1. **`src/themes`** (the plugin's `themes` folder): loaded with nothing to import, and offered by
+   every deck without `themes`. The usual place.
+2. **Any other stylesheet the project imports itself**: a CSS file in `src/styles` imported by
+   `src/main.js` (after `'araojs'`, so that it comes after the engine's CSS, as `src/themes`
+   does), a package's theme (`import 'some-theme/theme.css'`), a `.scss` file (with `sass`
+   installed), a deck's own `<style>`, or a partial imported in a way the plugin does not follow.
+   The plugin does not read these, so a deck without `themes` does not offer them; a deck that
+   lists the name in `themes` wears it all the same, and `arao export --theme` takes it: before
+   skipping a listed name, the engine looks for a `[data-theme="<name>"]` selector (outside
+   `:not(…)`) in every stylesheet the page has loaded, inside `@media`, `@supports`, `@layer`,
+   `@container`, nested rules and `@import`-ed sheets (a sheet of another origin that does not let
+   its rules be read is passed over). It looks when the deck's list is read, as the deck opens:
+   a stylesheet loaded later does not count.
 
 `Deck(:themes)` picks the themes a deck can wear, in its order (the first is the one it opens in);
 without it, the deck offers every theme there is: `default`, then the project's in alphabetical
-order. A name there that is neither `default` nor a project theme is skipped, with one `[arao]`
-warning. `?theme=<name>` and `t` (or the controls' picker) change the theme while presenting;
-`useDeck().themes` is the deck's list.
+order. A name there that is neither `default`, nor a project theme, nor a theme some stylesheet
+of the page declares (above), is skipped, with one `[arao]` warning. `?theme=<name>` and `t`
+(or the controls' picker) change the theme while presenting; `useDeck().themes` is the deck's
+list.
 
 Where tokens apply, from weakest to strongest:
 
@@ -1254,7 +1277,7 @@ Presenter view (its own dark look, whatever the deck theme):
 | `--ar-presenter-low` / `-over` | `#f5b13d` / `#ff5a4f` | the countdown's last minutes / past the end (and an invalid length) |
 | `--ar-presenter-code-bg` | `#2a2e38` | inline code in the notes |
 | `--ar-presenter-scrollbar` | `#3a3f4b` | the notes' scrollbar |
-| `--ar-presenter-shadow` | `0 16px 40px rgba(20, 22, 27, .85)` | the length editor's shadow |
+| `--ar-presenter-shadow` | `0 16px 40px color-mix(in srgb, var(--ar-presenter-bg) 85%, transparent)` | the length editor's shadow (it follows `--ar-presenter-bg` set at `:root`) |
 | `--ar-presenter-radius` | `10px` | buttons, the slides' corners; panels 1.4x, the length editor 1.2x, its fields .8x, inline code .5x |
 | `--ar-presenter-notes-size` | `clamp(18px, .85vw + 9px, 28px)` | the notes' text size |
 

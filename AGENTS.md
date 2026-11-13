@@ -121,8 +121,11 @@ Don't:
   Nothing to import: the plugin loads every CSS file there and takes the theme's name from the
   selector, not from the file (one file may hold several themes). A deck without `themes` offers
   every theme, `default` first; `Deck(:themes="['venue', 'default']")` picks some, in order. A
-  name in that list that no selector gives is skipped with an `[arao]` warning. No theme ships
-  with the package besides `default` (the defaults); there is no `araojs/themes/…` to import.
+  name in that list that no stylesheet of the page declares is skipped with an `[arao]` warning.
+  A theme kept elsewhere (`src/styles`, a package, a `.scss` file) and imported by hand, after
+  `'araojs'` in `src/main.js`, works when a deck lists it, but a deck without `themes` does not
+  offer it. No theme ships with the package besides `default` (the defaults); there is no
+  `araojs/themes/…` to import.
 - **Headings inside `#background` are ignored for the slide's title** (jump menu, presenter,
   notes pages). Put the heading in the content, or use `Slide(title="…")`.
 - **The list of decks (`/`) draws each deck's cover.** Its card is titled by the file name in

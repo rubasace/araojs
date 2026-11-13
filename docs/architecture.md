@@ -131,13 +131,15 @@ what stays literal: structural values, proportions of a token, weights, a part's
 The defaults sit at the root with zero specificity (`:where(:root)`), so they reach what is drawn
 outside every theme (the presenter view, its notes, the deck list) and any rule of the project's
 wins over them; an element that shows a theme apart from the one around it (a swatch of the theme
-picker) carries `data-ar-theme-root` and starts again from the defaults. A token whose default is
+picker) carries `data-ar-theme-root` and takes the slide's colours as the root has them (the
+defaults with the project's `:root` rules: private `--_ar-root-…` copies, resolved at the root),
+not the theme it sits in. A token whose default is
 another token cannot sit at the root (var() is resolved where it is declared: the root's
 `--ar-muted` would stick to `--ar-footer-color` whatever the theme), so its default is resolved on
 every element (`:where(*)`) into a private `--_ar-…` that the components read: the footer colour,
-the table's border and head colour, the code highlight, the controls' accent, the slide title's
-size, colour and gap (one each for an `h1` and an `h2` title, and for the gap under a header
-band). `base.css` holds the page (`html`, `body`, `#app`), the viewport the audience and
+the table's border and head colour, the code highlight, the controls' accent (with a block of
+its own for the docked controls, whose default is their text colour), the slide title's size,
+colour and gap (one each for an `h1` and an `h2` title, and for the gap under a header band). `base.css` holds the page (`html`, `body`, `#app`), the viewport the audience and
 export views share, and the classes `v-step` sets.
 
 The library build concatenates it all into `dist/arao.css` in import order, and order decides
@@ -149,7 +151,9 @@ components (their children clip `overflow-x`); `base.css` last (its step fade wi
 own transitions); the library build fails if `dist/arao.css` loses three of them (Snippet's
 `flex`, the `overflow-x` of an `Img` in `Cols`, the step fade: `vite.config.js`,
 `CSS_ORDER`). `index.js` then adds the addons, `app.js` the deck selector, and last the
-project's themes (`virtual:arao/theme-styles`), after all of the engine's CSS.
+project's themes (`virtual:arao/theme-styles`), after all of the engine's CSS; the library build
+fails if that import is not the entry's last, after `./arao.css` (`vite.config.js`,
+`themeStylesError`).
 
 ## Themes
 
@@ -157,9 +161,14 @@ The `default` theme is the defaults in `tokens.css`, and has no file. A project'
 CSS files directly in its themes folder (`src/themes`, the plugin's `themes` option), which the
 Vite plugin turns into two virtual modules: `virtual:arao/theme-styles` imports them all (an eager
 glob: Vite follows files added or removed), and `virtual:arao/themes` exports the names their
-`[data-theme="<name>"]` selectors give, sorted (the plugin reads the files; when an edit changes
-those names in the dev server, it reloads the module and the page). `state/deck.js` resolves a
-deck's list: `Deck(:themes)` without the names that are no theme (one warning), or, without it,
-`default` and then every project theme. The library ships no theme and no `themes/` export.
+`[data-theme="<name>"]` selectors give, sorted (the plugin reads the files and the local partials
+they `@import`, skips selectors inside `:not(…)`, resolves CSS escapes and warns about names with
+white space; when an edit changes those names in the dev server, it reloads the module and the
+page). `state/deck.js` resolves a deck's list: `Deck(:themes)` without the names that are no
+theme (one warning), or, without it, `default` and then every project theme. A listed name the
+plugin does not know is looked for in the page's stylesheets (`document.styleSheets`, their
+grouping rules and `@import`s) before it is skipped: a theme the project imports itself, from
+outside the themes folder, is worn when a deck lists it, and the export view, which checks
+`--theme` against the same list, prints it. The library ships no theme and no `themes/` export.
 The deck selector, like the presenter view, sits in no theme: it reads its `--ar-selector-*`
 tokens at the root, and each cover wears its deck's theme.
