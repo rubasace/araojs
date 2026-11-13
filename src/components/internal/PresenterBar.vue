@@ -8,21 +8,21 @@
      focus is in it, no key of the deck acts. Closed from inside, it leaves the focus next to the
      button, not on it, so Space and Enter move the slides again (below, close()). -->
 <template>
-  <header class="ar-p-bar">
+  <header class="ar-p-bar" :lang="lang">
     <div class="ar-p-where">
       <span class="ar-p-count">{{ deck.index.value + 1 }}<span class="ar-p-of"> / {{ deck.total.value }}</span></span>
-      <span class="ar-p-title" :title="title">{{ title }}</span>
+      <span class="ar-p-title" :title="title" :lang="deckLang">{{ title }}</span>
     </div>
     <div class="ar-p-timer" :class="[timer.state, tone]">
       <div class="ar-p-times">
-        <span class="ar-p-elapsed" title="Tiempo transcurrido">{{ clock(spent) }}</span>
+        <span class="ar-p-elapsed" :title="t('elapsed')">{{ clock(spent) }}</span>
         <span class="ar-p-sub" v-if="sub">{{ sub }}</span>
       </div>
       <button
         class="ar-p-btn"
         @mousedown.prevent
         @click="toggle"
-        :title="timer.state === 'running' ? 'Pausar el tiempo' : timer.state === 'paused' ? 'Reanudar el tiempo' : 'Empezar el tiempo'"
+        :title="t(timer.state === 'running' ? 'pauseTimer' : timer.state === 'paused' ? 'resumeTimer' : 'startTimer')"
       >
         <svg v-if="timer.state === 'running'" viewBox="0 0 24 24"><path d="M9 6v12M15 6v12" /></svg>
         <svg v-else viewBox="0 0 24 24"><path class="fill" d="M8 5.5v13l10.5-6.5z" /></svg>
@@ -32,13 +32,13 @@
         @mousedown.prevent
         @click="resetTimer"
         :disabled="timer.state === 'idle'"
-        title="Poner el tiempo a cero (vuelve a empezar al avanzar)"
+        :title="t('resetTimer')"
       >
         <svg viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v4h4" /></svg>
       </button>
       <!-- where the focus rests when the editor closes from inside it: not a button, so Space
            and Enter go back to the slides, and Tab reaches the length's button again -->
-      <div ref="group" class="ar-p-length" role="group" aria-label="Duración de la charla" tabindex="-1">
+      <div ref="group" class="ar-p-length" role="group" :aria-label="t('talkLength')" tabindex="-1">
         <button
           ref="trigger"
           class="ar-p-btn ar-p-dur"
@@ -52,7 +52,7 @@
           :aria-controls="editing ? ids.editor : null"
         >
           <svg viewBox="0 0 24 24"><path d="M6.5 3h11M6.5 21h11M8 3c0 4.5 4 5 4 9s-4 4.5-4 9M16 3c0 4.5-4 5-4 9s4 4.5 4 9" /></svg>
-          <span>{{ duration ? clock(duration) : 'duración' }}</span>
+          <span>{{ duration ? clock(duration) : t('lengthButton') }}</span>
         </button>
         <!-- data-ar-own-keys: no key of the deck acts while the focus is anywhere in it;
              tabindex -1: a click on its padding keeps the focus in it (else the group takes it) -->
@@ -69,7 +69,7 @@
           @keydown.esc.prevent="cancel"
           @focusout="leaving"
         >
-          <label :id="ids.label" :for="ids.input">Duración de la charla</label>
+          <label :id="ids.label" :for="ids.input">{{ t('talkLength') }}</label>
           <div class="ar-p-edit-row">
             <input
               ref="input"
@@ -83,19 +83,19 @@
               :aria-describedby="`${ids.msg} ${ids.note}`"
               @input="typing"
             />
-            <button class="ar-p-edit-btn ar-p-apply" type="submit">Aplicar</button>
+            <button class="ar-p-edit-btn ar-p-apply" type="submit">{{ t('apply') }}</button>
           </div>
           <p :id="ids.msg" class="ar-p-edit-msg" :class="{ bad: error }" aria-live="polite">
-            {{ error || '90, 45m, 1h30, 45:00… · Intro aplica, Esc cancela' }}
+            {{ error || t('lengthHint') }}
           </p>
           <p :id="ids.note" class="ar-p-edit-note" aria-live="polite">{{ notice }}</p>
           <button v-if="changed" class="ar-p-edit-btn ar-p-reset" type="button" @click="reset">
-            {{ deckDuration ? `Volver a la de la presentación: ${clock(deckDuration)}` : 'Quitar la cuenta atrás' }}
+            {{ deckDuration ? t('backToDeckLength', clock(deckDuration)) : t('removeCountdown') }}
           </button>
         </form>
       </div>
     </div>
-    <time class="ar-p-clock" title="Hora">{{ wall }}</time>
+    <time class="ar-p-clock" :title="t('clock')">{{ wall }}</time>
   </header>
 </template>
 
@@ -105,11 +105,14 @@ import { useEventListener } from '@vueuse/core'
 import { MIN_DURATION, clock, elapsed, parseDuration, phase, withinBounds } from '../../state/timer'
 import { useDeck } from '../../state/deck'
 import { useTimer } from '../../state/timer'
+import { lang, t } from '../../i18n/i18n'
 
 const props = defineProps({
   title: { type: String, default: '' },
 })
 const deck = useDeck()
+// the slide's title is the deck's: in the page's language, not the bar's
+const deckLang = document.documentElement.lang
 const { timer, duration, deckDuration, setDuration, toggle, reset: resetTimer } = useTimer()
 
 const now = ref(Date.now())
@@ -124,8 +127,8 @@ const spent = computed(() => Math.floor(elapsed(timer.value, now.value) / 1000) 
 const left = computed(() => (duration.value ? duration.value - spent.value : null))
 const tone = computed(() => (duration.value ? phase(left.value, duration.value) : 'ok'))
 const sub = computed(() => {
-  const state = { idle: 'empieza al avanzar', paused: 'en pausa' }[timer.value.state]
-  const rest = left.value == null ? '' : left.value >= 0 ? `quedan ${clock(left.value)}` : `${clock(left.value)} de más`
+  const state = { idle: t('timerIdle'), paused: t('timerPaused') }[timer.value.state]
+  const rest = left.value == null ? '' : t(left.value >= 0 ? 'timeLeft' : 'timeOver', clock(left.value))
   return [state, rest].filter(Boolean).join(' · ')
 })
 const wall = computed(() => new Date(now.value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
@@ -135,9 +138,9 @@ const wall = computed(() => new Date(now.value).toLocaleTimeString([], { hour: '
 const changed = computed(() => duration.value !== deckDuration.value)
 const durationLabel = computed(() => {
   const d = duration.value
-  if (!d) return 'Poner una duración a la charla (cuenta atrás)'
-  const own = deckDuration.value ? `la de la presentación: ${clock(deckDuration.value)}` : 'la presentación no tiene'
-  return changed.value ? `Duración de la charla: ${clock(d)}, cambiada (${own}). Cambiarla` : `Duración de la charla: ${clock(d)}. Cambiarla`
+  if (!d) return t('setLength')
+  if (!changed.value) return t('lengthIs', clock(d))
+  return t('lengthChanged', clock(d), deckDuration.value ? t('deckLength', clock(deckDuration.value)) : t('deckNoLength'))
 })
 const id = useId()
 const ids = { editor: `${id}-editor`, label: `${id}-label`, input: `${id}-input`, msg: `${id}-msg`, note: `${id}-note` }
@@ -175,13 +178,11 @@ function close(refocus) {
   if (refocus) group.value?.focus({ preventScroll: true })
 }
 function apply() {
-  const t = text.value.trim()
-  const ms = parseDuration(t)
+  const typedText = text.value.trim()
+  const ms = parseDuration(typedText)
   if (ms == null || !withinBounds(ms)) {
-    error.value = !t ? 'Escribe una duración: 90, 45m, 1h30 o 45:00'
-      : ms == null ? `«${t}» no es una duración: prueba 90, 45m, 1h30 o 45:00`
-      : ms < MIN_DURATION ? `«${t}» es muy corta: de 1 minuto a 24 horas`
-      : `«${t}» es muy larga: de 1 minuto a 24 horas`
+    error.value = !typedText ? t('lengthEmpty')
+      : t(ms == null ? 'lengthInvalid' : ms < MIN_DURATION ? 'lengthTooShort' : 'lengthTooLong', typedText)
     input.value?.focus()
     return
   }
@@ -212,7 +213,7 @@ useEventListener(document, 'pointerdown', (e) => {
 // so, so that Enter never overwrites the new value unknowingly.
 watch(duration, (ms) => {
   if (!editing.value) return
-  notice.value = `Ha cambiado mientras editabas: ${ms ? `ahora ${clock(ms)}` : 'ya no hay cuenta atrás'}`
+  notice.value = ms ? t('lengthNowIs', clock(ms)) : t('lengthNowNone')
   if (typed) return
   text.value = shown(ms)
   error.value = ''

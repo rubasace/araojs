@@ -1,4 +1,5 @@
 import { nextTick } from 'vue'
+import { t } from '../i18n/i18n'
 
 // Export mode: the deck as a book of pages for printing to PDF (npm run export, or the browser's
 // own Print → Save as PDF on the same URL). Every page is exactly the canvas size, unscaled.
@@ -432,7 +433,7 @@ export async function buildBook({ stage, canvas, book, notes, title, perStep, wi
       await settle(notes, stage.list[i].el.value.dataset.arSlide, stalled)
       const head = document.createElement('header')
       head.className = 'ar-notes-head'
-      head.textContent = [`Diapositiva ${i + 1}`, title(i)].filter(Boolean).join(' · ')
+      head.textContent = [t('slide', i + 1), title(i)].filter(Boolean).join(' · ')
       const body = notes.cloneNode(true)
       body.className = 'ar-notes-body'
       book.append(page(width, height, 'ar-page ar-notes-page', head, body))

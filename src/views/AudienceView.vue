@@ -21,9 +21,9 @@
     <Controls auto-hide />
     <!-- the browser blocked the presenter window: the same URL as a link, which it does not block -->
     <Transition name="ar-toast">
-      <div class="ar-toast" v-if="blocked" role="status">
-        <span>El navegador ha bloqueado la ventana del presentador.</span>
-        <a :href="blocked" :target="presenterWindow.name" :title="blocked" @click="presenterWindow.dismiss">Abrirla aquí</a>
+      <div class="ar-toast" v-if="blocked" role="status" :lang="lang">
+        <span>{{ t('presenterBlocked') }}</span>
+        <a :href="blocked" :target="presenterWindow.name" :title="blocked" @click="presenterWindow.dismiss">{{ t('openItHere') }}</a>
       </div>
     </Transition>
   </div>
@@ -33,6 +33,7 @@
 import { computed } from 'vue'
 import { useDeck } from '../state/deck'
 import { useAutoHide } from '../composables/useAutoHide'
+import { lang, t } from '../i18n/i18n'
 import Controls from '../components/internal/Controls.vue'
 import Stage from '../components/internal/Stage.vue'
 

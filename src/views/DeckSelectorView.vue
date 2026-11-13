@@ -15,27 +15,27 @@
      'default'), in the card's frame (a deck of another shape than the frame shows the frame
      around it, not its theme's letterbox). Until a cover is drawn, a soft sheen goes by in its
      frame (a still tint when the reader asks for reduced motion).
-     Its text is in Spanish, like the rest of the engine's own UI, and says so (lang="es")
-     whatever the page's <html lang>. -->
+     Its text is in the reader's language, like the rest of the engine's own UI (i18n/i18n.js),
+     and says so (lang) whatever the page's <html lang>; the titles are the decks', in the page's. -->
 <template>
-  <main class="ar-decks" lang="es">
+  <main class="ar-decks" :lang="lang">
     <div class="ar-decks-page">
       <header class="ar-decks-head">
-        <h1 class="ar-decks-heading">Presentaciones</h1>
+        <h1 class="ar-decks-heading">{{ t('decks') }}</h1>
         <p class="ar-decks-count" v-if="decks.length">
-          {{ decks.length }} {{ decks.length === 1 ? 'presentación' : 'presentaciones' }}
+          {{ t('deckCount', decks.length) }}
         </p>
       </header>
       <p class="ar-decks-missing" v-if="missing" role="alert">
-        No hay ninguna presentación «{{ missing }}»{{ decks.length ? '. Elige una:' : '.' }}
+        {{ t(decks.length ? 'noSuchDeckPick' : 'noSuchDeck', missing) }}
       </p>
       <ul class="ar-decks-grid" v-if="decks.length">
         <li class="ar-decks-card" v-for="d in decks" :key="d.name">
           <div class="ar-decks-preview">
-            <DeckCover :name="d.name" :load="d.load" @title="(t) => (titles[d.name] = t)" />
+            <DeckCover :name="d.name" :load="d.load" @title="(title) => (titles[d.name] = title)" />
           </div>
           <!-- the link covers the whole card (::after); the cover stays outside it, inert -->
-          <a class="ar-decks-link" :href="d.href + query">
+          <a class="ar-decks-link" :href="d.href + query" :lang="deckLang">
             <span class="ar-decks-title">{{ d.title }}</span>
             <span class="ar-decks-sub">{{ subtitle(d) }}</span>
             <span class="ar-decks-foot">
@@ -46,7 +46,7 @@
         </li>
       </ul>
       <p class="ar-decks-empty" v-else>
-        No hay presentaciones en {{ dir }}: cada fichero .vue directamente en esa carpeta es una.
+        {{ t('noDecks', dir) }}
       </p>
     </div>
   </main>
@@ -55,6 +55,7 @@
 <script setup>
 import { reactive } from 'vue'
 import DeckCover from '../components/internal/DeckCover.vue'
+import { lang, t } from '../i18n/i18n'
 
 defineProps({
   // { name, title, href, path, load } per deck: name is what its path takes, title what the card
@@ -70,10 +71,12 @@ defineProps({
 // each deck's cover title, as its cover tells it (DeckCover); shown under the title unless it
 // says the same (letters and digits compared, whatever the case)
 const titles = reactive({})
+// a card's titles are the deck's: in the page's language
+const deckLang = document.documentElement.lang
 const bare = (s) => s.toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, '')
 const subtitle = (d) => {
-  const t = titles[d.name] ?? ''
-  return bare(t) && bare(t) !== bare(d.title) ? t : ''
+  const cover = titles[d.name] ?? ''
+  return bare(cover) && bare(cover) !== bare(d.title) ? cover : ''
 }
 
 // the page's query, written back as it came: a flag stays a flag (&presenter, not &presenter=);

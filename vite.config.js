@@ -1,7 +1,8 @@
 // Two jobs:
 //   npm run build   the library: dist/index.js (ESM) + dist/arao.css
 //   npm run dev     the playground (playground/), a tiny slides project on the library's source
-import { fileURLToPath } from 'node:url'
+import { readdir } from 'node:fs/promises'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 import arao from './vite/index.js'
@@ -100,10 +101,39 @@ function css() {
   }
 }
 
+// The engine's UI text: one catalogue per language in src/i18n/, each with exactly the keys of
+// English (en.js, what a missing key would fall back to unseen), each a string where English has
+// a string and a function where it has one (a message that takes values).
+const I18N = here('src/i18n/')
+async function catalogueError() {
+  const files = (await readdir(I18N)).filter((f) => f.endsWith('.js') && f !== 'i18n.js')
+  const load = async (f) => (await import(pathToFileURL(I18N + f).href)).default
+  const en = await load('en.js')
+  for (const f of files) {
+    const other = await load(f)
+    const missing = Object.keys(en).filter((k) => !(k in other))
+    const extra = Object.keys(other).filter((k) => !(k in en))
+    const kind = Object.keys(en).filter((k) => k in other && typeof other[k] !== typeof en[k])
+    if (missing.length) return `${f} has no ${missing.join(', ')}`
+    if (extra.length) return `${f} has keys English has not: ${extra.join(', ')}`
+    if (kind.length) return `${f}: ${kind.join(', ')} must be a ${kind.map((k) => typeof en[k]).join(', ')}, as in en.js`
+  }
+  return null
+}
+function catalogues() {
+  return {
+    name: 'arao:catalogues',
+    async buildStart() {
+      const error = await catalogueError()
+      if (error) this.error(`UI text: ${error} (src/i18n/)`)
+    },
+  }
+}
+
 export default defineConfig(({ command }) => command === 'build'
   ? {
       // the virtual modules stay imports: the project's plugin resolves them
-      plugins: [keepImportMeta(), vue(), css()],
+      plugins: [keepImportMeta(), vue(), css(), catalogues()],
       build: {
         outDir: here('dist'),
         emptyOutDir: true,

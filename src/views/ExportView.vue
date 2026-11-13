@@ -8,7 +8,7 @@
      state/notes.js): the book copies them after the slide's page(s), every step of them shown.
      deck: createDeck() (state/deck.js): the stage and the export options. -->
 <template>
-  <div class="ar-viewport ar-export" ref="viewport" :data-theme="theme" :class="{ 'ar-export-done': done }">
+  <div class="ar-viewport ar-export" ref="viewport" :data-theme="theme" :class="{ 'ar-export-done': done }" :style="stepLabels">
     <Stage :stage="deck.stage" :width="width" :height="height">
       <slot />
     </Stage>
@@ -26,6 +26,7 @@ import { titleOf } from '../state/stage'
 import { useDeck } from '../state/deck'
 import { useNotesOutlet } from '../state/notes'
 import Stage from '../components/internal/Stage.vue'
+import { t } from '../i18n/i18n'
 
 const props = defineProps({
   deck: { type: Object, required: true }, // createDeck()
@@ -40,6 +41,13 @@ const book = ref()
 const notesOutlet = useNotesOutlet()
 // true once the book is complete
 const done = ref(false)
+
+// the labels of a step's notes on paper, in the reader's language (the CSS below draws them
+// around the step's number, attr(data-ar-step)): what each message says before and after it
+const around = (key) => t(key, '\u0000').split('\u0000').map((s) => JSON.stringify(s))
+const [fromBefore, fromAfter] = around('fromStep')
+const [atBefore, atAfter] = around('atStep')
+const stepLabels = { '--_ar-from-step-before': fromBefore, '--_ar-from-step-after': fromAfter, '--_ar-at-step-before': atBefore, '--_ar-at-step-after': atAfter }
 
 // every report says which deck it is of
 const report = (value) => reportReady({ ...value, deck: props.deck.name })
@@ -114,10 +122,10 @@ html:has(.ar-export), html:has(.ar-export) body, html:has(.ar-export) #app { hei
 .ar-notes-body .ar-step-hidden { opacity: 1 !important; }
 .ar-notes-body .ar-step-collapsed { display: revert !important; }
 .ar-notes-body :is([data-ar-step]:not([data-ar-step="1"]), [data-ar-step-only])::before {
-  content: "Desde el paso " attr(data-ar-step); display: block; margin-bottom: 6px;
+  content: var(--_ar-from-step-before) attr(data-ar-step) var(--_ar-from-step-after); display: block; margin-bottom: 6px;
   font-size: var(--ar-notes-page-step-size); font-weight: 600; color: var(--ar-notes-page-step);
 }
-.ar-notes-body [data-ar-step][data-ar-step-only]::before { content: "En el paso " attr(data-ar-step); }
+.ar-notes-body [data-ar-step][data-ar-step-only]::before { content: var(--_ar-at-step-before) attr(data-ar-step) var(--_ar-at-step-after); }
 /* on screen (?export opened in a browser), the pages one under the other */
 @media screen {
   .ar-viewport.ar-export { background: var(--ar-export-bg); }
