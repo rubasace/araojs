@@ -9,7 +9,8 @@
 // docs/assets/shots/<name>.png at half size (960x540). A comment <!-- shots: 2 3 --> at the top
 // of the example names the steps to capture: the last one is <name>.png, the others
 // <name>-<step>.png. Without it: one picture, at the slide's last step. Any console warning or
-// error of a deck fails the run. A full run also captures the views in VIEWS (presenter, deck list).
+// error of a deck fails the run. The README's features (GIFs, views other than a slide) are
+// scripts/feature-gifs.mjs's.
 //
 // Then it fills every <!-- example:<name> -->…<!-- /example --> block of README.md and docs/**/*.md
 // with that example's source (without its shots comment). <name> is an example's name, or a
@@ -24,11 +25,6 @@ import { launchChromium, REPO, settle, startDecksServer } from './docs-server.mj
 const EXAMPLES = join(REPO, 'docs/examples')
 const SHOTS = join(REPO, 'docs/assets/shots')
 const SHOTS_RE = /^<!--\s*shots:([\d\s]+)-->\s*\n/
-// Views of the examples rather than slides, for the README's features (only on a full run).
-const VIEWS = [
-  ['presenter.png', 'steps?presenter#/1/2'],
-  ['deck-list.png', ''],
-]
 
 const only = process.argv.slice(2)
 const examples = readdirSync(EXAMPLES).filter((f) => f.endsWith('.vue')).map((f) => f.slice(0, -4)).sort()
@@ -56,18 +52,6 @@ async function takeShots(names) {
         const file = i === steps.length - 1 ? `${name}.png` : `${name}-${step}.png`
         await page.screenshot({ path: join(SHOTS, file) })
         console.log(`${relative(REPO, join(SHOTS, file))}  (${new URL(page.url()).hash})`)
-        await page.close()
-      }
-    }
-    if (!only.length) {
-      for (const [file, path] of VIEWS) {
-        const page = await context.newPage()
-        page.on('console', (m) => ['warning', 'error'].includes(m.type()) && problems.push(`${file}: ${m.text()}`))
-        page.on('pageerror', (e) => problems.push(`${file}: ${e.message}`))
-        await page.goto(`${server.url}${path}`)
-        await settle(page)
-        await page.screenshot({ path: join(SHOTS, file) })
-        console.log(`${relative(REPO, join(SHOTS, file))}  (/${path})`)
         await page.close()
       }
     }

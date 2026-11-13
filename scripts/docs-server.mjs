@@ -1,12 +1,13 @@
-// Shared by scripts/shots.mjs and scripts/hero-gif.mjs: a Vite dev server for small decks on the
-// library's source (like the playground), and the Chromium that draws them.
+// Shared by scripts/shots.mjs, hero-gif.mjs and feature-gifs.mjs: a Vite dev server for small
+// decks on the library's source (like the playground), and the Chromium that draws them.
 //
 //   const server = await startDecksServer({ decks: '/abs/folder' })   // server.url, server.close()
 //   const browser = await launchChromium()
 //
 // The server's root is a throwaway folder under node_modules/.cache (index.html and src/main.js,
 // nothing else), so that 'vue' and the library's dependencies resolve from the repository.
-// The decks folder's snippets/, images/ and themes/ subfolders are the plugin's other folders.
+// The decks folder's snippets/, images/ and themes/ subfolders are the plugin's other folders;
+// `folders` names others instead ({ themes: '/abs/themes' }).
 // Chromium is playwright-core's (npx playwright-core install chromium), or ARAO_CHROMIUM; what
 // it needs on this machine (LD_LIBRARY_PATH, FONTCONFIG_FILE) passes through the environment.
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
@@ -17,7 +18,7 @@ import arao from '../vite/index.js'
 
 export const REPO = fileURLToPath(new URL('..', import.meta.url))
 
-export async function startDecksServer({ decks, port = 5190 }) {
+export async function startDecksServer({ decks, folders: others = {}, port = 5190 }) {
   const root = join(REPO, 'node_modules/.cache/arao-docs', String(process.pid))
   mkdirSync(join(root, 'src'), { recursive: true })
   writeFileSync(join(root, 'index.html'), '<!doctype html>\n<div id="app"></div>\n<script type="module" src="/src/main.js"></script>\n')
@@ -26,7 +27,7 @@ export async function startDecksServer({ decks, port = 5190 }) {
     configFile: false,
     root,
     logLevel: 'warn',
-    plugins: [arao({ decks, ...folders(decks) })],
+    plugins: [arao({ decks, ...folders(decks), ...others })],
     resolve: { alias: [{ find: /^araojs$/, replacement: join(REPO, 'src/index.js') }] },
     server: { host: '127.0.0.1', port, strictPort: false },
   })
