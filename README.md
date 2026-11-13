@@ -60,8 +60,8 @@ fixed canvas, absolute steps and themes made of tokens. eagle.js had its bird; s
   blur; a dashed placeholder names a missing file.
 - **Themes as tokens.** A theme is a block of `--ar-*` CSS variables. Same slides, another venue:
   only the theme changes, live (`t`, the picker, `?theme=`).
-- **Presenter view.** Current slide, next step, speaker notes, a timer with countdown and the wall
-  clock; every window of the deck stays in step.
+- **Presenter view.** Current slide, next step, speaker notes, a timer with countdown (its duration
+  can be changed live) and the wall clock; every window of the deck stays in step.
 - **Keyboard and touch.** Keys, a jump menu, tap and swipe on phones and tablets.
 - **PDF export.** `arao export`: every deck of the project, one PDF each; one page per step (or
   per slide), text kept as text, optional notes pages.
@@ -363,10 +363,18 @@ speaker notes of the slide (the ones that start at the current step are marked),
 and title, the timer and the wall clock.
 
 The timer starts with the first move in any window; it can be paused and reset, and it survives
-reloading the windows. With `Deck(duration="45m")` it also counts down: amber near the end, red
-when over. All windows of the same deck in the same browser follow each other (position, theme,
-timer). If the browser blocks the pop-up, a notice offers a link to open it by hand. The presenter
-UI is in Spanish.
+reloading the windows. With a duration it also counts down: amber near the end, red when over.
+All windows of the same deck in the same browser follow each other (position, theme, timer,
+duration). If the browser blocks the pop-up, a notice offers a link to open it by hand. The
+presenter UI is in Spanish.
+
+The talk's duration is set in the deck, `Deck(duration="45m")` (or `90`, `"1h30"`, `"45:00"`…). The
+same talk often gets another slot: change it live from the presenter view, without editing the
+deck. The duration button in the top bar (next to the timer's) opens a field that takes the same
+formats, from 1 minute to 24 hours; `Enter` applies, `Esc` cancels, and `Space` then moves the
+slides again at once. A deck without `duration` gets a countdown the same way. Every window of
+the deck takes the new duration, it survives reloading them, it wins over the deck until reset, and
+the same field goes back to the deck's value.
 
 ## Export to PDF
 
@@ -449,7 +457,8 @@ dist/               the build (npm run build): index.js, arao.css, themes/
 
 `scripts/smoke.mjs` checks the package the way a user gets it. It packs the library (or takes the
 tarball it is given), installs it into a new slides project in a temporary folder with the
-playground's decks, images and snippets (and a second, tiny deck of its own), and then:
+playground's decks, images and snippets (and two tiny decks of its own, the second with a duration
+and the third without), and then:
 
 1. runs `vite build`;
 2. opens every deck under the dev server (Vue's own warnings only show up in dev) and under
@@ -461,15 +470,24 @@ playground's decks, images and snippets (and a second, tiny deck of its own), an
 4. checks `useDeck()` on the second deck, under the dev server: the object is frozen, writes
    through its refs change nothing, `setTheme` of a name the deck has not gives one `[arao]`
    warning, and in the presenter view's preview no function acts;
-5. rewrites the project's `src/main.js` (and once its `vite.config.js`) for createDeckApp's
+5. changes the talk's duration in the presenter view of the second deck (`duration="15m"`), under
+   the dev server: `1h30` typed with real keys moves no slide and opens no jump menu, the
+   countdown follows and an audience window gets it; after an apply or `Esc` from the keyboard,
+   `Space` and `→` move the slides; an invalid value and one outside 1 minute – 24 hours show
+   their error; no key moves the slides with the focus on the field's button, and `Tab` out of
+   the field closes it; an open field follows a change made in another presenter window (or keeps
+   typed text) and says so; a reload keeps the duration, a new audience window takes it, and going
+   back restores the deck's 15:00 everywhere. On the third deck (no duration), one set adds the
+   countdown and going back removes it;
+6. rewrites the project's `src/main.js` (and once its `vite.config.js`) for createDeckApp's
    other cases, under the dev server: a project with one deck opens it at `/`;
    `createDeckApp({ deck: 'second' })` opens that deck at `/` while `?deck=<other>` still wins;
    `createDeckApp({ deck: 'missing' })` shows the list with one `[arao]` warning;
-6. runs `<bin> export` with no `--deck` and checks one PDF per deck at its default name, each with
+7. runs `<bin> export` with no `--deck` and checks one PDF per deck at its default name, each with
    as many pages (counted in the PDF itself) as steps, as its summary line says and as the walk
    counted, plus the total line; then `<bin> export --deck <name> --per-slide`, whose PDF must
    have as many pages as slides;
-7. runs the CLI's other cases on small decks folders of their own, into `--out <folder>`:
+8. runs the CLI's other cases on small decks folders of their own, into `--out <folder>`:
    `--theme` over a deck that lists it and one that falls back (a symlinked deck, next to a dotfile
    that must not count), a theme no deck lists (exit 1, nothing written), a deck that throws at
    runtime (the others exported, exit 1), and decks that resolve to the same file (the second fails).

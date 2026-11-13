@@ -34,6 +34,12 @@ export function parseDuration(v) {
   return Number.isFinite(ms) && ms > 0 ? ms : null
 }
 
+// A talk's length worth counting down: from 1 minute to 24 hours, both included. The presenter's
+// field takes nothing else; a deck's duration out of them still counts (it only warns).
+export const MIN_DURATION = 60000
+export const MAX_DURATION = 24 * 3600000
+export const withinBounds = (ms) => ms >= MIN_DURATION && ms <= MAX_DURATION
+
 // How the time left looks: 'over' past the duration; 'low' in the last 10 % of it, but never
 // earlier than 5 minutes before the end; 'ok' otherwise.
 export function phase(left, duration) {

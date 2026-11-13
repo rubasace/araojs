@@ -1,5 +1,6 @@
 // Windows of the same deck in the same browser (audience, presenter, a second audience) share a
-// few values through a BroadcastChannel: where the deck stands, its theme, the talk's timer.
+// few values through a BroadcastChannel: where the deck stands, its theme, the talk's timer and
+// the length the presenter set for it.
 //
 // Each value is a register, and the last change wins. A change carries a stamp [time, window]:
 // the wall clock (strictly increasing per register, so a change always beats the one it

@@ -14,8 +14,10 @@
      them moves the others, and so does a theme change; the last move wins. A window that opens
      takes the position of the ones already open (and their theme, unless its URL names one).
      duration="45m" is the talk's length (formats: core/timer.js parseDuration): the presenter view
-     counts down to it. The timer starts with the first move of the deck, in any window, and
-     survives reloading the windows (not closing them).
+     counts down to it, and its bar can change it live for every window (the prop stays the
+     default; the change wins until reset, even over an edit of the prop that differs from it).
+     The timer starts with the first move of the deck, in any window; timer and changed length
+     survive reloading the windows (not closing them).
      Export: ?export prints the deck, one page per step (&per-slide: per slide; &notes: a page of
      notes after each slide that has them): views/ExportView.vue and core/exporter.js, and
      npm run export for the PDFs.
@@ -56,7 +58,8 @@ const props = defineProps({
   // hide the mouse cursor after this many ms without moving it (0 = never)
   hideCursorAfter: { type: Number, default: 5000 },
   // the talk's length, for the presenter view's countdown: 90 or "90" (minutes), "45m", "1h30m",
-  // "1h30", "90s", "45:00" (m:ss), "1:30:00" (h:mm:ss). Anything else warns and counts nothing.
+  // "1h30", "90s", "45:00" (m:ss), "1:30:00" (h:mm:ss). Anything else warns and counts nothing;
+  // a length outside 1 min – 24 h warns and counts.
   duration: [String, Number],
 })
 
