@@ -1,6 +1,7 @@
 // The small languages of layout props, parsed into CSS: a track ratio ("1 2"), a gap ("md"), a
 // grid shape ("2:1"). Pure: strings in, CSS values out; each `is…` is the prop validator, the
-// same parser, so what passes validation is exactly what renders.
+// same parser, so what passes validation is exactly what renders. Used by the layout pieces next
+// to it (Cols, Rows, Grid), which hand the values to their CSS, and by Slide (its zones' ratio).
 //
 // Track ratio: one entry per track, separated by spaces (or commas). Each entry is one of
 //   a positive number   a share of the free space; shares are proportions, so "1 2",

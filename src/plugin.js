@@ -2,7 +2,8 @@
 //   components   Deck, Slide, Img, Icon, Notes, Snippet, Cols, Rows, Grid, Center
 //   directives   v-step, v-step-from
 // The addons (ProgressBar, SlideNumber) are not global: a deck imports the ones it uses.
-// CSS: every component brings its own (its .vue file's <style>); styles/ holds what is global.
+// CSS: every component brings its own (its .vue file's <style>; the layout pieces share
+// components/layout/layout.css, which comes in with the first of them); styles/ holds what is global.
 // Import order is CSS order, and it matters where two rules of the same specificity meet:
 //   tokens.css first (the defaults, zero specificity);
 //   the views (through Deck), then Snippet before Slide (a Snippet in an image zone takes the
@@ -11,7 +12,8 @@
 //   base.css last (its step fade wins over Snippet's own transitions). The project's themes come
 //   after all of the engine's CSS: index.js imports them last (the build checks it).
 // The library build checks three of them in dist/arao.css (vite.config.js, CSS_ORDER): Snippet's
-// flex, the overflow-x of an Img in Cols, the step fade.
+// flex, the overflow-x of an Img in a layout piece, the step fade; and that layout.css is in it
+// once (CSS_ONCE).
 import './styles/tokens.css'
 import Deck from './components/Deck.vue'
 import Snippet from './components/Snippet.vue'

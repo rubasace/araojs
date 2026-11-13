@@ -1,0 +1,21 @@
+/* What the layout pieces share (Cols, Rows, Grid, Center). Each one links this file
+   (<style src="./layout.css">, its first style block: the build keeps a single copy) and adds its
+   own rules in its own <style>. Not scoped, at the specificity these rules always had: a theme or a
+   deck overrides them by class. The classes are hooks for that, not classes to write in a deck.
+   A piece hands its props to its CSS as private custom properties, set inline on its own element
+   (--_ar-gap, --_ar-tracks…), and declares their defaults on itself: a piece inside another never
+   inherits its parent's. */
+
+/* every piece fills the free space of its container (the rest of the slide under its title, a
+   zone, a cell of another piece), and is never wider than it */
+:is(.ar-cols, .ar-rows, .ar-grid, .ar-center) {
+  box-sizing: border-box; flex: 1 1 auto; min-width: 0; min-height: 0;
+}
+
+/* the gap between tracks: the gap prop (--_ar-gap), else the theme's md */
+:is(.ar-cols, .ar-rows, .ar-grid) { --_ar-gap: var(--ar-gap-md); gap: var(--_ar-gap); }
+
+/* widths hold, heights grow: a child is never wider than its track and what is wider inside it is
+   clipped at the track's edge (the y axis stays visible), so it never paints over its neighbour.
+   Zero specificity: a child's own rule wins. */
+:where(.ar-cols, .ar-rows, .ar-grid) > * { max-width: 100%; overflow-x: clip; }

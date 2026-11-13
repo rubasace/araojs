@@ -32,22 +32,32 @@ function keepImportMeta() {
 
 // CSS order guard. Where two rules of the same specificity meet on one element, the later one in
 // arao.css wins, and the import order in src/plugin.js is what puts it later (its header says
-// why). Each entry: the rule that must come first, the rule that must follow it, what breaks
-// otherwise. A rule no longer in arao.css fails too, so that the guard cannot go stale unseen.
+// why), or, within a component, the order of its style blocks. Each entry: the rule that must come
+// first, the rule that must follow it, what breaks otherwise. A rule no longer in arao.css fails
+// too, so that the guard cannot go stale unseen.
 const CSS_ORDER = [
   ['.ar-snippet', '.ar-zone-image > *', "a Snippet in an image zone takes the zone's flex"],
-  [':where(.ar-img)', ':where(.ar-cols) > *', 'an Img in Cols clips overflow-x like its other children'],
+  [':where(.ar-img)', ':where(.ar-cols, .ar-rows, .ar-grid) > *', 'an Img in Cols, Rows or Grid clips overflow-x like their other children'],
   ['.ar-snippet-line', '[data-ar-slide] *', "the step fade wins over Snippet's own transitions"],
   ['.ar-snippet-tx', '[data-ar-slide] *', "the step fade wins over Snippet's own transitions"],
 ]
+// Rules that must be in arao.css exactly once: the CSS the layout pieces share (layout.css, which
+// each links with <style src>). The build keeps one copy as long as every piece links it the same
+// way; a second, later copy would beat the pieces' own rules and the order above unseen.
+const CSS_ONCE = [':is(.ar-cols, .ar-rows, .ar-grid, .ar-center)']
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const ruleRe = (selector) => new RegExp(`^${escapeRe(selector)} *\\{`, 'gm')
 // where the rule with exactly this selector starts (a line of its own in the unminified build)
-const ruleAt = (css, selector) => css.search(new RegExp(`^${escapeRe(selector)} *\\{`, 'm'))
+const ruleAt = (css, selector) => css.search(ruleRe(selector))
 function cssOrderError(css) {
+  for (const selector of CSS_ONCE) {
+    const n = css.match(ruleRe(selector))?.length ?? 0
+    if (n !== 1) return `\`${selector} {\` is in ${CSS} ${n} times, not once: every layout piece links layout.css as its first style block, <style src="./layout.css"></style>`
+  }
   for (const [first, then, why] of CSS_ORDER) {
     const a = ruleAt(css, first), b = ruleAt(css, then)
     if (a < 0 || b < 0) return `no rule \`${a < 0 ? first : then} {\` in ${CSS}: update CSS_ORDER in vite.config.js`
-    if (a > b) return `\`${first}\` must come before \`${then}\` in ${CSS} (${why}): fix the import order in src/plugin.js`
+    if (a > b) return `\`${first}\` must come before \`${then}\` in ${CSS} (${why}): fix the import order in src/plugin.js (or a component's style blocks)`
   }
   return null
 }

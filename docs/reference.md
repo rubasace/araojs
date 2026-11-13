@@ -447,6 +447,8 @@ the title, a zone, a cell of another piece) and takes `v-step` like any element.
 - Overflow: widths hold, heights grow. A child is never wider than its track; what is wider
   inside it is clipped at the track edge. Rows grow to fit their content, so a piece that does not
   fit overflows its container at the bottom.
+- Their classes (`ar-cols`, `ar-rows`, `ar-grid`, `ar-center`) are hooks for a theme to
+  override, not utility classes to write in a deck: the props do the layout.
 
 ```pug
 Slide

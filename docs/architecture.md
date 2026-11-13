@@ -9,9 +9,9 @@ this: [reference.md](reference.md) is their API, [../AGENTS.md](../AGENTS.md) th
 |---|---|---|
 | `state/` | what there is | the deck, its stages, its slides and the talk's timer: reactive state, made by a `create…` and read by a `use…` (the pair shares a provide/inject key private to its file) |
 | `composables/` | effects | small internal composables, one per file, that tie the state to the browser: the URL, other windows, keys, touch, the mouse, fullscreen |
-| `core/` | the pure how | plain modules with no Vue component state: sync, timer, exporter, flip, image, icons, layout (the parsers of the layout props: ratio, gap, grid shape) |
+| `core/` | the pure how | plain modules with no Vue component state: sync, timer, exporter, flip, image, icons |
 | `views/` | what Arao draws | the four views of a deck and their parts (the scaled canvas, the controls, the presenter's bar); `DeckSelector`, the list of decks `createDeckApp` shows at `/`, and its part `DeckCover` (a deck drawn as its cover) |
-| `components/` | what deck authors write | `Deck`, `Slide`, `Img`, `Icon`, `Snippet`, `Notes`; `layout/` holds the layout components (`Cols`, `Rows`, `Grid`, `Center`), `directives/` holds `v-step` and `v-step-from` |
+| `components/` | what deck authors write | `Deck`, `Slide`, `Img`, `Icon`, `Snippet`, `Notes`; `layout/` holds the layout components (`Cols`, `Rows`, `Grid`, `Center`), the parsers of their props (`layout.js`: ratio, gap, grid shape; Slide's zones use it too) and the CSS they share (`layout.css`), `directives/` holds `v-step` and `v-step-from` |
 | `addons/` | drawn over every slide | `ProgressBar`, `SlideNumber` |
 | `styles/` | CSS | only what is global: `tokens.css` (every token and its default: the `default` theme), `base.css` (the page, the viewport, the steps). Everything else comes with its component ([CSS](#css)); no theme ships with the engine ([Themes](#themes)) |
 
@@ -124,8 +124,18 @@ components, `Img`, `Icon`, `Snippet`, `Slide` (its zones, its footer, the slide'
 layouts: `layout-cover`, `layout-section`, `layout-image-left`… are Slide's classes), the addons,
 the views and their parts. Not scoped: a theme or a deck must be able to override any of it, so
 the selectors are the `ar-` classes at the specificity they always had (zero, with `:where()`,
-where a deck's own rule must win). `Notes` has none: its content is drawn, and styled, where it is
-teleported (the presenter's notes panel, `PresenterView`; the export's notes pages, `ExportView`).
+where a deck's own rule must win); they are hooks for that, not classes a deck writes. `Notes` has
+none: its content is drawn, and styled, where it is teleported (the presenter's notes panel,
+`PresenterView`; the export's notes pages, `ExportView`).
+
+The layout components share one file, `layout/layout.css` (filling their container, the gap,
+children clipped at their track), which each links as its first style block,
+`<style src="./layout.css">` (the build keeps one copy), and add their own rules after it. They
+do no layout in JavaScript: a component turns its props into private custom properties set inline
+on its element (`--_ar-gap`, `--_ar-tracks`, `--_ar-cols`…), whose defaults its own rule declares
+(so a piece inside another never inherits them), and its CSS lays it out; validation and its
+warnings stay in JavaScript (`layout.js`). `Grid` with `ratio` counts its children for its
+columns and rows, and centres an incomplete last row with an `::after` spacer before it.
 
 `styles/` keeps what no component owns: `tokens.css` and `base.css`. `tokens.css` declares every
 token the engine reads, with its default, and nowhere else is a default written: no component
@@ -152,11 +162,12 @@ Snippet in an image zone takes the zone's `flex`); `Img` before `Slide`; `Slide`
 and the layout components (they keep their own `flex` in an image zone); `Img` before the layout
 components (their children clip `overflow-x`); `base.css` last (its step fade wins over Snippet's
 own transitions); the library build fails if `dist/arao.css` loses three of them (Snippet's
-`flex`, the `overflow-x` of an `Img` in `Cols`, the step fade: `vite.config.js`,
-`CSS_ORDER`). `index.js` then adds the addons, `app.js` the deck selector, and last the
-project's themes (`virtual:arao/theme-styles`), after all of the engine's CSS; the library build
-fails if that import is not the entry's last, after `./arao.css` (`vite.config.js`,
-`themeStylesError`).
+`flex`, the `overflow-x` of an `Img` in a layout piece, the step fade), or if it holds `layout.css`
+more than once (a later copy would beat the pieces' own rules): `vite.config.js`, `CSS_ORDER` and
+`CSS_ONCE`. `index.js` then adds the addons, `app.js` the deck
+selector, and last the project's themes (`virtual:arao/theme-styles`), after all of the engine's
+CSS; the library build fails if that import is not the entry's last, after `./arao.css`
+(`vite.config.js`, `themeStylesError`).
 
 ## Themes
 
