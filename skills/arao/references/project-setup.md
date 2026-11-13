@@ -1,7 +1,8 @@
 # Setting up an Arao slides project
 
 A slides project is a Vite app that depends on `araojs` (with `vue` and `vite`, its peers). The
-engine is the library: nothing of it is copied into the project. Needs Node 20.19 or newer.
+engine is the library: nothing of it is copied into the project. Needs Node 20.19 or newer, and
+araojs 0.5.0 or later for everything this skill describes.
 
 ## From an empty folder
 
@@ -11,7 +12,8 @@ npm install araojs vue && npm install -D vite
 npm pkg set scripts.dev=vite scripts.build="vite build" scripts.export="arao export"
 ```
 
-Three files:
+Three files (keep `<!doctype html>` first in `index.html`: without it the page renders in quirks
+mode and tables silently lose the theme's colours and sizes):
 
 ```js
 // vite.config.js
@@ -29,6 +31,7 @@ createDeckApp().mount('#app')
 ```
 
 ```html
+<!doctype html>
 <!-- index.html -->
 <div id="app"></div>
 <script type="module" src="/src/main.js"></script>

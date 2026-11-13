@@ -9,6 +9,10 @@ Arao turns a Vue single-file component into a slide deck: `Deck` → `Slide` →
 *what* each slide says; the theme decides *how it looks*. This skill is how to write decks the
 Arao way and how to check them.
 
+**Version:** this skill describes araojs 0.5.0 or later (theme sources, fetched web fonts,
+`src/shortcuts.ts`). With an older araojs in the project, upgrade it (`npm install araojs@latest`)
+or check its own `node_modules/araojs/docs/`.
+
 The full manual ships with the package: in a slides project it is under
 `node_modules/araojs/docs/` (guides in `guide/`, every prop and token in `reference/`), and online
 at https://github.com/rubasace/araojs/tree/main/docs. Paths below like
@@ -65,8 +69,8 @@ Do:
 - Use `Icon` for icons and logos, by name: `lucide:…` for UI icons, `simple-icons:…` for
   technology logos. Colour it like text. Logos name the technology; they are not decoration.
 - Write sizes, if any, in canvas px (`gap="24"`, `:size="36"`, `width: 320px`).
-- Put speaker notes in one `Notes` inside the slide, with `v-step` inside it for what shows at
-  each step.
+- Put speaker notes in one `Notes` inside the slide. `v-step` works inside `Notes`: a note with
+  `v-step="2"` shows from step 2, following the slide's steps (it adds no steps of its own).
 - Put components only one talk uses under `src/decks/<talk>/`, shared ones under `src/slides/`;
   the deck imports them in `<script setup>`.
 
@@ -112,6 +116,8 @@ More, with the fix for each: [references/troubleshooting.md](references/troubles
 - Every prop and slot: `reference/components.md`; `v-step`: `reference/directives.md`;
   `useDeck`/`useSlide`: `reference/composables.md`; plugin options: `reference/vite-plugin.md`;
   `arao export`: `reference/cli.md`; URLs: `reference/urls.md`; tokens: `reference/theme-tokens.md`.
+- Start here: `getting-started.md` (from an empty folder to a deck and a PDF); the project's
+  files and `createDeckApp`: `guide/project.md`.
 - Guides: `guide/concepts.md`, `guide/slides-and-layouts.md`, `guide/steps.md`, `guide/code.md`,
   `guide/composition.md`, `guide/images-and-backgrounds.md`, `guide/icons.md`, `guide/themes.md`,
   `guide/presenting.md`, `guide/export.md`, `guide/hosting.md`, `guide/extending.md`.

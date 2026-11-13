@@ -29,6 +29,7 @@ createDeckApp().mount('#app')
 ```
 
 ```html
+<!doctype html>
 <!-- index.html -->
 <div id="app"></div>
 <script type="module" src="/src/main.js"></script>

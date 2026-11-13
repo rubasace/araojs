@@ -17,19 +17,33 @@ A theme is a `[data-theme="<name>"] { --ar-…: …; }` block in a CSS file of `
 (`src/themes/<name>.css`), declaring only the tokens it changes over the defaults:
 
 ```css
-/* src/themes/ocean.css */
-[data-theme="ocean"] {
-  --ar-bg: #1b2a3a;
-  --ar-fg: #edf1f4;
-  --ar-muted: #9aabbb;
-  --ar-accent: #6aaee8;
-  --ar-accent-fg: #1b2a3a;
-  --ar-letterbox: #111c27;
+/* src/themes/midnight.css: a dark venue, an orange accent and a dark code window */
+[data-theme="midnight"] {
+  --ar-bg: #11151b;
+  --ar-fg: #e9e6df;
+  --ar-muted: #8e99a6;
+  --ar-accent: #ff6a3d;
+  --ar-accent-fg: #11151b;
+  --ar-letterbox: #0a0d11;
   --ar-font-sans: "Inter", system-ui, sans-serif;
   --ar-title-align: center;
-  --ar-footer-color: var(--ar-accent);
+  /* the code window: its defaults are light */
+  --ar-code-theme: github-dark-default;
+  --ar-code-bg: #0d1117;
+  --ar-code-bar: #1b2129;
+  --ar-code-fg: #e6edf3;
+  --ar-code-muted: #6e7681;
+  --ar-code-title: #c9d1d9;
+  --ar-code-hl: #58a6ff;
 }
 ```
+
+- **A dark theme sets the code tokens too**: the code window's defaults are light
+  (`--ar-code-theme: github-light`, a white `--ar-code-bg`), so a dark page with them shows a
+  white window. `--ar-code-theme` is a Shiki theme name (`github-dark-default`,
+  `material-theme-darker`…). Tables follow `--ar-fg` (their lines are the text colour at 15 %),
+  so they need nothing unless you want a header background (`--ar-table-head-bg`) or stripes
+  (`--ar-table-stripe`).
 
 - Nothing to import: the plugin loads every CSS file there and takes the theme's name from the
   selector, not the file name. One file may hold several themes.
@@ -85,7 +99,8 @@ package) and serves it with the deck, with matched fallbacks:
 - System fonts (Georgia, Arial, Helvetica, Menlo…) and generic names are never fetched.
 - Weights 400, 600 and 700, upright and italic, are fetched by default.
 - The first build needs the network; the catalogue cache lasts a week, and `npm ci` starts empty.
-  For CI that must fail rather than ship fallbacks: `arao({ fonts: { throwOnError: true } })`.
+  Offline or on a provider timeout the build still passes with an `[arao] fonts:` warning and the
+  stack's fallback fonts. For CI that must fail instead: `arao({ fonts: { throwOnError: true } })`.
 - A font no provider has: write its own `@font-face` in the theme file, pointing at its files.
 - `--ar-ui-font` (controls, presenter view) is not fetched: use a system font there.
 - Off: `arao({ fonts: false })`; per family: `fonts: { families: [{ name: 'Brand', provider: 'none' }] }`.

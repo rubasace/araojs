@@ -60,7 +60,42 @@ export function fonts(option = true) {
   if (option === null || typeof option !== 'object' || Array.isArray(option)) {
     throw new Error(`[arao] fonts must be true, false or fontless's options (an object), got ${JSON.stringify(option)}`)
   }
-  return fontless(/** @type {Parameters<typeof fontless>[0]} */ (withDefaults(option)))
+  const options = withDefaults(option)
+  const plugins = fontless(/** @type {Parameters<typeof fontless>[0]} */ (options))
+  return option.throwOnError ? plugins : plugins.map(forgiving)
+}
+
+const HOOKS = ['buildStart', 'configResolved', 'configureServer', 'transform', 'transformIndexHtml', 'load', 'renderChunk', 'generateBundle', 'writeBundle', 'closeBundle']
+
+/**
+ * A fontless plugin whose hooks cannot fail the build: a font that cannot be fetched (no network,
+ * a provider timing out: ETIMEDOUT) is a warning, and the deck ships with the fallback fonts of its
+ * stack. With throwOnError the plugin is used as it is, so the failure stops the build.
+ * @param {import('vite').Plugin} plugin
+ * @returns {import('vite').Plugin}
+ */
+function forgiving(plugin) {
+  /** @type {Record<string, unknown>} */
+  const out = { ...plugin }
+  for (const name of HOOKS) {
+    const hook = /** @type {Record<string, any>} */ (plugin)[name]
+    if (!hook) continue
+    const fn = typeof hook === 'function' ? hook : hook.handler
+    if (typeof fn !== 'function') continue
+    /** @this {any} @param {...any} args */
+    const safe = async function (...args) {
+      try {
+        return await fn.apply(this, args)
+      } catch (e) {
+        const message = `[arao] fonts: ${e instanceof Error ? e.message : String(e)}. The deck uses its fallback fonts (set fonts: { throwOnError: true } to fail instead)`
+        if (this && typeof this.warn === 'function') this.warn(message)
+        else console.warn(message)
+        return undefined
+      }
+    }
+    out[name] = typeof hook === 'function' ? safe : { ...hook, handler: safe }
+  }
+  return /** @type {import('vite').Plugin} */ (/** @type {unknown} */ (out))
 }
 
 /**

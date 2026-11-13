@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 // Headless check of one Arao deck, against a running dev server.
 //   node check-deck.mjs <url> [outDir]
-//   e.g. node check-deck.mjs http://127.0.0.1:5173/mytalk shots
+//   e.g. node check-deck.mjs http://localhost:5173/mytalk shots   (the URL Vite prints)
 // Run it from the slides project (it imports playwright-core, a dependency of araojs). Chromium
 // once: npx playwright-core install chromium.
 // Prints: console warnings/errors and page errors, the slide count, the highest step reached on
 // each slide, slides whose content overflows, and saves a screenshot of every step in outDir
-// (default ./deck-check), named s<slide>-<step>.png. Exit code 1 if any warning, error or overflow.
+// (default ./deck-check), named s<slide>-<step>.png. Exit code 1 if any warning, error, overflow,
+// quirks mode (no <!doctype html>) or no slide rendered.
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { createRequire } from 'node:module'
@@ -41,9 +42,24 @@ page.on('console', (m) => {
 })
 page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`))
 
-await page.goto(url.replace(/#.*$/, '') + '#/1/1')
-await page.waitForSelector('.ar-slide')
+const fail = async (message) => {
+  console.log(message)
+  if (problems.length) console.log(`console problems (${problems.length}):\n  ${problems.join('\n  ')}`)
+  await browser.close()
+  process.exit(1)
+}
+
+try {
+  await page.goto(url.replace(/#.*$/, '') + '#/1/1')
+  await page.waitForSelector('.ar-slide', { timeout: 15000 })
+} catch (e) {
+  await fail(`no .ar-slide rendered at ${url} (wrong URL or port? is the dev server running?): ${e.message.split('\n')[0]}`)
+}
 await page.waitForTimeout(800)
+// no <!doctype html> in index.html: quirks mode, tables lose their theme
+if ((await page.evaluate(() => document.compatMode)) === 'BackCompat') {
+  problems.push('quirks mode: index.html has no <!doctype html> as its first line')
+}
 const slides = await page.locator('.ar-slide').count()
 
 const hash = () => page.evaluate(() => location.hash)

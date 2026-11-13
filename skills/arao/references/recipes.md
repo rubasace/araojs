@@ -23,14 +23,16 @@ mental model in SKILL.md). Every prop and slot: `docs/reference/components.md`; 
 ```pug
 <template lang="pug">
 Deck(duration="30m")
+  template(#footer="{ number, total }")
+    span My talk · Conf 2026
+    span {{ number }} / {{ total }}
   ProgressBar
-  SlideNumber
 
   //- slides go here
 </template>
 
 <script setup>
-import { ProgressBar, SlideNumber } from 'araojs'
+import { ProgressBar } from 'araojs'
 </script>
 ```
 
@@ -39,13 +41,19 @@ The same template in HTML (same `<script setup>`):
 ```vue
 <template>
   <Deck duration="30m">
+    <template #footer="{ number, total }">
+      <span>My talk · Conf 2026</span>
+      <span>{{ number }} / {{ total }}</span>
+    </template>
     <ProgressBar />
-    <SlideNumber />
 
     <!-- slides go here -->
   </Deck>
 </template>
 ```
+
+The slide number goes in the footer (`{{ number }} / {{ total }}`). The `SlideNumber` addon also
+exists, for a deck without a footer; don't use both.
 
 ## Title slide
 ```pug
