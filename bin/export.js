@@ -13,7 +13,9 @@
 // Each PDF is checked (one page per page of the deck, and of the deck asked for: the page says
 // which deck it printed) and put in place only once complete: an export that fails or is stopped
 // leaves no half file, and an earlier PDF at its place as it was. --url is the site's base: one
-// that ends in a deck's name (a deck's own URL, /renovate) is refused before anything opens.
+// that ends in a deck's name (a deck's own URL, /renovate, or a base named like a deck) gets a
+// warning naming the base it may have meant, and the export goes on (the deck each page reports
+// keeps a deck's URL from printing it under another deck's name).
 // A build error stops the run. A deck that fails once the site is up (it does not render, throws
 // before its pages are ready, crashes its page, cannot be printed or written) is reported and
 // does not stop the others; the exit code is 1 if any failed. Two decks of one run never write the
@@ -132,8 +134,10 @@ if (args.deck != null) {
   }
 }
 const several = decks.length > 1
-// --url is where / lists the decks: a path that ends in a deck's name is that deck's URL, which
-// would print it under every other deck's name. Refused, with the base it most likely meant.
+// --url is where / lists the decks: a path that ends in a deck's name is most likely that deck's
+// URL, or else a base named like the deck (/talks/ and a deck talks). A warning, with the base it
+// would mean, and on: a deck's URL opens that deck under every other deck's name, which the page's
+// report of the deck it printed then refuses, writing nothing (render, below).
 if (args.url != null) {
   const u = new URL(args.url)
   const segments = u.pathname.split('/').filter(Boolean)
@@ -144,8 +148,7 @@ if (args.url != null) {
   const named = all.find((d) => d.toLowerCase() === last.trim().toLowerCase())
   if (named) {
     const meant = new URL(`/${segments.slice(0, -1).map((s) => `${s}/`).join('')}`, u.origin).href
-    console.error(`export: --url ${args.url} is the URL of the deck "${named}", not the site's: give the site's base, --url ${meant} (each deck opens at <url><deck>)`)
-    process.exit(1)
+    console.warn(`export: --url ${args.url} ends in the name of the deck "${named}". If it is that deck's own URL, give the site's base instead, --url ${meant} (each deck opens at <url><deck>); if the site's base is named like the deck, nothing to do. Going on: a page that prints another deck than the one asked for writes nothing.`)
   }
 }
 // a deck's path is case-insensitive, and so are the file names: such decks open as one, and only

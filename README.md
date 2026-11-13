@@ -464,21 +464,23 @@ dist/               the build (npm run build): index.js, arao.css, themes/
 
 `scripts/smoke.mjs` checks the package the way a user gets it. It packs the library (or takes the
 tarball it is given), installs it into a new slides project in a temporary folder with the
-playground's decks, images and snippets (and two tiny decks of its own, the second with a duration
-and the third without), and then:
+playground's decks, images and snippets (and three tiny decks of its own: the second with a
+duration, the third without, the fourth with a file name and a cover heading far too long for a
+card), and then:
 
 1. runs `vite build`, which must also write `dist/404.html`, a copy of `dist/index.html`;
 2. opens every deck at its path under the dev server (Vue's own warnings only show up in dev) and
    under `vite preview`, and walks each one with ArrowRight to its last step. Any console warning
    or error, any page error, or a deck with no slides fails the test;
 3. opens `/` under both servers: it must list every deck, each card with its cover drawn in it,
-   its title (the file name in words) unchanged once the covers are in, the second deck's cover
-   heading under its title, its path shown as its link's (decoded), every card as tall as the
-   others, and the page's URL untouched; each link must
-   open its deck (the first one followed with the keyboard) and keep the page's query, and the
-   covers stay covers on `/?presenter`; `?deck=<name>` must move to `/<name>` keeping the rest of
-   the query and the hash; an unknown path, and an unknown `?deck=`, must show the list with a
-   notice and one warning;
+   its title the file name in words (written out in the test) from the list's first render, and
+   the same once the covers are in, the second and the fourth deck's cover heading under its
+   title, its path shown as its link's (decoded), every card as tall as the others, its title,
+   cover heading and path on one line each (the fourth deck's cut), and the page's URL untouched;
+   each link must open its deck (the first one followed with the keyboard) and keep the page's
+   query, and the covers stay covers on `/?presenter`; `?deck=<name>` must move to `/<name>`
+   keeping the rest of the query and the hash; an unknown path, and an unknown `?deck=`, must show
+   the list with a notice and one warning;
 4. checks `useDeck()` on the second deck, under the dev server: the object is frozen, writes
    through its refs change nothing, `setTheme` of a name the deck has not gives one `[arao]`
    warning, and in the presenter view's preview no function acts;
@@ -509,15 +511,18 @@ and the third without), and then:
    counted, plus the total line; then `<bin> export --deck <name> --per-slide`, whose PDF must
    have as many pages as slides;
 10. runs `<bin> export --deck <other> --url` against `vite preview`: with a deck's own URL it must
-   refuse before opening anything, naming the base meant; with a URL under which the second deck
-   opens, it must fail on the deck printed; both exit 1 and write nothing;
+   warn, naming the base meant, and then fail on the deck printed; with a URL under which the
+   second deck opens, it must fail on the deck printed, with no warning; both exit 1 and write
+   nothing;
 11. builds the project under a sub-path (`base: '/sub/'`): `dist/404.html` again; under `vite
    preview` the list at `/sub/` (the same checks as in 3), a deck at `/sub/<name>`, and
    `<bin> export --deck <name>` printing it;
 12. runs the CLI's other cases on small decks folders of their own, into `--out <folder>`:
-   `--theme` over a deck that lists it and one that falls back (a symlinked deck, next to a dotfile
-   that must not count), a theme no deck lists (exit 1, nothing written), a deck that throws at
-   runtime (the others exported, exit 1), and decks that resolve to the same file (the second fails).
+   `--url` at a site built under a base named like one of its decks (`/talks/`, a deck `Talks`),
+   which warns and exports every deck; `--theme` over a deck that lists it and one that falls back
+   (a symlinked deck, next to a dotfile that must not count), a theme no deck lists (exit 1,
+   nothing written), a deck that throws at runtime (the others exported, exit 1), and decks that
+   resolve to the same file (the second fails).
 
 The package name and the CLI's name come from `package.json`. CI runs it on every pull request and
 on every push to `main`. To run it locally:

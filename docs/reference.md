@@ -813,9 +813,12 @@ print as placeholders and are listed.
   `http://127.0.0.1:5173/talks/`). Each deck opens at `<url><deck>?export…`: the URL's own
   query and hash are dropped, and its path is taken as a folder (`/talks` is `/talks/`). The decks (the `--deck` name, or every
   deck) are still read from the project's decks folder before anything opens, so the server must
-  serve the same decks. A URL whose path ends in a deck's name (`http://127.0.0.1:5173/renovate`,
-  a deck's own URL) is an error, before anything opens, naming the base it meant; so a base named
-  like one of the decks cannot be given here (export without `--url`).
+  serve the same decks. A URL whose path ends in a deck's name gets a warning, naming the base it
+  would mean, and the export goes on. Either it is a deck's own URL
+  (`http://127.0.0.1:5173/renovate`), under which every deck opens as that one, so every other
+  deck fails, writing nothing (next point); or it is a base named like one of the decks
+  (`http://127.0.0.1:5173/renovate/`, a site under `base: '/renovate/'` with a deck
+  `renovate`), and the export runs as under any other base.
 - Whatever the URL, a PDF is written only of the deck asked for: the export page says which deck
   it printed, and a different one (a URL under which another deck opens) fails that deck, writing
   nothing; so does a page that shows the list of decks. An app shell of your own does not say

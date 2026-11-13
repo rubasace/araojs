@@ -9,8 +9,9 @@
 // The project is made in a temporary folder outside the repository: package.json depending on the
 // tarball (vite and vue at the versions of the library's devDependencies), vite.config.js with the
 // arao() plugin, index.html, src/main.js with the default and vigojug themes, the playground's
-// decks, images and snippets as content, and two tiny decks of its own (so that the project has
-// several and / lists them; the second has a duration, the third none). Then, in order:
+// decks, images and snippets as content, and three tiny decks of its own (so that the project has
+// several and / lists them; the second has a duration, the third none, the fourth a file name and
+// a cover heading far too long for its card). Then, in order:
 //   1. npm install
 //   2. vite build                      must pass, and write dist/404.html, a copy of index.html
 //   3. every deck of src/decks, under the dev server (Vue's own warnings only exist in dev) and
@@ -18,12 +19,15 @@
 //      until the hash stops changing; any console warning/error or page error fails, and so does
 //      a deck with no slides
 //   4. the deck selector, under both servers: / lists every deck, each card with its cover drawn
-//      in it (a .ar-slide), its title (the file name in words) unchanged once the covers are in,
-//      the second deck's cover heading under its title, its path as its link's (decoded), every
-//      card as tall as the others, and the page's URL left as it was; each link (the first followed with the keyboard) opens its deck; the links keep
-//      the page's query, and the covers stay covers on /?presenter; ?deck=<name> is moved to
-//      /<name>, keeping the rest of the query and the hash; an unknown path, and an unknown
-//      ?deck=, show the list with a notice and one warning
+//      in it (a .ar-slide), its title the file name in words (TITLES) from the list's first
+//      render (recorded before any cover is drawn) and the same once the covers are in, the
+//      second and the fourth deck's cover heading under its title, its path as its link's
+//      (decoded), every card as tall as the others, its title, cover heading and path on one line
+//      each (the fourth deck's cut), and the page's URL left as it was; each link (the first
+//      followed with the keyboard) opens its deck; the links keep the page's query, and the
+//      covers stay covers on /?presenter; ?deck=<name> is moved to /<name>, keeping the rest of
+//      the query and the hash; an unknown path, and an unknown ?deck=, show the list with a
+//      notice and one warning
 //   5. useDeck()'s face, under the dev server, on the second deck: frozen, its refs read-only all
 //      the way down, setTheme refuses a name the deck has not (one [arao] warning), and in the
 //      presenter view's preview no function acts
@@ -56,14 +60,17 @@
 //                                      a total line all the decks
 //  11. <bin> export --deck <name> --per-slide   the one PDF (exports/<deck>-slides.pdf), with as
 //                                      many pages as slides
-//  12. <bin> export --url <a deck's URL>, against vite preview: refused before anything opens,
-//      naming the base meant; --url <a URL under which the second deck opens>: fails on the deck
-//      printed (the page says which); both exit 1 and write nothing
+//  12. <bin> export --url <a deck's URL>, against vite preview: a warning naming the base meant,
+//      then it fails on the deck printed (the page says which); --url <a URL under which the
+//      second deck opens>: fails on the deck printed, with no warning; both exit 1 and write
+//      nothing
 //  13. a site under a sub-path (vite.config.js with base: '/sub/', then put back): vite build writes
 //      404.html; under vite preview /sub/ lists every deck at /sub/<name>, /sub/?deck=<name> is
 //      moved to /sub/<name>, and the deck opens there; <bin> export --deck <name> prints it
 //  14. the CLI's other cases, each on a decks folder of tiny decks of its own (vite.config.js
 //      rewritten for each, and put back), with --out <folder> and several decks:
+//        --url <vite preview of a site built under /talks/, with a deck Talks>: a warning (the
+//        base is named like a deck), and every deck exported;
 //        --theme vigojug over a deck that lists it and one that does not (a symlink, next to a
 //        dotfile deck that must not count): <deck>-vigojug.pdf and <other>.pdf, whose line says it
 //        fell back; --theme no deck lists: exit 1 and no PDF; a deck that throws at runtime: the
@@ -124,6 +131,29 @@ Deck(:themes="['default']")
     p(v-step="2") Until the presenter sets one.
 </template>
 `]
+
+// a fourth deck of the smoke project only: a file name and a cover heading far too long for the
+// one line each has in its card, which must cut them and stay as tall as the others
+const LONG_HEADING = 'A cover heading just as long, far longer than the one line its card keeps for it under the title'
+const LONG = ['TheDeckWhoseFileName-is_so-long-that-no-card-of-the-list-could-ever-hold-it-on-one-line.vue', `<template lang="pug">
+Deck(:themes="['default']")
+  Slide(layout="cover" title="Long")
+    h1 ${LONG_HEADING}
+  Slide
+    h2 A long name
+    p(v-step="2") Cut in the list, whole here.
+</template>
+`]
+
+// the title each deck's card must show, its file name in words, written out (not worked out the
+// way the engine does): words split at a lower-to-upper case change and at - and _, the first
+// letter upper case
+const TITLES = {
+  Playground: 'Playground',
+  Second: 'Second',
+  Untimed: 'Untimed',
+  [basename(LONG[0], '.vue')]: 'The Deck Whose File Name is so long that no card of the list could ever hold it on one line',
+}
 
 const log = (msg) => console.log(`\n[smoke] ${msg}`)
 const pause = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -215,6 +245,7 @@ try {
   await mkdir(join(project, 'src', 'decks'), { recursive: true })
   await writeFile(join(project, 'src', 'decks', SECOND[0]), SECOND[1])
   await writeFile(join(project, 'src', 'decks', UNTIMED[0]), UNTIMED[1])
+  await writeFile(join(project, 'src', 'decks', LONG[0]), LONG[1])
   const decks = (await readdir(join(project, 'src', 'decks'))).filter((f) => f.endsWith('.vue')).map((f) => basename(f, '.vue'))
   if (decks.length < 2) throw new Error('the project needs two decks or more to test the selector')
   log(`decks: ${decks.join(', ')}`)
@@ -321,6 +352,19 @@ try {
       complaints.push(`console ${m.type()}: ${m.text()}`)
     })
     page.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
+    // each card's link and title as the list first renders them, before the first paint: a cover
+    // is drawn later, once its card is seen and its deck loaded (covers counts any that were)
+    await context.addInitScript(() => {
+      new MutationObserver((_, watch) => {
+        const cards = [...document.querySelectorAll('.ar-decks-card')]
+        if (!cards.length) return
+        watch.disconnect()
+        window.__firstRender = {
+          covers: document.querySelectorAll('.ar-thumb').length,
+          cards: cards.map((c) => [c.querySelector('a')?.getAttribute('href'), c.querySelector('.ar-decks-title')?.textContent.trim() ?? null]),
+        }
+      }).observe(document, { childList: true, subtree: true })
+    })
     const site = new URL(base).pathname
     const links = page.locator('.ar-decks a.ar-decks-link')
     const listed = async (where, query = '') => {
@@ -331,31 +375,70 @@ try {
         complaints.push(`${where}: the list links to ${hrefs.join(', ') || 'nothing'}, not to ${want.join(', ')}`)
       return hrefs
     }
-    // every card has its deck's cover drawn in it; its title, the file name in words, is the one
-    // it had before (no title changes under the reader), and the second deck's card shows its
-    // cover's heading under it; each path shown is its link's, decoded; every card is as tall as
-    // the others; and the page is where it was
+    // every card has its deck's cover drawn in it; its title, the file name in words (TITLES), is
+    // there from the list's first render and stays (no title changes under the reader); the second
+    // and the long deck's cards show their cover's heading under it; each path shown is its
+    // link's, decoded; every card is as tall as the others, its title, cover heading and path on
+    // one line each, the long deck's cut; and the page is where it was
+    const card = (href) => decks.find((d) => href?.split('?')[0] === `${site}${encodeURIComponent(d.toLowerCase())}`)
+    const named = (cards) => cards.map(([, title]) => JSON.stringify(title)).join(', ')
     const covers = async (where) => {
       const was = await page.evaluate(() => location.href)
-      const first = await page.locator('.ar-decks-title').allTextContents()
+      const first = await page.evaluate(() => window.__firstRender ?? null)
+      if (!first) complaints.push(`${where}: no card in the list's first render`)
+      else {
+        if (first.covers) complaints.push(`${where}: ${first.covers} covers drawn in the list's first render: its titles were not read before the covers`)
+        if (first.cards.length !== decks.length) complaints.push(`${where}: ${first.cards.length} cards in the list's first render, not ${decks.length}`)
+        for (const [href, title] of first.cards) {
+          const want = TITLES[card(href)]
+          if (want == null) complaints.push(`${where}: no title written down for the card of ${href} (TITLES)`)
+          else if (title !== want) complaints.push(`${where}: the card of ${href} is titled ${JSON.stringify(title)} in the list's first render, not ${JSON.stringify(want)} (its file name in words)`)
+        }
+      }
       const drawn = await page.waitForFunction((n) => {
         const cards = [...document.querySelectorAll('.ar-decks-card')]
         return cards.length === n && cards.every((c) => c.querySelector('.ar-thumb .ar-slide'))
       }, decks.length, { timeout: 30_000 }).then(() => true, () => false)
       if (!drawn) complaints.push(`${where}: not every card has its cover drawn in it (.ar-thumb .ar-slide)`)
-      const titled = await page.waitForFunction((mark) => [...document.querySelectorAll('.ar-decks-sub')].some((t) => t.textContent.trim() === mark), MARK, { timeout: 10_000 })
-        .then(() => true, () => false)
-      if (!titled) complaints.push(`${where}: no card shows "${MARK}", the second deck's cover heading, under its title (${(await page.locator('.ar-decks-sub').allTextContents()).join(', ')})`)
-      const last = await page.locator('.ar-decks-title').allTextContents()
-      if (JSON.stringify(first) !== JSON.stringify(last)) complaints.push(`${where}: the titles changed from ${first.join(', ')} to ${last.join(', ')}`)
-      const shape = await page.evaluate(() => {
+      const headings = [MARK, LONG_HEADING]
+      const titled = await page.waitForFunction((want) => {
+        const shown = [...document.querySelectorAll('.ar-decks-sub')].map((t) => t.textContent.trim())
+        return want.every((w) => shown.includes(w))
+      }, headings, { timeout: 10_000 }).then(() => true, () => false)
+      if (!titled) complaints.push(`${where}: not every cover heading of ${headings.map((h) => `"${h}"`).join(', ')} shows under its card's title (${(await page.locator('.ar-decks-sub').allTextContents()).join(', ')})`)
+      const now = await page.locator('.ar-decks-card').evaluateAll((cs) => cs.map((c) => [c.querySelector('a')?.getAttribute('href'), c.querySelector('.ar-decks-title')?.textContent.trim() ?? null]))
+      if (first && JSON.stringify(now) !== JSON.stringify(first.cards)) complaints.push(`${where}: the titles changed once the covers were drawn, from ${named(first.cards)} to ${named(now)}`)
+      const long = `${site}${encodeURIComponent(basename(LONG[0], '.vue').toLowerCase())}`
+      const shape = await page.evaluate((long) => {
         const cards = [...document.querySelectorAll('.ar-decks-card')]
-        const heights = cards.map((c) => Math.round(c.getBoundingClientRect().height * 10) / 10)
+        const tenth = (n) => Math.round(n * 10) / 10
+        const heights = cards.map((c) => tenth(c.getBoundingClientRect().height))
+        // what each card's content takes, its top to its path's line: the grid stretches the cards
+        // of a row to its tallest, so a taller one shows here even with no other row to differ from
+        const inner = cards.map((c) => tenth(c.querySelector('.ar-decks-foot').getBoundingClientRect().bottom - c.getBoundingClientRect().top))
         const paths = cards.map((c) => [c.querySelector('.ar-decks-path').textContent.trim(), decodeURIComponent(c.querySelector('a').getAttribute('href').split('?')[0])])
-        return { heights, wrong: paths.filter(([shown, link]) => shown !== link) }
-      })
+        // the lines a text is laid out on: the distinct tops of its boxes (cut or not, there they all are)
+        const lines = (el) => {
+          const r = document.createRange()
+          r.selectNodeContents(el)
+          return new Set([...r.getClientRects()].filter((b) => b.width && b.height).map((b) => Math.round(b.top))).size
+        }
+        const parts = ['.ar-decks-title', '.ar-decks-sub', '.ar-decks-path']
+        const wrapped = cards.flatMap((c) => parts.map((p) => [c.querySelector('a').getAttribute('href'), p, c.querySelector(p)])
+          .filter(([, , el]) => el && lines(el) > 1).map(([href, p, el]) => `${p} of ${href} (${lines(el)} lines)`))
+        const longCard = cards.find((c) => c.querySelector('a').getAttribute('href').split('?')[0] === long)
+        const whole = longCard && parts.filter((p) => {
+          const el = longCard.querySelector(p)
+          return !el || el.scrollWidth <= el.clientWidth
+        })
+        return { heights, inner, wrong: paths.filter(([shown, link]) => shown !== link), wrapped, whole }
+      }, long)
       // (a pixel apart at most: the grid's columns round their widths, and so their covers' heights)
       if (Math.max(...shape.heights) - Math.min(...shape.heights) > 1) complaints.push(`${where}: the cards are not as tall as each other (${shape.heights.join(', ')} px)`)
+      if (Math.max(...shape.inner) - Math.min(...shape.inner) > 1) complaints.push(`${where}: the cards' contents are not as tall as each other (${shape.inner.join(', ')} px): a gap inside the shorter ones of a row`)
+      if (shape.wrapped.length) complaints.push(`${where}: text on more than its one line: ${shape.wrapped.join(', ')}`)
+      if (!shape.whole) complaints.push(`${where}: no card links to ${long}, the long deck`)
+      else if (shape.whole.length) complaints.push(`${where}: the long deck's card shows ${shape.whole.join(', ')} whole, not cut on its one line`)
       for (const [shown, link] of shape.wrong) complaints.push(`${where}: a card shows the path ${shown}, its link goes to ${link}`)
       if (await page.locator('.ar-decks :is(.ar-presenter, .ar-controls, .ar-export)').count()) complaints.push(`${where}: a cover is drawn as something else than a thumbnail`)
       await pause(300)
@@ -1027,24 +1110,29 @@ throw new Error('smoke: this deck throws as it is drawn')
     fail(`export --per-slide of ${one}: ${e.message}`)
   }
 
-  // --url is the site's base, never a deck's: a deck's own URL is refused before anything opens,
-  // naming the base it meant; a URL under which another deck opens fails on the deck printed (the
-  // page says which); either way exit 1 and nothing written. Against vite preview of the build
+  // --url is the site's base, never a deck's: a deck's own URL gets a warning naming the base it
+  // would mean, and then fails on the deck printed (the page says which), as does a URL under
+  // which another deck opens (with no warning: its last segment is no deck's); either way exit 1
+  // and nothing written. Against vite preview of the build. (A base named like a deck exports
+  // with the warning: the CLI's cases, below.)
   const deckName = basename(SECOND[0], '.vue')
   log(`${BIN} export --url <a deck's URL> --deck ${other}`)
   try {
     const base = await serve('preview')
     const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const printed = new RegExp(`printed the deck "${deckName}", not ${esc(other)}: nothing written`)
+    const warned = (url) => new RegExp(`--url ${esc(url)} ends in the name of the deck "${deckName}"\\. If it is that deck's own URL, give the site's base instead, --url ${esc(base)} `)
     const tries = [
-      { url: new URL(second, base).href, re: new RegExp(`is the URL of the deck "${deckName}", not the site's: give the site's base, --url ${esc(base)} `) },
-      { url: new URL(`${second}/x/`, base).href, re: new RegExp(`printed the deck "${deckName}", not ${esc(other)}: nothing written`) },
+      { url: new URL(second, base).href, res: [warned(new URL(second, base).href), printed] },
+      { url: new URL(`${second}/x/`, base).href, res: [printed], not: /ends in the name of the deck/ },
     ]
     try {
       for (const t of tries) {
         const { code, err } = await exec('npx', ['--no-install', BIN, 'export', '--url', t.url, '--deck', other, '--out', 'guard/'], project)
         const what = `export --url ${t.url} --deck ${other}`
         if (code !== 1) fail(`${what}: exited with ${code}, not 1`)
-        if (!t.re.test(err)) fail(`${what}: no message matching ${t.re} on its stderr`)
+        for (const re of t.res) if (!re.test(err)) fail(`${what}: no message matching ${re} on its stderr`)
+        if (t.not?.test(err)) fail(`${what}: a message matching ${t.not} on its stderr`)
         const made = await readdir(join(project, 'guard')).catch(() => [])
         if (made.length) fail(`${what}: wrote ${made.join(', ')}`)
       }
@@ -1082,8 +1170,14 @@ throw new Error('smoke: this deck throws as it is drawn')
   }
 
   // the CLI's other cases: each a decks folder of tiny decks (src/cases/<case>), vite.config.js
-  // pointed at it, one export into a folder of its own (--out <case>/)
+  // pointed at it, one export into a folder of its own (--out <case>/). A case with a base is built
+  // under it and printed from vite preview there (--url <its base>)
   const cases = [
+    { name: 'talks', base: 'talks', args: [],
+      files: { 'Talks.vue': tiny('Talks', ['default']), 'Second.vue': tiny('Second', ['default']) },
+      code: 0, pdfs: { 'talks.pdf': 3, 'second.pdf': 3 },
+      lines: [/^talks\/talks\.pdf: /m, /^2 of 2 decks exported, 6 pages$/m],
+      errs: [/--url http:\/\/\S+\/talks\/ ends in the name of the deck "Talks"\. If it is that deck's own URL, give the site's base instead, --url http:\/\/\S+\/ .*if the site's base is named like the deck, nothing to do/] },
     { name: 'theme', args: ['--theme', 'vigojug'],
       files: { 'Second.vue': tiny('Second', ['default']), '.Hidden.vue': tiny('Hidden', ['default', 'vigojug']) },
       link: { 'Third.vue': tiny('Third', ['default', 'vigojug']) },
@@ -1105,7 +1199,7 @@ throw new Error('smoke: this deck throws as it is drawn')
   ]
   try {
     for (const c of cases) {
-      log(`${BIN} export ${[...c.args, '--out', `${c.name}/`].join(' ')} (${c.name})`)
+      log(`${BIN} export ${[...c.args, ...(c.base ? ['--url', `<vite preview>/${c.base}/`] : []), '--out', `${c.name}/`].join(' ')} (${c.name})`)
       const folder = `src/cases/${c.name}`
       await mkdir(join(project, folder), { recursive: true })
       for (const [name, text] of Object.entries(c.files)) await writeFile(join(project, folder, name), text)
@@ -1114,8 +1208,21 @@ throw new Error('smoke: this deck throws as it is drawn')
         await writeFile(join(project, 'src/cases', name), text)
         await symlink(join(project, 'src/cases', name), join(project, folder, name))
       }
-      await writeFile(join(project, 'vite.config.js'), asIs['vite.config.js'].replace('arao()', `arao({ decks: '${folder}' })`))
-      const { code, out, err } = await exec('npx', ['--no-install', BIN, 'export', ...c.args, '--out', `${c.name}/`], project)
+      let config = asIs['vite.config.js'].replace('arao()', `arao({ decks: '${folder}' })`)
+      if (c.base) config = config.replace('defineConfig({', `defineConfig({ base: '/${c.base}/',`)
+      await writeFile(join(project, 'vite.config.js'), config)
+      const url = []
+      if (c.base) {
+        await run(process.execPath, [viteBin, 'build'], project)
+        url.push('--url', await serve('preview', `${c.base}/`))
+      }
+      let said
+      try {
+        said = await exec('npx', ['--no-install', BIN, 'export', ...c.args, ...url, '--out', `${c.name}/`], project)
+      } finally {
+        if (c.base) await stop()
+      }
+      const { code, out, err } = said
       const what = `export (${c.name})`
       if (code !== c.code) fail(`${what}: exited with ${code}, not ${c.code}`)
       for (const [file, want] of Object.entries(c.pdfs)) {
