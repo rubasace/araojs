@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 // docs/assets/hero.gif, the README's animation: a slide written in seconds. On the left the deck's
 // source is typed, highlighted; on the right the deck, live on the dev server, follows each saved
-// line (Vite's hot reload, the real thing); then it is presented: two steps, and another theme.
+// line (Vite's hot reload, the real thing), in the default theme.
 //
 //   npm run hero-gif
 //
-// The deck is written line by line into a temporary decks folder (with docs/examples/themes), served
+// The deck is written line by line into a temporary decks folder, served
 // on the library's source (scripts/docs-server.mjs) and drawn in an iframe of a page of its own.
 // Each frame is a screenshot; ffmpeg (on the PATH, or FFMPEG=/path/to/ffmpeg) makes the GIF with a
 // palette of its own (palettegen/paletteuse). Run on demand, not in CI, and commit the GIF.
 import { execFileSync } from 'node:child_process'
-import { copyFileSync, cpSync, mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createHighlighter } from 'shiki'
@@ -24,17 +24,11 @@ const TAIL = '</template>\n'
 const LINES = [
   '    h2 Ship a talk',
   '    Cols',
-  '      Center',
-  '        Icon(name="lucide:file-code" size="160")',
-  '        h3 One Vue file',
-  '      Center(v-step="2")',
-  '        Icon(name="lucide:monitor" size="160")',
-  '        h3 Any screen',
-  '      Center(v-step="3")',
-  '        Icon(name="lucide:printer" size="160")',
-  '        h3 And a PDF',
+  '      h3 #[Icon(name="lucide:file-code")] One Vue file',
+  '      h3 #[Icon(name="lucide:monitor")] Any screen',
+  '      h3 #[Icon(name="lucide:printer")] And a PDF',
 ]
-const W = 878
+const W = 940
 const H = 352
 
 const work = mkdtempSync(join(tmpdir(), 'arao-hero-'))
@@ -42,7 +36,6 @@ const decks = join(work, 'decks')
 const frames = join(work, 'frames')
 mkdirSync(decks)
 mkdirSync(frames)
-cpSync(join(REPO, 'docs/examples/themes'), join(decks, 'themes'), { recursive: true })
 const deckFile = join(decks, 'talk.vue')
 writeFileSync(deckFile, HEAD + TAIL)
 
@@ -73,14 +66,7 @@ try {
     const before = await slideHtml()
     writeFileSync(deckFile, HEAD + text + '\n' + TAIL)
     for (let t = 0; t < 40 && (await slideHtml()) === before; t++) await tab.waitForTimeout(100)
-    await deck.evaluate(() => (location.hash = '#/1/99')) // the author looks at the last step
     await settle(deck, 450)
-  }
-  const key = async (k, label, hold) => {
-    await tab.evaluate((label) => window.setHint(label), label)
-    await deck.evaluate((k) => window.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true })), k)
-    await tab.waitForTimeout(500)
-    await shot(hold)
   }
 
   await code('')
@@ -99,16 +85,7 @@ try {
     await shot(3)
   }
   await code(typed, false)
-  await shot(14)
-
-  // present it: back to step 1, two steps, then the next theme
-  await tab.evaluate(() => window.setHint('Home &nbsp;step 1'))
-  await deck.evaluate(() => (location.hash = '#/1/1'))
-  await settle(deck, 450)
-  await shot(8)
-  await key('ArrowRight', '→ &nbsp;next step', 9)
-  await key('ArrowRight', '→ &nbsp;next step', 12)
-  await key('t', 't &nbsp;next theme', 22)
+  await shot(36)
 } finally {
   await browser.close()
   await server.close()
@@ -131,13 +108,10 @@ function page() {
          display: flex; gap: 14px; padding: 16px; box-sizing: border-box; }
   .pane { display: flex; flex-direction: column; gap: 6px; }
   .label { height: 16px; white-space: nowrap; }
-  .editor { width: 352px; flex: 1; background: #24292e; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px #0008; }
+  .editor { width: 414px; flex: 1; background: #24292e; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px #0008; }
   .editor pre { margin: 0; padding: 12px; font: 11px/1.5 "DejaVu Sans Mono", ui-monospace, monospace; background: none !important; }
   .caret { display: inline-block; width: 1px; height: 1.2em; margin-left: 1px; vertical-align: text-bottom; background: #e1e4e8; }
   iframe { width: 480px; height: 270px; border: 0; border-radius: 6px; box-shadow: 0 10px 30px #0008; background: #000; }
-  .hint { height: 18px; }
-  .hint span { display: inline-block; padding: 1px 8px; border: 1px solid #3c4252; border-radius: 6px; color: #eceef2; background: #1c1f26; }
-  .hint:empty { visibility: hidden; }
 </style>
 <div class="pane">
   <div class="label">src/decks/Talk.vue</div>
@@ -146,7 +120,6 @@ function page() {
 <div class="pane">
   <div class="label">localhost:5173/talk</div>
   <iframe src="/talk"></iframe>
-  <div class="hint" id="hint"></div>
 </div>
 <script>
   window.setCode = (html, line, caret) => {
@@ -154,7 +127,6 @@ function page() {
     el.innerHTML = html
     if (caret) el.querySelectorAll('.line')[line]?.append(Object.assign(document.createElement('span'), { className: 'caret' }))
   }
-  window.setHint = (text) => { document.getElementById('hint').innerHTML = text ? '<span>' + text + '</span>' : '' }
 </script>
 `
 }
