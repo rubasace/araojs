@@ -21,7 +21,6 @@ export default defineConfig({
 | `images` | `'src/images'` | `Img(file)`, `Slide(bg)` | `png jpg jpeg gif webp avif svg` (any case), as URLs, eager |
 | `themes` | `'src/themes'` | `Deck(:themes)`, `?theme=`, `t` | the theme sources, one or a list, in order: a folder (`'src/themes'`, `'./themes'`) or an installed package's name (a bare lowercase name, `'arao-themes'`, `'@acme/arao-themes'`: its `themes/` folder, or the folder inside it that its `package.json` names in `"arao": { "themes": "<folder>" }`); anything that is not a bare lowercase name is a folder. Symlinks are resolved, and a folder named twice counts once. The `.css` files directly in each folder are loaded after the engine's CSS; their `[data-theme="<name>"]` selectors, and those of the local partials they `@import`, name the themes ([Themes](../guide/themes.md)). A package not installed, or one that gives no theme, stops the build |
 | `icons` | `[]` | `Icon` | names (`'lucide:sun'`) built in even when the source does not spell them out (built at runtime); one that is in no installed set is reported when the module is built |
-| `shortcuts` | `'src/shortcuts'` (`.ts`, else `.js`) | the deck's keys | the project's key map, a default export (`defineShortcuts({ … })`), laid over the engine's keys; optional: without the file the defaults apply ([Your own keys](../guide/presenting.md#your-own-keys)). A file named explicitly that does not exist is reported when Vite starts |
 | `vue` | `{}` | — | options for `@vitejs/plugin-vue`, passed through |
 
 - A folder is relative to the Vite root, or absolute. One outside the root (`../shared/images`)
@@ -36,6 +35,10 @@ export default defineConfig({
   `virtual:arao/themes` exports `themes` (the theme names, source after source, sorted in each)
   and `themeSources` (the sources, as messages name them), and `virtual:arao/theme-styles`
   imports every source's CSS files, in order;
+  `virtual:arao/shortcuts` exports `shortcuts`, the key map in effect (key → command): the
+  engine's keys with the project's optional `src/shortcuts.ts` (else `src/shortcuts.js`) over them,
+  checked when Vite starts, which fails on a mistake naming the file
+  ([Your own keys](../guide/presenting.md#your-own-keys));
   `virtual:arao/icons` exports `icons` (`prefix:name` → `{ body, width, height }`, only the icons
   the source uses, plus the `icons` option).
 - It also keeps `araojs` out of Vite's dependency prebundling (it imports those virtual

@@ -19,7 +19,7 @@ declare module 'virtual:arao/themes' {
   export const themeSources: string[]
 }
 declare module 'virtual:arao/shortcuts' {
-  export const shortcuts: Record<string, string | null | undefined>
+  export const shortcuts: Readonly<Record<string, import('./core/shortcuts').Command>>
 }
 declare module 'virtual:arao/theme-styles'
 declare module '*.vue' {

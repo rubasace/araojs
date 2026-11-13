@@ -146,10 +146,11 @@ const MARK = 'A second deck'
 const THEME = 'sample'
 const SAMPLE = { bg: 'rgb(16, 32, 48)', accent: 'rgb(233, 30, 99)' }
 // the smoke project's shortcuts file (src/shortcuts.ts, loaded by the plugin): an added key in two
-// cases (x, X), a code (KeyQ, the q key), a default remapped (End → first) and one turned off (PageUp)
+// cases (x, X), a code against a key for the same press (KeyQ → prev wins over q → next), a default
+// remapped (End → first) and one turned off (PageUp)
 const SHORTCUTS = `import { defineShortcuts } from '${PKG}'
 
-export default defineShortcuts({ x: 'next', KeyQ: 'prev', End: 'first', PageUp: null })
+export default defineShortcuts({ x: 'next', KeyQ: 'prev', q: 'next', End: 'first', PageUp: null })
 `
 const BRAND = ['brand.css', `/* the smoke project's own theme: a [data-theme] rule in src/themes, nothing to import */
 @import './parts/extra.css';
@@ -424,6 +425,29 @@ try {
       await rm(join(project, 'src', 'dupes'), { recursive: true, force: true })
     }
     await run(process.execPath, [viteBin, 'build'], project) // the project's own build back in dist/
+  }
+
+  // a shortcuts file the build turns down (vite/shortcuts.js, checked when Vite starts): a reserved
+  // key, a value that is no command, two spellings of one key; each stops vite build naming the file
+  {
+    const file = join(project, 'src', 'shortcuts.ts')
+    const cases = [
+      { map: "{ Escape: 'next' }", says: /\[arao\] src\/shortcuts\.ts: "Escape" is reserved/ },
+      { map: "{ z: 'nope' }", says: /\[arao\] src\/shortcuts\.ts: "z" → "nope" is no command/ },
+      { map: "{ Space: 'next', ' ': 'prev' }", says: /\[arao\] src\/shortcuts\.ts: "Space" and " " are the same key/ },
+    ]
+    try {
+      for (const c of cases) {
+        await writeFile(file, `export default ${c.map}\n`)
+        const { code, out, err } = await exec(process.execPath, [viteBin, 'build'], project)
+        if (code === 0) fail(`vite build with shortcuts ${c.map}: passed`)
+        else if (!c.says.test(out + err)) fail(`vite build with shortcuts ${c.map}: nothing matching ${c.says}`)
+        else console.log(`  shortcuts ${c.map}: the build stops, naming the file`)
+      }
+    } finally {
+      await writeFile(file, SHORTCUTS)
+    }
+    await run(process.execPath, [viteBin, 'build'], project)
   }
 
   browser = await chromium.launch({ executablePath: process.env.ARAO_CHROMIUM || undefined })
@@ -773,11 +797,20 @@ try {
       await page.waitForFunction(() => location.hash.startsWith('#/3/'), null, { timeout: 5_000 }).catch(() => {})
       await pause(200)
       s = await state()
-      if (!s.hash.startsWith('#/3/') || s.list) complaints.push(`3 then Enter: ${s.hash}, list ${s.list ? 'open' : 'closed'}, not #/3/ and closed`)
-      // a number that is no slide does nothing; Escape clears a typed number (Enter then moves on)
+      if (s.hash !== '#/3/1' || s.list) complaints.push(`3 then Enter: ${s.hash}, list ${s.list ? 'open' : 'closed'}, not #/3/1 and closed (Enter must not also move on)`)
+      // a number that is no slide does nothing
       await page.keyboard.press('9'); await page.keyboard.press('9'); await page.keyboard.press('Enter')
       await pause(300)
-      if (!(await state()).hash.startsWith('#/3/')) complaints.push(`99 then Enter moved the deck to ${(await state()).hash}`)
+      if ((await state()).hash !== '#/3/1') complaints.push(`99 then Enter moved the deck to ${(await state()).hash}`)
+      // Backspace deletes a digit: 4, Backspace, 2, Enter → slide 2
+      for (const k of ['4', 'Backspace', '2', 'Enter']) await page.keyboard.press(k)
+      await page.waitForFunction(() => location.hash === '#/2/1', null, { timeout: 5_000 }).catch(() => {})
+      if ((await state()).hash !== '#/2/1') complaints.push(`4, Backspace, 2, Enter: ${(await state()).hash}, not #/2/1`)
+      // Escape clears a typed number: 5, Escape, Enter is a plain next (one step on, not slide 5)
+      await page.keyboard.press('5'); await page.keyboard.press('Escape'); await page.keyboard.press('Enter')
+      await pause(300)
+      s = await state()
+      if (s.hash === '#/2/1' || s.hash.startsWith('#/5/')) complaints.push(`5, Escape, Enter: ${s.hash}, not one step past #/2/1`)
       // the project's src/shortcuts.ts (SHORTCUTS): x and X add next, the code KeyQ (q) prev,
       // End remapped to first, PageUp turned off (the browser's: not prevented, no move)
       await page.keyboard.press('Home')
@@ -790,10 +823,9 @@ try {
       await page.keyboard.press('Shift+X')
       await pause(250)
       if ((await at()) === afterX) complaints.push('shortcuts file: X (Shift+x, letters match either case) does not move the deck')
-      const beforeQ = await at()
       await page.keyboard.press('q')
       await pause(250)
-      if ((await at()) === beforeQ) complaints.push('shortcuts file: q (code KeyQ → prev) does not move the deck')
+      if ((await at()) !== afterX) complaints.push(`shortcuts file: q (code KeyQ → prev, over q → next) leaves ${await at()}, not ${afterX}`)
       await page.keyboard.press('End')
       await page.waitForFunction(() => location.hash === '#/1/1', null, { timeout: 5_000 }).catch(() => {})
       if ((await at()) !== '#/1/1') complaints.push(`shortcuts file: End (remapped → first) leaves ${await at()}, not #/1/1`)

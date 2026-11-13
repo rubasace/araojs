@@ -42,8 +42,8 @@ its own (`createApp(MyApp).use(Arao)`) provides no route: then `location.pathnam
 ## Views
 
 `Deck.vue` makes the deck (`createDeck(props)`), turns its shortcuts on (`useDeckShortcuts(deck)`)
-and shows one view, by the URL. A key runs a command (`core/shortcuts.ts`: the engine's map, with
-the project's `src/shortcuts.ts` over it); whoever does a command registers it
+and shows one view, by the URL. A key runs a command (the engine's map, with the project's
+`src/shortcuts.ts` over it, built by the Vite plugin: `vite/shortcuts.js`); whoever does a command registers it
 (`useShortcuts`), and calls the deck directly, as its buttons do: the deck registers the moves,
 the theme, fullscreen and the presenter window; the controls register `menu` (their jump list).
 Typing a slide number and `Enter` jumps with nothing on screen (`useSlideNumber`). Touch (the
@@ -126,9 +126,9 @@ exposes anything, and `Deck` holds no ref to its view. `v-step` finds its slide 
 |---|---|
 | `useDeckSync(stage, …)` | every window of the deck in step through core/sync.ts: position, theme, timer, the duration set in the presenter view (the last two kept through a reload) |
 | `usePresenterWindow()` | opens the presenter window or brings it forward; `blocked` when the browser blocks it |
-| `useShortcuts({ command: fn })` | the shortcuts' registry: one key map (`core/shortcuts.ts`: the engine's defaults with the project's `src/shortcuts.ts` laid over them, built when the first command registers), one listener on the window, one owner per command (registering a command twice throws). Each caller registers the commands it does: `Deck` the moves, `Controls` `menu` |
+| `useShortcuts({ command: fn })` | the shortcuts' registry: one key map (the engine's defaults with the project's `src/shortcuts.ts` laid over them, checked and built by the Vite plugin when it starts: `vite/shortcuts.js`, rules in `vite/shortcut-rules.js`; read by `core/shortcuts.ts`), one listener on the window, one owner per command (registering a command twice throws). Each caller registers the commands it does: `Deck` the moves, `Controls` `menu` |
 | `useDeckShortcuts(deck)` | called by `Deck.vue` (audience and presenter only): registers next, prev, first, last, theme, fullscreen, presenter (not in the presenter view) on the deck's own functions, turns on `useSlideNumber`, and in the audience view reads edge taps and swipes |
-| `useSlideNumber({ go, total })` | digits, then `Enter`, jump to that slide with nothing on screen; `Esc` or 2 s clear; the digits and `Esc` are reserved keys |
+| `useSlideNumber({ go, total })` | digits (by key or by code), then `Enter`, jump to that slide with nothing on screen; `Backspace` deletes a digit; `Esc`, another key or 2 s clear; the digits and `Esc` are reserved keys |
 | `useKeyboard(handlers)` | key → handler on the window (VueUse `onKeyStroke`), with the rules every key of the deck keeps: keys inside a text field or an element marked `data-ar-own-keys` (the presenter's duration editor) are left to it, so are Ctrl/Cmd/Alt + key, a focused button keeps Space and Enter. Its rules (`forDeck`) are shared by `useShortcuts` and `useSlideNumber`; `Controls` uses it for `Escape` |
 | `useTouchGestures(el, { tap, swipe })` | taps, by zone (left quarter, right quarter, middle), and swipes, from pointer events: touch and pen (VueUse's `useSwipe` reads touch events only, so the pen would lose its swipes). Used by `useShortcuts` (edges, swipes) and `useAutoHide` (the middle) |
 | `useAutoHide({ after, tap })` | `visible`: shown on a mouse move, hidden after `after` ms without one; optionally a tap in the middle shows it for `tap` ms or hides it; ignores a tap's echo mousemove. The controls' auto-hide and the audience view's cursor (VueUse's `useIdle` counts keys too, with a fixed timeout and no tap) |

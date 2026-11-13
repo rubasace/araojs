@@ -530,7 +530,7 @@ export const ${name}Dir = ${JSON.stringify(folders[name])}`
     },
   }
 
-  return [vue(vueWithPug), plugin, shortcuts()]
+  return [vue(vueWithPug), plugin, shortcuts(PACKAGE)]
 }
 
 export { arao }

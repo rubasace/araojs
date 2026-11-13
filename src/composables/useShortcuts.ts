@@ -1,6 +1,6 @@
 import { getCurrentInstance, onBeforeUnmount, type ShallowRef } from 'vue'
 import { shortcuts as projectShortcuts } from 'virtual:arao/shortcuts'
-import { buildShortcuts, commandFor, type Command } from '../core/shortcuts'
+import { commandFor, type Command } from '../core/shortcuts'
 import type { DeckFace, DeckMode } from '../state/deck'
 import type { ThemeControls } from '../state/theme'
 import { forDeck } from './useKeyboard'
@@ -17,9 +17,9 @@ import { useTouchGestures, type Zone } from './useTouchGestures'
 //       the deck's commands (next, prev, first, last, theme, fullscreen, presenter), the slide
 //       number (useSlideNumber) and touch. Only in the audience and presenter views: the export
 //       and the thumbnails have none
-// One map (built when the first command registers: a mistake in the project's file throws then,
-// when the deck starts), one listener on the window and one registry per window: a press runs at
-// most one thing. A command has one owner: registering one that is already registered throws
+// One map (the Vite plugin checked and built it when it started: vite/shortcuts.js), one listener
+// on the window and one registry per window: a press runs at most one thing. A held key repeats
+// only next and prev (holding t does not spin through the themes). A command has one owner: registering one that is already registered throws
 // (two components doing "next" would both run on one key). The deck owns the moves; Controls
 // owns menu (its jump list). Escape and the digits are not commands (core/shortcuts.ts).
 // Keys keep the deck's rules (useKeyboard.ts forDeck): not in text fields, not with Ctrl/Cmd/Alt.
@@ -28,20 +28,20 @@ import { useTouchGestures, type Zone } from './useTouchGestures'
 // controls' (their auto-hide). The presenter view reads no touch.
 export type CommandHandlers = Partial<Record<Command, (() => void) | null | undefined>>
 
-let map: ReadonlyMap<string, Command> | null = null
+const REPEATS: ReadonlySet<Command> = new Set(['next', 'prev'])
 const registry = new Map<Command, () => void>()
 
 function onKey(e: KeyboardEvent) {
   if (!forDeck(e)) return
-  const command = commandFor(map!, e)
+  const command = commandFor(projectShortcuts, e)
   const run = command && registry.get(command)
   if (!run) return
+  if (e.repeat && !REPEATS.has(command)) return e.preventDefault()
   run()
   e.preventDefault()
 }
 
 export function useShortcuts(handlers: CommandHandlers) {
-  map ??= buildShortcuts(projectShortcuts)
   const mine: Command[] = []
   for (const [command, run] of Object.entries(handlers) as [Command, (() => void) | null | undefined][]) {
     if (!run) continue
