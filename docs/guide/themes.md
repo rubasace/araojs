@@ -62,11 +62,11 @@ Every token, with its default: [Theme tokens](../reference/theme-tokens.md).
 
 ## Where themes are found
 
-A project theme is a CSS rule `[data-theme="<name>"] { --ar-…: …; }` in a CSS file of the
-project's themes folder (`src/themes`; the [plugin](../reference/vite-plugin.md)'s `themes` option). It declares
-only the tokens it changes, over the defaults. The plugin loads every CSS file directly in that
-folder, after the engine's CSS, with nothing to import, and names the project's themes by their
-selectors:
+A theme is a CSS rule `[data-theme="<name>"] { --ar-…: …; }` in a CSS file of a **theme source**:
+the project's themes folder (`src/themes`), or any folder or package named in the
+[plugin](../reference/vite-plugin.md)'s `themes` option. It declares only the tokens it changes,
+over the defaults. The plugin loads every CSS file directly in each source's folder, after the
+engine's CSS, with nothing to import, and names the themes by their selectors:
 
 - a theme's name is the one in `[data-theme="<name>"]` (quoted or not), not the file's: one file
   may hold several themes (`[data-theme="venue"]` and `[data-theme="venue-dark"]`), and rules for
@@ -84,26 +84,36 @@ selectors:
 - a file added, removed or renamed while `npm run dev` runs is picked up, and so is an edit of a
   partial it imports (the page reloads when the theme names change).
 
-**Where a theme can come from.** Two places:
+**Where a theme can come from.** Only from the theme sources, `arao({ themes })` in
+`vite.config.js`: one, or a list, in order (default `'src/themes'`):
 
-1. **`src/themes`** (the plugin's `themes` folder): loaded with nothing to import, and offered by
-   every deck without `themes`. The usual place.
-2. **Any other stylesheet the project imports itself**: a CSS file in `src/styles` imported by
-   `src/main.js` (after `'araojs'`, so that it comes after the engine's CSS, as `src/themes`
-   does), a package's theme (`import 'some-theme/theme.css'`), a `.scss` file (with `sass`
-   installed), a deck's own `<style>`, or a partial imported in a way the plugin does not follow.
-   The plugin does not read these, so a deck without `themes` does not offer them; a deck that
-   lists the name in `themes` wears it all the same, and `arao export --theme` takes it: before
-   skipping a listed name, the engine looks for a `[data-theme="<name>"]` selector (outside
-   `:not(…)`) in every stylesheet the page has loaded, inside `@media`, `@supports`, `@layer`,
-   `@container`, nested rules and `@import`-ed sheets (a sheet of another origin that does not let
-   its rules be read is passed over). It looks when the deck's list is read, as the deck opens:
-   a stylesheet loaded later does not count.
+```js
+// vite.config.js
+import arao from 'araojs/vite'
+export default defineConfig({
+  plugins: [arao({ themes: ['src/themes', 'src/styles/venues', 'arao-themes'] })],
+})
+```
+
+- **a folder**: a path from the project's root, or absolute (`'src/themes'`, `'../shared/themes'`).
+  A folder right at the root needs `./` (`'./themes'`): a bare name is read as a package's.
+- **a package**: an npm name (`'arao-themes'`, `'@acme/arao-themes'`), installed in the project
+  (`npm i -D arao-themes`). A theme package publishes plain CSS files, no build step needed
+  (minified is fine), in a `themes/` folder at its root; one that keeps them elsewhere says so in
+  its `package.json`: `"arao": { "themes": "dist" }`. A package that is not installed, or whose
+  folder gives no theme, stops the build with an `[arao]` error.
+
+Every theme the sources give is offered, after `default`, source after source (alphabetical in
+each). A name two sources give is offered once, where it comes first, and Vite warns; both files
+are loaded, source after source, so the later source's rules win where both set a token. A CSS
+file the project imports itself (from `src/main.js`, a `.scss` file, a deck's own `<style>`) is
+no theme source: its rules apply, but a `[data-theme]` in it is not a theme a deck can list.
+Put its folder, or its package, in `themes` instead.
 
 `Deck(:themes)` picks the themes a deck can wear, in its order (the first is the one it opens in);
 without it, the deck offers every theme there is: `default`, then the project's in alphabetical
-order. A name there that is neither `default`, nor a project theme, nor a theme some stylesheet
-of the page declares (above), is skipped, with one `[arao]` warning. `?theme=<name>` and `t`
+order. A name there that is neither `default` nor a theme a source gives (above) is skipped,
+with one `[arao]` warning. `?theme=<name>` and `t`
 (or the controls' picker) change the theme while presenting; `useDeck().themes` is the deck's
 list.
 

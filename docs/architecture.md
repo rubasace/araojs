@@ -213,18 +213,21 @@ CSS; the library build fails if that import is not the entry's last, after `./ar
 
 ## Themes
 
-The `default` theme is the defaults in `tokens.css`, and has no file. A project's themes are the
-CSS files directly in its themes folder (`src/themes`, the plugin's `themes` option), which the
-Vite plugin turns into two virtual modules: `virtual:arao/theme-styles` imports them all (an eager
-glob: Vite follows files added or removed), and `virtual:arao/themes` exports the names their
+The `default` theme is the defaults in `tokens.css`, and has no file. The other themes are the
+CSS files directly in the folders of the theme sources (the plugin's `themes` option: folders and
+installed packages, in order; default `src/themes`), which the Vite plugin turns into two virtual
+modules: `virtual:arao/theme-styles` imports them all, source after source (an eager glob per
+folder: Vite follows files added or removed), and `virtual:arao/themes` exports the names their
 `[data-theme="<name>"]` selectors give, sorted (the plugin reads the files and the local partials
 they `@import`, skips selectors inside `:not(…)`, resolves CSS escapes and warns about names with
 white space; when an edit changes those names in the dev server, it reloads the module and the
-page). `state/deck.ts` resolves a deck's list: `Deck(:themes)` without the names that are no
-theme (one warning), or, without it, `default` and then every project theme. A listed name the
-plugin does not know is looked for in the page's stylesheets (`document.styleSheets`, their
-grouping rules and `@import`s) before it is skipped: a theme the project imports itself, from
-outside the themes folder, is worn when a deck lists it, and the export view, which checks
-`--theme` against the same list, prints it. The library ships no theme and no `themes/` export.
+page), source after source, each name once (a name a later source gives again warns). A package
+source is resolved at config time (node_modules, from the root up; its `themes/` folder or the
+one its `package.json` names under `"arao"`), and one not installed or giving no theme stops
+Vite. `state/theme.ts` resolves a deck's list: `Deck(:themes)` without the names that are no
+theme (one warning), or, without it, `default` and then every theme the sources give. Nothing
+is read from the page's stylesheets: a name the plugin does not know is no theme, and the export
+view, which checks `--theme` against the same list, refuses it. The library ships no theme and
+no `themes/` export.
 The deck selector, like the presenter view, sits in no theme: it reads its `--ar-selector-*`
 tokens at the root, and each cover wears its deck's theme.

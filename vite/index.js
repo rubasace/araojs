@@ -4,11 +4,12 @@
 // It brings @vitejs/plugin-vue along (with Pug for the templates), so the project adds neither;
 // Vue's options go in arao({ vue: { … } }). Do not add vue() as well: the plugin would run twice.
 //
-// It exposes four project folders as virtual modules, so slides name files and need no imports:
+// It exposes the project's folders as virtual modules, so slides name files and need no imports:
 //   decks     /talk                       default src/decks      (each .vue file directly in it)
 //   snippets  <Snippet file="App.java">   default src/snippets   (source text, loaded lazily)
 //   images    <Img file="team.jpg">       default src/images     (URLs; subfolders allowed)
-//   themes    Deck(:themes="['venue']")   default src/themes     (each .css file directly in it)
+//   themes    Deck(:themes="['venue']")   default src/themes     (each .css file directly in it;
+//                                                                 a list of folders and packages)
 //   arao({ decks: 'src/decks', snippets: 'src/snippets', images: 'src/images', themes: 'src/themes' })
 // A folder is a path relative to the Vite root, or an absolute path. One outside the root
 // ("../shared/images") works the same: the dev server is allowed to serve it (server.fs.allow)
@@ -31,16 +32,25 @@
 // SVG stay sharp at any scale, but a photo is upscaled with the canvas, so for 4K a full-slide
 // background wants ~3840 px wide (twice its size in canvas px); prefer WebP/AVIF/JPEG for photos.
 //
-// Themes: every .css file directly in the folder is loaded, after the engine's own CSS, with nothing
-// to import (virtual:arao/theme-styles), and names the themes of its [data-theme="<name>"]
-// selectors (one file may hold several; comments, :not(…) and names with white space do not count),
-// and of the local partials it @import-s: virtual:arao/themes gives the engine those names, which a
-// Deck without themes offers after 'default' (the engine's own tokens, no file). A file that names
-// none is still loaded (shared rules, fonts) and Vite says so. Subfolders hold what the themes use
-// (pictures, @import-ed partials), and are not loaded on their own.
-// A theme from anywhere else (a CSS file the project imports itself, from src/styles, a package,
-// a .scss file) is no business of the plugin's: a deck that lists it wears it all the same
-// (state/deck.js finds its rule in the page), but a deck without a list does not offer it.
+// Themes come only from their sources: arao({ themes }) is one source or a list of them, in order
+// (default 'src/themes'):
+//   a folder    a path, as the other folders ('src/themes', '../shared/themes', './themes': a
+//               folder at the root needs the "./", else it reads as a package's name)
+//   a package   a bare npm name ('arao-themes', '@acme/arao-themes'), installed in the project:
+//               its themes are the .css files of its themes/ folder, or of the folder its
+//               package.json names ("arao": { "themes": "css" }). A package not installed, or
+//               one that gives no theme, stops the build.
+// Every .css file directly in a source's folder is loaded, after the engine's own CSS, with nothing
+// to import (virtual:arao/theme-styles), source after source, and names the themes of its
+// [data-theme="<name>"] selectors (one file may hold several; comments, :not(…) and names with
+// white space do not count), and of the local partials it @import-s: virtual:arao/themes gives the
+// engine those names, which a Deck without themes offers after 'default' (the engine's own tokens,
+// no file), source after source. A file that names none is still loaded (shared rules, fonts) and
+// Vite says so. Subfolders hold what the themes use (pictures, @import-ed partials), and are not
+// loaded on their own. A name two sources give is offered once, where it comes first, and Vite
+// warns: both files are loaded, so the later source's rules win where they set the same token.
+// A theme no source gives (a CSS file the project imports itself) is not one: a deck that lists it
+// is warned and does not wear it. Its folder or its package goes in arao({ themes }).
 //
 // Icons: <Icon name="lucide:rocket"> draws an icon of an installed Iconify set (@iconify-json/<prefix>),
 // resolved here, at build time: the source is read for the names it uses and only those go into
@@ -58,15 +68,20 @@ const require = createRequire(import.meta.url)
 const { name: PACKAGE } = require('../package.json')
 
 /**
- * arao()'s options: the four folders (paths from the Vite root, or absolute), icon names to
- * include whatever the source says, and the options of Vue's own plugin (plugin-vue).
- * @typedef {{ decks?: string, snippets?: string, images?: string, themes?: string, icons?: string[], vue?: import('@vitejs/plugin-vue').Options }} AraoOptions
- * @typedef {'decks' | 'snippets' | 'images' | 'themes'} Folder
+ * arao()'s options: the three content folders (paths from the Vite root, or absolute), the theme
+ * sources (a folder or a package, or a list of them), icon names to include whatever the source
+ * says, and the options of Vue's own plugin (plugin-vue).
+ * @typedef {{ decks?: string, snippets?: string, images?: string, themes?: string | string[], icons?: string[], vue?: import('@vitejs/plugin-vue').Options }} AraoOptions
+ * @typedef {'decks' | 'snippets' | 'images'} Folder
+ * @typedef {{ spec: string, dir: string, pkg: string | null, label: string }} ThemeSource
  */
 
 const IMAGES = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'svg']
 /** @type {Record<Folder, string>} */
-const DEFAULTS = { decks: 'src/decks', snippets: 'src/snippets', images: 'src/images', themes: 'src/themes' }
+const DEFAULTS = { decks: 'src/decks', snippets: 'src/snippets', images: 'src/images' }
+const DEFAULT_THEMES = 'src/themes'
+// a source that is a package's name, not a path: 'name' or '@scope/name' (npm's rules, loosely)
+const PACKAGE_NAME = /^(?:@[a-z0-9~][\w.~-]*\/)?[a-z0-9~][\w.~-]*$/i
 
 // what each folder's glob takes, and how; and what a missing folder means
 /** @type {Record<Folder, { pattern: string, options?: string, missing: string }>} */
@@ -74,9 +89,8 @@ const modules = {
   decks: { pattern: '*.vue', options: '{}', missing: 'createDeckApp() has no deck to open' },
   snippets: { pattern: '**/*', options: "{ query: '?raw', import: 'default' }", missing: 'files named in slides will show as missing' },
   images: { pattern: `**/*.{${IMAGES}}`, options: "{ query: '?url', import: 'default', eager: true, caseSensitive: false }", missing: 'files named in slides will show as missing' },
-  // its own two modules (load, below): the names, and the styles
-  themes: { pattern: '*.css', missing: "decks can only wear 'default'" },
 }
+// the themes have their own two modules (load, below): the names, and the styles
 
 // the files of a folder with an extension, by name without it: what import.meta.glob takes for
 // '*<ext>' (files directly in it or symlinks to files, not dotfiles, case-sensitive)
@@ -151,8 +165,8 @@ function themesOf(css) {
 }
 // the local file an @import names, or null: a path relative to the sheet, or from the root
 // ("/styles/x.css"). A URL, a package's file (what is not next to the sheet) or a missing file is
-// not followed: its themes still work when a deck lists them (state/deck.js finds their rules in
-// the page), but a deck without a list does not offer them
+// not followed: the browser still loads it, but the themes it names are no theme (put its folder
+// or package in arao({ themes }))
 /** @param {string} path @param {string} from @param {string} root */
 function importedFile(path, from, root) {
   const p = path.replace(/[?#].*$/, '')
@@ -160,7 +174,7 @@ function importedFile(path, from, root) {
   const file = p.startsWith('/') ? join(root, p) : resolve(dirname(from), p)
   return statSync(file, { throwIfNoEntry: false })?.isFile() ? file : null
 }
-// the themes folder: every name its files give, sorted (the reader's alphabetical order, code-point
+// a themes folder: every name its files give, sorted (the reader's alphabetical order, code-point
 // order between names that differ only in case); the files that give none; the names skipped for
 // their white space ({ file, name }); and every file read (the folder's and the local partials
 // they @import, followed all the way down), for the dev server to follow
@@ -206,6 +220,75 @@ function themesIn(folder, root) {
   return { names: [...names].sort(byName), unnamed, spaced, sources }
 }
 
+// The theme sources arao({ themes }) names, resolved: each a folder ({ spec, dir, pkg: null }) or
+// an installed package's themes folder ({ spec, dir, pkg: its name }); label is how messages name
+// it. A package is looked up as Node does, in node_modules from the root up; its folder is themes/,
+// or what its package.json says ("arao": { "themes": "<folder>" }). Throws on a package not
+// installed, or whose folder is not one.
+/** @param {string[]} specs @param {string} root @returns {ThemeSource[]} */
+function resolveThemeSources(specs, root) {
+  return specs.map((spec) => {
+    const isPackage = PACKAGE_NAME.test(spec) && !spec.startsWith('.')
+    if (!isPackage) return { spec, dir: resolve(root, spec), pkg: null, label: spec }
+    let pkgDir = null
+    for (let d = root; ; d = dirname(d)) {
+      if (existsSync(join(d, 'node_modules', spec, 'package.json'))) { pkgDir = join(d, 'node_modules', spec); break }
+      if (dirname(d) === d) break
+    }
+    if (!pkgDir) throw new Error(`[arao] themes: no package "${spec}" installed (node_modules/${spec}). Install it, or, if you meant a folder at the root, write "./${spec}"`)
+    /** @type {{ arao?: { themes?: unknown } }} */
+    let meta = {}
+    try {
+      meta = JSON.parse(readFileSync(join(pkgDir, 'package.json'), 'utf8'))
+    } catch {
+      // an unreadable package.json: the default folder
+    }
+    const named = meta.arao?.themes
+    if (named != null && (typeof named !== 'string' || !named.trim()))
+      throw new Error(`[arao] themes: package "${spec}" says "arao": { "themes": ${JSON.stringify(named)} } in its package.json: a folder's path is wanted`)
+    const folder = typeof named === 'string' ? named.trim() : 'themes'
+    const dir = resolve(pkgDir, folder)
+    if (!statSync(dir, { throwIfNoEntry: false })?.isDirectory())
+      throw new Error(`[arao] themes: package "${spec}" has no ${folder}/ folder (${dir}): a theme package keeps its CSS in themes/, or names its folder in its package.json, "arao": { "themes": "<folder>" }`)
+    return { spec, dir, pkg: spec, label: `${spec} (${folder}/)` }
+  })
+}
+// every source's themes, in order: their names, each once where it comes first (the names a later
+// source gives again: dupes, { name, first, then }), and the files that name none, the names
+// skipped and the files read, as themesIn gives them, the files by full path
+/** @param {ThemeSource[]} sources @param {string} root */
+function themesOfSources(sources, root) {
+  /** @type {string[]} */
+  const names = []
+  /** @type {Map<string, string>} */
+  const from = new Map()
+  /** @type {{ name: string, first: string, then: string }[]} */
+  const dupes = []
+  /** @type {string[]} */
+  const unnamed = []
+  /** @type {{ file: string, name: string }[]} */
+  const spaced = []
+  /** @type {Set<string>} */
+  const files = new Set()
+  /** @type {Map<string, string[]>} */
+  const perSource = new Map()
+  for (const source of sources) {
+    const got = themesIn(source.dir, root)
+    perSource.set(source.spec, got.names)
+    for (const n of got.names) {
+      const first = from.get(n)
+      if (first == null) {
+        from.set(n, source.label)
+        names.push(n)
+      } else dupes.push({ name: n, first, then: source.label })
+    }
+    for (const file of got.unnamed) unnamed.push(join(source.dir, file))
+    spaced.push(...got.spaced)
+    for (const file of got.sources) files.add(file)
+  }
+  return { names, dupes, unnamed, spaced, sources: files, perSource }
+}
+
 // glob syntax in a folder's name is literal: "talk (draft)", "[2024]"
 /** @param {string} s */
 const escapeGlob = (s) => s.replace(/[()[\]{}*?!+@|\\]/g, '\\$&')
@@ -215,7 +298,7 @@ const escapeGlob = (s) => s.replace(/[()[\]{}*?!+@|\\]/g, '\\$&')
  * @returns {import('vite').Plugin[]}
  */
 export default function arao(options = {}) {
-  const { vue: vueOptions = {}, icons: iconsOption, ...rest } = options
+  const { vue: vueOptions = {}, icons: iconsOption, themes: themesOption, ...rest } = options
   const names = /** @type {Folder[]} */ (Object.keys(modules))
   /** @type {Record<Folder, string>} */
   const folders = { ...DEFAULTS }
@@ -224,6 +307,14 @@ export default function arao(options = {}) {
     if (typeof f !== 'string' || !f.trim()) throw new Error(`[arao] the ${name} folder must be a path, got ${JSON.stringify(f)}`)
     folders[name] = f.trim()
   }
+  // the theme sources as written: one, or a list (a folder's path or a package's name each)
+  const themeSpecs = (themesOption == null ? [DEFAULT_THEMES] : Array.isArray(themesOption) ? themesOption : [themesOption]).map((t) => {
+    if (typeof t !== 'string' || !t.trim()) throw new Error(`[arao] themes: each source must be a folder's path or a package's name, got ${JSON.stringify(t)}`)
+    return t.trim()
+  })
+  if (!themeSpecs.length) throw new Error('[arao] themes: the list is empty (leave it out for src/themes)')
+  /** @type {ThemeSource[]} */
+  let themeSources = [] // resolved once the root is known (configResolved)
   let root = process.cwd()
   let publicDir = ''
   let ssr = false
@@ -234,14 +325,18 @@ export default function arao(options = {}) {
     const r = relative(root, d)
     return r === '..' || r.startsWith('..' + sep) || isAbsolute(r)
   }
-  const outside = () => names.map(dir).filter(isOutside)
+  const outside = () => [...names.map(dir), ...themeSources.map((t) => t.dir)].filter(isOutside)
   /** @param {string} name */
   const resolved = (name) => `\0virtual:arao/${name}`
   /** @type {string[] | null} */
   let themeNames = null // the names the themes module was last loaded with
-  let themeSources = new Set() // the files they were read from (the folder's, and their partials)
+  let themeFiles = new Set() // the files they were read from (the sources' files, and their partials)
   /** @param {string} file */
-  const unnamedTheme = (file) => logger.warn(`[arao] ${folders.themes}/${file} names no theme (no [data-theme="<name>"] selector): it is loaded, but no deck can wear it`)
+  const unnamedTheme = (file) => logger.warn(`[arao] ${normalizePath(relative(root, file))} names no theme (no [data-theme="<name>"] selector): it is loaded, but no deck can wear it`)
+  /** @param {{ name: string, first: string, then: string }} d */
+  const dupeTheme = ({ name, first, then }) => logger.warn(`[arao] theme "${name}" is in ${first} and in ${then}: it is offered once, and ${then}'s rules, loaded later, win where both set a token`)
+  /** @param {string} file */
+  const inThemeFolder = (file) => file.endsWith('.css') && themeSources.some((t) => relative(t.dir, file) === basename(file))
   /** @param {{ file: string, name: string }} s */
   const spacedTheme = ({ file, name }) => logger.warn(`[arao] ${normalizePath(relative(root, file))}: [data-theme=${JSON.stringify(name)}] is no theme (a theme's name has no white space): skipped`)
 
@@ -270,17 +365,20 @@ export default function arao(options = {}) {
     },
   }
 
-  /** @type {import('vite').Plugin & { api: { folders: () => Record<Folder, string>, decks: () => string[] } }} */
+  /** @type {import('vite').Plugin & { api: { folders: () => Record<Folder, string>, themes: () => string[], decks: () => string[] } }} */
   const plugin = {
     name: 'arao',
     // for tools that run the project's Vite config (the export CLI): the folders, resolved
     api: {
       folders: () => /** @type {Record<Folder, string>} */ (Object.fromEntries(names.map((n) => [n, dir(n)]))),
+      // the theme sources' folders, in order
+      themes: () => themeSources.map((t) => t.dir),
       // the decks' names, sorted: what the decks glob below ('*.vue') takes
       decks: () => decksIn(dir('decks')),
     },
     config(user) {
       root = resolve(user.root ?? process.cwd()) // as Vite resolves it
+      themeSources = resolveThemeSources(themeSpecs, root)
       /** @type {import('vite').UserConfig} */
       const config = {
         // one Vue, the project's, also for this package when it is linked (npm link, file:)
@@ -310,6 +408,15 @@ export default function arao(options = {}) {
         if (rest[name] != null && !existsSync(dir(name)))
           config.logger.warn(`[arao] the ${name} folder "${folders[name]}" does not exist (${dir(name)}): ${modules[name].missing}`)
       }
+      themeSources = resolveThemeSources(themeSpecs, root)
+      const given = themesOfSources(themeSources, root)
+      for (const t of themeSources) {
+        if (t.pkg) {
+          if (!given.perSource.get(t.spec)?.length)
+            throw new Error(`[arao] themes: package "${t.spec}" gives no theme: no .css file of ${t.dir} has a [data-theme="<name>"] selector`)
+        } else if (themesOption != null && !existsSync(t.dir))
+          config.logger.warn(`[arao] the themes folder "${t.spec}" does not exist (${t.dir}): its themes are missing`)
+      }
     },
     configureServer(server) {
       // the watcher covers the root; a folder outside it is added, so its new files show up live
@@ -317,7 +424,7 @@ export default function arao(options = {}) {
     },
     resolveId(id) {
       const name = id.startsWith('virtual:arao/') ? id.slice('virtual:arao/'.length) : ''
-      return (name && name in modules) || name === 'icons' || name === 'theme-styles' ? resolved(name) : null
+      return (name && name in modules) || name === 'icons' || name === 'themes' || name === 'theme-styles' ? resolved(name) : null
     },
     // a saved file that uses an icon the module lacks: the module goes first in the same update,
     // so its new data is in place when the file's own update renders the Icon
@@ -328,10 +435,10 @@ export default function arao(options = {}) {
       // none and the names skipped) and the page reloads; else it is a plain CSS update (the styles
       // module's glob follows the files on its own, Vite's CSS the partials), and what that file
       // gets wrong is reported here
-      const isTheme = file.endsWith('.css') && relative(dir('themes'), file) === basename(file)
-      if (isTheme || themeSources.has(normalizePath(file))) {
-        const { names, unnamed, spaced, sources } = themesIn(dir('themes'), root)
-        themeSources = sources
+      const isTheme = inThemeFolder(file)
+      if (isTheme || themeFiles.has(normalizePath(file))) {
+        const { names, unnamed, spaced, sources } = themesOfSources(themeSources, root)
+        themeFiles = sources
         const mod = this.environment.moduleGraph.getModuleById(resolved('themes'))
         if (mod && JSON.stringify(names) !== JSON.stringify(themeNames)) {
           this.environment.moduleGraph.invalidateModule(mod)
@@ -339,7 +446,7 @@ export default function arao(options = {}) {
           return []
         }
         if (type !== 'delete') {
-          if (isTheme && unnamed.includes(basename(file))) unnamedTheme(basename(file))
+          if (isTheme && unnamed.some((u) => normalizePath(u) === normalizePath(file))) unnamedTheme(file)
           for (const s of spaced) if (normalizePath(s.file) === normalizePath(file)) spacedTheme(s)
         }
       }
@@ -360,24 +467,30 @@ export default function arao(options = {}) {
     load(id) {
       if (id === resolved('icons')) return icons.load()
       if (id === resolved('themes')) {
-        const { names, unnamed, spaced, sources } = themesIn(dir('themes'), root)
+        const { names, dupes, unnamed, spaced, sources } = themesOfSources(themeSources, root)
         for (const file of unnamed) unnamedTheme(file)
         for (const s of spaced) spacedTheme(s)
+        for (const d of dupes) dupeTheme(d)
         themeNames = names
-        themeSources = sources
+        themeFiles = sources
         return `export const themes = ${JSON.stringify(names)}
-export const themesDir = ${JSON.stringify(folders.themes)}`
+export const themeSources = ${JSON.stringify(themeSources.map((t) => t.label))}`
       }
-      const styles = id === resolved('theme-styles')
-      const name = styles ? 'themes' : names.find((n) => id === resolved(n))
+      // the themes' CSS, each file imported for its styles alone, source after source (a folder
+      // missing gives nothing): globs from the root ("/../x" leaves it)
+      if (id === resolved('theme-styles')) {
+        return themeSources.map((t) => {
+          const rel = relative(root, t.dir).split(sep).join('/')
+          return `import.meta.glob(${JSON.stringify((rel ? `/${escapeGlob(rel)}/` : '/') + '*.css')}, { eager: true })`
+        }).join('\n')
+      }
+      const name = names.find((n) => id === resolved(n))
       if (!name) return null
       // globs starting with "/" are relative to the root ("/../shared" leaves it); Vite keys
       // each file by its path from the root, so the folder's part is cut off the keys
       const rel = relative(root, dir(name)).split(sep).join('/')
       const prefix = rel ? `/${rel}/` : '/'
       const glob = (rel ? `/${escapeGlob(rel)}/` : '/') + modules[name].pattern
-      // the themes' CSS, each file imported for its styles alone
-      if (styles) return `import.meta.glob(${JSON.stringify(glob)}, { eager: true })`
       return `const files = import.meta.glob(${JSON.stringify(glob)}, ${modules[name].options})
 const prefix = ${JSON.stringify(prefix)}
 // no prototype: a file named "constructor" or "toString" is looked up, not an Object method

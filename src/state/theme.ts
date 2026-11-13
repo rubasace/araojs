@@ -1,5 +1,5 @@
 import { computed, inject, provide, readonly, ref, toValue, watch, type InjectionKey, type MaybeRefOrGetter, type Ref } from 'vue'
-import { themes as projectThemes, themesDir } from 'virtual:arao/themes'
+import { themes as projectThemes, themeSources } from 'virtual:arao/themes'
 
 // The theme a deck wears, and the ones it offers. One per Deck: the CSS of every theme is the
 // project's, shared by all its decks; which of them a deck offers (its themes prop) and which it
@@ -11,11 +11,9 @@ import { themes as projectThemes, themesDir } from 'virtual:arao/themes'
 //                                    and returns { controls, theme, set } (internals below)
 //   useTheme()                       the controls, for the deck's controls (the themes list, "t")
 // The deck's themes: Deck(:themes), in its order, or without it every theme there is
-// (ALL_THEMES). A name that is no theme there is, and whose rule no stylesheet of the page
-// declares either (isTheme: a theme imported by hand), is skipped, with one warning per list; a
-// list left with none is ['default']. The page's stylesheets are read when the list is: a
-// stylesheet the page loads later does not count. It wears the URL's theme, else the first of
-// the list (a thumbnail: the first).
+// (ALL_THEMES). A name that is no theme there is (none of the plugin's theme sources gives it) is
+// skipped, with one warning per list; a list left with none is ['default']. It wears the URL's
+// theme, else the first of the list (a thumbnail: the first).
 // The controls (useTheme), a frozen object:
 //   theme               read-only ref: the theme worn
 //   themes              read-only ref: the deck's list, resolved
@@ -34,68 +32,14 @@ export interface ThemeControls {
 const KEY: InjectionKey<ThemeControls> = Symbol('arao-theme')
 
 // Every theme there is: 'default' (the engine's own tokens, styles/tokens.css: no file), then the
-// project's, by name (each [data-theme="<name>"] of a CSS file in its themes folder, src/themes by
-// default, or in a local partial such a file @import-s: the Vite plugin reads them and loads their
-// CSS).
+// ones the theme sources give, source after source, by name in each (each [data-theme="<name>"] of
+// a CSS file in a source's folder, src/themes by default, or in a local partial such a file
+// @import-s: the Vite plugin reads them and loads their CSS).
 const ALL_THEMES = Object.freeze(['default', ...projectThemes.filter((n) => n !== 'default')])
 
-// Whether a stylesheet of the page declares a theme: a [data-theme="<name>"] selector, outside
-// :not(…), in any rule (inside @media, @supports, @layer, @container, nested rules, @import-ed
-// sheets). For a name a deck lists that the themes folder does not give: a theme the project
-// imports itself (from src/styles, a package, a .scss file, a deck's own <style>), or one in a
-// partial the plugin does not follow. A sheet of another origin that keeps its rules to itself is
-// passed over. The browser writes every selector back in one form: the value in double quotes,
-// " and \ escaped, then " i" or " s" for a flag. A name with white space is no theme's, here as
-// in the plugin.
-function declaresTheme(name: unknown) {
-  if (typeof name !== 'string' || !name || /\s/.test(name)) return false
-  const needle = `[data-theme="${name.replace(/["\\]/g, (c) => `\\${c}`)}"`
-  const names = (selector: string) => {
-    const text = withoutNot(selector)
-    for (let at = text.indexOf(needle); at >= 0; at = text.indexOf(needle, at + 1)) {
-      if (/^(?: [is])?\]/.test(text.slice(at + needle.length))) return true
-    }
-    return false
-  }
-  const inRules = (rules: CSSRuleList): boolean => {
-    for (const rule of rules) {
-      // the kinds of rule that hold others: a style rule (its selector, nested rules), @import (its sheet), grouping rules
-      const r = rule as Partial<CSSStyleRule & CSSImportRule & CSSGroupingRule>
-      if (r.selectorText && names(r.selectorText)) return true
-      if ((r.styleSheet && inSheet(r.styleSheet)) || (r.cssRules && inRules(r.cssRules))) return true
-    }
-    return false
-  }
-  const inSheet = (sheet: CSSStyleSheet): boolean => {
-    if (sheet.disabled) return false
-    try {
-      return inRules(sheet.cssRules)
-    } catch {
-      return false // another origin's, unreadable
-    }
-  }
-  return [...document.styleSheets, ...(document.adoptedStyleSheets ?? [])].some(inSheet)
-}
-// a selector without what each :not(…) holds (its parentheses nested; strings and escapes skipped)
-function withoutNot(selector: string) {
-  let out = ''
-  let from = 0
-  for (let at = selector.indexOf(':not('); at >= 0; at = selector.indexOf(':not(', from)) {
-    out += selector.slice(from, at)
-    let i = at + 5
-    for (let depth = 1, quoted = false; i < selector.length && depth; i++) {
-      const c = selector[i]
-      if (c === '\\') i++
-      else if (c === '"') quoted = !quoted
-      else if (!quoted && c === '(') depth++
-      else if (!quoted && c === ')') depth--
-    }
-    from = i
-  }
-  return out + selector.slice(from)
-}
-// a name a deck can list: a theme there is, or one the page's stylesheets declare
-const isTheme = (name: unknown): name is string => typeof name === 'string' && (ALL_THEMES.includes(name) || declaresTheme(name))
+// a name a deck can list: a theme there is (no stylesheet of the page is read: a theme comes from
+// a source of arao({ themes }) or it is none)
+const isTheme = (name: unknown): name is string => typeof name === 'string' && ALL_THEMES.includes(name)
 
 export function createTheme({ themes: prop, initial = null, warn = true }: { themes: MaybeRefOrGetter<readonly string[] | null | undefined>; initial?: string | null; warn?: boolean }) {
   const themes = computed((): readonly string[] => {
@@ -110,7 +54,7 @@ export function createTheme({ themes: prop, initial = null, warn = true }: { the
       const unknown = (list ?? []).filter((n) => !isTheme(n))
       if (unknown.length) {
         const names = unknown.map((n) => JSON.stringify(n)).join(', ')
-        console.warn(`[arao] Deck themes: no theme ${names} (there are: ${ALL_THEMES.join(', ')}; a theme is a [data-theme="<name>"] rule in a CSS file of ${themesDir}, or in any stylesheet the page has loaded): skipped`)
+        console.warn(`[arao] Deck themes: no theme ${names} (there are: ${ALL_THEMES.join(', ')}; a theme is a [data-theme="<name>"] rule in a CSS file of a theme source, arao({ themes }): ${themeSources.join(', ')}): skipped`)
       }
     }, { immediate: true })
   }

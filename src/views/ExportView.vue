@@ -56,8 +56,8 @@ const stepLabels = { '--_ar-from-step-before': fromBefore, '--_ar-from-step-afte
 const report = (value: Record<string, unknown>) => reportReady({ ...value, deck: props.deck.name })
 
 async function run() {
-  // the deck's themes, as state/deck.ts resolves them: a listed theme from outside the themes
-  // folder (imported by hand) is one of them, so arao export --theme takes it
+  // the deck's themes, as state/theme.ts resolves them (from the plugin's theme sources only):
+  // arao export --theme takes one of them
   const list = themes.value
   if (!list.includes(theme.value))
     return report({ error: `theme "${theme.value}" is not one of the deck's themes: ${list.join(', ')}`, code: 'theme-not-listed', themes: list })

@@ -8,16 +8,20 @@
 // Without a tarball it packs one itself (npm pack, which builds the library first).
 // The project is made in a temporary folder outside the repository: package.json depending on the
 // tarball (vite and vue at the versions of the library's devDependencies), vite.config.js with the
-// arao() plugin, index.html, src/main.js (createDeckApp, nothing else: no theme is imported by
-// hand), a theme of its own in src/themes (THEME, in a file of another name: the plugin names it by
-// its selector; and THEME-extra, in a partial that file @import-s), the playground's decks, images
+// arao() plugin and three theme sources (src/themes, src/venues and a theme package, THEME_SOURCES),
+// index.html, src/main.js (createDeckApp, nothing else: no theme is imported by hand), a theme of
+// its own in src/themes (THEME, in a file of another name: the plugin names it by its selector;
+// and THEME-extra, in a partial that file @import-s), ROOM in src/venues, IMPORTED in a theme
+// package it depends on (vendor/, its CSS in the folder its package.json names), the playground's decks, images
 // and snippets as content, and four tiny decks of its own (so that the project has several and /
 // lists them; the second has a duration and lists its themes, the third neither: it gets every
 // theme there is; the fourth a file name and a cover heading far too long for its card, and THEME
-// first; the fifth lists first IMPORTED, a theme from outside src/themes, in its own <style>).
+// first; the fifth lists first IMPORTED, the theme package's).
 // Then, in order:
 //   1. npm install
-//   2. vite build                      must pass, and write dist/404.html, a copy of index.html
+//   2. vite build                      must pass, and write dist/404.html, a copy of index.html;
+//      with a theme source that is a package not installed, or one that gives no theme, it must
+//      stop with an [arao] error
 //   3. every deck of src/decks, under the dev server (Vue's own warnings only exist in dev) and
 //      under vite preview (the production build): opened at /<name>, walked with ArrowRight
 //      until the hash stops changing; any console warning/error or page error fails, and so does
@@ -37,13 +41,13 @@
 //      the way down, setTheme refuses a name the deck has not (one [arao] warning), and in the
 //      presenter view's preview no function acts
 //   5b. themes, under the dev server, on the third deck (no themes listed): it wears 'default' and
-//      lists 'default', THEME and THEME-extra; t cycles to THEME, and ?theme=THEME wears it; the
+//      lists 'default', THEME, THEME-extra, ROOM and IMPORTED (source after source); t cycles to THEME, and ?theme=THEME wears it; the
 //      defaults reach what is drawn outside every theme (the presenter view); a :root rule of the
 //      project's own wins over a default (and a default that is another token follows it), a
 //      theme wins over that rule, and the picker's swatch of 'default' shows it; :root
 //      { --ar-controls-accent } reaches the presenter view's docked controls, and its length
-//      editor's shadow follows :root { --ar-presenter-bg }. On the fifth deck, IMPORTED (not in
-//      src/themes) is worn with no warning
+//      editor's shadow follows :root { --ar-presenter-bg }. On the fifth deck, IMPORTED (the theme
+//      package's) is worn with no warning
 //   5c. speaker notes, under the dev server, on the third deck: the v-steps inside Notes add no step
 //      (the slide has two in the audience and in the presenter view), the presenter's panel shows
 //      the notes of the slide on screen only (none from the preview), each step's own, and marks
@@ -103,8 +107,7 @@
 //        fell back; --theme no deck lists: exit 1 and no PDF; a deck that throws at runtime: the
 //        others exported, exit 1; decks that resolve to one file (Alpha in THEME and
 //        alpha-THEME, Beta and beta): the first kept, the second failed, a warning on the case;
-//        --theme IMPORTED (declared in the deck's own <style>, not in src/themes) over a deck that
-//        lists it
+//        --theme IMPORTED (the theme package's) over a deck that lists it
 // The package name and the CLI's name are read from package.json: nothing here names them.
 //
 // Environment:
@@ -149,19 +152,21 @@ const BRAND = ['brand.css', `/* the smoke project's own theme: a [data-theme] ru
 // a partial brand.css @import-s, with a theme of its own: the plugin follows the @import
 const EXTRA = [`parts/extra.css`, `[data-theme="${THEME}-extra"] { --ar-accent: rgb(0, 150, 136); }
 `]
-// a theme from outside src/themes, as one a project brings itself (src/styles, a package): the
-// plugin does not know it, the page's stylesheets declare it. Declared in the <style> of the deck
-// that lists it (src/main.js imports no theme), which a deck that lists it wears
+// a theme from a package the project installs (a local one, vendor/<HALL_PKG>, depended on with
+// file:), named in arao({ themes }): its CSS in css/, the folder its package.json names
 const IMPORTED = 'hall'
 const HALL = { bg: 'rgb(40, 20, 10)' }
-const HALL_STYLE = `<style>
-/* a theme of the smoke project's own, outside src/themes */
-[data-theme="${IMPORTED}"] {
-  --ar-bg: ${HALL.bg};
-  --ar-fg: rgb(250, 240, 230);
+const HALL_PKG = 'arao-hall-themes'
+const HALL_FILES = {
+  [`vendor/${HALL_PKG}/package.json`]: JSON.stringify({ name: HALL_PKG, version: '1.0.0', arao: { themes: 'css' } }, null, 2),
+  [`vendor/${HALL_PKG}/css/hall.css`]: `[data-theme="${IMPORTED}"]{--ar-bg:${HALL.bg};--ar-fg:rgb(250, 240, 230)}\n`,
 }
-</style>
-`
+// a theme in a second folder of the project's, src/venues
+const ROOM = 'room'
+const ROOM_FILE = ['src/venues/room.css', `[data-theme="${ROOM}"] { --ar-accent: rgb(63, 81, 181); }
+`]
+// the plugin's theme sources, in order
+const THEME_SOURCES = `themes: ['src/themes', 'src/venues', '${HALL_PKG}']`
 const DURATION = 15 * 60000
 const SECOND = ['Second.vue', `<template lang="pug">
 Deck(:themes="['default', '${THEME}']" duration="15m")
@@ -210,16 +215,16 @@ Deck(:themes="['${THEME}', 'default']")
 </template>
 `]
 
-// a fifth deck of the smoke project only: it lists IMPORTED, a theme from outside src/themes, first
+// a fifth deck of the smoke project only: it lists IMPORTED, the theme package's, first
 const VENUE = ['Venue.vue', `<template lang="pug">
 Deck(:themes="['${IMPORTED}', 'default']")
   Slide(layout="cover" title="Venue")
     h1 A deck in a theme of its own
   Slide
-    h2 From outside src/themes
+    h2 From a theme package
     p(v-step="2") Listed, so worn.
 </template>
-${HALL_STYLE}`]
+`]
 
 // the first theme each deck's cover wears in the list, by deck name, and its canvas's background
 // (SAMPLE's, HALL's; null: default's, whatever it is)
@@ -309,13 +314,15 @@ try {
       private: true,
       type: 'module',
       scripts: { dev: 'vite', build: 'vite build', export: `${BIN} export` },
-      dependencies: { [PKG]: `file:${tarball}`, vite: dev.vite, vue: dev.vue },
+      dependencies: { [PKG]: `file:${tarball}`, [HALL_PKG]: `file:./vendor/${HALL_PKG}`, vite: dev.vite, vue: dev.vue },
     }, null, 2),
-    'vite.config.js': `import { defineConfig } from 'vite'\nimport arao from '${PKG}/vite'\n\nexport default defineConfig({ plugins: [arao()] })\n`,
+    'vite.config.js': `import { defineConfig } from 'vite'\nimport arao from '${PKG}/vite'\n\nexport default defineConfig({ plugins: [arao({ ${THEME_SOURCES} })] })\n`,
     'index.html': `<!doctype html>\n<html lang="en">\n  <head><meta charset="UTF-8" /><title>smoke</title></head>\n  <body>\n    <div id="app"></div>\n    <script type="module" src="/src/main.js"></script>\n  </body>\n</html>\n`,
     'src/main.js': `import { createDeckApp } from '${PKG}'\n\ncreateDeckApp().mount('#app')\n`,
     [`src/themes/${BRAND[0]}`]: BRAND[1],
     [`src/themes/${EXTRA[0]}`]: EXTRA[1],
+    [ROOM_FILE[0]]: ROOM_FILE[1],
+    ...HALL_FILES,
   }
   for (const [name, text] of Object.entries(files)) {
     await mkdir(dirname(join(project, name)), { recursive: true })
@@ -353,6 +360,31 @@ try {
   log('vite build')
   await run(process.execPath, [viteBin, 'build'], project)
   await notFoundPage('vite build')
+
+  // a theme source that is a package not installed, and one that gives no theme: the build stops
+  {
+    const config = files['vite.config.js']
+    const empty = 'arao-empty-themes'
+    await mkdir(join(project, 'node_modules', empty, 'themes'), { recursive: true })
+    await writeFile(join(project, 'node_modules', empty, 'package.json'), JSON.stringify({ name: empty, version: '1.0.0' }))
+    await writeFile(join(project, 'node_modules', empty, 'themes', 'shared.css'), ':root { --x: 1; }\n')
+    const bad = [
+      { spec: 'arao-no-such-themes', says: /\[arao\] themes: no package "arao-no-such-themes" installed/ },
+      { spec: empty, says: new RegExp(`\\[arao\\] themes: package "${empty}" gives no theme`) },
+    ]
+    try {
+      for (const b of bad) {
+        await writeFile(join(project, 'vite.config.js'), config.replace(`'${HALL_PKG}']`, `'${HALL_PKG}', '${b.spec}']`))
+        const { code, out, err } = await exec(process.execPath, [viteBin, 'build'], project)
+        if (code === 0) fail(`vite build with the theme source "${b.spec}": passed, not stopped`)
+        else if (!b.says.test(out + err)) fail(`vite build with the theme source "${b.spec}": stopped, but without ${b.says}`)
+        else console.log(`  theme source "${b.spec}": the build stops, saying so`)
+      }
+    } finally {
+      await writeFile(join(project, 'vite.config.js'), config)
+      await rm(join(project, 'node_modules', empty), { recursive: true, force: true })
+    }
+  }
 
   browser = await chromium.launch({ executablePath: process.env.ARAO_CHROMIUM || undefined })
   // every page in English (the engine's UI text follows the browser's language, i18n/i18n.ts),
@@ -917,7 +949,7 @@ try {
       if (!plain.picker) complaints.push('no theme picker in the controls: the deck has one theme, not default and ' + THEME)
       // every theme there is: THEME-extra comes from a partial of brand.css (the plugin follows it)
       const offered = (await picker(page)).map((t) => t.name)
-      const all = ['default', THEME, `${THEME}-extra`]
+      const all = ['default', THEME, `${THEME}-extra`, ROOM, IMPORTED]
       if (JSON.stringify(offered) !== JSON.stringify(all)) complaints.push(`the picker offers ${offered.join(', ') || 'nothing'}, not ${all.join(', ')}`)
       await page.keyboard.press('Escape')
       await page.keyboard.press('t')
@@ -975,12 +1007,12 @@ try {
       if (over.title !== SAMPLE.accent) complaints.push(`:root { --ar-accent } and ?theme=${THEME}: the h2 title is ${over.title}, not the theme's ${SAMPLE.accent}`)
       await page.close()
 
-      // a theme from outside src/themes (the deck's own <style>), and listed: worn, with no warning
+      // a theme of the theme package, and listed: worn, with no warning
       page = await open('', null, venue)
       const hall = await look(page)
       if (hall.theme !== IMPORTED || hall.bg !== HALL.bg) complaints.push(`/${venue}: wears "${hall.theme}" (background ${hall.bg}), not ${IMPORTED} (${HALL.bg})`)
       await page.close()
-      console.log(`  dev themes: ${complaints.length ? 'problems below' : `${all.join(', ')} listed, t and ?theme= wear ${THEME}, defaults outside themes, :root wins over defaults (and reaches the docked controls and default's swatch), themes over :root, ${IMPORTED} (outside src/themes) worn`}`)
+      console.log(`  dev themes: ${complaints.length ? 'problems below' : `${all.join(', ')} listed, t and ?theme= wear ${THEME}, defaults outside themes, :root wins over defaults (and reaches the docked controls and default's swatch), themes over :root, ${IMPORTED} (a theme package's) worn`}`)
     } finally {
       await context.close()
     }
@@ -1343,7 +1375,7 @@ throw new Error('smoke: this deck throws as it is drawn')
   }
   const crowd = 'src/crowd' // a decks folder of many decks, one of which cannot be drawn
   const asIs = { 'src/main.js': files['src/main.js'], 'vite.config.js': files['vite.config.js'] }
-  const alone = asIs['vite.config.js'].replace('arao()', `arao({ decks: '${solo}' })`)
+  const alone = asIs['vite.config.js'].replace('arao({', `arao({ decks: '${solo}',`)
   const withOptions = (o) => asIs['src/main.js'].replace('createDeckApp()', `createDeckApp(${o})`)
   const crowded = { 'Broken.vue': tiny('Broken', ['default'], THROWS_DRAWN), 'Café.vue': tiny('Café', ['default']) }
   for (let i = 1; i <= 12; i++) crowded[`Deck${String(i).padStart(2, '0')}.vue`] = tiny(`Deck ${i}`, ['default'])
@@ -1443,9 +1475,9 @@ throw new Error('smoke: this deck throws as it is drawn')
       visits: [{ path: '', list: 1 }, { path: second, deck: true }] },
     { name: `one deck, createDeckApp({ deckList: 'sometimes' })`, files: { 'vite.config.js': alone, 'src/main.js': withOptions(`{ deckList: 'sometimes' }`) },
       visits: [{ path: '', deck: true, warns: 'deckList' }] },
-    { name: 'a long list', files: { 'vite.config.js': asIs['vite.config.js'].replace('arao()', `arao({ decks: '${crowd}' })`) },
+    { name: 'a long list', files: { 'vite.config.js': asIs['vite.config.js'].replace('arao({', `arao({ decks: '${crowd}',`) },
       checks: [lazy] },
-    { name: `Deck(:themes="['nosuch', '${THEME}']") and Deck(:themes="['nosuch']")`, files: { 'vite.config.js': asIs['vite.config.js'].replace('arao()', `arao({ decks: '${listed}' })`) },
+    { name: `Deck(:themes="['nosuch', '${THEME}']") and Deck(:themes="['nosuch']")`, files: { 'vite.config.js': asIs['vite.config.js'].replace('arao({', `arao({ decks: '${listed}',`) },
       visits: [{ path: '', list: 2, covers: { listed: THEME, nameless: 'default' } },
         { path: 'listed', deck: true, theme: THEME, warns: '"nosuch"' }, { path: 'nameless', deck: true, theme: 'default', warns: '"nosuch"' }] },
   ]
@@ -1655,7 +1687,7 @@ throw new Error('smoke: this deck throws as it is drawn')
       lines: [new RegExp(`^clash/alpha-${THEME}\\.pdf: .*theme ${THEME}$`, 'm'), new RegExp(`^2 of 4 decks exported, 6 pages; failed: alpha-${THEME}, beta$`, 'm')],
       errs: [/differ only in case.*Beta and beta/, new RegExp(`alpha-${THEME}: clash/alpha-${THEME}\\.pdf is Alpha's, written in this run: not overwritten`), /beta: clash\/beta\.pdf is Beta's/] },
     { name: 'imported', args: ['--theme', IMPORTED],
-      files: { 'Gamma.vue': tiny('Gamma', ['default', IMPORTED], HALL_STYLE), 'Second.vue': tiny('Second', ['default']) },
+      files: { 'Gamma.vue': tiny('Gamma', ['default', IMPORTED]), 'Second.vue': tiny('Second', ['default']) },
       code: 0, pdfs: { [`gamma-${IMPORTED}.pdf`]: 3, 'second.pdf': 3 },
       lines: [new RegExp(`^imported/gamma-${IMPORTED}\\.pdf: .*theme ${IMPORTED}$`, 'm'), /^2 of 2 decks exported, 6 pages$/m] },
   ]
@@ -1670,7 +1702,7 @@ throw new Error('smoke: this deck throws as it is drawn')
         await writeFile(join(project, 'src/cases', name), text)
         await symlink(join(project, 'src/cases', name), join(project, folder, name))
       }
-      let config = asIs['vite.config.js'].replace('arao()', `arao({ decks: '${folder}' })`)
+      let config = asIs['vite.config.js'].replace('arao({', `arao({ decks: '${folder}',`)
       if (c.base) config = config.replace('defineConfig({', `defineConfig({ base: '/${c.base}/',`)
       await writeFile(join(project, 'vite.config.js'), config)
       const url = []
