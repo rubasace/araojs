@@ -38,7 +38,7 @@
     "docs",
     "!docs/.vitepress",
     "!docs/assets",
-    "AGENTS.md"
+    "skills"
   ],
   "scripts": {
     "dev": "vite",

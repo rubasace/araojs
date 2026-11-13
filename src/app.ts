@@ -122,6 +122,10 @@ export function createDeckApp(options?: DeckAppOptions): App {
   const list: DeckEntry[] = names.map((n) => ({ name: n.toLowerCase(), title: humanise(n), href: pathOf(base, n), path: decode(pathOf(base, n)), load: decks[`${n}.vue`] }))
   const render = deck ? () => h(deck) : () => h(DeckSelectorView, { decks: list, missing, dir: decksDir })
   const app = createApp({ name: 'AraoDeckApp', render }).use(Arao)
+  // without <!doctype html> the page renders in quirks mode: tables lose the theme's colour and size
+  if (import.meta.env.DEV && typeof document !== 'undefined' && document.compatMode === 'BackCompat') {
+    console.warn('[arao] index.html has no <!doctype html>: the page renders in quirks mode (tables lose their theme). Put <!doctype html> as its first line')
+  }
   if (name) provideDeckRoute(app, { name, path: pathOf(base, name) })
   return app
 }

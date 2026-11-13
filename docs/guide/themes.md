@@ -194,9 +194,10 @@ Gill Sans, Palatino, Trebuchet MS, SF Pro… in `vite/fonts.js`). Generic names 
   deck). Turn it off for a family, or altogether, below.
 - **Network at build time.** The files are cached in `node_modules/.cache/fontless`, but the
   providers' catalogues are cached for a week only (and again on a new version), and a fresh
-  install (`npm ci` in CI) starts empty. Offline, a build still passes: fontless warns (the
-  plugin cannot quiet it, not even `arao export`), and the text uses the family's next fonts. To
-  fail the build instead (CI), set `fonts: { throwOnError: true }`.
+  install (`npm ci` in CI) starts empty. Offline, or with a provider that does not answer (a
+  timeout, `ETIMEDOUT`), a build still passes: fontless and the plugin warn (`[arao] fonts: …`;
+  fontless's own warnings cannot be quieted, not even by `arao export`), and the text uses the
+  family's next fonts. To fail the build instead (CI), set `fonts: { throwOnError: true }`.
 - **Behind a proxy** (`HTTPS_PROXY`), fetching goes through it on Node 22.19 or later only (the
   proxy support needs a newer `undici` than Node 20 runs; npm may warn about its engine on
   install). On older Node a build behind a proxy gets no fonts, as offline.

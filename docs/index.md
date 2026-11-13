@@ -43,8 +43,8 @@ Every prop, slot, token, option and URL, exactly.
 
 ## Elsewhere
 
-- [AGENTS.md](../AGENTS.md): the guide for AI agents writing decks (rules, gotchas, recipes, how
-  to verify a deck). In a slides project it is at `node_modules/araojs/AGENTS.md`.
+- [The Arao skill](../skills/arao/): the skill for coding agents writing decks (rules, gotchas,
+  recipes, how to verify a deck). It ships with the package too, at `node_modules/araojs/skills/arao/`.
 - [Architecture](architecture.md): how the engine is built, for whoever works on Arao itself.
 - [CONTRIBUTING.md](../CONTRIBUTING.md): developing, testing and releasing Arao.
 - [examples/](examples/): the small decks behind the pictures in these pages.
