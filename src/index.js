@@ -1,6 +1,6 @@
 // Arao, the library: what a slides project imports from 'araojs'. The only barrel: every
 // other module imports the file it uses.
-//   createDeckApp()   the whole app: the engine installed, the deck picked from ?deck=<name>
+//   createDeckApp()   the whole app: the engine installed, the deck picked from the path, /<name>
 //   default export    the Vue plugin (app.use(Arao)), for a project with its own app shell
 //   components, directives and composables, for code that wants them by name
 //   ProgressBar, SlideNumber: the addons, imported by the decks that use them

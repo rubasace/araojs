@@ -66,49 +66,52 @@
       :class="['layout-' + layout, { 'ar-footed': footed() && !flat }]"
       :style="image ? zones : undefined"
     >
-      <div class="ar-slide-bg" aria-hidden="true">
-        <Img v-if="picture" v-bind="picture" />
-        <div class="ar-slide-bg-fill" v-else-if="kind || !renders($slots.background, { step })" :class="{ 'ar-slide-bg-theme': !kind }" :style="fill"></div>
-        <slot name="background" :step="step" />
-      </div>
-      <template v-if="layout === 'split'">
-        <div class="ar-slide-head" v-if="$slots.title || $slots.default">
-          <VNodes :nodes="titled()" />
+      <!-- in a thumbnail only the cover draws its content -->
+      <template v-if="drawn">
+        <div class="ar-slide-bg" aria-hidden="true">
+          <Img v-if="picture" v-bind="picture" />
+          <div class="ar-slide-bg-fill" v-else-if="kind || !renders($slots.background, { step })" :class="{ 'ar-slide-bg-theme': !kind }" :style="fill"></div>
+          <slot name="background" :step="step" />
         </div>
-        <div class="ar-zones" :style="zones">
-          <div class="ar-zone ar-zone-left">
-            <slot name="left" :step="step" />
+        <template v-if="layout === 'split'">
+          <div class="ar-slide-head" v-if="$slots.title || $slots.default">
+            <VNodes :nodes="titled()" />
           </div>
-          <div class="ar-zone ar-zone-right">
-            <slot name="right" :step="step" />
+          <div class="ar-zones" :style="zones">
+            <div class="ar-zone ar-zone-left">
+              <slot name="left" :step="step" />
+            </div>
+            <div class="ar-zone ar-zone-right">
+              <slot name="right" :step="step" />
+            </div>
           </div>
-        </div>
+        </template>
+        <!-- zones in visual order, left to right, so the DOM (and reading order) matches the screen -->
+        <template v-else-if="layout === 'image-left'">
+          <div class="ar-zone ar-zone-image">
+            <slot name="image" :step="step" />
+          </div>
+          <div class="ar-zone ar-zone-text">
+            <VNodes :nodes="titled()" />
+          </div>
+        </template>
+        <template v-else-if="layout === 'image-right'">
+          <div class="ar-zone ar-zone-text">
+            <VNodes :nodes="titled()" />
+          </div>
+          <div class="ar-zone ar-zone-image">
+            <slot name="image" :step="step" />
+          </div>
+        </template>
+        <template v-else-if="flat">
+          <slot name="title" :step="step" />
+          <slot :step="step" />
+        </template>
+        <VNodes v-else :nodes="zoned()" />
+        <footer class="ar-footer" v-if="footed()">
+          <VNodes :nodes="footerSlot()({ number: index + 1, total })" />
+        </footer>
       </template>
-      <!-- zones in visual order, left to right, so the DOM (and reading order) matches the screen -->
-      <template v-else-if="layout === 'image-left'">
-        <div class="ar-zone ar-zone-image">
-          <slot name="image" :step="step" />
-        </div>
-        <div class="ar-zone ar-zone-text">
-          <VNodes :nodes="titled()" />
-        </div>
-      </template>
-      <template v-else-if="layout === 'image-right'">
-        <div class="ar-zone ar-zone-text">
-          <VNodes :nodes="titled()" />
-        </div>
-        <div class="ar-zone ar-zone-image">
-          <slot name="image" :step="step" />
-        </div>
-      </template>
-      <template v-else-if="flat">
-        <slot name="title" :step="step" />
-        <slot :step="step" />
-      </template>
-      <VNodes v-else :nodes="zoned()" />
-      <footer class="ar-footer" v-if="footed()">
-        <VNodes :nodes="footerSlot()({ number: index + 1, total })" />
-      </footer>
     </section>
   </Transition>
 </template>
@@ -186,8 +189,9 @@ const zones = computed(() => ({ gridTemplateColumns: tracks(isRatio(props.ratio,
 
 const deck = useDeck()
 const el = ref(null)
-// its place in the stage, its step; still: export mode, no transition (state/slide.js)
-const { id, index, active, step, still, total, footer: footerSlot } = createSlide({ el, title: computed(() => props.title) })
+// its place in the stage, its step; still: export mode or a thumbnail, no transition; drawn:
+// whether its content is (state/slide.js)
+const { id, index, active, drawn, step, still, total, footer: footerSlot } = createSlide({ el, title: computed(() => props.title) })
 
 // ---- zones: header, body, footer ------------------------------------------------------------
 // Slot content rendered by this component's own render (VNodes only places it), so a change in

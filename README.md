@@ -62,6 +62,8 @@ fixed canvas, absolute steps and themes made of tokens. eagle.js had its bird; s
   only the theme changes, live (`t`, the picker, `?theme=`).
 - **Presenter view.** Current slide, next step, speaker notes, a timer with countdown (its duration
   can be changed live) and the wall clock; every window of the deck stays in step.
+- **A URL per deck.** `/mytalk`, under any base; `/` shows every deck of the project as a card
+  with its cover drawn live.
 - **Keyboard and touch.** Keys, a jump menu, tap and swipe on phones and tablets.
 - **PDF export.** `arao export`: every deck of the project, one PDF each; one page per step (or
   per slide), text kept as text, optional notes pages.
@@ -110,10 +112,10 @@ That is the whole setup:
   `vue()` too; Vue's options go in `arao({ vue: { … } })`), serves the project's folders (decks in
   `src/decks`, code files in `src/snippets`, pictures in `src/images`, each one an option) and
   builds in the icons the source names.
-- `createDeckApp()` creates the Vue app with the engine installed and renders the deck named by
-  `?deck=` (`createDeckApp({ deck: 'mytalk' })`: the deck to open when the URL names none). A
-  project with its own app shell uses `createApp(MyApp).use(Arao)` instead
-  (`import Arao from 'araojs'`).
+- `createDeckApp()` creates the Vue app with the engine installed and renders the deck the URL's
+  path names (`/mytalk`), or at `/` the list of decks (a project with one deck opens it there;
+  `createDeckApp({ deckList: 'always' })` lists it anyway). A project with its own app shell uses
+  `createApp(MyApp).use(Arao)` instead (`import Arao from 'araojs'`).
 - The engine's CSS comes with `'araojs'`; the themes the decks wear are imported one by one.
 
 ### A first deck
@@ -198,14 +200,16 @@ Then `npm run dev` and open `http://localhost:5173/`:
 
 | URL | What it opens |
 |---|---|
-| `/` | the list of the project's decks, a link to each (a project with one deck opens it) |
-| `/?deck=mytalk` | the deck `src/decks/MyTalk.vue` (the name is case-insensitive) |
-| `/?deck=mytalk&theme=vigojug` | the same deck with another of its themes |
-| `/?deck=mytalk#/5/2` | slide 5, step 2 (the hash follows you as you move) |
-| `/?deck=mytalk&presenter` | the presenter view |
-| `/?deck=mytalk&export` | the deck as a book of pages, for printing |
+| `/` | the list of the project's decks: a card each, with its cover drawn in it (a project with one deck opens it, and `/` and `/mytalk` are then the same deck to every window) |
+| `/mytalk` | the deck `src/decks/MyTalk.vue` (the name is case-insensitive) |
+| `/mytalk?theme=vigojug` | the same deck with another of its themes |
+| `/mytalk#/5/2` | slide 5, step 2 (the hash follows you as you move) |
+| `/mytalk?presenter` | the presenter view |
+| `/mytalk?export` | the deck as a book of pages, for printing |
 
-A name that is no deck shows the list too, with a notice (and a warning in the console).
+A name that is no deck shows the list too, with a notice (and a warning in the console). The old
+form, `/?deck=mytalk`, still opens the deck, and the address bar turns it into `/mytalk`. Under a
+sub-path (Vite's `base: '/talks/'`) every path is under it: `/talks/`, `/talks/mytalk`.
 
 ### Project layout
 
@@ -215,7 +219,7 @@ vite.config.js      plugins: [arao()]
 index.html          <div id="app"> and /src/main.js
 src/
   main.js           createDeckApp().mount('#app'), after the theme imports
-  decks/            one .vue file per deck (?deck=<file name>)
+  decks/            one .vue file per deck (/<file name>)
     <talk>/         components only that talk uses
   slides/           components shared by several decks
   snippets/         code files shown by Snippet(file="…"), by name (subfolders allowed)
@@ -357,7 +361,7 @@ controls; swiping left or right also navigates.
 
 ### Presenter view
 
-Press `p` (or the controls' screen button, or open the URL with `&presenter`). A separate window
+Press `p` (or the controls' screen button, or open the deck's URL with `?presenter`). A separate window
 shows the current slide with the controls under it, a preview of what the next press shows, the
 speaker notes of the slide (the ones that start at the current step are marked), the slide number
 and title, the timer and the wall clock.
@@ -395,17 +399,18 @@ npm run export -- --deck mytalk --theme vigojug --per-slide --notes --out talk.p
 | `--per-step` | one page per step: the default, still accepted (not together with `--per-slide`) |
 | `--notes` | a page with the speaker notes after each slide that has them |
 | `--out <path>` | output file or folder (default `exports/<deck>[-<theme>][-slides][-notes].pdf`); with several decks always a folder (a path ending in `.pdf` is an error) |
-| `--url <url>` | print from a running server (e.g. `http://127.0.0.1:5173/`) instead of building |
+| `--url <url>` | print from a running server instead of building: the site's URL, its base (`http://127.0.0.1:5173/`, or `…/talks/` under a base) |
 
-The command builds the project (with its own Vite config) into a temporary folder, serves it,
-opens each deck at `?export` in headless Chromium and prints it, one deck after the other. By
+The command builds the project (with its own Vite config, base included) into a temporary folder,
+serves it, opens each deck at `/<deck>?export` in headless Chromium and prints it, one deck after
+the other. By
 default every step is a page; with `--per-slide` each slide is one page showing its last step.
 It prints one summary line per PDF and, with several decks, a total. A build error stops the run;
 a deck that fails at runtime (does not render, throws, crashes) is reported and does not stop the
 others, and the exit code is 1 if any failed. With `--theme` and several decks, a deck that does
 not list that theme is printed in its first (its line says so, its file name has no theme); a
 theme no deck lists is an error. Pages are 1920x1080 px (1440x810 pt). `ARAO_CHROMIUM=/path/to/chrome` uses a browser
-you already have. Opening `?export` in a normal browser and printing to PDF gives the same pages.
+you already have. Opening `/<deck>?export` in a normal browser and printing to PDF gives the same pages.
 
 ## Documentation
 
@@ -426,7 +431,8 @@ Node 20.19 or newer.
 | `npm run smoke [-- <file.tgz>]` | the packaged-consumer smoke test (below) |
 
 In a slides project, `npm run dev` is the Vite dev server with hot reload, `npm run build` a
-static build into `dist/` (every deck; pick one with `?deck=`) and `npm run export` the PDF.
+static build into `dist/` (every deck, each at its path; with a `404.html` for static hosts, see
+[Hosting](docs/reference.md#hosting)) and `npm run export` the PDF.
 
 ### Repository layout
 
@@ -438,8 +444,8 @@ src/
   state/            the deck, its stages, its slides: createDeck/useDeck, createStage/useStage, createSlide/useSlide
   composables/      the effects (internal): useHashRoute, useDeckSync, usePresenterWindow, useKeyboard, useTouchNav, useMouseIdle, useFullscreen
   core/             plain modules: sync, timer, exporter, image, icons, flip, layout (the layout props' parsers)
-  views/            what Arao draws: AudienceView, PresenterView, ExportView; DeckSelector (createDeckApp's list of decks)
-    parts/          Stage (the scaled canvas), Controls, PresenterBar
+  views/            what Arao draws: AudienceView, PresenterView, ExportView, ThumbnailView; DeckSelector (createDeckApp's list of decks)
+    parts/          Stage (the scaled canvas), Controls, PresenterBar, DeckCover (a deck's cover in the list)
   components/       Deck, Slide, Img, Icon, Snippet, Notes; layout/: Cols, Rows, Grid, Center
   directives/       v-step and v-step-from (step.js)
   addons/           ProgressBar, SlideNumber: things drawn over every slide
@@ -458,16 +464,23 @@ dist/               the build (npm run build): index.js, arao.css, themes/
 
 `scripts/smoke.mjs` checks the package the way a user gets it. It packs the library (or takes the
 tarball it is given), installs it into a new slides project in a temporary folder with the
-playground's decks, images and snippets (and two tiny decks of its own, the second with a duration
-and the third without), and then:
+playground's decks, images and snippets (and three tiny decks of its own: the second with a
+duration, the third without, the fourth with a file name and a cover heading far too long for a
+card), and then:
 
-1. runs `vite build`;
-2. opens every deck under the dev server (Vue's own warnings only show up in dev) and under
-   `vite preview`, and walks each one with ArrowRight to its last step. Any console warning or
-   error, any page error, or a deck with no slides fails the test;
-3. opens `/` under both servers: it must list every deck, each link must open its deck (the first
-   one followed with the keyboard) and keep the page's other query parameters, and an unknown
-   `?deck=` must show the list with one warning;
+1. runs `vite build`, which must also write `dist/404.html`, a copy of `dist/index.html`;
+2. opens every deck at its path under the dev server (Vue's own warnings only show up in dev) and
+   under `vite preview`, and walks each one with ArrowRight to its last step. Any console warning
+   or error, any page error, or a deck with no slides fails the test;
+3. opens `/` under both servers: it must list every deck, each card with its cover drawn in it,
+   its title the file name in words (written out in the test) from the list's first render, and
+   the same once the covers are in, the second and the fourth deck's cover heading under its
+   title, its path shown as its link's (decoded), every card as tall as the others, its title,
+   cover heading and path on one line each (the fourth deck's cut), and the page's URL untouched;
+   each link must open its deck (the first one followed with the keyboard) and keep the page's
+   query, and the covers stay covers on `/?presenter`; `?deck=<name>` must move to `/<name>`
+   keeping the rest of the query and the hash; an unknown path, and an unknown `?deck=`, must show
+   the list with a notice and one warning;
 4. checks `useDeck()` on the second deck, under the dev server: the object is frozen, writes
    through its refs change nothing, `setTheme` of a name the deck has not gives one `[arao]`
    warning, and in the presenter view's preview no function acts;
@@ -480,18 +493,36 @@ and the third without), and then:
    typed text) and says so; a reload keeps the duration, a new audience window takes it, and going
    back restores the deck's 15:00 everywhere. On the third deck (no duration), one set adds the
    countdown and going back removes it;
-6. rewrites the project's `src/main.js` (and once its `vite.config.js`) for createDeckApp's
-   other cases, under the dev server: a project with one deck opens it at `/`;
-   `createDeckApp({ deck: 'second' })` opens that deck at `/` while `?deck=<other>` still wins;
-   `createDeckApp({ deck: 'missing' })` shows the list with one `[arao]` warning;
-7. runs `<bin> export` with no `--deck` and checks one PDF per deck at its default name, each with
+6. presses `p` on the second deck under the dev server: the presenter window must open at
+   `/<second>?presenter` and move with the audience's window, either way, while a window of the
+   other deck stays put;
+7. opens the second deck at `/<second>#/2/1`, under the dev server, and `/` in another window of
+   the same browser, then reloads `/`: the deck's window must keep its hash and its timer;
+8. rewrites the project's `vite.config.js` and `src/main.js` for createDeckApp's other cases,
+   under the dev server. On a decks folder holding one deck: it opens at `/` and at its path,
+   and windows at `/` and `/<second>` move together, either way, `/` staying `/` (`p` there
+   opens `/<second>?presenter`); `createDeckApp({ deckList: 'always' })` lists it at `/`, with
+   its cover; `createDeckApp({ deckList: 'sometimes' })` opens it, with one `[arao]` warning. On a
+   decks folder of 14 decks, at 390x844: the covers far below the screen are not drawn until
+   scrolled to, a deck that throws as it is drawn shows "Sin vista previa" (one `[arao]`
+   warning), and `/café` is shown as such;
+9. runs `<bin> export` with no `--deck` and checks one PDF per deck at its default name, each with
    as many pages (counted in the PDF itself) as steps, as its summary line says and as the walk
    counted, plus the total line; then `<bin> export --deck <name> --per-slide`, whose PDF must
    have as many pages as slides;
-8. runs the CLI's other cases on small decks folders of their own, into `--out <folder>`:
-   `--theme` over a deck that lists it and one that falls back (a symlinked deck, next to a dotfile
-   that must not count), a theme no deck lists (exit 1, nothing written), a deck that throws at
-   runtime (the others exported, exit 1), and decks that resolve to the same file (the second fails).
+10. runs `<bin> export --deck <other> --url` against `vite preview`: with a deck's own URL it must
+   warn, naming the base meant, and then fail on the deck printed; with a URL under which the
+   second deck opens, it must fail on the deck printed, with no warning; both exit 1 and write
+   nothing;
+11. builds the project under a sub-path (`base: '/sub/'`): `dist/404.html` again; under `vite
+   preview` the list at `/sub/` (the same checks as in 3), a deck at `/sub/<name>`, and
+   `<bin> export --deck <name>` printing it;
+12. runs the CLI's other cases on small decks folders of their own, into `--out <folder>`:
+   `--url` at a site built under a base named like one of its decks (`/talks/`, a deck `Talks`),
+   which warns and exports every deck; `--theme` over a deck that lists it and one that falls back
+   (a symlinked deck, next to a dotfile that must not count), a theme no deck lists (exit 1,
+   nothing written), a deck that throws at runtime (the others exported, exit 1), and decks that
+   resolve to the same file (the second fails).
 
 The package name and the CLI's name come from `package.json`. CI runs it on every pull request and
 on every push to `main`. To run it locally:

@@ -31,6 +31,7 @@ import { nextTick } from 'vue'
 // Ready: window.__araoReady = { pages, slides, steps, width, height, missing, stalled } once
 // every page is in the book with its fonts and pictures loaded; { error } if the export cannot be
 // made (with code: 'theme-not-listed' and the deck's themes when the theme is not one of them).
+// The export view adds deck to each: the name of the deck printed (null when the app named none).
 // missing: names of pictures shown as placeholders (they failed). stalled: what was still on its
 // way when printed (it neither loaded nor failed in time), printed as it stood.
 // Content that arrives late marks itself with the attribute data-ar-busy while it does (Snippet

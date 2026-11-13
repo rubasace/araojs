@@ -1,22 +1,25 @@
 import { onBeforeUnmount, readonly, ref } from 'vue'
 import { deckKey } from '../core/sync'
 
-// Internal. Opens the presenter view (this URL with ?presenter) from the audience's window.
-//   const { open, name, blocked, dismiss } = usePresenterWindow()
+// Internal. Opens the presenter view (the deck's path with this URL's query and ?presenter:
+// /talk → /talk?presenter, the hash kept) from the audience's window.
+//   const { open, name, blocked, dismiss } = usePresenterWindow(path)
+// path: the deck's (state/deck.js), which may not be the address bar's: a project's only deck,
+// opened at /, opens its presenter view at /talk?presenter.
 // A window of its own (not a tab), to drag to the speaker's screen, found by its name (one per
 // deck): one already open, even by this page before a reload, is only brought forward, keeping
 // its scroll; a new one opens blank and is sent to the presenter view.
 // If the browser blocks it, blocked holds the presenter view's URL for 10 s (Deck shows it as a
 // link, which the browser does not block); dismiss() clears it.
-export function usePresenterWindow() {
-  const name = `arao-presenter ${deckKey(location)}`
+export function usePresenterWindow(path) {
+  const name = `arao-presenter ${deckKey(path, location.search)}`
   const blocked = ref(null)
   let blockedTimer
   function open() {
     const params = new URLSearchParams(location.search)
     params.delete('presenter')
     const q = params.toString()
-    const url = new URL(`${location.pathname}?${q ? q + '&' : ''}presenter${location.hash}`, location.href).href
+    const url = new URL(`${path}?${q ? q + '&' : ''}presenter${location.hash}`, location.href).href
     const w = window.open('', name, 'popup,width=1280,height=800')
     if (!w) {
       console.warn(`[arao] The browser blocked the presenter window: allow pop-ups for this site, or open ${url}`)

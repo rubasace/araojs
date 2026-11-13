@@ -15,9 +15,11 @@ import { computed, inject, nextTick, provide, readonly, ref, shallowReactive } f
 //                                           it cannot be moved by itself
 //   role: 'audience' (default)              which rendering this is, for components (useDeck().role):
 //         | 'presenter' | 'preview'         the audience window, the presenter view's current slide,
-//         | 'export'                        or its preview of the next step; or the deck being printed
+//         | 'export' | 'thumbnail'          or its preview of the next step; the deck being printed
 //                                           (?export, core/exporter.js: walked page by page, copied
-//                                           into a book)
+//                                           into a book); or a thumbnail of its cover (a follower
+//                                           that stands at the first slide; its slides other than
+//                                           that one draw nothing, state/slide.js)
 //   provideStage(stage)                     in the Stage part: what it draws belongs to this stage
 //   useStage()                              the stage the caller is drawn in, or null outside every
 //                                           Stage (the views' own UI: controls, presenter bar)
@@ -163,9 +165,10 @@ export function createStage({ follow, onMove, role = 'audience' } = {}) {
 }
 
 // A slide's title, for the jump menu, the presenter view and the notes pages: Slide(title="…"),
-// else its first heading outside the background and the footer.
+// else its first heading outside the background and the footer (headingOf: that heading's text).
 const HEADING = ':is(h1, h2, h3):not(.ar-slide-bg *, .ar-footer *)'
-export const titleOf = (slide) => slide.title.value || slide.el.value?.querySelector(HEADING)?.textContent.trim() || ''
+export const headingOf = (slide) => slide.el.value?.querySelector(HEADING)?.textContent.replace(/\s+/g, ' ').trim() || ''
+export const titleOf = (slide) => slide.title.value || headingOf(slide)
 
 // Where the audience will be after one more press: the next step of the same slide, else the
 // next slide at its first step; at the very end, { end: true }.
