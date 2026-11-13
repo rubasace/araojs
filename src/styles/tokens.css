@@ -3,9 +3,9 @@
 
    Declared here, as defaults, wherever a theme is applied: the audience's viewport (and the export
    book inside it), each Stage of the presenter view (views/parts/Stage.vue), and the elements
-   that show a theme of their own (the deck selector, the theme swatches of the controls). Zero
-   specificity: the theme's own [data-theme="x"] rule wins on the same element, and a token set on
-   any element inside (a layout, a slide, a table) wins over both. */
+   that show a theme of their own (each cover in the deck selector, the theme swatches of the
+   controls). Zero specificity: the theme's own [data-theme="x"] rule wins on the same element,
+   and a token set on any element inside (a layout, a slide, a table) wins over both. */
 :where([data-theme]) {
   /* canvas and slide */
   --ar-letterbox: #000;              /* around the canvas when the window shape differs */
@@ -63,7 +63,6 @@
        --ar-header-height    unset: no header band (Slide.vue)
        --ar-code-theme       unset: material-theme-darker (Snippet.vue)
    - Read where no theme may apply, with fallbacks of their own: the presenter view's docked
-     controls (Controls.vue: --ar-accent, #fff), the deck selector (DeckSelector.vue: system
-     colours, when the project does not import the default theme).
+     controls (Controls.vue: --ar-accent, #fff).
    - Set by the engine, not by themes: --ar-scale, the canvas's scale (Stage.vue; 1 in the
      export's book, ExportView.vue). */
