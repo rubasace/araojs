@@ -36,7 +36,7 @@
 // (default 'src/themes'):
 //   a folder    a path, as the other folders ('src/themes', '../shared/themes', './themes': a
 //               folder at the root needs the "./", else it reads as a package's name)
-//   a package   a bare npm name ('arao-themes', '@acme/arao-themes'), installed in the project:
+//   a package   a bare lowercase npm name ('arao-themes', '@acme/arao-themes'), installed:
 //               its themes are the .css files of its themes/ folder, or of the folder its
 //               package.json names ("arao": { "themes": "css" }). A package not installed, or
 //               one that gives no theme, stops the build.
@@ -48,7 +48,9 @@
 // no file), source after source. A file that names none is still loaded (shared rules, fonts) and
 // Vite says so. Subfolders hold what the themes use (pictures, @import-ed partials), and are not
 // loaded on their own. A name two sources give is offered once, where it comes first, and Vite
-// warns: both files are loaded, so the later source's rules win where they set the same token.
+// warns: both files are loaded and both apply; at equal specificity the later source wins.
+// Sources are taken by their real folder (symlinks resolved: a linked package is watched where its
+// files are), and one named twice counts once.
 // A theme no source gives (a CSS file the project imports itself) is not one: a deck that lists it
 // is warned and does not wear it. Its folder or its package goes in arao({ themes }).
 //
@@ -56,7 +58,7 @@
 // resolved here, at build time: the source is read for the names it uses and only those go into
 // virtual:arao/icons (icons.js). arao({ icons: ['lucide:rocket'] }) adds names the source
 // does not spell out (built at runtime).
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import vue from '@vitejs/plugin-vue'
@@ -80,8 +82,10 @@ const IMAGES = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'svg']
 /** @type {Record<Folder, string>} */
 const DEFAULTS = { decks: 'src/decks', snippets: 'src/snippets', images: 'src/images' }
 const DEFAULT_THEMES = 'src/themes'
-// a source that is a package's name, not a path: 'name' or '@scope/name' (npm's rules, loosely)
-const PACKAGE_NAME = /^(?:@[a-z0-9~][\w.~-]*\/)?[a-z0-9~][\w.~-]*$/i
+// a source that is a package's name, not a path: a bare lowercase npm name, 'name' or
+// '@scope/name' (npm's rules: lowercase letters, digits, - . _ ~); anything else, or a name
+// written with './', is a folder
+const PACKAGE_NAME = /^(?:@[a-z0-9~][a-z0-9._~-]*\/)?[a-z0-9~][a-z0-9._~-]*$/
 
 // what each folder's glob takes, and how; and what a missing folder means
 /** @type {Record<Folder, { pattern: string, options?: string, missing: string }>} */
@@ -221,37 +225,65 @@ function themesIn(folder, root) {
 }
 
 // The theme sources arao({ themes }) names, resolved: each a folder ({ spec, dir, pkg: null }) or
-// an installed package's themes folder ({ spec, dir, pkg: its name }); label is how messages name
-// it. A package is looked up as Node does, in node_modules from the root up; its folder is themes/,
-// or what its package.json says ("arao": { "themes": "<folder>" }). Throws on a package not
-// installed, or whose folder is not one.
+// an installed package's themes folder ({ spec, dir, pkg: its name }), dir its real path (symlinks
+// resolved), each real folder once; label is how messages name it. A package is looked up as Node
+// does, in node_modules from the root up, else through Node's resolution (Yarn PnP); its folder is
+// themes/, or what its package.json says ("arao": { "themes": "<folder>" }, inside the package).
+// Throws on a package not installed, or whose folder is not one.
+/** @param {string} p */
+const real = (p) => {
+  try {
+    return realpathSync(p)
+  } catch {
+    return p // not there (yet): as written
+  }
+}
 /** @param {string[]} specs @param {string} root @returns {ThemeSource[]} */
 function resolveThemeSources(specs, root) {
-  return specs.map((spec) => {
-    const isPackage = PACKAGE_NAME.test(spec) && !spec.startsWith('.')
-    if (!isPackage) return { spec, dir: resolve(root, spec), pkg: null, label: spec }
-    let pkgDir = null
-    for (let d = root; ; d = dirname(d)) {
-      if (existsSync(join(d, 'node_modules', spec, 'package.json'))) { pkgDir = join(d, 'node_modules', spec); break }
-      if (dirname(d) === d) break
-    }
-    if (!pkgDir) throw new Error(`[arao] themes: no package "${spec}" installed (node_modules/${spec}). Install it, or, if you meant a folder at the root, write "./${spec}"`)
-    /** @type {{ arao?: { themes?: unknown } }} */
-    let meta = {}
+  /** @type {Set<string>} */
+  const seen = new Set()
+  return specs.map((spec) => resolveThemeSource(spec, root)).filter((t) => !seen.has(t.dir) && seen.add(t.dir))
+}
+/** @param {string} spec @param {string} root @returns {ThemeSource} */
+function resolveThemeSource(spec, root) {
+  if (!PACKAGE_NAME.test(spec)) return { spec, dir: real(resolve(root, spec)), pkg: null, label: spec }
+  let pkgDir = null
+  for (let d = root; ; d = dirname(d)) {
+    if (existsSync(join(d, 'node_modules', spec, 'package.json'))) { pkgDir = join(d, 'node_modules', spec); break }
+    if (dirname(d) === d) break
+  }
+  if (!pkgDir) {
     try {
-      meta = JSON.parse(readFileSync(join(pkgDir, 'package.json'), 'utf8'))
+      pkgDir = dirname(createRequire(join(root, 'package.json')).resolve(`${spec}/package.json`))
     } catch {
-      // an unreadable package.json: the default folder
+      // not resolvable that way either (or its exports hide package.json)
     }
-    const named = meta.arao?.themes
-    if (named != null && (typeof named !== 'string' || !named.trim()))
-      throw new Error(`[arao] themes: package "${spec}" says "arao": { "themes": ${JSON.stringify(named)} } in its package.json: a folder's path is wanted`)
-    const folder = typeof named === 'string' ? named.trim() : 'themes'
-    const dir = resolve(pkgDir, folder)
-    if (!statSync(dir, { throwIfNoEntry: false })?.isDirectory())
-      throw new Error(`[arao] themes: package "${spec}" has no ${folder}/ folder (${dir}): a theme package keeps its CSS in themes/, or names its folder in its package.json, "arao": { "themes": "<folder>" }`)
-    return { spec, dir, pkg: spec, label: `${spec} (${folder}/)` }
-  })
+  }
+  if (!pkgDir) {
+    const folder = statSync(resolve(root, spec), { throwIfNoEntry: false })?.isDirectory()
+    throw new Error(folder
+      ? `[arao] themes: "${spec}" is read as a package's name, and no package "${spec}" is installed. There is a folder "${spec}" at the root: write "./${spec}" to use it`
+      : `[arao] themes: no package "${spec}" installed (node_modules/${spec}). Install it, or, if you meant a folder at the root, write "./${spec}"`)
+  }
+  pkgDir = real(pkgDir)
+  /** @type {{ arao?: { themes?: unknown } }} */
+  let meta = {}
+  try {
+    meta = JSON.parse(readFileSync(join(pkgDir, 'package.json'), 'utf8'))
+  } catch {
+    // an unreadable package.json: the default folder
+  }
+  const named = meta.arao?.themes
+  if (named != null && (typeof named !== 'string' || !named.trim()))
+    throw new Error(`[arao] themes: package "${spec}" says "arao": { "themes": ${JSON.stringify(named)} } in its package.json: a folder's path is wanted`)
+  const folder = typeof named === 'string' ? named.trim() : 'themes'
+  const inside = relative(pkgDir, resolve(pkgDir, folder))
+  if (isAbsolute(folder) || inside === '..' || inside.startsWith('..' + sep) || isAbsolute(inside))
+    throw new Error(`[arao] themes: package "${spec}" names "${folder}" as its themes folder ("arao": { "themes" } in its package.json): it must be a folder inside the package`)
+  const dir = real(resolve(pkgDir, folder))
+  if (!statSync(dir, { throwIfNoEntry: false })?.isDirectory())
+    throw new Error(`[arao] themes: package "${spec}" has no ${folder}/ folder (${dir}): a theme package keeps its CSS in themes/, or names its folder in its package.json, "arao": { "themes": "<folder>" }`)
+  return { spec, dir, pkg: spec, label: `${spec} (${folder}/)` }
 }
 // every source's themes, in order: their names, each once where it comes first (the names a later
 // source gives again: dupes, { name, first, then }), and the files that name none, the names
@@ -334,7 +366,7 @@ export default function arao(options = {}) {
   /** @param {string} file */
   const unnamedTheme = (file) => logger.warn(`[arao] ${normalizePath(relative(root, file))} names no theme (no [data-theme="<name>"] selector): it is loaded, but no deck can wear it`)
   /** @param {{ name: string, first: string, then: string }} d */
-  const dupeTheme = ({ name, first, then }) => logger.warn(`[arao] theme "${name}" is in ${first} and in ${then}: it is offered once, and ${then}'s rules, loaded later, win where both set a token`)
+  const dupeTheme = ({ name, first, then }) => logger.warn(`[arao] theme "${name}" is in ${first} and in ${then}: it is offered once; both apply, and at equal specificity ${then} (loaded later) wins`)
   /** @param {string} file */
   const inThemeFolder = (file) => file.endsWith('.css') && themeSources.some((t) => relative(t.dir, file) === basename(file))
   /** @param {{ file: string, name: string }} s */
@@ -365,14 +397,12 @@ export default function arao(options = {}) {
     },
   }
 
-  /** @type {import('vite').Plugin & { api: { folders: () => Record<Folder, string>, themes: () => string[], decks: () => string[] } }} */
+  /** @type {import('vite').Plugin & { api: { folders: () => Record<Folder, string>, decks: () => string[] } }} */
   const plugin = {
     name: 'arao',
     // for tools that run the project's Vite config (the export CLI): the folders, resolved
     api: {
       folders: () => /** @type {Record<Folder, string>} */ (Object.fromEntries(names.map((n) => [n, dir(n)]))),
-      // the theme sources' folders, in order
-      themes: () => themeSources.map((t) => t.dir),
       // the decks' names, sorted: what the decks glob below ('*.vue') takes
       decks: () => decksIn(dir('decks')),
     },
@@ -415,7 +445,7 @@ export default function arao(options = {}) {
           if (!given.perSource.get(t.spec)?.length)
             throw new Error(`[arao] themes: package "${t.spec}" gives no theme: no .css file of ${t.dir} has a [data-theme="<name>"] selector`)
         } else if (themesOption != null && !existsSync(t.dir))
-          config.logger.warn(`[arao] the themes folder "${t.spec}" does not exist (${t.dir}): its themes are missing`)
+          config.logger.warn(`[arao] the theme source "${t.spec}" is no folder (${t.dir}): its themes are missing`)
       }
     },
     configureServer(server) {

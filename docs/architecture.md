@@ -221,10 +221,11 @@ folder: Vite follows files added or removed), and `virtual:arao/themes` exports 
 `[data-theme="<name>"]` selectors give, sorted (the plugin reads the files and the local partials
 they `@import`, skips selectors inside `:not(…)`, resolves CSS escapes and warns about names with
 white space; when an edit changes those names in the dev server, it reloads the module and the
-page), source after source, each name once (a name a later source gives again warns). A package
-source is resolved at config time (node_modules, from the root up; its `themes/` folder or the
-one its `package.json` names under `"arao"`), and one not installed or giving no theme stops
-Vite. `state/theme.ts` resolves a deck's list: `Deck(:themes)` without the names that are no
+page), source after source, each name once (a name a later source gives again warns: both
+apply, at equal specificity the later wins). A package source is resolved at config time
+(node_modules, from the root up, else Node's resolution; its `themes/` folder or the one inside it
+that its `package.json` names under `"arao"`), to its real path, and one not installed or giving
+no theme stops Vite. `state/theme.ts` resolves a deck's list: `Deck(:themes)` without the names that are no
 theme (one warning), or, without it, `default` and then every theme the sources give. Nothing
 is read from the page's stylesheets: a name the plugin does not know is no theme, and the export
 view, which checks `--theme` against the same list, refuses it. The library ships no theme and

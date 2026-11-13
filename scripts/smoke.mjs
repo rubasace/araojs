@@ -20,8 +20,10 @@
 // Then, in order:
 //   1. npm install
 //   2. vite build                      must pass, and write dist/404.html, a copy of index.html;
-//      with a theme source that is a package not installed, or one that gives no theme, it must
-//      stop with an [arao] error
+//      with a theme source that is a package not installed, one that gives no theme, one whose
+//      themes folder is outside it, or a bare name that is a root folder, it must stop with an
+//      [arao] error (the last one with the "./" hint); a name two sources give warns once, and a
+//      source named twice does not warn about itself
 //   3. every deck of src/decks, under the dev server (Vue's own warnings only exist in dev) and
 //      under vite preview (the production build): opened at /<name>, walked with ArrowRight
 //      until the hash stops changing; any console warning/error or page error fails, and so does
@@ -41,7 +43,8 @@
 //      the way down, setTheme refuses a name the deck has not (one [arao] warning), and in the
 //      presenter view's preview no function acts
 //   5b. themes, under the dev server, on the third deck (no themes listed): it wears 'default' and
-//      lists 'default', THEME, THEME-extra, ROOM and IMPORTED (source after source); t cycles to THEME, and ?theme=THEME wears it; the
+//      lists 'default', THEME, THEME-extra, ROOM, IMPORTED and LINKED (source after source); a theme
+//      added to the linked package (outside the root) while it runs is offered by the next page; t cycles to THEME, and ?theme=THEME wears it; the
 //      defaults reach what is drawn outside every theme (the presenter view); a :root rule of the
 //      project's own wins over a default (and a default that is another token follows it), a
 //      theme wins over that rule, and the picker's swatch of 'default' shows it; :root
@@ -165,8 +168,12 @@ const HALL_FILES = {
 const ROOM = 'room'
 const ROOM_FILE = ['src/venues/room.css', `[data-theme="${ROOM}"] { --ar-accent: rgb(63, 81, 181); }
 `]
+// a scoped theme package linked from outside the project (as npm link or a workspace does): a
+// symlink in node_modules to a folder next to the project, its CSS in themes/ (the default)
+const LINKED = 'linked'
+const LINKED_PKG = '@smoke/linked-themes'
 // the plugin's theme sources, in order
-const THEME_SOURCES = `themes: ['src/themes', 'src/venues', '${HALL_PKG}']`
+const THEME_SOURCES = `themes: ['src/themes', 'src/venues', '${HALL_PKG}', '${LINKED_PKG}']`
 const DURATION = 15 * 60000
 const SECOND = ['Second.vue', `<template lang="pug">
 Deck(:themes="['default', '${THEME}']" duration="15m")
@@ -288,6 +295,7 @@ async function cleanup() {
   await browser?.close().catch(() => {})
   if (server && server.exitCode == null) server.kill()
   if (project && !process.env.SMOKE_KEEP) await rm(project, { recursive: true, force: true })
+  if (project && !process.env.SMOKE_KEEP) await rm(`${project}-linked`, { recursive: true, force: true })
 }
 
 try {
@@ -343,6 +351,13 @@ try {
 
   log('npm install')
   await run('npm', ['install', '--no-audit', '--no-fund'], project)
+  // the linked package: outside the project, symlinked into its node_modules
+  const linked = `${project}-linked`
+  await mkdir(join(linked, 'themes'), { recursive: true })
+  await writeFile(join(linked, 'package.json'), JSON.stringify({ name: LINKED_PKG, version: '1.0.0' }))
+  await writeFile(join(linked, 'themes', 'linked.css'), `[data-theme="${LINKED}"] { --ar-accent: rgb(121, 85, 72); }\n`)
+  await mkdir(join(project, 'node_modules', '@smoke'), { recursive: true })
+  await symlink(linked, join(project, 'node_modules', LINKED_PKG), 'dir')
 
   // the project's own Vite and Playwright, as installed with the package
   const need = createRequire(join(project, 'package.json'))
@@ -361,29 +376,46 @@ try {
   await run(process.execPath, [viteBin, 'build'], project)
   await notFoundPage('vite build')
 
-  // a theme source that is a package not installed, and one that gives no theme: the build stops
+  // theme sources the build turns down, or warns about: a package not installed, one that gives no
+  // theme, one whose package.json names a folder outside it, a bare name that is a folder at the
+  // root (the "./" hint); a name two sources give (one warning, the build passes), and a source
+  // named twice ('src/themes' and './src/themes': no warning about its own names)
   {
     const config = files['vite.config.js']
-    const empty = 'arao-empty-themes'
-    await mkdir(join(project, 'node_modules', empty, 'themes'), { recursive: true })
-    await writeFile(join(project, 'node_modules', empty, 'package.json'), JSON.stringify({ name: empty, version: '1.0.0' }))
-    await writeFile(join(project, 'node_modules', empty, 'themes', 'shared.css'), ':root { --x: 1; }\n')
-    const bad = [
-      { spec: 'arao-no-such-themes', says: /\[arao\] themes: no package "arao-no-such-themes" installed/ },
-      { spec: empty, says: new RegExp(`\\[arao\\] themes: package "${empty}" gives no theme`) },
+    const fake = async (name, meta, css) => {
+      const dir = join(project, 'node_modules', name)
+      await mkdir(join(dir, 'themes'), { recursive: true })
+      await writeFile(join(dir, 'package.json'), JSON.stringify({ name, version: '1.0.0', ...meta }))
+      await writeFile(join(dir, 'themes', 'shared.css'), css)
+    }
+    await fake('arao-empty-themes', {}, ':root { --x: 1; }\n')
+    await fake('arao-escape-themes', { arao: { themes: '../../src/themes' } }, '[data-theme="x"] {}\n')
+    await mkdir(join(project, 'src', 'dupes'), { recursive: true })
+    await writeFile(join(project, 'src', 'dupes', 'room.css'), `[data-theme="${ROOM}"] { --ar-accent: rgb(1, 1, 1); }\n`)
+    const cases = [
+      { add: ['arao-no-such-themes'], says: /\[arao\] themes: no package "arao-no-such-themes" installed/ },
+      { add: ['arao-empty-themes'], says: /\[arao\] themes: package "arao-empty-themes" gives no theme/ },
+      { add: ['arao-escape-themes'], says: /\[arao\] themes: package "arao-escape-themes" names "\.\.\/\.\.\/src\/themes" .*must be a folder inside the package/ },
+      { add: ['vendor'], says: /\[arao\] themes: "vendor" is read as a package's name.*There is a folder "vendor" at the root: write "\.\/vendor"/ },
+      { add: ['./src/dupes', './src/themes'], passes: true, says: new RegExp(`\\[arao\\] theme "${ROOM}" is in src/venues and in \\./src/dupes: it is offered once; both apply`), not: /\[arao\] theme "sample/ },
     ]
     try {
-      for (const b of bad) {
-        await writeFile(join(project, 'vite.config.js'), config.replace(`'${HALL_PKG}']`, `'${HALL_PKG}', '${b.spec}']`))
+      for (const c of cases) {
+        const what = `vite build with the theme sources + ${c.add.join(', ')}`
+        await writeFile(join(project, 'vite.config.js'), config.replace(`'${HALL_PKG}'`, `'${HALL_PKG}', ${c.add.map((a) => `'${a}'`).join(', ')}`))
         const { code, out, err } = await exec(process.execPath, [viteBin, 'build'], project)
-        if (code === 0) fail(`vite build with the theme source "${b.spec}": passed, not stopped`)
-        else if (!b.says.test(out + err)) fail(`vite build with the theme source "${b.spec}": stopped, but without ${b.says}`)
-        else console.log(`  theme source "${b.spec}": the build stops, saying so`)
+        const said = out + err
+        if (c.passes ? code !== 0 : code === 0) fail(`${what}: exited with ${code}`)
+        else if (!c.says.test(said)) fail(`${what}: nothing matching ${c.says}`)
+        else if (c.not?.test(said)) fail(`${what}: says ${c.not}`)
+        else console.log(`  theme sources + ${c.add.join(', ')}: ${c.passes ? 'builds, warning once' : 'the build stops, saying why'}`)
       }
     } finally {
       await writeFile(join(project, 'vite.config.js'), config)
-      await rm(join(project, 'node_modules', empty), { recursive: true, force: true })
+      for (const p of ['arao-empty-themes', 'arao-escape-themes']) await rm(join(project, 'node_modules', p), { recursive: true, force: true })
+      await rm(join(project, 'src', 'dupes'), { recursive: true, force: true })
     }
+    await run(process.execPath, [viteBin, 'build'], project) // the project's own build back in dist/
   }
 
   browser = await chromium.launch({ executablePath: process.env.ARAO_CHROMIUM || undefined })
@@ -949,7 +981,7 @@ try {
       if (!plain.picker) complaints.push('no theme picker in the controls: the deck has one theme, not default and ' + THEME)
       // every theme there is: THEME-extra comes from a partial of brand.css (the plugin follows it)
       const offered = (await picker(page)).map((t) => t.name)
-      const all = ['default', THEME, `${THEME}-extra`, ROOM, IMPORTED]
+      const all = ['default', THEME, `${THEME}-extra`, ROOM, IMPORTED, LINKED]
       if (JSON.stringify(offered) !== JSON.stringify(all)) complaints.push(`the picker offers ${offered.join(', ') || 'nothing'}, not ${all.join(', ')}`)
       await page.keyboard.press('Escape')
       await page.keyboard.press('t')
@@ -1006,6 +1038,24 @@ try {
       const over = await look(page)
       if (over.title !== SAMPLE.accent) complaints.push(`:root { --ar-accent } and ?theme=${THEME}: the h2 title is ${over.title}, not the theme's ${SAMPLE.accent}`)
       await page.close()
+
+      // a theme added to the linked package (outside the root) while the dev server runs: offered
+      // by the next page (the plugin watches the package where its files are)
+      const LATE = 'late'
+      await writeFile(join(`${project}-linked`, 'themes', 'late.css'), `[data-theme="${LATE}"] { --ar-accent: rgb(2, 2, 2); }\n`)
+      try {
+        let offeredLate = []
+        for (let i = 0; i < 20 && !offeredLate.includes(LATE); i++) {
+          await pause(500)
+          page = await open('')
+          offeredLate = (await picker(page)).map((t) => t.name)
+          await page.close()
+        }
+        if (!offeredLate.includes(LATE)) complaints.push(`a theme added to the linked package (${LATE}) is not offered: ${offeredLate.join(', ')}`)
+      } finally {
+        await rm(join(`${project}-linked`, 'themes', 'late.css'), { force: true })
+        await pause(1500)
+      }
 
       // a theme of the theme package, and listed: worn, with no warning
       page = await open('', null, venue)

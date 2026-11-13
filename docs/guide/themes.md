@@ -96,16 +96,19 @@ export default defineConfig({
 ```
 
 - **a folder**: a path from the project's root, or absolute (`'src/themes'`, `'../shared/themes'`).
-  A folder right at the root needs `./` (`'./themes'`): a bare name is read as a package's.
+  The rule: a bare lowercase name (`'themes'`, `'@acme/x'`) is a package; anything else is a folder,
+  so a folder right at the root is written `'./themes'`.
 - **a package**: an npm name (`'arao-themes'`, `'@acme/arao-themes'`), installed in the project
   (`npm i -D arao-themes`). A theme package publishes plain CSS files, no build step needed
   (minified is fine), in a `themes/` folder at its root; one that keeps them elsewhere says so in
-  its `package.json`: `"arao": { "themes": "dist" }`. A package that is not installed, or whose
-  folder gives no theme, stops the build with an `[arao]` error.
+  its `package.json`: `"arao": { "themes": "dist" }` (a folder inside the package). A linked
+  package (`file:`, `npm link`, a workspace) works the same, watched where its files really are.
+  A package that is not installed, or whose folder gives no theme, stops the build with an
+  `[arao]` error.
 
 Every theme the sources give is offered, after `default`, source after source (alphabetical in
-each). A name two sources give is offered once, where it comes first, and Vite warns; both files
-are loaded, source after source, so the later source's rules win where both set a token. A CSS
+each). A name two sources give is offered once, where it comes first, and Vite warns: both files
+are loaded, source after source, and both apply; at equal specificity the later source wins. A CSS
 file the project imports itself (from `src/main.js`, a `.scss` file, a deck's own `<style>`) is
 no theme source: its rules apply, but a `[data-theme]` in it is not a theme a deck can list.
 Put its folder, or its package, in `themes` instead.
