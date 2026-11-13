@@ -33,8 +33,20 @@ const SYSTEM = [
 ]
 
 /**
- * fonts: true or omitted (the defaults), false (off), or fontless's options over ours.
- * @typedef {boolean | Parameters<typeof fontless>[0]} FontsOption
+ * fonts: true or omitted (the defaults), false (off), or fontless's options over ours. Declared
+ * here, not imported from fontless: the published types stay free of fontless's own dependencies
+ * (a project type-checks without them). The common keys are named; any other of fontless's
+ * options passes through as it is.
+ * @typedef {{
+ *   defaults?: { weights?: (number | string)[], styles?: ('normal' | 'italic' | 'oblique')[], subsets?: string[], fallbacks?: Record<string, string[]>, preload?: unknown },
+ *   providers?: Record<string, false | string | ((options: any) => unknown)>,
+ *   priority?: string[],
+ *   families?: { name: string, provider?: string, global?: boolean, weights?: (number | string)[], styles?: string[], subsets?: string[], [key: string]: unknown }[],
+ *   throwOnError?: boolean,
+ *   processCSSVariables?: boolean | string,
+ *   [key: string]: unknown,
+ * }} FontsOptions
+ * @typedef {boolean | FontsOptions} FontsOption
  */
 
 /**
@@ -48,22 +60,22 @@ export function fonts(option = true) {
   if (option === null || typeof option !== 'object' || Array.isArray(option)) {
     throw new Error(`[arao] fonts must be true, false or fontless's options (an object), got ${JSON.stringify(option)}`)
   }
-  return fontless(withDefaults(option))
+  return fontless(/** @type {Parameters<typeof fontless>[0]} */ (withDefaults(option)))
 }
 
 /**
  * Ours under the project's, key by key, one level down (a value the project gives replaces ours:
  * weights [300] means 300 only; providers and defaults merge by key; families add up).
- * @param {NonNullable<Parameters<typeof fontless>[0]>} option
- * @returns {NonNullable<Parameters<typeof fontless>[0]>}
+ * @param {FontsOptions} option
+ * @returns {FontsOptions}
  */
-export function withDefaults(option) {
+function withDefaults(option) {
   const families = option.families ?? []
   const own = new Set(families.map((f) => f.name.toLowerCase()))
   return {
     processCSSVariables: 'ar-font',
     ...option,
-    providers: { googleicons: /** @type {false} */ (false), adobe: /** @type {false} */ (false), ...option.providers },
+    providers: { googleicons: false, adobe: false, ...option.providers },
     defaults: { weights: [400, 600, 700], ...option.defaults },
     families: [
       ...families,
