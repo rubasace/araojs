@@ -270,7 +270,9 @@ const vars = computed(() => {
 }
 .ar-snippet-header {
   flex: none; height: 80px; padding: 0 30px;
-  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  /* the name centred, the lights' width (three 24px lights, 18px apart) kept on both sides and a
+     gap to them: in a narrow window (fit) the name never runs into the lights */
+  display: grid; grid-template-columns: minmax(108px, 1fr) auto minmax(108px, 1fr); column-gap: 24px; align-items: center;
   background: var(--sn-bar);
   font: 400 var(--ar-code-title-size)/1 var(--ar-font-sans);
   color: var(--ar-code-title);
