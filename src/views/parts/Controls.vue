@@ -112,7 +112,7 @@
           @click="pickTheme(t)"
           role="menuitemradio" :aria-checked="t === theme"
         >
-          <span class="swatch" :data-theme="t"></span>
+          <span class="swatch" :data-theme="t" data-ar-theme-root></span>
           <span class="t">{{ t }}</span>
           <svg class="check" v-if="t === theme" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10" /></svg>
         </button>
@@ -202,49 +202,41 @@ defineExpose({
 </script>
 
 <style>
+/* frosted glass: strong blur, a light top sheen, a specular edge (the --ar-controls-* tokens,
+   tokens.css); window px, not canvas px */
 .ar-controls {
-  /* frosted glass: strong blur + light top sheen + specular edge */
-  --c-tint: rgba(28, 28, 34, .84);
-  --c-tint-panel: rgba(28, 28, 34, .92);
-  --c-sheen: linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .04) 45%, rgba(255, 255, 255, .02));
-  --c-glass-shadow: 0 18px 50px rgba(0, 0, 0, .35), 0 2px 8px rgba(0, 0, 0, .2),
-    inset 0 1px 0 rgba(255, 255, 255, .28), inset 0 -1px 0 rgba(255, 255, 255, .05),
-    inset 0 0 0 .5px rgba(255, 255, 255, .08);
-  --c-blur: blur(28px) saturate(180%) brightness(1.05);
-  --c-fg: rgba(255, 255, 255, .94);
-  --c-dim: rgba(255, 255, 255, .5);
-  --c-line: rgba(255, 255, 255, .14);
-  --c-hover: rgba(255, 255, 255, .1);
-  --c-active: rgba(255, 255, 255, .16);
   position: absolute; left: 50%; bottom: 48px; z-index: 100;
   display: flex; align-items: center; gap: 4px;
   padding: 8px;
-  background: var(--c-sheen), var(--c-tint);
-  backdrop-filter: var(--c-blur);
-  -webkit-backdrop-filter: var(--c-blur);
-  border: 1px solid rgba(255, 255, 255, .16);
-  border-radius: 16px;
-  box-shadow: var(--c-glass-shadow);
-  color: var(--c-fg);
-  font: 500 16px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--ar-controls-sheen), var(--ar-controls-bg);
+  backdrop-filter: var(--ar-controls-blur);
+  -webkit-backdrop-filter: var(--ar-controls-blur);
+  border: 1px solid var(--ar-controls-border);
+  border-radius: calc(var(--ar-controls-radius) * 2);
+  box-shadow: var(--ar-controls-shadow);
+  color: var(--ar-controls-fg);
+  font: 500 var(--ar-ui-text)/1 var(--ar-ui-font);
   font-variant-numeric: tabular-nums;
   opacity: 0;
   transform: translate(-50%, 14px);
-  transition: opacity .25s ease, transform .25s ease;
+  transition: opacity var(--ar-ui-duration-slow) ease, transform var(--ar-ui-duration-slow) ease;
   pointer-events: none;
   user-select: none;
 }
 .ar-controls.visible { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
 .ar-controls.docked { position: relative; left: auto; bottom: auto; transform: none; transition: none; }
+/* docked (the presenter view) the controls sit in no theme, so they have no accent to take: their
+   accent is their text colour */
+:where(.ar-controls.docked) { --ar-controls-accent: var(--ar-controls-fg); }
 
 .ar-btn {
   display: grid; place-items: center;
   width: 44px; height: 44px; padding: 0;
-  border: 0; border-radius: 9px; background: transparent; color: inherit;
-  cursor: pointer; transition: background .15s, opacity .15s;
+  border: 0; border-radius: calc(var(--ar-controls-radius) * 1.125); background: transparent; color: inherit;
+  cursor: pointer; transition: background var(--ar-ui-duration-fast), opacity var(--ar-ui-duration-fast);
 }
-.ar-btn:hover:not(:disabled) { background: var(--c-hover); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1); }
-.ar-btn.active { background: var(--c-active); }
+.ar-btn:hover:not(:disabled) { background: var(--ar-controls-hover); box-shadow: var(--ar-controls-hover-shadow); }
+.ar-btn.active { background: var(--ar-controls-active); }
 .ar-btn:disabled { opacity: .28; cursor: default; }
 .ar-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8;
   stroke-linecap: round; stroke-linejoin: round; }
@@ -253,32 +245,33 @@ defineExpose({
 .ar-ctl-mid { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 0 10px; min-width: 88px; }
 .ar-counter {
   border: 0; background: transparent; color: inherit; cursor: pointer;
-  padding: 6px 12px; border-radius: 8px; font: inherit; font-size: 17px; transition: background .15s;
+  padding: 6px 12px; border-radius: var(--ar-controls-radius); font: inherit;
+  font-size: calc(var(--ar-ui-text) * 1.0625); transition: background var(--ar-ui-duration-fast);
 }
-.ar-counter:hover { background: var(--c-hover); }
-.ar-counter.active { background: var(--c-active); }
-.ar-counter .sep, .ar-counter .tot { color: var(--c-dim); }
+.ar-counter:hover { background: var(--ar-controls-hover); }
+.ar-counter.active { background: var(--ar-controls-active); }
+.ar-counter .sep, .ar-counter .tot { color: var(--ar-controls-dim); }
 .ar-counter .sep { margin: 0 5px; }
 
 .ar-dots { display: flex; gap: 5px; }
 .ar-dot {
   width: 7px; height: 4px; padding: 0; border: 0; border-radius: 2px;
-  background: var(--c-dim); opacity: .45; cursor: pointer; transition: all .2s;
+  background: var(--ar-controls-dim); opacity: .45; cursor: pointer; transition: all var(--ar-ui-duration);
 }
-.ar-dot.on { background: var(--ar-accent, #fff); opacity: 1; width: 16px; }
+.ar-dot.on { background: var(--_ar-controls-accent); opacity: 1; width: 16px; }
 
-.ar-divider { width: 1px; height: 26px; background: var(--c-line); margin: 0 6px; }
+.ar-divider { width: 1px; height: 26px; background: var(--ar-controls-line); margin: 0 6px; }
 
 /* popover panels */
 .ar-panel {
   position: absolute; bottom: calc(100% + 12px);
   display: flex; flex-direction: column;
   padding: 8px;
-  background: var(--c-sheen), var(--c-tint-panel);
-  backdrop-filter: var(--c-blur);
-  -webkit-backdrop-filter: var(--c-blur);
-  border: 1px solid rgba(255, 255, 255, .16); border-radius: 16px;
-  box-shadow: var(--c-glass-shadow);
+  background: var(--ar-controls-sheen), var(--ar-controls-panel-bg);
+  backdrop-filter: var(--ar-controls-blur);
+  -webkit-backdrop-filter: var(--ar-controls-blur);
+  border: 1px solid var(--ar-controls-border); border-radius: calc(var(--ar-controls-radius) * 2);
+  box-shadow: var(--ar-controls-shadow);
 }
 .ar-slides { left: 50%; transform: translateX(-50%); width: min(380px, calc(100vw - 24px)); }
 
@@ -294,34 +287,35 @@ defineExpose({
 
 .ar-search {
   margin: 0 0 8px; padding: 11px 13px;
-  border: 1px solid var(--c-line); border-radius: 9px; outline: none;
-  background: rgba(255, 255, 255, .08); color: inherit; font: inherit;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .25);
+  border: 1px solid var(--ar-controls-line); border-radius: calc(var(--ar-controls-radius) * 1.125); outline: none;
+  background: var(--ar-controls-field-bg); color: inherit; font: inherit;
+  box-shadow: var(--ar-controls-field-shadow);
 }
-.ar-search:focus { border-color: color-mix(in srgb, var(--ar-accent, #fff) 70%, transparent); }
-.ar-search::placeholder { color: var(--c-dim); }
+.ar-search:focus { border-color: color-mix(in srgb, var(--_ar-controls-accent) 70%, transparent); }
+.ar-search::placeholder { color: var(--ar-controls-dim); }
 .ar-list { max-height: min(50vh, 440px); overflow-y: auto; scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,.2) transparent; }
-.ar-empty { padding: 14px; color: var(--c-dim); text-align: center; }
+  scrollbar-color: var(--ar-controls-scrollbar) transparent; }
+.ar-empty { padding: 14px; color: var(--ar-controls-dim); text-align: center; }
 
 .ar-item {
   display: flex; gap: 12px; align-items: center; width: 100%;
-  padding: 10px 12px; border: 0; border-radius: 8px;
-  background: transparent; color: inherit; font: inherit; font-size: 15px; text-align: left; cursor: pointer;
+  padding: 10px 12px; border: 0; border-radius: var(--ar-controls-radius);
+  background: transparent; color: inherit; font: inherit; font-size: calc(var(--ar-ui-text) * .9375);
+  text-align: left; cursor: pointer;
 }
-.ar-item:hover, .ar-item.sel { background: var(--c-hover); }
-.ar-item .n { color: var(--c-dim); min-width: 1.8em; text-align: right; }
-.ar-item.current .n { color: var(--ar-accent, #fff); }
+.ar-item:hover, .ar-item.sel { background: var(--ar-controls-hover); }
+.ar-item .n { color: var(--ar-controls-dim); min-width: 1.8em; text-align: right; }
+.ar-item.current .n { color: var(--_ar-controls-accent); }
 .ar-item.current .t { font-weight: 650; }
 .ar-item .t { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ar-item .swatch {
-  width: 18px; height: 18px; border-radius: 5px; flex: none;
+  width: 18px; height: 18px; border-radius: calc(var(--ar-controls-radius) * .625); flex: none;
   background: linear-gradient(135deg, var(--ar-bg) 50%, var(--ar-accent) 50%);
-  border: 1px solid var(--c-line);
+  border: 1px solid var(--ar-controls-line);
 }
 .ar-item .check { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2;
   stroke-linecap: round; stroke-linejoin: round; }
 
-.ar-pop-enter-active, .ar-pop-leave-active { transition: opacity .18s, translate .18s; }
+.ar-pop-enter-active, .ar-pop-leave-active { transition: opacity var(--ar-ui-duration), translate var(--ar-ui-duration); }
 .ar-pop-enter-from, .ar-pop-leave-to { opacity: 0; translate: 0 6px; }
 </style>

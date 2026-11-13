@@ -1,7 +1,7 @@
 /* Base: what is global, owned by no component. Every component brings its own CSS in its .vue
-   file; every visual decision is a token (tokens.css) the theme supplies. The Vue plugin imports
-   this file after the components: a rule here wins over a component's rule of the same
-   specificity (the step fade below over Snippet's own transitions). */
+   file; every visual decision is a token (tokens.css holds its default; a theme changes it). The
+   Vue plugin imports this file after the components: a rule here wins over a component's rule of
+   the same specificity (the step fade below over Snippet's own transitions). */
 html, body, #app { margin: 0; height: 100%; }
 
 /* the window's viewport: the audience view's, and the export view's (where it holds the book) */

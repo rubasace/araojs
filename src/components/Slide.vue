@@ -347,7 +347,7 @@ const footed = () => !!footerSlot() && (props.footer ?? !flat.value)
   box-sizing: border-box; height: var(--ar-footer-height);
   padding: var(--ar-pad); padding-top: 0; padding-bottom: 0;
   display: flex; align-items: center; justify-content: var(--ar-footer-align); gap: var(--ar-gap-sm);
-  font-size: var(--ar-footer-size); line-height: 1.2; color: var(--ar-footer-color);
+  font-size: var(--ar-footer-size); line-height: 1.2; color: var(--_ar-footer-color);
   white-space: nowrap;
 }
 .ar-slide.ar-footed { padding-bottom: var(--ar-footer-height); }
@@ -375,7 +375,7 @@ const footed = () => !!footerSlot() && (props.footer ?? !flat.value)
 .ar-slide .small { font-size: var(--ar-text-small); }
 
 /* slide transition */
-.ar-slide-enter-active, .ar-slide-leave-active { transition: opacity .4s ease; }
+.ar-slide-enter-active, .ar-slide-leave-active { transition: opacity var(--ar-slide-duration) ease; }
 .ar-slide-enter-from, .ar-slide-leave-to { opacity: 0; }
 
 /* Content, styled only through tokens */
@@ -390,25 +390,26 @@ const footed = () => !!footerSlot() && (props.footer ?? !flat.value)
      --ar-title-align   start | center | end (default: as the slide's text)
      --ar-title-gap     the space under it, before the body (default .6em of an h2, .4em of an h1;
                         em is the title's size, as for any margin of it)
-   Same specificity as the rules above, after them: a deck's own h2 rule still wins. */
+   Same specificity as the rules above, after them: a deck's own h2 rule still wins. Each reads
+   the token, or its default for that heading, through a private --_ar-h1-…/--_ar-h2-… (tokens.css). */
 .ar-slide h1:where(.ar-title) {
-  font-size: var(--ar-title-size, var(--ar-title));
-  color: var(--ar-title-color, currentColor);
-  text-align: var(--ar-title-align, match-parent);
-  margin-bottom: var(--ar-title-gap, .4em);
+  font-size: var(--_ar-h1-size);
+  color: var(--_ar-h1-color);
+  text-align: var(--ar-title-align);
+  margin-bottom: var(--_ar-h1-gap);
 }
 .ar-slide h2:where(.ar-title) {
-  font-size: var(--ar-title-size, calc(var(--ar-title) * .6));
-  color: var(--ar-title-color, var(--ar-accent));
-  text-align: var(--ar-title-align, match-parent);
-  margin-bottom: var(--ar-title-gap, .6em);
+  font-size: var(--_ar-h2-size);
+  color: var(--_ar-h2-color);
+  text-align: var(--ar-title-align);
+  margin-bottom: var(--_ar-h2-gap);
 }
 /* in a header band (--ar-header-height) the gap goes under the band, so the title sits centred in
    it; its default is the same length as above (em of the title, computed from the size tokens) */
 .ar-header-band > .ar-title { margin-bottom: 0; }
-.ar-header-band { margin-bottom: var(--ar-title-gap, 0px); }
-.ar-header-band.ar-header-h1 { margin-bottom: var(--ar-title-gap, calc(var(--ar-title-size, var(--ar-title)) * .4)); }
-.ar-header-band.ar-header-h2 { margin-bottom: var(--ar-title-gap, calc(var(--ar-title-size, calc(var(--ar-title) * .6)) * .6)); }
+.ar-header-band { margin-bottom: var(--_ar-band-gap); }
+.ar-header-band.ar-header-h1 { margin-bottom: var(--_ar-h1-band-gap); }
+.ar-header-band.ar-header-h2 { margin-bottom: var(--_ar-h2-band-gap); }
 
 /* lists: --ar-list-gap between items (default 0). Zero specificity: a deck's li rule wins. */
 :where(.ar-slide li + li) { margin-top: var(--ar-list-gap); }
@@ -423,11 +424,11 @@ const footed = () => !!footerSlot() && (props.footer ?? !flat.value)
 :where(.ar-slide :is(th, td)) {
   padding: var(--ar-table-pad);
   text-align: start;
-  border-bottom: var(--ar-table-border, 2px solid color-mix(in srgb, var(--ar-fg) 15%, transparent));
+  border-bottom: var(--_ar-table-border);
 }
 :where(.ar-slide th) {
   background: var(--ar-table-head-bg);
-  color: var(--ar-table-head-color, var(--ar-muted));
+  color: var(--_ar-table-head-color);
   font-weight: 600;
 }
 :where(.ar-slide tbody tr:nth-child(even)) { background: var(--ar-table-stripe); }

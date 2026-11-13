@@ -80,12 +80,12 @@ defineExpose({
 .ar-toast {
   position: absolute; left: 50%; bottom: 128px; z-index: 101; transform: translateX(-50%);
   display: flex; align-items: baseline; gap: 14px; max-width: calc(100% - 32px); box-sizing: border-box;
-  padding: 12px 16px; border: 1px solid rgba(255, 255, 255, .16); border-radius: 12px;
-  background: #1c1c22; box-shadow: 0 12px 32px rgba(0, 0, 0, .35);
-  color: rgba(255, 255, 255, .94); font: 15px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  padding: 12px 16px; border: 1px solid var(--ar-controls-border); border-radius: calc(var(--ar-controls-radius) * 1.5);
+  background: var(--ar-toast-bg); box-shadow: var(--ar-toast-shadow);
+  color: var(--ar-controls-fg); font: calc(var(--ar-ui-text) * .9375)/1.35 var(--ar-ui-font);
 }
-.ar-toast a { color: #8ab4ff; font-weight: 600; white-space: nowrap; }
-.ar-toast-enter-active, .ar-toast-leave-active { transition: opacity .2s, translate .2s; }
+.ar-toast a { color: var(--ar-toast-link); font-weight: 600; white-space: nowrap; }
+.ar-toast-enter-active, .ar-toast-leave-active { transition: opacity var(--ar-ui-duration), translate var(--ar-ui-duration); }
 .ar-toast-enter-from, .ar-toast-leave-to { opacity: 0; translate: 0 6px; }
 
 /* the cursor, hidden after hideCursorAfter ms without a move */

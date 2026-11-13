@@ -1,68 +1,193 @@
-/* Tokens: every custom property the engine reads, and its default. A theme sets them
-   ([data-theme="x"] { --ar-…: …; }, themes/*.css); slides and components only read them.
+/* Tokens: every custom property the engine reads, each with its default, declared here and nowhere
+   else. A theme ([data-theme="x"] { --ar-…: …; }, themes/*.css or a CSS file of the project)
+   declares only what it changes, and slides and components only read them.
 
-   Declared here, as defaults, wherever a theme is applied: the audience's viewport (and the export
-   book inside it), each Stage of the presenter view (views/parts/Stage.vue), and the elements
-   that show a theme of their own (each cover in the deck selector, the theme swatches of the
-   controls). Zero specificity: the theme's own [data-theme="x"] rule wins on the same element,
-   and a token set on any element inside (a layout, a slide, a table) wins over both. */
-:where([data-theme]) {
-  /* canvas and slide */
+   Where they apply:
+   - At the root, with zero specificity (:where(:root)): they reach everything Arao draws, inside a
+     theme or not (the presenter view and its notes, the deck selector), and any rule of the
+     project's own wins over them, :root { --ar-accent: … } included. A theme's rule, on the
+     element that wears it (the audience's viewport, each Stage, the export's book), wins over
+     both; a token set on any element inside (a layout, a slide, a table) wins over all of them.
+   - An element that shows a theme apart from the one around it (a theme's swatch in the
+     controls) carries data-ar-theme-root: it starts again from the defaults, not from the theme
+     it sits in.
+   - A token whose default is another token (--ar-footer-color is --ar-muted unless set) cannot be
+     declared at the root: var() is resolved where it is declared, so the root's --ar-muted would
+     stick and a theme's would never reach it. Its default is the second block, resolved on every
+     element into a private --_ar-… (from the tokens that element inherits): components read the
+     private one, deck authors and themes set the public one, anywhere.
+
+   What is a token: every colour, font family, font size, radius, shadow and filter, and duration
+   the engine draws with, and the slide's spacing (padding, gaps, footer band). What stays literal
+   in the components: structural values (0, auto, 100%, fr, z-index, flex, the 1-3px of hairlines
+   and borders); proportions of a token or of the element's own type (calc(var(--ar-title) * .6),
+   em lengths, unitless line heights, colour-mix percentages over a token, the opacity of a
+   disabled or dimmed state); font weights; and the inner geometry of a part, in px (the paddings,
+   gaps and offsets of the controls, the presenter view, the code window, the addons; button and
+   glyph boxes; the cover's bar). A part's inner radii are proportions of its radius token.
+
+   Not declared here: --ar-scale, the canvas's scale, set by the engine (Stage.vue; 1 in the
+   export's book, ExportView.vue). */
+:where(:root, [data-ar-theme-root]) {
+  /* ---- the slide: colours and type (Stage.vue, Slide.vue) ---- */
+  --ar-bg: #0f1115;                  /* slide background */
+  --ar-fg: #e8e8ea;                  /* text */
+  --ar-muted: #9aa0a6;               /* secondary text: .muted, the slide number, the footer */
+  --ar-accent: #ff6a3d;              /* h2, cover bar, section background, progress, highlights */
+  --ar-accent-fg: #0f1115;           /* text on the accent (section slides) */
   --ar-letterbox: #000;              /* around the canvas when the window shape differs */
+  --ar-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ar-font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   --ar-text-base: 40px;              /* base font size of a slide */
   --ar-text-small: .75em;            /* .small */
+  --ar-title: 88px;                  /* the type scale: h1; h2 .6x, cover h1 1.25x, section h1 1.4x */
+  --ar-radius: 16px;                 /* Img rounded, the missing-picture box */
+  --ar-placeholder: currentColor;    /* the missing picture or icon box (the text colour where drawn) */
+
+  /* ---- the slide: spacing ---- */
   --ar-pad: 96px 120px;              /* slide padding, the safe margin */
-  --ar-gap-sm: 24px;                 /* gap="sm" */
+  --ar-gap-sm: 24px;                 /* gap="sm", the footer's children */
   --ar-gap-md: 48px;                 /* gap="md", the default gap of Cols, Rows, Grid */
   --ar-gap-lg: 80px;                 /* gap="lg", between zones */
-  --ar-placeholder: currentColor;    /* the missing picture or icon box (the text colour where drawn) */
+
+  /* ---- motion ---- */
   --ar-step-duration: .35s;          /* fade of v-step (also read by core/flip.js) */
-  /* the theme's default slide background (Slide.vue): a CSS background-image, where it sits, how opaque */
-  --ar-slide-bg-image: none;
+  --ar-slide-duration: .4s;          /* fade from one slide to the next */
+
+  /* ---- the theme's default slide background (Slide.vue) ---- */
+  --ar-slide-bg-image: none;         /* a CSS background-image: a gradient, or url(…) relative to the theme file */
   --ar-slide-bg-position: center;
   --ar-slide-bg-opacity: 1;
-  /* slide zones (Slide.vue): where the body sits (also read by Slide.vue's script), the deck's
-     footer band, list items, the inset of an image zone */
-  --ar-body-align: center;
+
+  /* ---- slide zones (Slide.vue) ---- */
+  --ar-body-align: center;           /* start | center | end (also read by Slide.vue's script) */
+  --ar-header-height: auto;          /* a length: the header is a band that tall (read by script too) */
+  --ar-title-align: match-parent;    /* the slide title: start | center | end */
+  /* --ar-title-size, --ar-title-color, --ar-title-gap: below (their defaults are other tokens) */
   --ar-footer-height: 88px;
   --ar-footer-size: 24px;
-  --ar-footer-color: var(--ar-muted);
   --ar-footer-align: space-between;
-  --ar-list-gap: 0;
-  --ar-image-inset: 0;
-  /* tables (Slide.vue) */
+  /* --ar-footer-color: below */
+  --ar-list-gap: 0;                  /* between list items */
+  --ar-image-inset: 0;               /* padding of an image zone */
+
+  /* ---- tables (Slide.vue) ---- */
   --ar-table-pad: .4em .8em;
   --ar-table-head-bg: none;
-  --ar-table-stripe: none;
-  /* code windows (Snippet.vue) */
+  --ar-table-stripe: none;           /* background of every other body row */
+  /* --ar-table-border, --ar-table-head-color: below */
+
+  /* ---- code windows (Snippet.vue) ---- */
+  --ar-code-theme: material-theme-darker; /* the Shiki theme (read by script) */
   --ar-code-size: 44px;
   --ar-code-width: 1520px;
   --ar-code-aspect: 16 / 9;
   --ar-code-bg: #2b2b2b;
-  --ar-code-bar: #383a40;
+  --ar-code-bar: #383a40;            /* the title bar */
   --ar-code-fg: #eeffff;
-  --ar-code-muted: #8a8f98;
-  --ar-code-title: rgba(255, 255, 255, .92);
+  --ar-code-muted: #8a8f98;          /* line numbers */
+  --ar-code-title: rgba(255, 255, 255, .92); /* the file name in the title bar */
+  --ar-code-title-size: 34px;
   --ar-code-radius: 22px;
-  /* addons */
+  --ar-code-shadow: 0 30px 70px rgba(0, 0, 0, .35), 0 8px 20px rgba(0, 0, 0, .2),
+    inset 0 0 0 1px rgba(255, 255, 255, .06);
+  --ar-code-light-1: #ff5f57;        /* the title bar's three lights, left to right */
+  --ar-code-light-2: #febc2e;
+  --ar-code-light-3: #28c840;
+  --ar-code-duration: .3s;           /* lines and words dimming and lighting up */
+  /* --ar-code-hl: below */
+
+  /* ---- addons ---- */
   --ar-progress-height: 8px;         /* ProgressBar */
+  --ar-progress-duration: .35s;
+  --ar-slide-number-size: 24px;      /* SlideNumber */
+
+  /* ---- the deck's own interface, outside the canvas, in window px ---- */
+  --ar-ui-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ar-ui-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --ar-ui-text: 16px;                /* its base size: every other size of it is a multiple */
+  --ar-ui-duration: .2s;             /* panels, notices and step dots coming and going */
+  --ar-ui-duration-fast: .15s;       /* hover and press feedback */
+  --ar-ui-duration-slow: .25s;       /* the floating controls showing and hiding */
+
+  /* the controls (Controls.vue): frosted glass, floating over the slides or docked in the
+     presenter view; and the notice above them (AudienceView.vue) */
+  --ar-controls-bg: rgba(28, 28, 34, .84);
+  --ar-controls-panel-bg: rgba(28, 28, 34, .92);   /* the jump menu, the theme picker */
+  --ar-controls-sheen: linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .04) 45%, rgba(255, 255, 255, .02));
+  --ar-controls-blur: blur(28px) saturate(180%) brightness(1.05);
+  --ar-controls-shadow: 0 18px 50px rgba(0, 0, 0, .35), 0 2px 8px rgba(0, 0, 0, .2),
+    inset 0 1px 0 rgba(255, 255, 255, .28), inset 0 -1px 0 rgba(255, 255, 255, .05),
+    inset 0 0 0 .5px rgba(255, 255, 255, .08);
+  --ar-controls-border: rgba(255, 255, 255, .16);
+  --ar-controls-fg: rgba(255, 255, 255, .94);
+  --ar-controls-dim: rgba(255, 255, 255, .5);
+  --ar-controls-line: rgba(255, 255, 255, .14);    /* dividers, the search field, swatch edges */
+  --ar-controls-hover: rgba(255, 255, 255, .1);
+  --ar-controls-hover-shadow: inset 0 1px 0 rgba(255, 255, 255, .1);
+  --ar-controls-active: rgba(255, 255, 255, .16);  /* the button of the open panel */
+  --ar-controls-field-bg: rgba(255, 255, 255, .08);
+  --ar-controls-field-shadow: inset 0 1px 2px rgba(0, 0, 0, .25);
+  --ar-controls-scrollbar: rgba(255, 255, 255, .2);
+  --ar-controls-radius: 8px;         /* items; buttons and the search field 1.125x, the bar and
+                                        panels 2x, the notice 1.5x, swatches .625x */
+  /* --ar-controls-accent: below */
+  --ar-toast-bg: #1c1c22;
+  --ar-toast-shadow: 0 12px 32px rgba(0, 0, 0, .35);
+  --ar-toast-link: #8ab4ff;
+
+  /* the presenter view (PresenterView.vue, its bar: PresenterBar.vue) */
+  --ar-presenter-bg: #14161b;
+  --ar-presenter-bar: #101216;
+  --ar-presenter-panel: #1c1f26;     /* the next step, the notes, buttons */
+  --ar-presenter-hover: #272b34;     /* a button under the pointer */
+  --ar-presenter-frame: #0d0f13;     /* where the next step would be, after the last one */
+  --ar-presenter-line: #2b2f39;
+  --ar-presenter-edge: rgba(255, 255, 255, .16);   /* the slides' own edge */
+  --ar-presenter-fg: #eceef2;
+  --ar-presenter-dim: #949bab;
+  --ar-presenter-strong: #fff;       /* bold text in the notes */
+  --ar-presenter-accent: #5b9dff;    /* the notes of the step just reached, a changed length, focus */
+  --ar-presenter-low: #f5b13d;       /* the countdown's last minutes */
+  --ar-presenter-over: #ff5a4f;      /* the countdown past the end, an invalid length */
+  --ar-presenter-code-bg: #2a2e38;   /* inline code in the notes */
+  --ar-presenter-scrollbar: #3a3f4b;
+  --ar-presenter-shadow: 0 16px 40px rgba(20, 22, 27, .85);  /* the length editor */
+  --ar-presenter-radius: 10px;       /* buttons, the slides' corners; panels 1.4x, the length
+                                        editor 1.2x, its fields .8x, inline code .5x */
+  --ar-presenter-notes-size: clamp(18px, .85vw + 9px, 28px);
+
+  /* the export (ExportView.vue): behind the pages on screen, and the notes pages (&notes), in
+     canvas px */
+  --ar-export-bg: #2a2a2e;
+  --ar-notes-page-bg: #fff;
+  --ar-notes-page-fg: #1c1c22;
+  --ar-notes-page-muted: #5c5c66;    /* the slide's number and title, at the top */
+  --ar-notes-page-line: #d4d4da;
+  --ar-notes-page-step: #8a5a00;     /* "Desde el paso n" over a step's notes */
+  --ar-notes-page-text: 34px;
+  --ar-notes-page-head-size: 28px;
+  --ar-notes-page-step-size: 24px;
 }
 
-/* Not declared above, and why:
-   - No default, every theme sets them (both shipped themes do):
-       --ar-bg, --ar-fg, --ar-muted, --ar-accent, --ar-accent-fg, --ar-font-sans, --ar-font-mono,
-       --ar-title (the type scale), --ar-radius (the missing-picture box, Img.vue, falls back to
-       sans-serif and monospace for the fonts)
-   - A default that depends on where it is read, so it stays at the read site, as a var() fallback:
-       --ar-title-size, --ar-title-color, --ar-title-align, --ar-title-gap
-                             each its own for an h1 and an h2 title (Slide.vue)
-       --ar-table-border     2px solid, the text colour at 15 % (Slide.vue)
-       --ar-table-head-color --ar-muted (Slide.vue)
-       --ar-code-hl          --ar-accent (Snippet.vue)
-   - Read by script, with no CSS default:
-       --ar-header-height    unset: no header band (Slide.vue)
-       --ar-code-theme       unset: material-theme-darker (Snippet.vue)
-   - Read where no theme may apply, with fallbacks of their own: the presenter view's docked
-     controls (Controls.vue: --ar-accent, #fff).
-   - Set by the engine, not by themes: --ar-scale, the canvas's scale (Stage.vue; 1 in the
-     export's book, ExportView.vue). */
+/* Defaults that are other tokens, resolved on every element (see above). Each line: the private
+   token the components read, the public one it follows, and the default.
+     --ar-title-size, --ar-title-color, --ar-title-gap: the slide's title (Slide.vue), each with a
+       default of its own for an h1 title and an h2 title; and the gap under a header band, which
+       counts in the title's size (.ar-header-band) */
+:where(*) {
+  --_ar-footer-color: var(--ar-footer-color, var(--ar-muted));
+  --_ar-table-border: var(--ar-table-border, 2px solid color-mix(in srgb, var(--ar-fg) 15%, transparent));
+  --_ar-table-head-color: var(--ar-table-head-color, var(--ar-muted));
+  --_ar-code-hl: var(--ar-code-hl, var(--ar-accent));
+  --_ar-controls-accent: var(--ar-controls-accent, var(--ar-accent));
+  --_ar-h1-size: var(--ar-title-size, var(--ar-title));
+  --_ar-h2-size: var(--ar-title-size, calc(var(--ar-title) * .6));
+  --_ar-h1-color: var(--ar-title-color, currentColor);
+  --_ar-h2-color: var(--ar-title-color, var(--ar-accent));
+  --_ar-h1-gap: var(--ar-title-gap, .4em);
+  --_ar-h2-gap: var(--ar-title-gap, .6em);
+  --_ar-band-gap: var(--ar-title-gap, 0px);
+  --_ar-h1-band-gap: var(--ar-title-gap, calc(var(--_ar-h1-size) * .4));
+  --_ar-h2-band-gap: var(--ar-title-gap, calc(var(--_ar-h2-size) * .6));
+}

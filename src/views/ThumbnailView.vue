@@ -31,7 +31,7 @@ const lang = document.documentElement.lang
 <style>
 .ar-thumb {
   position: absolute; inset: 0; overflow: hidden;
-  background: var(--ar-letterbox, #000);
+  background: var(--ar-letterbox);
   color-scheme: normal;
   pointer-events: none; user-select: none;
 }
