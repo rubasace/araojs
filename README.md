@@ -22,7 +22,7 @@ one fixed canvas, so your laptop, the projector, the presenter view and the PDF 
 slide, with the same line breaks.
 
 <p align="center">
-  <img src="docs/assets/hero.gif" alt="A slide typed in Pug on the left while the live deck on the right follows each saved line, then two steps revealed and the theme switched" width="878" />
+  <img src="docs/assets/hero.gif" alt="A slide typed in Pug on the left while the live deck on the right follows each saved line" width="940" />
 </p>
 
 > [!NOTE]
