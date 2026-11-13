@@ -41,15 +41,18 @@ its own (`createApp(MyApp).use(Arao)`) provides no route: then `location.pathnam
 
 ## Views
 
-`Deck.vue` makes the deck (`createDeck(props)`), turns its shortcuts on (`useShortcuts(deck)`)
-and shows one view, by the URL. The shortcuts call the deck directly, as its buttons do: keys move
-it, cycle the theme, toggle fullscreen and open the presenter window; touch (the audience view's
-viewport) moves it. Only the audience and presenter views have them. The controls keep their own
-keys (`g`, a digit, `Escape`: their lists), and the middle tap (their auto-hide).
+`Deck.vue` makes the deck (`createDeck(props)`), turns its shortcuts on (`useDeckShortcuts(deck)`)
+and shows one view, by the URL. A key runs a command (`core/shortcuts.ts`: the engine's map, with
+the project's `src/shortcuts.ts` over it); whoever does a command registers it
+(`useShortcuts`), and calls the deck directly, as its buttons do: the deck registers the moves,
+the theme, fullscreen and the presenter window; the controls register `menu` (their jump list).
+Typing a slide number and `Enter` jumps with nothing on screen (`useSlideNumber`). Touch (the
+audience view's viewport) moves the deck. Only the audience and presenter views have them. The
+controls keep `Escape` (reserved: closes their lists) and the middle tap (their auto-hide).
 
 ```
 Deck.vue ── createDeck(props) ── state/deck.ts: stage(s), fullscreen, URL hash, sync
-   │  └ useShortcuts(deck) ── composables/useShortcuts.ts: keys, touch → the deck (audience, presenter)
+   │  └ useDeckShortcuts(deck) ── composables/useShortcuts.ts: commands, slide number, touch → the deck (audience, presenter)
                                    └ createTheme ── state/theme.ts: the deck's themes, the one it wears, ?theme=
                                    └ createTimer ── state/timer.ts: the timer, the talk's length, and their pure helpers (parseDuration, clock…)
    │
@@ -123,8 +126,10 @@ exposes anything, and `Deck` holds no ref to its view. `v-step` finds its slide 
 |---|---|
 | `useDeckSync(stage, …)` | every window of the deck in step through core/sync.ts: position, theme, timer, the duration set in the presenter view (the last two kept through a reload) |
 | `usePresenterWindow()` | opens the presenter window or brings it forward; `blocked` when the browser blocks it |
-| `useShortcuts(deck)` | the deck's shortcuts, called by `Deck.vue` (audience and presenter only): the key map (next, previous, Home, End, `t` theme, `f` fullscreen, `p` presenter but in the presenter view) and, in the audience view, edge taps and swipes, all calling the deck directly |
-| `useKeyboard(handlers)` | key → handler on the window (VueUse `onKeyStroke`), with the rules every key of the deck keeps: keys inside a text field or an element marked `data-ar-own-keys` (the presenter's duration editor) are left to it, so are Ctrl/Cmd/Alt + key, a focused button keeps Space and Enter. Used by `useShortcuts` and `Controls` (`g`, digits, `Escape`) |
+| `useShortcuts({ command: fn })` | the shortcuts' registry: one key map (`core/shortcuts.ts`: the engine's defaults with the project's `src/shortcuts.ts` laid over them, built when the first command registers), one listener on the window, one owner per command (registering a command twice throws). Each caller registers the commands it does: `Deck` the moves, `Controls` `menu` |
+| `useDeckShortcuts(deck)` | called by `Deck.vue` (audience and presenter only): registers next, prev, first, last, theme, fullscreen, presenter (not in the presenter view) on the deck's own functions, turns on `useSlideNumber`, and in the audience view reads edge taps and swipes |
+| `useSlideNumber({ go, total })` | digits, then `Enter`, jump to that slide with nothing on screen; `Esc` or 2 s clear; the digits and `Esc` are reserved keys |
+| `useKeyboard(handlers)` | key → handler on the window (VueUse `onKeyStroke`), with the rules every key of the deck keeps: keys inside a text field or an element marked `data-ar-own-keys` (the presenter's duration editor) are left to it, so are Ctrl/Cmd/Alt + key, a focused button keeps Space and Enter. Its rules (`forDeck`) are shared by `useShortcuts` and `useSlideNumber`; `Controls` uses it for `Escape` |
 | `useTouchGestures(el, { tap, swipe })` | taps, by zone (left quarter, right quarter, middle), and swipes, from pointer events: touch and pen (VueUse's `useSwipe` reads touch events only, so the pen would lose its swipes). Used by `useShortcuts` (edges, swipes) and `useAutoHide` (the middle) |
 | `useAutoHide({ after, tap })` | `visible`: shown on a mouse move, hidden after `after` ms without one; optionally a tap in the middle shows it for `tap` ms or hides it; ignores a tap's echo mousemove. The controls' auto-hide and the audience view's cursor (VueUse's `useIdle` counts keys too, with a fixed timeout and no tap) |
 | `useFullscreen(el)` | `fullscreen` is true while anything in the window is fullscreen; `toggle()` leaves it if so, else makes the element fullscreen; the standard API only (VueUse's `useFullscreen` counts only its own element and falls back to prefixed APIs) |

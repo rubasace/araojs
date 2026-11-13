@@ -51,7 +51,7 @@
 import { useSlots, type PropType } from 'vue'
 import { createDeck } from '../state/deck'
 import { provideFooter } from '../state/slide'
-import { useShortcuts } from '../composables/useShortcuts'
+import { useDeckShortcuts } from '../composables/useShortcuts'
 import AudienceView from '../views/AudienceView.vue'
 import ExportView from '../views/ExportView.vue'
 import PresenterView from '../views/PresenterView.vue'
@@ -77,5 +77,5 @@ provideFooter(() => slots.footer)
 
 const deck = createDeck(props)
 // the keys and touch move the deck (in the audience and presenter views only)
-useShortcuts(deck)
+useDeckShortcuts(deck)
 </script>

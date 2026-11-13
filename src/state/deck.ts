@@ -30,6 +30,8 @@ export interface DeckFace {
   next(): void
   prev(): void
   go(index: number, step?: number): void
+  first(): void
+  last(): void
   titles(): string[]
   setTheme(name: string): void
   toggleFullscreen(): void
@@ -181,6 +183,7 @@ export function createDeck(props: DeckProps) {
 //                                         (1-based), the slide count, its step count, and the
 //                                         progress over every step of the deck (0..1)
 //   next(), prev(), go(i, step)           move it
+//   first(), last()                       the first slide at step 1; the last slide at its last step
 //   titles()                              every slide's title, in order ('' for one without)
 //   theme, themes                         the theme worn, the deck's list (read-only refs; the
 //                                         list is its themes prop, or every theme there is);

@@ -86,6 +86,9 @@ export function createStage({ follow, onMove, role = 'audience' }: StageOptions 
     next: follow ? noop : move(next),
     prev: follow ? noop : move(prev),
     go: follow ? noop : move(go),
+    // the first slide at its first step; the last slide at its last step
+    first: follow ? noop : move(() => go(0, 1)),
+    last: follow ? noop : move(last),
   }
 
   // slide = { id, steps, title, el }; el is a ref to its <section>
@@ -177,7 +180,7 @@ export function createStage({ follow, onMove, role = 'audience' }: StageOptions 
 
   return {
     role, list, index, step, current, view, register, unregister, change,
-    place: go, go: view.go, next: view.next, prev: view.prev, last: follow ? noop : move(last),
+    place: go, go: view.go, next: view.next, prev: view.prev, first: view.first, last: view.last,
   }
 }
 

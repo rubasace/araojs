@@ -33,8 +33,8 @@ src/
   plugin.ts         the Vue plugin: global components and directives, the global CSS (in CSS order)
   app.ts            createDeckApp
   state/            the deck, its stages, its slides, the talk's timer: createDeck/useDeck, createStage/useStage, createSlide/useSlide, createTimer/useTimer
-  composables/      the effects (internal): useDeckSync, usePresenterWindow, useShortcuts, useKeyboard, useTouchGestures, useAutoHide, useFullscreen
-  core/             plain modules: sync, exporter, image, icons, flip
+  composables/      the effects (internal): useDeckSync, usePresenterWindow, useShortcuts, useSlideNumber, useKeyboard, useTouchGestures, useAutoHide, useFullscreen
+  core/             plain modules: sync, exporter, image, icons, flip, shortcuts
   views/            full screens: AudienceView, PresenterView, ExportView; DeckSelectorView (createDeckApp's list of decks)
   components/       what authors write: Deck, Slide, Img, Icon, Snippet, Notes; layout/: Cols, Rows, Grid, Center, layout.ts (their props' parsers), layout.css
     internal/       the engine's components, which no author names: Stage (the scaled canvas), Controls, PresenterBar, Thumbnail, DeckCover (a deck's cover in the list)

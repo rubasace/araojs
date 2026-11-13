@@ -9,7 +9,8 @@
 // The project is made in a temporary folder outside the repository: package.json depending on the
 // tarball (vite and vue at the versions of the library's devDependencies), vite.config.js with the
 // arao() plugin and three theme sources (src/themes, src/venues and a theme package, THEME_SOURCES),
-// index.html, src/main.js (createDeckApp, nothing else: no theme is imported by hand), a theme of
+// index.html, src/main.js (createDeckApp, nothing else: no theme is imported by hand), a
+// shortcuts file (src/shortcuts.ts: SHORTCUTS), a theme of
 // its own in src/themes (THEME, in a file of another name: the plugin names it by its selector;
 // and THEME-extra, in a partial that file @import-s), ROOM in src/venues, IMPORTED in a theme
 // package it depends on (vendor/, its CSS in the folder its package.json names), the playground's decks, images
@@ -144,6 +145,12 @@ const MARK = 'A second deck'
 // them back, for the theme check
 const THEME = 'sample'
 const SAMPLE = { bg: 'rgb(16, 32, 48)', accent: 'rgb(233, 30, 99)' }
+// the smoke project's shortcuts file (src/shortcuts.ts, loaded by the plugin): an added key in two
+// cases (x, X), a code (KeyQ, the q key), a default remapped (End → first) and one turned off (PageUp)
+const SHORTCUTS = `import { defineShortcuts } from '${PKG}'
+
+export default defineShortcuts({ x: 'next', KeyQ: 'prev', End: 'first', PageUp: null })
+`
 const BRAND = ['brand.css', `/* the smoke project's own theme: a [data-theme] rule in src/themes, nothing to import */
 @import './parts/extra.css';
 [data-theme="${THEME}"] {
@@ -327,6 +334,7 @@ try {
     'vite.config.js': `import { defineConfig } from 'vite'\nimport arao from '${PKG}/vite'\n\nexport default defineConfig({ plugins: [arao({ ${THEME_SOURCES} })] })\n`,
     'index.html': `<!doctype html>\n<html lang="en">\n  <head><meta charset="UTF-8" /><title>smoke</title></head>\n  <body>\n    <div id="app"></div>\n    <script type="module" src="/src/main.js"></script>\n  </body>\n</html>\n`,
     'src/main.js': `import { createDeckApp } from '${PKG}'\n\ncreateDeckApp().mount('#app')\n`,
+    'src/shortcuts.ts': SHORTCUTS,
     [`src/themes/${BRAND[0]}`]: BRAND[1],
     [`src/themes/${EXTRA[0]}`]: EXTRA[1],
     [ROOM_FILE[0]]: ROOM_FILE[1],
@@ -726,7 +734,8 @@ try {
   }
 
   // the controls (components/internal/Controls.vue), in the audience view of the playground's deck:
-  // their keys open and close the jump list (g, a digit, Escape) and move the deck; auto-hide: hidden
+  // their keys open and close the jump list (g, Escape) and move the deck; a typed slide number
+  // jumps with no list; the project's src/shortcuts.ts remaps, adds and turns off keys; auto-hide: hidden
   // until the mouse moves, shown on a move, hidden again 2.5 s later; a tap in the middle (touch)
   // shows them, another hides them; a tap on a side quarter moves the deck without showing them;
   // the cursor hides after hideCursorAfter. Any console warning, error or page error fails.
@@ -755,15 +764,51 @@ try {
       await page.keyboard.press('Escape')
       await pause(300)
       if ((await state()).list) complaints.push('Escape leaves the jump list open')
+      // typing a slide number jumps with nothing on screen (composables/useSlideNumber.ts)
       await page.keyboard.press('3')
       await pause(300)
       s = await state()
-      if (!s.list || s.query !== '3') complaints.push(`a digit opens ${s.list ? `the list with "${s.query}"` : 'no list'}, not the list with "3"`)
+      if (s.list) complaints.push('a digit opens the jump list (the jump by number is invisible)')
       await page.keyboard.press('Enter')
       await page.waitForFunction(() => location.hash.startsWith('#/3/'), null, { timeout: 5_000 }).catch(() => {})
-      await pause(400) // the list's leave transition
+      await pause(200)
       s = await state()
-      if (!s.hash.startsWith('#/3/') || s.list) complaints.push(`Enter in the list: ${s.hash}, list ${s.list ? 'open' : 'closed'}, not #/3/ and closed`)
+      if (!s.hash.startsWith('#/3/') || s.list) complaints.push(`3 then Enter: ${s.hash}, list ${s.list ? 'open' : 'closed'}, not #/3/ and closed`)
+      // a number that is no slide does nothing; Escape clears a typed number (Enter then moves on)
+      await page.keyboard.press('9'); await page.keyboard.press('9'); await page.keyboard.press('Enter')
+      await pause(300)
+      if (!(await state()).hash.startsWith('#/3/')) complaints.push(`99 then Enter moved the deck to ${(await state()).hash}`)
+      // the project's src/shortcuts.ts (SHORTCUTS): x and X add next, the code KeyQ (q) prev,
+      // End remapped to first, PageUp turned off (the browser's: not prevented, no move)
+      await page.keyboard.press('Home')
+      await page.waitForFunction(() => location.hash === '#/1/1', null, { timeout: 5_000 }).catch(() => {})
+      const at = async () => (await state()).hash
+      await page.keyboard.press('x')
+      await pause(250)
+      const afterX = await at()
+      if (afterX === '#/1/1') complaints.push('shortcuts file: x (added → next) does not move the deck')
+      await page.keyboard.press('Shift+X')
+      await pause(250)
+      if ((await at()) === afterX) complaints.push('shortcuts file: X (Shift+x, letters match either case) does not move the deck')
+      const beforeQ = await at()
+      await page.keyboard.press('q')
+      await pause(250)
+      if ((await at()) === beforeQ) complaints.push('shortcuts file: q (code KeyQ → prev) does not move the deck')
+      await page.keyboard.press('End')
+      await page.waitForFunction(() => location.hash === '#/1/1', null, { timeout: 5_000 }).catch(() => {})
+      if ((await at()) !== '#/1/1') complaints.push(`shortcuts file: End (remapped → first) leaves ${await at()}, not #/1/1`)
+      await page.evaluate(() => {
+        window.__arPrevented = null
+        window.addEventListener('keydown', (e) => { if (e.key === 'PageUp') setTimeout(() => (window.__arPrevented = e.defaultPrevented)) })
+      })
+      await page.keyboard.press('ArrowRight')
+      await pause(250)
+      const beforeUp = await at()
+      await page.keyboard.press('PageUp')
+      await pause(250)
+      if ((await at()) !== beforeUp) complaints.push('shortcuts file: PageUp (turned off) still moves the deck')
+      if (await page.evaluate(() => window.__arPrevented) !== false) complaints.push('shortcuts file: PageUp (turned off) is not left to the browser')
+      await page.keyboard.press('Home')
       await page.keyboard.press('ArrowRight')
       await pause(200)
       await page.keyboard.press('Home')

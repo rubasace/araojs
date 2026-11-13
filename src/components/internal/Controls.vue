@@ -7,10 +7,10 @@
        change afterwards. Without auto-hide (and not docked) it is always shown.
      Where the deck is and what it does come from useDeck() (the slides' titles too); the themes
      from useTheme(). Which list is open and what is typed in it are its own.
-     Its own keys (composables/useKeyboard.ts), on the window, wherever the focus is: g opens or
-     closes the jump list, a digit opens it with that number typed, Escape closes any list. The
-     deck's other keys (moves, theme, fullscreen, presenter) are its shortcuts
-     (composables/useShortcuts.ts, Deck.vue). Keys never show the panel: only the mouse does. -->
+     Its keys: the menu command opens or closes the jump list (a shortcut: g by default,
+     composables/useShortcuts.ts, remappable in the project's src/shortcuts.ts); Escape closes any
+     list (reserved, not a shortcut). Typing a slide number jumps with no list on screen
+     (composables/useSlideNumber.ts, Deck.vue). Keys never show the panel: only the mouse does. -->
 <template>
   <nav
     class="ar-controls"
@@ -21,7 +21,7 @@
     :aria-label="t('controls')"
     :lang="lang"
   >
-    <button class="ar-btn ar-edge" @mousedown.prevent @click="deck.go(0)" :disabled="atStart" :title="t('first')">
+    <button class="ar-btn ar-edge" @mousedown.prevent @click="deck.first()" :disabled="atStart" :title="t('first')">
       <svg viewBox="0 0 24 24"><path d="M18 17l-5-5 5-5M11 17l-5-5 5-5" /></svg>
     </button>
     <button class="ar-btn" @mousedown.prevent @click="deck.prev()" :disabled="atStart" :title="t('previous')">
@@ -49,7 +49,7 @@
     <button class="ar-btn" @mousedown.prevent @click="deck.next()" :disabled="atEnd" :title="t('next')">
       <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" /></svg>
     </button>
-    <button class="ar-btn ar-edge" @mousedown.prevent @click="deck.go(deck.total.value - 1, Infinity)" :disabled="atEnd" :title="t('last')">
+    <button class="ar-btn ar-edge" @mousedown.prevent @click="deck.last()" :disabled="atEnd" :title="t('last')">
       <svg viewBox="0 0 24 24"><path d="M6 17l5-5-5-5M13 17l5-5-5-5" /></svg>
     </button>
 
@@ -133,7 +133,8 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useDeck } from '../../state/deck'
 import { useTheme } from '../../state/theme'
-import { useKeyboard, type KeyHandlers } from '../../composables/useKeyboard'
+import { useKeyboard } from '../../composables/useKeyboard'
+import { useShortcuts } from '../../composables/useShortcuts'
 import { useAutoHide } from '../../composables/useAutoHide'
 import { lang, t } from '../../i18n/i18n'
 
@@ -217,10 +218,9 @@ function onPointerDown(e: PointerEvent) {
 onMounted(() => document.addEventListener('pointerdown', onPointerDown, true))
 onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown, true))
 
-// ---- its own keys: g, a digit, Escape (the deck's other keys: composables/useShortcuts.ts) ----
-const keys: KeyHandlers = { g: () => toggle('slides'), Escape: close }
-for (const d of '0123456789') keys[d] = openSlides
-useKeyboard(keys)
+// ---- its keys: the menu command (a shortcut) and Escape (reserved: closes any list) -------------
+useShortcuts({ menu: () => toggle('slides') })
+useKeyboard({ Escape: close })
 </script>
 
 <style>

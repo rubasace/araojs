@@ -18,6 +18,9 @@ declare module 'virtual:arao/themes' {
   export const themes: string[]
   export const themeSources: string[]
 }
+declare module 'virtual:arao/shortcuts' {
+  export const shortcuts: Record<string, string | null | undefined>
+}
 declare module 'virtual:arao/theme-styles'
 declare module '*.vue' {
   import type { DefineComponent } from 'vue'
