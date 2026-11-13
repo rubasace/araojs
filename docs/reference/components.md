@@ -9,6 +9,13 @@ Globally registered: `Deck`, `Slide`, `Img`, `Icon`, `Snippet`, `Notes`, `Cols`,
 by hand from `'araojs'`: the [addons](#addons) (`ProgressBar`, `SlideNumber`) and the
 [composables](composables.md) (`useDeck`, `useSlide`).
 
+**In TypeScript.** The package's types declare these global components and directives for Vue
+(`GlobalComponents`, `GlobalDirectives`), so `vue-tsc` and the editor check their props in any
+template of a project that imports `'araojs'`. That declaration claims the names: a project that
+also declares a global component of its own under one of them (its own global `Icon`, say) gets
+`TS2717: Subsequent property declarations must have the same type`. Give yours another name
+(`AppIcon`), or import it where it is used instead of registering it globally.
+
 Contents: [Deck](#deck) · [Slide](#slide) · [Cols, Rows, Grid, Center](#cols-rows-grid-center) ·
 [Utility classes](#utility-classes) · [Img](#img) · [Icon](../guide/icons.md) · [Snippet](#snippet) ·
 [Notes](#notes) · [Addons](#addons)
