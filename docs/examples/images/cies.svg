@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <!-- The Cíes islands at dusk, drawn for the examples in flat
+       bands (they keep the GIFs made from it small): sky, sun, sea, islands, a lighthouse, guillemots -->
+  <rect y="0" width="1600" height="92" fill="#2b3a8c"/>
+  <rect y="90" width="1600" height="92" fill="#4a3f95"/>
+  <rect y="180" width="1600" height="92" fill="#6f4596"/>
+  <rect y="270" width="1600" height="92" fill="#9a4d8f"/>
+  <rect y="360" width="1600" height="92" fill="#c65a80"/>
+  <rect y="450" width="1600" height="92" fill="#e86a6a"/>
+  <rect y="540" width="1600" height="92" fill="#f48a6c"/>
+  <rect y="630" width="1600" height="100" fill="#ffb072"/>
+  <g transform="translate(1600 0) scale(-1 1)">
+  <circle cx="1120" cy="720" r="140" fill="#ffd98a"/>
+  <rect y="720" width="1600" height="72" fill="#2f6f9f"/>
+  <rect y="790" width="1600" height="82" fill="#245c8a"/>
+  <rect y="870" width="1600" height="72" fill="#1a4870"/>
+  <rect y="940" width="1600" height="60" fill="#0d2d4f"/>
+  <g fill="#ffd98a" opacity=".55">
+    <rect x="1010" y="750" width="220" height="8" rx="4"/>
+    <rect x="1045" y="782" width="150" height="7" rx="3.5"/>
+    <rect x="1075" y="814" width="90" height="6" rx="3"/>
+  </g>
+  <path d="M0 720 L0 640 C140 610 260 590 360 600 C450 610 500 545 590 550 C680 555 730 640 840 680 C880 695 900 710 920 720 Z" fill="#1c2b45"/>
+  <path d="M1300 720 C1350 680 1410 655 1470 660 C1520 665 1570 640 1600 632 L1600 720 Z" fill="#22324f"/>
+  <g fill="#f4efe6">
+    <rect x="567" y="466" width="24" height="86"/>
+    <path d="M561 466 h36 l-6 -17 h-24 z"/>
+  </g>
+  <rect x="571" y="440" width="16" height="11" fill="#ffd98a"/>
+  <g fill="none" stroke="#1c2b45" stroke-width="7" stroke-linecap="round">
+    <path d="M1180 260 q22 -18 44 0 q22 -18 44 0"/>
+    <path d="M1300 200 q16 -13 32 0 q16 -13 32 0"/>
+    <path d="M1400 300 q18 -15 36 0 q18 -15 36 0"/>
+  </g>
+  </g>
+</svg>

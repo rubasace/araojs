@@ -1,0 +1,18 @@
+/* docs/examples/themes/midnight.css: a dark venue, a pink accent and a dark code window */
+[data-theme="midnight"] {
+  --ar-bg: #15112e;
+  --ar-fg: #eeeaff;
+  --ar-muted: #a49fd0;
+  --ar-accent: #ff5fae;
+  --ar-accent-fg: #15112e;
+  --ar-letterbox: #0a0819;
+  --ar-font-sans: "Inter", system-ui, sans-serif;
+  --ar-title-align: center;
+  --ar-radius: 12px;
+  --ar-code-theme: tokyo-night;
+  --ar-code-bg: #1d1940;
+  --ar-code-bar: #29245a;
+  --ar-code-fg: #d6d2ff;
+  --ar-code-muted: #6f6aa6;
+  --ar-code-title: #d6d2ff;
+}
