@@ -225,9 +225,7 @@ defineExpose({
 }
 .ar-controls.visible { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
 .ar-controls.docked { position: relative; left: auto; bottom: auto; transform: none; transition: none; }
-/* docked (the presenter view) the controls sit in no theme, so they have no accent to take: their
-   accent is their text colour */
-:where(.ar-controls.docked) { --ar-controls-accent: var(--ar-controls-fg); }
+/* docked (the presenter view), their accent defaults to their text colour: tokens.css */
 
 .ar-btn {
   display: grid; place-items: center;

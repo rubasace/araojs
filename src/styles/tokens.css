@@ -10,13 +10,15 @@
      element that wears it (the audience's viewport, each Stage, the export's book), wins over
      both; a token set on any element inside (a layout, a slide, a table) wins over all of them.
    - An element that shows a theme apart from the one around it (a theme's swatch in the
-     controls) carries data-ar-theme-root: it starts again from the defaults, not from the theme
-     it sits in.
+     controls) carries data-ar-theme-root: it takes the slide's colours (--ar-bg, --ar-fg,
+     --ar-muted, --ar-accent, --ar-accent-fg) as the root has them, the defaults with the
+     project's :root rules over them, not from the theme it sits in. So the swatch of `default`
+     shows what `default` wears, and a theme's swatch what that theme changes over it.
    - A token whose default is another token (--ar-footer-color is --ar-muted unless set) cannot be
      declared at the root: var() is resolved where it is declared, so the root's --ar-muted would
-     stick and a theme's would never reach it. Its default is the second block, resolved on every
-     element into a private --_ar-… (from the tokens that element inherits): components read the
-     private one, deck authors and themes set the public one, anywhere.
+     stick and a theme's would never reach it. Its default is in the :where(*) block, resolved on
+     every element into a private --_ar-… (from the tokens that element inherits): components read
+     the private one, deck authors and themes set the public one, anywhere.
 
    What is a token: every colour, font family, font size, radius, shadow and filter, and duration
    the engine draws with, and the slide's spacing (padding, gaps, footer band). What stays literal
@@ -30,7 +32,7 @@
 
    Not declared here: --ar-scale, the canvas's scale, set by the engine (Stage.vue; 1 in the
    export's book, ExportView.vue). */
-:where(:root, [data-ar-theme-root]) {
+:where(:root) {
   /* ---- the slide: colours and type (Stage.vue, Slide.vue) ---- */
   --ar-bg: #f6f3ec;                  /* slide background */
   --ar-fg: #1b2a3a;                  /* text */
@@ -154,7 +156,9 @@
   --ar-presenter-over: #ff5a4f;      /* the countdown past the end, an invalid length */
   --ar-presenter-code-bg: #2a2e38;   /* inline code in the notes */
   --ar-presenter-scrollbar: #3a3f4b;
-  --ar-presenter-shadow: 0 16px 40px rgba(20, 22, 27, .85);  /* the length editor */
+  /* the length editor; the presenter's tokens are set at the root (the view sits in no theme), so
+     its background can be read here */
+  --ar-presenter-shadow: 0 16px 40px color-mix(in srgb, var(--ar-presenter-bg) 85%, transparent);
   --ar-presenter-radius: 10px;       /* buttons, the slides' corners; panels 1.4x, the length
                                         editor 1.2x, its fields .8x, inline code .5x */
   --ar-presenter-notes-size: clamp(18px, .85vw + 9px, 28px);
@@ -187,6 +191,24 @@
   --ar-notes-page-text: 34px;
   --ar-notes-page-head-size: 28px;
   --ar-notes-page-step-size: 24px;
+
+  /* the slide's colours as the root has them, for data-ar-theme-root (below): declared here, they
+     are resolved here, with the project's :root rules, and no theme below changes them */
+  --_ar-root-bg: var(--ar-bg);
+  --_ar-root-fg: var(--ar-fg);
+  --_ar-root-muted: var(--ar-muted);
+  --_ar-root-accent: var(--ar-accent);
+  --_ar-root-accent-fg: var(--ar-accent-fg);
+}
+
+/* an element that shows a theme apart from the one around it (a theme's swatch): the root's
+   colours, under its own [data-theme] rule (any theme rule wins over this one) */
+:where([data-ar-theme-root]) {
+  --ar-bg: var(--_ar-root-bg);
+  --ar-fg: var(--_ar-root-fg);
+  --ar-muted: var(--_ar-root-muted);
+  --ar-accent: var(--_ar-root-accent);
+  --ar-accent-fg: var(--_ar-root-accent-fg);
 }
 
 /* Defaults that are other tokens, resolved on every element (see above). Each line: the private
@@ -209,4 +231,11 @@
   --_ar-band-gap: var(--ar-title-gap, 0px);
   --_ar-h1-band-gap: var(--ar-title-gap, calc(var(--_ar-h1-size) * .4));
   --_ar-h2-band-gap: var(--ar-title-gap, calc(var(--_ar-h2-size) * .6));
+}
+/* docked in the presenter view, the controls sit in no theme, so they have no accent to take:
+   their accent defaults to their text colour. On them and inside them (each element resolves
+   the private token again), after the block above, which it overrides; --ar-controls-accent set
+   anywhere above them (:root included) still wins. */
+:where(.ar-controls.docked, .ar-controls.docked *) {
+  --_ar-controls-accent: var(--ar-controls-accent, var(--ar-controls-fg));
 }
