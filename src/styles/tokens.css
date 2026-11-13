@@ -26,8 +26,7 @@
    disabled or dimmed state); font weights; and the inner geometry of a part, in px (the paddings,
    gaps and offsets of the controls, the presenter view, the code window, the addons; button and
    glyph boxes; the cover's bar; the 2px radius of a mark, as the step dot's). A part's inner
-   radii are proportions of its radius token. One file is left out for now: the deck selector
-   (views/DeckSelector.vue) keeps its own font sizes.
+   radii are proportions of its radius token.
 
    Not declared here: --ar-scale, the canvas's scale, set by the engine (Stage.vue; 1 in the
    export's book, ExportView.vue). */
@@ -159,6 +158,23 @@
   --ar-presenter-radius: 10px;       /* buttons, the slides' corners; panels 1.4x, the length
                                         editor 1.2x, its fields .8x, inline code .5x */
   --ar-presenter-notes-size: clamp(18px, .85vw + 9px, 28px);
+
+  /* the list of decks (DeckSelector.vue, a cover's frame in it; its type: multiples of
+     --ar-ui-text). It sits in no theme, as the presenter view: a :root rule restyles it */
+  --ar-selector-bg: #14161b;
+  --ar-selector-panel: #1c1f26;      /* a card, the notice of a missing deck */
+  --ar-selector-raised: #222631;     /* a card under the pointer */
+  --ar-selector-frame: #0d0f13;      /* a cover's frame, around the cover and until it is drawn */
+  --ar-selector-line: #2b2f39;
+  --ar-selector-line-hover: #3c4252; /* a card's border under the pointer */
+  --ar-selector-edge: rgba(255, 255, 255, .08);    /* a cover frame's own edge */
+  --ar-selector-sheen: rgba(255, 255, 255, .11);   /* going by in a frame until its cover is drawn */
+  --ar-selector-still: rgba(255, 255, 255, .05);   /* the sheen, still (reduced motion) */
+  --ar-selector-fg: #eceef2;
+  --ar-selector-dim: #949bab;        /* the count, a cover's heading, a path, the arrow */
+  --ar-selector-accent: #5b9dff;     /* the heading's bar, the notice's edge, focus, the arrow */
+  --ar-selector-shadow: 0 18px 40px rgba(0, 0, 0, .38), 0 2px 8px rgba(0, 0, 0, .24);  /* a card under the pointer */
+  --ar-selector-radius: 14px;        /* a card; a cover's frame .5x, the notice 5/7 */
 
   /* the export (ExportView.vue): behind the pages on screen, and the notes pages (&notes), in
      canvas px */
