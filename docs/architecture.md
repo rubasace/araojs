@@ -115,4 +115,6 @@ and its header says why: `tokens.css`; the views (through `Deck`); `Snippet` bef
 Snippet in an image zone takes the zone's `flex`); `Img` before `Slide`; `Slide` before `Icon`
 and the layout components (they keep their own `flex` in an image zone); `Img` before the layout
 components (their children clip `overflow-x`); `base.css` last (its step fade wins over Snippet's
-own transitions). `index.js` then adds the addons, and `app.js` the deck selector.
+own transitions); the library build fails if `dist/arao.css` loses three of them (Snippet's
+`flex`, the `overflow-x` of an `Img` in `Cols`, the step fade: `vite.config.js`,
+`CSS_ORDER`). `index.js` then adds the addons, and `app.js` the deck selector.

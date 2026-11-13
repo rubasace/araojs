@@ -9,6 +9,8 @@
 //   zone's flex), Img before Slide, Slide before Icon and the layout pieces (both keep their own
 //   flex in an image zone), Img before the layout pieces (their children clip overflow-x);
 //   base.css last (its step fade wins over Snippet's own transitions).
+// The library build checks three of them in dist/arao.css (vite.config.js, CSS_ORDER): Snippet's
+// flex, the overflow-x of an Img in Cols, the step fade.
 import './styles/tokens.css'
 import Deck from './components/Deck.vue'
 import Snippet from './components/Snippet.vue'

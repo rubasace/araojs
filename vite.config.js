@@ -31,6 +31,28 @@ function keepImportMeta() {
   }
 }
 
+// CSS order guard. Where two rules of the same specificity meet on one element, the later one in
+// arao.css wins, and the import order in src/plugin.js is what puts it later (its header says
+// why). Each entry: the rule that must come first, the rule that must follow it, what breaks
+// otherwise. A rule no longer in arao.css fails too, so that the guard cannot go stale unseen.
+const CSS_ORDER = [
+  ['.ar-snippet', '.ar-zone-image > *', "a Snippet in an image zone takes the zone's flex"],
+  [':where(.ar-img)', ':where(.ar-cols) > *', 'an Img in Cols clips overflow-x like its other children'],
+  ['.ar-snippet-line', '[data-ar-slide] *', "the step fade wins over Snippet's own transitions"],
+  ['.ar-snippet-tx', '[data-ar-slide] *', "the step fade wins over Snippet's own transitions"],
+]
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+// where the rule with exactly this selector starts (a line of its own in the unminified build)
+const ruleAt = (css, selector) => css.search(new RegExp(`^${escapeRe(selector)} *\\{`, 'm'))
+function cssOrderError(css) {
+  for (const [first, then, why] of CSS_ORDER) {
+    const a = ruleAt(css, first), b = ruleAt(css, then)
+    if (a < 0 || b < 0) return `no rule \`${a < 0 ? first : then} {\` in ${CSS}: update CSS_ORDER in vite.config.js`
+    if (a > b) return `\`${first}\` must come before \`${then}\` in ${CSS} (${why}): fix the import order in src/plugin.js`
+  }
+  return null
+}
+
 // The library's CSS comes with its JS: the entry imports it, so a project needs no import of its
 // own (it is built by Vite in any case: the virtual modules require the plugin). The themes are
 // copied as they are, one file each, for the project to import the ones its decks wear.
@@ -42,6 +64,9 @@ function cssAndThemes() {
       handler(_, bundle) {
         const entry = Object.values(bundle).find((f) => f.type === 'chunk' && f.isEntry)
         if (!bundle[CSS]) this.error(`no ${CSS} in the build`)
+        const { source } = bundle[CSS]
+        const order = cssOrderError(typeof source === 'string' ? source : new TextDecoder().decode(source))
+        if (order) this.error(`CSS order: ${order}`)
         entry.code = `import './${CSS}'\n${entry.code}`
         for (const f of readdirSync(here('src/themes')).filter((f) => f.endsWith('.css')))
           this.emitFile({ type: 'asset', fileName: `themes/${f}`, source: readFileSync(here(`src/themes/${f}`), 'utf8') })
