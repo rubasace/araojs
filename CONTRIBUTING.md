@@ -44,15 +44,16 @@ src/
   i18n/             the engine's UI text: one catalogue per language (en.ts the reference), i18n.ts the lookup
   styles/           only what is global: tokens.css (every token and its default: the default theme),
                     base.css (page, viewport, steps); every component brings its own CSS in its .vue file
+themes/             the built-in themes, one CSS file each, named as the theme (default.css names the defaults): the library's theme source (arao({ builtinThemes }) says which load)
 vite/               the Vite plugin (araojs/vite; icons.js resolves the icons)
 bin/                the arao command (arao export)
 playground/         a tiny slides project on the library's source, for developing it
-scripts/            smoke.mjs (the smoke test), shots.mjs and hero-gif.mjs (the docs' pictures)
+scripts/            smoke.mjs (the smoke test), shots.mjs, hero-gif.mjs and theme-sheets.mjs (the docs' pictures)
 docs/               the user docs (shipped in the package, and the source of the docs site):
   index.md          their map; getting-started.md, guide/, reference/
   architecture.md   how the engine is built: folders, views, provide/inject, useDeck's face
   examples/         small decks behind the docs' pictures (with their snippets and theme)
-  assets/           the pictures: shots/ (npm run shots), hero.gif (npm run hero-gif)
+  assets/           the pictures: shots/ (npm run shots), hero.gif (npm run hero-gif), themes/ (npm run theme-sheets)
   .vitepress/       the docs site's config (its cache and build are not committed)
 dist/               the build (npm run build): index.js, arao.css, types/ (the .d.ts the package exports)
 ```
@@ -74,8 +75,12 @@ The pictures come from real decks, so code and picture never drift:
 - `<!-- example:<name> -->…<!-- /example -->` in the README or a docs page is filled with that
   example's source (`<name>` may also be a file of `docs/examples/` with its extension, such as
   `themes/ocean.css`).
-- `npm run shots` (and `npm run hero-gif`) run on demand, not in CI: after changing an example,
-  an engine change that shows on them, or the default theme, run them and commit the result.
+- `npm run theme-sheets` draws the built-in themes' contact sheets (`docs/assets/themes/<name>.png`,
+  for [Built-in themes](docs/guide/built-in-themes.md)): `scripts/theme-sheets/Tour.vue` in each
+  theme, eleven slides and the presenter view; `-- <name>` for one theme.
+- `npm run shots` (and `npm run hero-gif`, `npm run theme-sheets`) run on demand, not in CI: after
+  changing an example, an engine change that shows on them, a built-in theme, or the default theme,
+  run them and commit the result.
   They drive Chromium through `playwright-core` like the smoke test (below), and `hero-gif` needs
   `ffmpeg` on the `PATH` (or `FFMPEG=/path/to/ffmpeg`).
 
@@ -94,8 +99,9 @@ theme from outside `src/themes`, declared in its own `<style>`. Then it:
 
 1. runs `vite build`, which must also write `dist/404.html`, a copy of `dist/index.html`;
 2. opens every deck at its path under the dev server (Vue's own warnings only show up in dev) and
-   under `vite preview`, and walks each one with ArrowRight to its last step. Any console warning
-   or error, any page error, or a deck with no slides fails the test;
+   under `vite preview`, and walks each one with ArrowRight to its last step, and the playground's
+   deck again in each built-in theme (the installed package's `themes/`). Any console warning or
+   error, any page error, or a deck with no slides fails the test;
 3. opens `/` under both servers: it must list every deck, each card with its cover drawn in it,
    its title the file name in words (written out in the test) from the list's first render, and
    the same once the covers are in, the second and the fourth deck's cover heading under its
@@ -110,7 +116,9 @@ theme from outside `src/themes`, declared in its own `<style>`. Then it:
 4. checks `useDeck()` on the second deck, under the dev server: the object is frozen, writes
    through its refs change nothing, `setTheme` of a name the deck has not gives one `[arao]`
    warning, and in the presenter view's preview no function acts; and the themes, on the third
-   deck: it lists `default` and the project's two themes, `t` and `?theme=` wear the first, the
+   deck: it lists `default`, the project's themes and then the other built-in ones, `t` and
+   `?theme=` wear the project's first, `?theme=` wears each built-in theme (a background of its
+   own), the
    defaults reach the presenter view (outside every theme), and a `:root` rule of the project's
    wins over a default (`default`'s swatch shows it, and `--ar-controls-accent` reaches the
    docked controls) while a theme wins over that rule; the fifth deck wears its theme from outside

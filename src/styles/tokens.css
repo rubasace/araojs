@@ -1,7 +1,9 @@
 /* Tokens: every custom property the engine reads, each with its default, declared here and nowhere
-   else. Together the defaults are the `default` theme, which has no file of its own: a theme
-   ([data-theme="x"] { --ar-…: …; }, in a CSS file of the project's src/themes, which the Vite
-   plugin loads) declares only what it changes, over them; slides and components only read them.
+   else. Together the defaults are the `default` theme (themes/default.css, at the package's root,
+   names it and sets nothing: its look is this file's): a theme ([data-theme="x"] { --ar-…: …; },
+   in a CSS file of a theme source, the library's themes/ folder or the project's src/themes, which
+   the Vite plugin loads) declares only what it changes, over them; slides and components only read
+   them.
 
    Where they apply:
    - At the root, with zero specificity (:where(:root)): they reach everything Arao draws, inside a

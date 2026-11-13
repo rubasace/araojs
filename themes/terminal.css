@@ -1,0 +1,47 @@
+/* terminal: a phosphor screen. Green on near-black, monospace throughout (Space Mono for
+   headings, JetBrains Mono for text and code), square corners, dashed table rules, a faint glow
+   in the middle of the screen, section slides on a darker screen, code windows outlined in green
+   with muted, greenish colours (Everforest). */
+[data-theme="terminal"] {
+  --ar-letterbox: #000;
+  --ar-bg: #0a0f0b;
+  --ar-fg: #d3f5d9;
+  --ar-muted: #8cb894;
+  --ar-accent: #4ef08a;
+  --ar-accent-fg: #04140a;
+  --ar-font-heading: "Space Mono", "JetBrains Mono", ui-monospace, monospace;
+  --ar-font-sans: "JetBrains Mono", ui-monospace, monospace;
+  --ar-font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --ar-text-base: 34px;
+  --ar-title: 88px;
+  --ar-pad: 104px 120px;
+  --ar-radius: 0px;
+  --ar-list-gap: .3em;
+
+  --ar-slide-bg-image: radial-gradient(70% 70% at 50% 45%, rgb(78 240 138 / .07), transparent 75%);
+
+  --ar-table-head-color: var(--ar-accent);
+  --ar-table-border: 2px dashed rgb(78 240 138 / .3);
+
+  --ar-code-theme: everforest-dark;
+  --ar-code-size: 38px;
+  --ar-code-bg: #060a07;
+  --ar-code-bar: #0f1a12;
+  --ar-code-fg: #d3c6aa;
+  --ar-code-muted: #6f9c79;
+  --ar-code-title: #8cb894;
+  --ar-code-hl: #4ef08a;
+  --ar-code-hl-bg: rgb(78 240 138 / .1);
+  --ar-code-radius: 0px;
+  --ar-code-shadow: 0 0 0 2px rgb(78 240 138 / .45), 0 0 60px rgb(78 240 138 / .12);
+  --ar-code-light-1: #2f5a3a;
+  --ar-code-light-2: #2f5a3a;
+  --ar-code-light-3: #2f5a3a;
+
+  --ar-progress-height: 6px;
+}
+/* the section slides: a darker screen, its heading glowing in the accent */
+[data-theme="terminal"] .layout-section {
+  --ar-accent-fg: var(--ar-accent);
+  --ar-slide-bg-image: radial-gradient(55% 60% at 50% 50%, rgb(78 240 138 / .16), transparent 75%), linear-gradient(#060b07, #060b07);
+}

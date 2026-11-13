@@ -1,0 +1,6 @@
+/* default: the engine's defaults as they are (src/styles/tokens.css): a warm light page, Georgia,
+   a blue accent, a light code window. It changes no token, on purpose: the defaults are declared
+   once, at the root with zero specificity, so a project's own :root rule still wins over them
+   while a deck wears default. This file makes default a theme like any other: given by a theme
+   source (the library's own, first), so it is always there to offer and to fall back to. */
+[data-theme="default"] {}

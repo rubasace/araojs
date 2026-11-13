@@ -2,7 +2,10 @@
 
 Every token the engine reads has a default ([Theme tokens](../reference/theme-tokens.md), declared in
 `styles/tokens.css`), and the defaults are the `default` theme: a light page, Georgia, a blue
-accent, a light code window. It has no file; `default` is always a valid theme name.
+accent, a light code window. The library ships it with five more, each with a character of its
+own (dark, light, editorial, vivid, terminal): [Built-in themes](built-in-themes.md). Every deck
+can wear them (`arao({ builtinThemes })` turns them off, all or some), and `default` is always
+there.
 
 A project theme declares only what it changes. This one is the examples' (`docs/examples/themes/`;
 in a slides project, `src/themes/ocean.css`), with a deck that wears it:
@@ -63,7 +66,8 @@ Every token, with its default: [Theme tokens](../reference/theme-tokens.md).
 ## Where themes are found
 
 A theme is a CSS rule `[data-theme="<name>"] { --ar-…: …; }` in a CSS file of a **theme source**:
-the project's themes folder (`src/themes`), or any folder or package named in the
+the library's own themes folder (its [built-in themes](built-in-themes.md)); then the project's
+themes folder (`src/themes`), or any folder or package named in the
 [plugin](../reference/vite-plugin.md)'s `themes` option. It declares only the tokens it changes,
 over the defaults. The plugin loads every CSS file directly in each source's folder, after the
 engine's CSS, with nothing to import, and names the themes by their selectors:
@@ -84,8 +88,9 @@ engine's CSS, with nothing to import, and names the themes by their selectors:
 - a file added, removed or renamed while `npm run dev` runs is picked up, and so is an edit of a
   partial it imports (the page reloads when the theme names change).
 
-**Where a theme can come from.** Only from the theme sources, `arao({ themes })` in
-`vite.config.js`: one, or a list, in order (default `'src/themes'`):
+**Where a theme can come from.** Only from the theme sources: the library's own, which needs no
+option, and `arao({ themes })` in `vite.config.js`, the project's: one, or a list, in order
+(default `'src/themes'`):
 
 ```js
 // vite.config.js
@@ -106,17 +111,32 @@ export default defineConfig({
   A package that is not installed, or whose folder gives no theme, stops the build with an
   `[arao]` error.
 
-Every theme the sources give is offered, after `default`, source after source (alphabetical in
-each). A name two sources give is offered once, where it comes first, and Vite warns: both files
-are loaded, source after source, and both apply; at equal specificity the later source wins. A CSS
-file the project imports itself (from `src/main.js`, a `.scss` file, a deck's own `<style>`) is
-no theme source: its rules apply, but a `[data-theme]` in it is not a theme a deck can list.
-Put its folder, or its package, in `themes` instead.
+Every theme the sources give is offered: `default` first, then the project's, source after source
+(alphabetical in each), then the built-in ones. A name two of the project's sources give is offered
+once, where it comes first, and Vite warns: both files are loaded, source after source, and both
+apply; at equal specificity the later source wins.
+
+A project theme named like a built-in one (`src/themes/folio.css` with `[data-theme="folio"]`)
+**replaces** it: the built-in file is not loaded at all (nor the fonts it names), so the project's
+theme looks exactly as it says, over the defaults, and Vite says so once
+(`theme "folio" of src/themes replaces the built-in one`). To start from a built-in theme, copy its
+file (`node_modules/araojs/themes/<name>.css`) into `src/themes/`: under the same name it replaces
+the built-in one, under another the deck offers both. A project's `default` replaces the built-in
+`default`, which sets nothing: it refines the defaults while a deck wears it.
+
+**The built-in themes to load**: `arao({ builtinThemes })`, `true` by default (all of them),
+`false` (none but `default`), or a list of their names (`['folio', 'carbon']`; another name stops
+the build). A built-in theme left out is not in the build at all: no CSS, no fonts, no name to
+offer.
+
+A CSS file the project imports itself (from `src/main.js`, a `.scss` file, a deck's own `<style>`)
+is no theme source: its rules apply, but a `[data-theme]` in it is not a theme a deck can list. Put
+its folder, or its package, in `themes` instead.
 
 `Deck(:themes)` picks the themes a deck can wear, in its order (the first is the one it opens in);
-without it, the deck offers every theme there is: `default`, then the project's in alphabetical
-order. A name there that is neither `default` nor a theme a source gives (above) is skipped,
-with one `[arao]` warning. `?theme=<name>` and `t`
+without it, the deck offers every theme there is: `default`, the project's, then the built-in
+ones, each source in alphabetical order. A name there that no source gives (above) is skipped, with
+one `[arao]` warning; a list left with no theme is `['default']`. `?theme=<name>` and `t`
 (or the controls' picker) change the theme while presenting; `useDeck().themes` is the deck's
 list.
 
@@ -195,6 +215,13 @@ Gill Sans, Palatino, Trebuchet MS, SF Pro… in `vite/fonts.js`). Generic names 
 - **The build asks the providers.** Each family name goes to Google, Bunny, Fontshare and
   Fontsource at build time (the deck's viewers never contact them: the files are served with the
   deck). Turn it off for a family, or altogether, below.
+- **The built-in themes name fonts too**, thirteen families between them: with all of them loaded
+  (the default), every build fetches and ships them, about 140 files, some 2.6 MB in
+  `assets/_fonts` (a viewer's browser downloads only the files of the theme on screen). A project
+  with system fonts only goes from no font file to those; offline, its build takes longer and
+  warns for each family the providers do not answer. `arao({ builtinThemes: false })`, or the
+  list of the ones the decks wear, keeps the others' fonts out; `fonts: false` fetches none, and
+  the built-in themes fall back to system fonts.
 - **Network at build time.** The files are cached in `node_modules/.cache/fontless`, but the
   providers' catalogues are cached for a week only (and again on a new version), and a fresh
   install (`npm ci` in CI) starts empty. Offline, or with a provider that does not answer (a

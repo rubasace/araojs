@@ -1,0 +1,39 @@
+/* carbon: a dark keynote. Near-black, white type, one signal colour (yellow) for what matters:
+   the cover's bar, the progress, highlighted code, the section slides. Titles stay white; the
+   yellow is kept for emphasis. Space Grotesk for headings, Inter for text, JetBrains Mono for
+   code. */
+[data-theme="carbon"] {
+  --ar-letterbox: #050506;
+  --ar-bg: #0e0f11;
+  --ar-fg: #f1f1f3;
+  --ar-muted: #a4a7af;
+  --ar-accent: #ffd23f;
+  --ar-accent-fg: #0e0f11;
+  --ar-font-heading: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --ar-font-sans: "Inter", system-ui, sans-serif;
+  --ar-font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --ar-text-base: 40px;
+  --ar-title: 104px;
+  --ar-radius: 6px;
+  --ar-list-gap: .25em;
+
+  /* a faint warm light from the top right corner */
+  --ar-slide-bg-image: radial-gradient(90% 80% at 100% 0%, rgb(255 210 63 / .07), transparent 60%);
+  --ar-title-color: var(--ar-fg);
+
+  --ar-table-head-color: var(--ar-accent);
+  --ar-table-border: 2px solid rgb(241 241 243 / .12);
+  --ar-table-stripe: rgb(241 241 243 / .035);
+
+  --ar-code-theme: github-dark-high-contrast;
+  --ar-code-bg: #15171c;
+  --ar-code-bar: #1e2128;
+  --ar-code-fg: #f0f3f6;
+  --ar-code-muted: #9ea7b3;
+  --ar-code-title: #c9d1d9;
+  --ar-code-radius: 12px;
+  --ar-code-shadow: 0 30px 80px rgb(0 0 0 / .6), inset 0 0 0 1px rgb(255 255 255 / .08);
+  --ar-code-light-1: #3b3e46;
+  --ar-code-light-2: #3b3e46;
+  --ar-code-light-3: #3b3e46;
+}

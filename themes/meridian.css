@@ -1,0 +1,49 @@
+/* meridian: calm and corporate. A cool white page with a band of the accent along the top of
+   each slide, navy titles, a quiet teal for the details, tables with a tinted head and striped
+   rows, section slides in a navy-to-teal gradient. Manrope for headings, Source Sans 3 for
+   text, Source Code Pro for code. */
+[data-theme="meridian"] {
+  --ar-letterbox: #0f2236;
+  --ar-bg: #f6f8fb;
+  --ar-fg: #14243a;
+  --ar-muted: #556477;
+  --ar-accent: #0a6f86;
+  --ar-accent-fg: #ffffff;
+  --ar-font-heading: "Manrope", system-ui, sans-serif;
+  --ar-font-sans: "Source Sans 3", system-ui, sans-serif;
+  --ar-font-mono: "Source Code Pro", ui-monospace, monospace;
+  --ar-text-base: 42px;
+  --ar-title: 96px;
+  --ar-radius: 10px;
+  --ar-list-gap: .3em;
+
+  /* the band: the accent along the top 14px, transparent below */
+  --ar-slide-bg-image: linear-gradient(var(--ar-accent) 14px, transparent 14px);
+  --ar-title-color: var(--ar-fg);
+
+  --ar-table-head-bg: rgb(10 111 134 / .1);
+  --ar-table-head-color: var(--ar-fg);
+  --ar-table-border: 2px solid rgb(20 36 58 / .1);
+  --ar-table-stripe: rgb(20 36 58 / .035);
+
+  --ar-code-theme: github-light-high-contrast;
+  --ar-code-bg: #ffffff;
+  --ar-code-bar: #e7ecf2;
+  --ar-code-fg: #0e1116;
+  --ar-code-muted: #66707b;
+  --ar-code-hl-bg: #ebf6f9;          /* a pale teal: every code colour keeps 4.5:1 on it */
+  --ar-code-title: #3d4a5c;
+  --ar-code-radius: 12px;
+  --ar-code-shadow: 0 20px 50px rgb(20 36 58 / .14), 0 2px 6px rgb(20 36 58 / .08), inset 0 0 0 1px rgb(20 36 58 / .08);
+
+  --ar-controls-accent: #5ccbe3;
+}
+/* the cover: the band, and a soft teal light in its far corner */
+[data-theme="meridian"] .layout-cover {
+  --ar-slide-bg-image:
+    linear-gradient(var(--ar-accent) 14px, transparent 14px),
+    radial-gradient(65% 85% at 100% 100%, rgb(14 165 196 / .22), rgb(14 165 196 / .08) 45%, transparent 75%);
+}
+[data-theme="meridian"] .layout-section {
+  --ar-slide-bg-image: linear-gradient(135deg, #14243a 0%, #0f4560 55%, #0a6f86 100%);
+}
