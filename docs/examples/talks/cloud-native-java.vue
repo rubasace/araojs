@@ -1,5 +1,5 @@
 <template lang="pug">
-Deck(:themes="['ocean']")
+Deck
   Slide(layout="cover")
     .bar
     h1 Cloud-native Java

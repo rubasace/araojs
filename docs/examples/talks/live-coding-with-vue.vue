@@ -1,5 +1,5 @@
 <template lang="pug">
-Deck(:themes="['midnight']")
+Deck
   Slide(layout="cover")
     .bar
     h1 Live coding with Vue
