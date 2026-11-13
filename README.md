@@ -25,13 +25,26 @@ slide, with the same line breaks.
   <img src="docs/assets/hero.gif" alt="A slide typed in Pug on the left while the live deck on the right follows each saved line" width="940" />
 </p>
 
-> [!NOTE]
-> Not on npm yet (the `araojs` name holds a placeholder). Until the first release, use a checkout,
-> `"araojs": "file:../araojs"` (`npm run build` there after each change), or an `npm pack` tarball.
+**Contents:** [Why Arao](#why-arao) · [Quick start](#quick-start) · [Code and slide](#code-and-slide) ·
+[Features](#features) · [Documentation](#documentation) · [License](#license)
 
-**Contents:** [Quick start](#quick-start) · [Code and slide](#code-and-slide) ·
-[Features](#features) · [Why Arao](#why-arao) · [Documentation](#documentation) ·
-[License](#license)
+## Why Arao
+
+<table>
+<tr>
+<td>
+
+Arao continues the idea of [eagle.js](https://github.com/Zulko/eagle.js): **a slideshow is a Vue
+app, slides are components, and anything Vue can do, a slide can do.** eagle.js was built for
+Vue 2 and is no longer maintained; Arao takes the same idea and rebuilds it for Vue 3 and Vite,
+around a fixed canvas, absolute steps and themes made of tokens.
+
+eagle.js had its bird; so does Arao. The *arao* is the **common guillemot**, a black-and-white
+diving seabird of the **Cíes islands**, off Vigo.
+
+</td>
+</tr>
+</table>
 
 ## Quick start
 
@@ -64,6 +77,26 @@ The whole walkthrough, with a first deck: [Getting started](docs/getting-started
 <table>
 <tr>
 <td width="50%">
+
+<!-- example:cover -->
+
+```vue
+<template lang="pug">
+Deck
+  Slide(layout="cover")
+    .bar
+    h1 Building a framework
+    p.muted Jane Doe · VigoJUG 2026
+</template>
+```
+
+<!-- /example -->
+
+</td>
+<td width="50%"><img src="docs/assets/shots/cover.png" alt="A cover slide: a title and a speaker line" /></td>
+</tr>
+<tr>
+<td>
 
 <!-- example:split -->
 
@@ -140,6 +173,19 @@ Every picture is drawn from the deck beside it ([docs/examples](docs/examples/))
 
 ## Features
 
+<table>
+<tr>
+<td width="33%" align="center"><a href="docs/guide/steps.md"><img src="docs/assets/shots/steps-1.png" alt="A slide at its first step, one bullet shown" /></a><br/><b><a href="docs/guide/steps.md">Steps</a></b></td>
+<td width="33%" align="center"><a href="docs/guide/composition.md"><img src="docs/assets/shots/grid.png" alt="Five cards in a 3 + 2 grid, icons in the accent colour" /></a><br/><b><a href="docs/guide/composition.md">Composition</a></b></td>
+<td width="33%" align="center"><a href="docs/guide/code.md"><img src="docs/assets/shots/snippet-2.png" alt="A code window with one line highlighted" /></a><br/><b><a href="docs/guide/code.md">Code with highlights</a></b></td>
+</tr>
+<tr>
+<td width="33%" align="center"><a href="docs/guide/icons.md"><img src="docs/assets/shots/icons.png" alt="The Vue, Vite and Pug logos, large" /></a><br/><b><a href="docs/guide/icons.md">Icons by name</a></b></td>
+<td width="33%" align="center"><a href="docs/guide/presenting.md"><img src="docs/assets/shots/presenter.png" alt="The presenter view: current slide, next step, notes and timer" /></a><br/><b><a href="docs/guide/presenting.md">Presenter view</a></b></td>
+<td width="33%" align="center"><a href="docs/guide/project.md#the-list-of-decks"><img src="docs/assets/shots/deck-list.png" alt="The deck list: each deck shown by its cover" /></a><br/><b><a href="docs/guide/project.md#the-list-of-decks">Every deck, one URL</a></b></td>
+</tr>
+</table>
+
 - **One fixed canvas**, 1920x1080 by default, scaled to any window: [Concepts](docs/guide/concepts.md)
 - **Steps** that a slide counts on its own, and reusable ones: [Steps](docs/guide/steps.md)
 - **Layouts and composition** by props, no CSS: [Layouts](docs/guide/slides-and-layouts.md) · [Composition](docs/guide/composition.md)
@@ -152,24 +198,6 @@ Every picture is drawn from the deck beside it ([docs/examples](docs/examples/))
 - **Keyboard and touch**: keys, a jump menu, taps and swipes: [Controls](docs/guide/presenting.md#controls)
 - **PDF export**, a page per step or per slide, text kept as text: [Export](docs/guide/export.md)
 - **Written by people or by agents**: [AGENTS.md](AGENTS.md) ships with the package
-
-## Why Arao
-
-<table>
-<tr>
-<td>
-
-Arao continues the idea of [eagle.js](https://github.com/Zulko/eagle.js): **a slideshow is a Vue
-app, slides are components, and anything Vue can do, a slide can do.** eagle.js was built for
-Vue 2 and is no longer maintained; Arao takes the same idea and rebuilds it for Vue 3 and Vite,
-around a fixed canvas, absolute steps and themes made of tokens.
-
-eagle.js had its bird; so does Arao. The *arao* is the **common guillemot**, a black-and-white
-diving seabird of the **Cíes islands**, off Vigo.
-
-</td>
-</tr>
-</table>
 
 ## Documentation
 
