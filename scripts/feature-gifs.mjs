@@ -202,7 +202,7 @@ async function themes() {
 
 // The presenter view: the slide, the next step, the notes of this step, the timer running.
 async function presenter() {
-  const rec = await recorder('presenter', 'window.html', { zoom: 1.5 })
+  const rec = await recorder('presenter', 'window.html', { zoom: 2 })
   await rec.load(`${talks.url}building-a-framework?presenter#/2/1`)
   await rec.hold(HOLD)
   for (const [i, k] of ['ArrowRight', 'ArrowRight', 'ArrowRight', 'ArrowRight'].entries()) {
