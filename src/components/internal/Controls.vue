@@ -1,10 +1,10 @@
 <!-- Built-in deck controls: a floating panel (the audience view), or docked under the slide (the
      presenter view). Its buttons, its two lists (the jump list, the themes) and the deck's keys.
      docked: always shown, in the flow of the page (the presenter view places it under the slide).
-     auto-hide: shown for 2.5 s after the mouse moves anywhere in the window, then hidden; the
-       pointer over it or a list open keeps it shown. v-model:shown says whether it is shown, and
-       sets it: true shows it for 4 s, false hides it (the audience view: a tap in the middle).
-       Without auto-hide (and not docked) it is always shown.
+     auto-hide: shown for 2.5 s after the mouse moves anywhere in the window, then hidden; a tap
+       in the middle of the window shows it for 4 s, another hides it (composables/useAutoHide.js);
+       the pointer over it or a list open keeps it shown. Read once, when it mounts: it does not
+       change afterwards. Without auto-hide (and not docked) it is always shown.
      Where the deck is and what it does come from useDeck() (the slides' titles too); the themes
      from useTheme(). Which list is open and what is typed in it are its own.
      The keys (composables/useKeyboard.js), on the window, wherever the focus is: they move the
@@ -133,7 +133,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useDeck } from '../../state/deck'
 import { useTheme } from '../../state/theme'
 import { useKeyboard } from '../../composables/useKeyboard'
-import { useMouseIdle } from '../../composables/useMouseIdle'
+import { useAutoHide } from '../../composables/useAutoHide'
 
 const props = defineProps({
   docked: Boolean,
@@ -149,16 +149,9 @@ const open = ref(null) // null | 'slides' | 'themes'
 const atStart = computed(() => deck.index.value === 0 && deck.step.value === 1)
 const atEnd = computed(() => deck.index.value === deck.total.value - 1 && deck.step.value === deck.steps.value)
 
-// ---- auto-hide: the mouse anywhere in the window shows it for 2.5 s -------------------------
-// shown follows the mouse; whoever binds it can set it too (true: 4 s, false: hidden now)
-const shown = defineModel('shown', { type: Boolean, default: false })
-const idle = useMouseIdle(() => (props.autoHide ? window : null), 2500, { idle: true })
-watch(idle.idle, (v) => (shown.value = !v), { immediate: true })
-watch(shown, (v) => {
-  if (v === !idle.idle.value) return
-  v ? idle.wake(4000) : idle.sleep()
-})
-const visible = computed(() => props.docked || !props.autoHide || shown.value || hovering.value || !!open.value)
+// ---- auto-hide (read once: the prop does not change once it is mounted) ----------------------
+const shown = props.autoHide ? useAutoHide({ after: 2500, tap: 4000 }).visible : null
+const visible = computed(() => props.docked || !shown || shown.value || hovering.value || !!open.value)
 
 // ---- jump list --------------------------------------------------------------
 const query = ref('')

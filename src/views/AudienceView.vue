@@ -3,8 +3,9 @@
      the mouse and touch are read from.
        mouse   a move shows the controls for 2.5 s (their auto-hide, Controls.vue), and the cursor
                hides after hideCursorAfter ms without one (0: never); keys never show them
-       touch   tap the right quarter → next, the left quarter → previous, the middle → show/hide the
-               controls (4 s); swipe left/right → next/previous (composables/useTouchNav.js)
+       touch   tap the right quarter → next, the left quarter → previous; swipe left/right →
+               next/previous (composables/useTouchNav.js); a tap in the middle shows or hides the
+               controls (their auto-hide)
      If the browser blocks the presenter window, a notice above the controls links to it.
      deck: createDeck() (state/deck.js): the stage, the viewport ref, the presenter window. -->
 <template>
@@ -17,7 +18,7 @@
     <Stage :stage="deck.stage" :width="width" :height="height">
       <slot />
     </Stage>
-    <Controls auto-hide v-model:shown="hud" />
+    <Controls auto-hide />
     <!-- the browser blocked the presenter window: the same URL as a link, which it does not block -->
     <Transition name="ar-toast">
       <div class="ar-toast" v-if="blocked" role="status">
@@ -29,9 +30,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed } from 'vue'
 import { useDeck } from '../state/deck'
-import { useMouseIdle } from '../composables/useMouseIdle'
+import { useAutoHide } from '../composables/useAutoHide'
 import { useTouchNav } from '../composables/useTouchNav'
 import Controls from '../components/internal/Controls.vue'
 import Stage from '../components/internal/Stage.vue'
@@ -48,15 +49,11 @@ const blocked = presenterWindow.blocked
 // the deck's ref: fullscreen fills this element
 const viewport = props.deck.viewport
 
-// ---- the controls hide themselves (auto-hide); a tap in the middle shows them for 4 s, or hides
-// them. The cursor hides after hideCursorAfter
-const hud = ref(false)
-const { idle: cursorHidden } = useMouseIdle(viewport, () => props.hideCursorAfter)
-useTouchNav(viewport, {
-  next: stage.next,
-  prev: stage.prev,
-  middle: () => (hud.value = !hud.value),
-})
+// ---- the cursor hides after hideCursorAfter ms without a move (0: never); touch moves the deck.
+// The controls hide themselves (their auto-hide).
+const cursor = useAutoHide({ after: () => props.hideCursorAfter, visible: true })
+const cursorHidden = computed(() => !cursor.visible.value)
+useTouchNav(viewport, { next: stage.next, prev: stage.prev })
 </script>
 
 <style>
