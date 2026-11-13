@@ -2,17 +2,12 @@
 
 From an empty folder to a deck on the screen and in a PDF. You need Node 20.19 or newer.
 
-> [!NOTE]
-> The first release is not on npm yet (the `araojs` name holds a placeholder). Until then a
-> project uses it from a checkout, `"araojs": "file:../araojs"` (run `npm run build` in the
-> checkout after each change to the library), or from a tarball made with `npm pack`.
-
 ## 1. Make the project
 
 A slides project is a Vite app with `araojs` (and `vue` and `vite`, its peers):
 
 ```bash
-mkdir my-talks && cd my-talks && npm init -y
+mkdir my-talks && cd my-talks && npm init -y && npm pkg set type=module
 npm install araojs vue && npm install -D vite
 ```
 
