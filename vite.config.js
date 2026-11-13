@@ -65,7 +65,7 @@ function cssOrderError(css) {
 
 // The project's themes go after all of the engine's CSS, so that a theme's rule wins over an
 // engine rule of the same specificity: in the project's build, CSS is in import order, and the
-// entry imports ./arao.css first and virtual:arao/theme-styles (the themes folder's CSS) last. The
+// entry imports ./arao.css first and virtual:arao/theme-styles (the theme sources' CSS) last. The
 // bundler hoists every import to the top of the chunk, in the order the modules run (src/index.ts
 // imports the themes last for that): the theme styles must be the last import, after ./arao.css.
 const THEME_STYLES = 'virtual:arao/theme-styles'

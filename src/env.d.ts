@@ -16,7 +16,7 @@ declare module 'virtual:arao/images' {
 }
 declare module 'virtual:arao/themes' {
   export const themes: string[]
-  export const themesDir: string
+  export const themeSources: string[]
 }
 declare module 'virtual:arao/theme-styles'
 declare module '*.vue' {
