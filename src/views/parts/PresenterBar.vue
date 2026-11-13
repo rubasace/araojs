@@ -102,7 +102,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
-import { MIN_DURATION, clock, elapsed, parseDuration, phase, withinBounds } from '../../core/timer'
+import { MIN_DURATION, clock, elapsed, parseDuration, phase, withinBounds } from '../../state/timer'
 import { useDeck } from '../../state/deck'
 import { useTimer } from '../../state/timer'
 

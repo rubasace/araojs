@@ -26,7 +26,7 @@ src/
   app.js            createDeckApp
   state/            the deck, its stages, its slides, the talk's timer: createDeck/useDeck, createStage/useStage, createSlide/useSlide, createTimer/useTimer
   composables/      the effects (internal): useHashRoute, useDeckSync, usePresenterWindow, useKeyboard, useTouchNav, useMouseIdle, useFullscreen
-  core/             plain modules: sync, timer, exporter, image, icons, flip
+  core/             plain modules: sync, exporter, image, icons, flip
   views/            what Arao draws: AudienceView, PresenterView, ExportView, ThumbnailView; DeckSelector (createDeckApp's list of decks)
     parts/          Stage (the scaled canvas), Controls, PresenterBar, DeckCover (a deck's cover in the list)
   components/       Deck, Slide, Img, Icon, Snippet, Notes; layout/: Cols, Rows, Grid, Center, layout.js (their props' parsers), layout.css

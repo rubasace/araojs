@@ -9,7 +9,7 @@ this: [the docs](index.md) are their manual, [../AGENTS.md](../AGENTS.md) their 
 |---|---|---|
 | `state/` | what there is | the deck, its stages, its slides and the talk's timer: reactive state, made by a `create…` and read by a `use…` (the pair shares a provide/inject key private to its file) |
 | `composables/` | effects | small internal composables, one per file, that tie the state to the browser: the URL, other windows, keys, touch, the mouse, fullscreen |
-| `core/` | the pure how | plain modules with no Vue component state: sync, timer, exporter, flip, image, icons |
+| `core/` | the pure how | plain modules with no Vue component state: sync, exporter, flip, image, icons |
 | `views/` | what Arao draws | the four views of a deck and their parts (the scaled canvas, the controls, the presenter's bar); `DeckSelector`, the list of decks `createDeckApp` shows at `/`, and its part `DeckCover` (a deck drawn as its cover) |
 | `components/` | what deck authors write | `Deck`, `Slide`, `Img`, `Icon`, `Snippet`, `Notes`; `layout/` holds the layout components (`Cols`, `Rows`, `Grid`, `Center`), the parsers of their props (`layout.js`: ratio, gap, grid shape; Slide's zones use it too) and the CSS they share (`layout.css`), `directives/` holds `v-step` and `v-step-from` |
 | `addons/` | drawn over every slide | `ProgressBar`, `SlideNumber` |
@@ -33,7 +33,7 @@ shows one view, by the URL:
 
 ```
 Deck.vue ── createDeck(props) ── state/deck.js: stage(s), theme, fullscreen, URL, sync
-                                   └ createTimer ── state/timer.js: the timer, the talk's length
+                                   └ createTimer ── state/timer.js: the timer, the talk's length, and their pure helpers (parseDuration, clock…)
    │
    ├─ thumbnail ───────▶ ThumbnailView   Stage (role 'thumbnail', standing at the cover)
    ├─ ?export ─────────▶ ExportView      Stage (role 'export')            → core/exporter.js book

@@ -239,7 +239,7 @@ export function createDeck(props) {
 //                                         setTheme(name) wears another of the list (any other
 //                                         name warns and is ignored)
 //   fullscreen, toggleFullscreen()        read-only ref; enters or leaves fullscreen
-//   timer                                 read-only ref of the talk's timer (core/timer.js)
+//   timer                                 read-only ref of the talk's timer (state/timer.js)
 //   duration                              read-only ref: the talk's length in ms, or null; the
 //                                         one the presenter set in the presenter view, else the
 //                                         deck's duration prop
