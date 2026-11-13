@@ -2,8 +2,8 @@
 
 Operational guide for AI agents writing or editing slide decks in a slides project that uses
 Arao (the `araojs` package). In such a project this file is
-`node_modules/araojs/AGENTS.md`, next to the full API, [docs/reference.md](docs/reference.md).
-Overview: [README.md](README.md).
+`node_modules/araojs/AGENTS.md`, next to the docs, [docs/index.md](docs/index.md) (guides, and the
+full API under [docs/reference/](docs/reference/components.md)). Overview: [README.md](README.md).
 
 ## Mental model
 
@@ -351,9 +351,16 @@ Slide
 
 ## Where to look
 
-- Every prop, slot, token, key and URL (and hosting a build under a path): [docs/reference.md](docs/reference.md).
+- Every prop and slot: [docs/reference/components.md](docs/reference/components.md); `v-step`:
+  [directives.md](docs/reference/directives.md); `useDeck`/`useSlide`:
+  [composables.md](docs/reference/composables.md); plugin options:
+  [vite-plugin.md](docs/reference/vite-plugin.md); `arao export`: [cli.md](docs/reference/cli.md);
+  URLs: [urls.md](docs/reference/urls.md); keys: [docs/guide/presenting.md](docs/guide/presenting.md#controls);
+  hosting a build under a path: [docs/guide/hosting.md](docs/guide/hosting.md). The map of all of
+  it: [docs/index.md](docs/index.md).
 - How the engine is built (only for a change to Arao itself): [docs/architecture.md](docs/architecture.md).
-- Working examples: the project's own decks; `playground/` in the Arao repository, a tiny
-  project set up like any other.
-- Themes: the defaults (the `default` theme) in the Theme tokens table of
-  [docs/reference.md](docs/reference.md#theme-tokens); the project's in `src/themes/*.css`.
+- Working examples: the project's own decks; [docs/examples/](docs/examples/), small one-slide
+  decks; `playground/` in the Arao repository, a tiny project set up like any other.
+- Themes: how they are found and applied in [docs/guide/themes.md](docs/guide/themes.md); the
+  defaults (the `default` theme) in [docs/reference/theme-tokens.md](docs/reference/theme-tokens.md);
+  the project's in `src/themes/*.css`.

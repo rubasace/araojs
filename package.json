@@ -29,13 +29,20 @@
     "vite",
     "bin",
     "docs",
+    "!docs/.vitepress",
+    "!docs/assets",
     "AGENTS.md"
   ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "prepack": "vite build",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "shots": "node scripts/shots.mjs",
+    "hero-gif": "node scripts/hero-gif.mjs"
   },
   "peerDependencies": {
     "vite": "^8.0.0",
@@ -53,6 +60,8 @@
   },
   "devDependencies": {
     "vite": "^8.3.8",
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-llms": "^1.15.0",
     "vue": "^3.5.45"
   }
 }

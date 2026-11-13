@@ -1,0 +1,12 @@
+/* docs/examples/themes/ocean.css: a theme declares only the tokens it changes */
+[data-theme="ocean"] {
+  --ar-bg: #0b1f2a;
+  --ar-fg: #e6f1f5;
+  --ar-muted: #8fb3c2;
+  --ar-accent: #4fd1c5;
+  --ar-accent-fg: #0b1f2a;
+  --ar-letterbox: #06141b;
+  --ar-font-sans: "Inter", system-ui, sans-serif;
+  --ar-title-align: center;
+  --ar-footer-color: var(--ar-accent);
+}

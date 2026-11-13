@@ -26,7 +26,7 @@ import { nextTick } from 'vue'
 //     as soft masks that some readers (macOS Preview, Quick Look) draw as solid boxes;
 //   - blurred (filtered) pictures are drawn with their filter beforehand (printableFilters below):
 //     Chromium blurs only what is inside the clip, and the edge of the blur shows.
-// A blurred text-shadow stays a soft mask: see the reference, Export.
+// A blurred text-shadow stays a soft mask: see docs/guide/export.md, Printing.
 //
 // Ready: window.__araoReady = { pages, slides, steps, width, height, missing, stalled } once
 // every page is in the book with its fonts and pictures loaded; { error } if the export cannot be
@@ -120,7 +120,7 @@ function page(width, height, cls, ...children) {
 // Left as they are (printed as Chromium prints them): elements with a border-image of their own,
 // a border that is not solid in one colour, a filter (Chromium already prints those as a
 // picture), inline and table-part boxes. A blurred text-shadow has the same problem and no box
-// to carry a picture: see the reference, Export.
+// to carry a picture: see docs/guide/export.md, Printing.
 const SHADOW_SCALE = 2
 const SHADOW_MAX_PX = 16e6 // canvas pixels for one picture: a larger shadow gets a lower scale
 const px = (v) => parseFloat(v) || 0
