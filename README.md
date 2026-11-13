@@ -142,7 +142,7 @@ step lights up its own lines or words.
 <td width="400"><img src="docs/assets/features/code.gif" alt="A Vue code window: one line highlighted, then two words" width="380" /></td>
 </tr>
 <tr>
-<td width="400"><img src="docs/assets/features/icons.png" alt="The Vue, Vite, Pug, TypeScript, Kubernetes and Docker logos in their colours" width="380" /></td>
+<td width="400"><img src="docs/assets/features/icons.png" alt="The Vue, Vite, Pug, TypeScript, Kubernetes and Docker logos, in one ink colour" width="380" /></td>
 <td width="340">
 
 **Icons by name**

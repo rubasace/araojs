@@ -1,5 +1,5 @@
 <template lang="pug">
-Deck(:themes="['sunset']")
+Deck(:themes="['sage']")
   Slide(layout="cover")
     .bar
     h1 Design tokens, for real

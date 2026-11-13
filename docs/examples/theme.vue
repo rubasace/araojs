@@ -1,5 +1,5 @@
 <template lang="pug">
-Deck(:themes="['ocean', 'sunset', 'midnight', 'default']")
+Deck(:themes="['ocean', 'sage', 'midnight', 'default']")
   template(#footer="{ number, total }")
     span ACME · DevConf 2026
     span {{ number }} / {{ total }}

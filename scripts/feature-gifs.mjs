@@ -21,7 +21,7 @@ import { promisify } from 'node:util'
 import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
-import { launchChromium, REPO, startDecksServer } from './docs-server.mjs'
+import { launchChromium, LOCALE, REPO, startDecksServer } from './docs-server.mjs'
 
 const OUT = join(REPO, 'docs/assets/features')
 const EXAMPLES = join(REPO, 'docs/examples')
@@ -168,7 +168,7 @@ async function code() {
   await rec.gif()
 }
 
-// Logos by name, in their brand colours.
+// Logos by name, in the text's colour.
 async function icons() {
   const rec = await recorder('icons')
   await rec.load(`${examples.url}icons#/1/6`)
@@ -271,7 +271,7 @@ export default { plugins: [arao(${JSON.stringify({ decks: TALKS, snippets: join(
   console.log(`  arao export: ${summary}`)
 
   // the pages, as the export view lays them out for printing
-  const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 0.25 })
+  const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 0.25, locale: LOCALE })
   const page = await context.newPage()
   watch(page, 'export')
   await page.goto(`${talks.url}${deck}?export`)
@@ -280,7 +280,7 @@ export default { plugins: [arao(${JSON.stringify({ decks: TALKS, snippets: join(
   for (const el of await page.locator('.ar-book > *').all()) pages.push((await el.screenshot()).toString('base64'))
   await context.close()
 
-  const tab = await browser.newPage({ viewport: { width: W, height: H + BAR } })
+  const tab = await browser.newPage({ viewport: { width: W, height: H + BAR }, locale: LOCALE })
   await tab.setContent(exportPage(`npm run export -- --deck ${deck}`, summary, pages))
   await tab.evaluate(() => document.fonts.ready)
   await tab.screenshot({ path: join(OUT, 'export.png') })
@@ -292,7 +292,7 @@ export default { plugins: [arao(${JSON.stringify({ decks: TALKS, snippets: join(
 
 async function recorder(name, pageName = 'window.html', { zoom = 1 } = {}) {
   const frames = mkdtempSync(join(tmpdir(), `arao-${name}-`))
-  const tab = await browser.newPage({ viewport: { width: W, height: H + BAR } })
+  const tab = await browser.newPage({ viewport: { width: W, height: H + BAR }, locale: LOCALE })
   watch(tab, name)
   await tab.goto(`${examples.url}${pageName}`)
   // zoom: the deck's window that many times larger, drawn smaller (the presenter view and the list

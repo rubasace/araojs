@@ -2,7 +2,7 @@
 // decks on the library's source (like the playground), and the Chromium that draws them.
 //
 //   const server = await startDecksServer({ decks: '/abs/folder' })   // server.url, server.close()
-//   const browser = await launchChromium()
+//   const browser = await launchChromium()   // its pages: browser.newPage({ locale: LOCALE })
 //
 // The server's root is a throwaway folder under node_modules/.cache (index.html and src/main.js,
 // nothing else), so that 'vue' and the library's dependencies resolve from the repository.
@@ -49,6 +49,10 @@ function folders(decks) {
   const all = { snippets: join(decks, 'snippets'), images: join(decks, 'images'), themes: join(decks, 'themes') }
   return Object.fromEntries(Object.entries(all).filter(([, dir]) => existsSync(dir)))
 }
+
+// The pictures' language: the engine's own text follows the browser's (src/i18n/), and the docs
+// are in English. Every page that draws a picture is opened with it (a context's locale).
+export const LOCALE = 'en-US'
 
 export async function launchChromium() {
   const { chromium } = await import('playwright-core')

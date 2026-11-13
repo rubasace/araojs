@@ -1,18 +1,19 @@
-/* docs/examples/themes/midnight.css: a dark venue, a pink accent and a dark code window */
+/* docs/examples/themes/midnight.css: a dark venue, an orange accent and a dark code window */
 [data-theme="midnight"] {
-  --ar-bg: #15112e;
-  --ar-fg: #eeeaff;
-  --ar-muted: #a49fd0;
-  --ar-accent: #ff5fae;
-  --ar-accent-fg: #15112e;
-  --ar-letterbox: #0a0819;
+  --ar-bg: #11151b;
+  --ar-fg: #e9e6df;
+  --ar-muted: #8e99a6;
+  --ar-accent: #ff6a3d;
+  --ar-accent-fg: #11151b;
+  --ar-letterbox: #0a0d11;
   --ar-font-sans: "Inter", system-ui, sans-serif;
   --ar-title-align: center;
   --ar-radius: 12px;
-  --ar-code-theme: tokyo-night;
-  --ar-code-bg: #1d1940;
-  --ar-code-bar: #29245a;
-  --ar-code-fg: #d6d2ff;
-  --ar-code-muted: #6f6aa6;
-  --ar-code-title: #d6d2ff;
+  --ar-code-theme: github-dark-default;
+  --ar-code-bg: #0d1117;
+  --ar-code-bar: #1b2129;
+  --ar-code-fg: #e6edf3;
+  --ar-code-muted: #6e7681;
+  --ar-code-title: #c9d1d9;
+  --ar-code-hl: #58a6ff;
 }
