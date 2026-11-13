@@ -240,7 +240,7 @@ const vars = computed(() => {
 
 <style>
 .ar-snippet {
-  /* code window palette: tokens (defaults in tokens.css: a dark editor, like a real Mac window) */
+  /* code window palette: tokens (defaults in tokens.css: a light editor, like a real Mac window) */
   --sn-bg: var(--ar-code-bg);
   --sn-bar: var(--ar-code-bar);
   --sn-fg: var(--ar-code-fg);
