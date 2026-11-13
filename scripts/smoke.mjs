@@ -24,7 +24,8 @@
 //      with a theme source that is a package not installed, one that gives no theme, one whose
 //      themes folder is outside it, or a bare name that is a root folder, it must stop with an
 //      [arao] error (the last one with the "./" hint); a name two sources give warns once, and a
-//      source named twice does not warn about itself
+//      source named twice does not warn about itself; and it writes the files and @font-face of the
+//      web font THEME names (WEB_FONT; skipped where the font provider is unreachable)
 //   3. every deck of src/decks, under the dev server (Vue's own warnings only exist in dev) and
 //      under vite preview (the production build): opened at /<name>, walked with ArrowRight
 //      until the hash stops changing; any console warning/error or page error fails, and so does
@@ -152,12 +153,16 @@ const SHORTCUTS = `import { defineShortcuts } from '${PKG}'
 
 export default defineShortcuts({ x: 'next', KeyQ: 'prev', q: 'next', End: 'first', PageUp: null })
 `
+// a web font THEME names in its font token: the build fetches it (vite/fonts.js, fontless) and
+// writes its files under dist/assets/_fonts, unless the machine cannot reach the font provider
+const WEB_FONT = 'Inter'
 const BRAND = ['brand.css', `/* the smoke project's own theme: a [data-theme] rule in src/themes, nothing to import */
 @import './parts/extra.css';
 [data-theme="${THEME}"] {
   --ar-bg: ${SAMPLE.bg};
   --ar-fg: rgb(240, 240, 240);
   --ar-accent: ${SAMPLE.accent};
+  --ar-font-sans: "${WEB_FONT}", sans-serif;
 }
 `]
 // a partial brand.css @import-s, with a theme of its own: the plugin follows the @import
@@ -374,6 +379,21 @@ try {
   const viteBin = join(dirname(viteJson), JSON.parse(await readFile(viteJson, 'utf8')).bin.vite)
   const { chromium } = need('playwright-core')
 
+  // the web font THEME names: its files in the build (assets/_fonts), its @font-face in the CSS.
+  // Without a way to the provider (an offline machine) the build passes without them: skipped
+  async function webFonts() {
+    const assets = join(project, 'dist', 'assets')
+    const files = await readdir(join(assets, '_fonts')).catch(() => [])
+    if (!files.some((f) => f.endsWith('.woff2'))) {
+      const online = await fetch('https://fonts.google.com/metadata/fonts', { method: 'HEAD', signal: AbortSignal.timeout(10000) }).then((r) => r.ok, () => false)
+      if (online) fail(`vite build: no web font files for "${WEB_FONT}" in dist/assets/_fonts`)
+      else log(`web fonts: skipped, the font provider cannot be reached from here`)
+      return
+    }
+    const css = (await Promise.all((await readdir(assets)).filter((f) => f.endsWith('.css')).map((f) => readFile(join(assets, f), 'utf8')))).join('\n')
+    if (!new RegExp(`@font-face\\s*{[^}]*font-family:\\s*["']?${WEB_FONT}["']?\\s*;`).test(css)) fail(`vite build: no @font-face for "${WEB_FONT}" in the built CSS`)
+  }
+
   // the build's 404.html: a copy of its index.html (static hosts answer a deck's path with it)
   async function notFoundPage(what) {
     const [index, page] = await Promise.all(['index.html', '404.html'].map((f) => readFile(join(project, 'dist', f), 'utf8').catch(() => null)))
@@ -384,6 +404,7 @@ try {
   log('vite build')
   await run(process.execPath, [viteBin, 'build'], project)
   await notFoundPage('vite build')
+  await webFonts()
 
   // theme sources the build turns down, or warns about: a package not installed, one that gives no
   // theme, one whose package.json names a folder outside it, a bare name that is a folder at the

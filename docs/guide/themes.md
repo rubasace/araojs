@@ -154,6 +154,38 @@ In a slide, style through tokens (`color: var(--ar-accent)`,
 `background: color-mix(in srgb, var(--ar-fg) 8%, var(--ar-bg))`) rather than fixed colours or
 fonts: a venue-specific look is a new theme, not edits to slides.
 
+## Fonts
+
+A theme names its fonts in its tokens, and the build fetches them:
+
+```css
+[data-theme="venue"] {
+  --ar-font-sans: "Inter", sans-serif;
+  --ar-font-mono: "JetBrains Mono", monospace;
+}
+```
+
+The [Vite plugin](../reference/vite-plugin.md) reads the families in `font-family` declarations
+and in the `--ar-font-*` tokens. For a family that no stylesheet declares with `@font-face` and
+that is not a system font (Georgia, Arial, `system-ui`…), it asks the font providers in turn
+(Google Fonts, Bunny Fonts, Fontshare, Fontsource), puts the files in the build
+(`assets/_fonts`), and adds the `@font-face` rules plus fallbacks with matched metrics, so the
+text does not jump when the font arrives. The dev server serves the same files, and the PDF export
+waits for them. This is [fontless](https://github.com/unjs/fontaine/tree/main/packages/fontless),
+the engine of Nuxt Fonts.
+
+- **Only families a provider has.** For another font, write its `@font-face` in the theme file,
+  pointing at its files (a family declared with `@font-face` is left alone).
+- **The first build needs the network.** The files are then cached
+  (`node_modules/.cache/fontless`) and later builds work offline. Without network and without a
+  cache, the build still passes with a warning, and the text uses the family's next fonts.
+- **`--ar-ui-font`** (the controls and the presenter view) is not fetched: use a system font, or
+  one the theme declares with `@font-face`.
+- **The licence is the font's.** The providers above serve open fonts.
+- `arao({ fonts: false })` turns it off; `arao({ fonts: { … } })` passes
+  [fontless's options](https://github.com/unjs/fontaine/tree/main/packages/fontless#configuration)
+  (providers, priority, weights and subsets, families…).
+
 ## Sizes
 
 Rules of thumb for a 1920x1080 canvas (and what the defaults do):
