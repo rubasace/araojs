@@ -1,6 +1,6 @@
 {
   "name": "araojs",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "A slide engine for technical talks: Vue 3 + Vite, one fixed canvas, themes as tokens, PDF export",
   "license": "Apache-2.0",
   "repository": {

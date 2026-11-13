@@ -1,5 +1,97 @@
 # Changelog
 
+## [0.5.0](https://github.com/rubasace/araojs/compare/0.4.0...0.5.0) (2026-11-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* **themes:** a deck without a themes list now offers the five built-in themes too (after default and the project's themes), and t goes through them. A project theme named aurora, carbon, folio, meridian or terminal now replaces the built-in theme of that name (Vite says so). Every build now fetches and ships the built-in themes' fonts (thirteen families, about 2.6 MB in assets/_fonts; a viewer downloads only those of the theme on screen): arao({ builtinThemes: false }), or the list of the ones the decks wear, keeps them out.
+* **skill:** node_modules/araojs/AGENTS.md no longer exists; its content is the skill at node_modules/araojs/skills/arao/.
+* digits no longer open the jump list; letter shortcuts now also act with Shift or Caps Lock.
+* **themes:** a theme imported by hand (main.js, a deck's <style>, .scss) is no longer listable in Deck(:themes); put its folder or its package in arao({ themes }). A bare name in `themes` is a package; a folder at the root is written './themes'.
+* Notes no longer takes `step`. Write one Notes per slide and put v-step on what shows from a later step: Notes(step="2") p … becomes p(v-step="2") … inside the slide's Notes.
+
+### Features
+
+* configurable shortcuts, invisible jump by slide number, first()/last() ([e1e087c](https://github.com/rubasace/araojs/commit/e1e087c67450a90a6966fe0d3a8d12973ce40b9e))
+* **fonts:** fetch the web fonts themes name, with fontless ([f3f93db](https://github.com/rubasace/araojs/commit/f3f93dbe7e58c673486453f1b9c4488c0afc74bc))
+* **fonts:** fetch the web fonts themes name, with fontless ([466ac95](https://github.com/rubasace/araojs/commit/466ac95195a63282b61d34108fe6b75e58cc558c))
+* Notes draw themselves where notes are shown; their steps are v-steps ([57d42cc](https://github.com/rubasace/araojs/commit/57d42cc09fd69fb2632b556e8651673bd64e49cc))
+* **skill:** an Arao skill for coding agents replaces AGENTS.md ([8ed6c4e](https://github.com/rubasace/araojs/commit/8ed6c4e610ceb30b3dcf1bc9539a6474a874a759))
+* **themes:** the library ships its themes: default and five curated ones ([5cafa63](https://github.com/rubasace/araojs/commit/5cafa63848032f799cd55776af66bd4861c244c8))
+* **themes:** themes come only from declared sources, folders or packages ([341be3b](https://github.com/rubasace/araojs/commit/341be3b722794691fd79f932ce95e53c1a14e10b))
+* **tokens:** --ar-code-hl-bg, the code highlight's background ([07ad318](https://github.com/rubasace/araojs/commit/07ad318f28ffad4f80a908edac32e1df37a8a765))
+* **tokens:** --ar-font-heading, the headings' own font ([3062107](https://github.com/rubasace/araojs/commit/30621072b9b6c50072f30882aa4d76f5590c9810))
+* UI strings in the browser's language, English by default ([a956117](https://github.com/rubasace/araojs/commit/a956117d6f9d34e5586b56747cedde2d992cf9eb))
+* UI strings in the browser's language, English by default ([79ca648](https://github.com/rubasace/araojs/commit/79ca648b4033289e5c5139b40df8f9e265d0559b)), closes [#36](https://github.com/rubasace/araojs/issues/36)
+
+
+### Bug Fixes
+
+* **fonts:** published types free of fontless's dependencies ([9e91771](https://github.com/rubasace/araojs/commit/9e91771cc9c94b3bbdbfc2ae51d8551d2b5ea3cd))
+* **fonts:** weights 400-700, system fonts left alone, honest limits ([8b84421](https://github.com/rubasace/araojs/commit/8b84421097d20ac3afdb024daf2b8d49550ff508))
+* **shortcuts:** check the project's file when Vite starts; review fixes ([c477351](https://github.com/rubasace/araojs/commit/c4773516611b0f0b0213fc7e8bd9ca4aa46d72d5))
+* **skill:** review fixes; quirks-mode warning; font fetch failures non-fatal ([8863f7c](https://github.com/rubasace/araojs/commit/8863f7ce43a05642db034958b35aa5e85fbbb0c4))
+* **snippet:** the window's name stays centred and clear of its lights ([ce7d4f3](https://github.com/rubasace/araojs/commit/ce7d4f378f0ff054759b7512a5263df487b66251))
+* **themes:** real paths for linked packages, dedupe sources, stricter package rules ([46db987](https://github.com/rubasace/araojs/commit/46db9874249cd2a47ff9d02c385086c3d3342620))
+* **types:** named arao export, public-only vite types, per-export type checks, unresolvable-import guard ([241a67c](https://github.com/rubasace/araojs/commit/241a67ccc307a58b980eb1a6d9c2cf9f3bbd5238))
+* **types:** one self-contained declaration file per entry, typed global components, CI on the Node floors ([3c632a5](https://github.com/rubasace/araojs/commit/3c632a515e53efa9d65eabfd212b1c296eef38f8))
+* **types:** self-contained declarations, typed global components, CI on the Node floors ([ec8500f](https://github.com/rubasace/araojs/commit/ec8500f5c1e7f29dfce44567c56510e0eba93666))
+
+
+### Refactoring
+
+* **controls:** useAutoHide replaces useMouseIdle ([4e5dd2b](https://github.com/rubasace/araojs/commit/4e5dd2b38bd174a1f7cd88a07cfb73763a0ff3a1))
+* **controls:** useAutoHide replaces useMouseIdle ([4b328ca](https://github.com/rubasace/araojs/commit/4b328ca0d031127fd9b68b15ee53d50d5fe27be1))
+* **layout:** CSS does the layout, helpers next to their components ([aafb4b6](https://github.com/rubasace/araojs/commit/aafb4b66e0a15ca1c396d82616015d5b8cbc04a0))
+* **layout:** CSS does the layout, helpers next to their components ([ab0a500](https://github.com/rubasace/araojs/commit/ab0a500acba7024bbcba6dcc2877f15dfe61f75f))
+* **shortcuts:** the deck's keys and touch in one place, turned on by Deck ([c6cd611](https://github.com/rubasace/araojs/commit/c6cd6110a2e7179bcb62fe797c25995807929afa))
+* **shortcuts:** the deck's keys and touch in one place, turned on by Deck ([eb91262](https://github.com/rubasace/araojs/commit/eb91262638f119a36a50d12ae3aab912a88c1b51))
+* the controls own their lists and the keys, the theme gets its own state ([9e34d6b](https://github.com/rubasace/araojs/commit/9e34d6be2f2794bfb2db88b1c7b6bafbc96bfee4))
+* the controls own their lists and the keys, the theme gets its own state ([923400b](https://github.com/rubasace/araojs/commit/923400b721065365314a9fea266648a9f82ce1a5))
+* the library in strict TypeScript ([2656a92](https://github.com/rubasace/araojs/commit/2656a9266d1ae573ec9049257de2eda25f8b2246))
+* the library in strict TypeScript ([d8abbd1](https://github.com/rubasace/araojs/commit/d8abbd155cedf01ae0d702ee832887c598b3052f))
+* **timer:** fold core/timer.js into state/timer.js ([3bd61cf](https://github.com/rubasace/araojs/commit/3bd61cf65ffe151c934f60327674b416647f1286))
+* **timer:** fold core/timer.js into state/timer.js ([6af6fa2](https://github.com/rubasace/araojs/commit/6af6fa28f0698f188ae00ec5c5a5938204bf2aa6))
+* **timer:** the talk's timer and its length get their own state ([336745e](https://github.com/rubasace/araojs/commit/336745e67e812953d63876d27160878afb4ca678))
+* **timer:** the talk's timer and its length get their own state ([14c773f](https://github.com/rubasace/araojs/commit/14c773f12ea321994a6061bcb0d43663f4051188))
+* views hold only screens, engine components go to components/internal ([d6c3da2](https://github.com/rubasace/araojs/commit/d6c3da2d7ee0139f67964bec5bfdf26774735d68))
+* views hold only screens, engine components go to components/internal ([5383502](https://github.com/rubasace/araojs/commit/5383502ca84a758be263fe46cd323dd4142541d7))
+
+
+### Documentation
+
+* add the README's hero animation and the script that makes it ([a5d4db1](https://github.com/rubasace/araojs/commit/a5d4db145727eb3e1ffe335eeb92780340458e6d)), closes [#27](https://github.com/rubasace/araojs/issues/27)
+* build a docs site from docs/ with VitePress ([bbf847f](https://github.com/rubasace/araojs/commit/bbf847f1c91e38efb266115a179586dd0c00f003)), closes [#27](https://github.com/rubasace/araojs/issues/27)
+* coloured badge logos, feature pictures that fit ([21d3ef9](https://github.com/rubasace/araojs/commit/21d3ef985632be481415198fba8f25bd799b6b82))
+* draw the docs' pictures from example decks ([67bd18f](https://github.com/rubasace/araojs/commit/67bd18f8566258cd24d6de1ac143dc0852240bb6)), closes [#27](https://github.com/rubasace/araojs/issues/27)
+* **examples:** brand-coloured logos, two more themes and a small project of talks ([c41a5f9](https://github.com/rubasace/araojs/commit/c41a5f92dd45a973c60f12e0f2b56f99ee51e71c))
+* feature GIFs in one light theme, roomier presenter view ([3c887d1](https://github.com/rubasace/araojs/commit/3c887d1732e443e564aab7bb4fb5e3fdbc023eb8))
+* feature GIFs in the default theme, roomier presenter view ([6b25e48](https://github.com/rubasace/araojs/commit/6b25e489dcd30cbdce13ed1b8e4dd5be90297282))
+* Getting started gains a coding-agent section; README's first steps are Getting started ([9d2ac5a](https://github.com/rubasace/araojs/commit/9d2ac5a328f5e9e00ee391e194ab88107475bcc6))
+* Getting started with a coding-agent section ([613abba](https://github.com/rubasace/araojs/commit/613abbabe1c04ae05ac9806389ebe19879825c5e))
+* hero GIF without steps ([6ac43b3](https://github.com/rubasace/araojs/commit/6ac43b389be72b2c82cbdc4fabc6a8a3d6ef6097))
+* hero GIF without steps: the slide appears as it is typed ([478454f](https://github.com/rubasace/araojs/commit/478454fb1f4dd6f4f9d337ab8aa447cda834d191))
+* new logo in the README header ([ac5ea04](https://github.com/rubasace/araojs/commit/ac5ea04ef653bbb22d42ae83d71741718889bf14))
+* new logo: the guillemot alone, in the README header ([1e1ed2a](https://github.com/rubasace/araojs/commit/1e1ed2ab91c7ba55f45b1f4a1abd58b4c39ebbf5))
+* README badges with coloured logos; feature pictures sized to fit GitHub's column ([def2269](https://github.com/rubasace/araojs/commit/def22698bd3d5a6342cbcdf697e4d622ac3f211f))
+* README decks and agents features ([4c5e87b](https://github.com/rubasace/araojs/commit/4c5e87b4acd497345072b7055598502a12cd565b))
+* README features, each with its own picture or GIF ([b7572e0](https://github.com/rubasace/araojs/commit/b7572e0e7744c5aec2d040a4953961c58457dec8))
+* README features, each with its own picture or GIF ([8eccc86](https://github.com/rubasace/araojs/commit/8eccc8685c76701ac10d3356ff4990308ae7ad27))
+* README keyboard feature: jump by number, search with g ([2dfd6f7](https://github.com/rubasace/araojs/commit/2dfd6f7dca049dc8c4a1042f40f3a9c12fd984b2))
+* README keyboard: jump by number, search with g ([5d83c5c](https://github.com/rubasace/araojs/commit/5d83c5c78e77f135dbb24587501fde9a486dfb4d))
+* README pictures in English, calmer colours ([0babee2](https://github.com/rubasace/araojs/commit/0babee2b8620f8f211ef7a4bb6718234d53d00f2))
+* README pictures in English, calmer colours ([64c984e](https://github.com/rubasace/araojs/commit/64c984e386f53c6a5cbbcd0952972e5725ae5444)), closes [#27](https://github.com/rubasace/araojs/issues/27)
+* README sells several talks in one project, and the agent row gets its picture ([607a240](https://github.com/rubasace/araojs/commit/607a24010242189e8071c31c39fec6809c08c6e9))
+* README: why first, a cover to start, a features gallery, the stepped GIF back ([4c9df1d](https://github.com/rubasace/araojs/commit/4c9df1d71756891f3e2f1ffc1e0e4f7cb6a8cadb))
+* README: why first, cover pair, features gallery, stepped GIF ([d0bf1c2](https://github.com/rubasace/araojs/commit/d0bf1c2581e7395ef51cfb4f4d2b1520090689da))
+* restructure docs, slim visual README, docs site ([c84daea](https://github.com/rubasace/araojs/commit/c84daeaebb8b7211dea055b36f702cd4be0f0d97))
+* simpler hero GIF ([53e7ea5](https://github.com/rubasace/araojs/commit/53e7ea5ebba73c2299aa70f431f21b85ada43aac))
+* simpler hero GIF: typing and the live slide, default theme ([321fcc3](https://github.com/rubasace/araojs/commit/321fcc3ee5ce34e8c090630430cc7d5ce27b3a8c))
+* **slide:** wrap the centred-body comment ([c70247f](https://github.com/rubasace/araojs/commit/c70247f49d609cc910fdb0415cb9e8e6ad4d7ad5))
+* slim, visual README ([426c309](https://github.com/rubasace/araojs/commit/426c309a462827c8388406082c3ef994c62f9c30)), closes [#27](https://github.com/rubasace/araojs/issues/27)
+* split the reference into a tutorial, guides and reference pages ([ca03c6e](https://github.com/rubasace/araojs/commit/ca03c6e0751e37c8c0872aabd1f84fd22b52a766)), closes [#27](https://github.com/rubasace/araojs/issues/27)
+
 ## [0.4.0](https://github.com/rubasace/araojs/compare/0.3.0...0.4.0) (2026-11-13)
 
 
