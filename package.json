@@ -29,13 +29,15 @@
     "vite",
     "bin",
     "docs",
+    "!docs/assets",
     "AGENTS.md"
   ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "prepack": "vite build",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "shots": "node scripts/shots.mjs"
   },
   "peerDependencies": {
     "vite": "^8.0.0",
