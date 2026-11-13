@@ -1,8 +1,8 @@
-import { computed, getCurrentInstance, inject, onBeforeUnmount, onMounted, onUpdated, provide, reactive, ref, shallowReactive, toValue, watch } from 'vue'
+import { computed, getCurrentInstance, inject, onBeforeUnmount, onMounted, onUpdated, provide, reactive, ref, toValue, watch } from 'vue'
 import { addSlide, scopesVersion, stepOffset, sweep } from '../directives/step'
 import { useStage } from './stage'
 
-// One slide's state: its place in the stage it is drawn in, its steps and its speaker notes.
+// One slide's state: its place in the stage it is drawn in, and its steps.
 //   const slide = createSlide({ el, title })   in Slide.vue: el, a ref to its <section>; title, a
 //                                              ref of its title prop. Registers it with its stage
 //                                              (which orders it by its place in the template) and
@@ -10,12 +10,13 @@ import { useStage } from './stage'
 //                                              Slide draws its content (not in a thumbnail, but
 //                                              for the cover)
 //   useSlide()                                 public: for components inside a Slide (below)
-//   useSlideNotes()                            Notes: adds a note to the slide it is in
+//   useSlideForNotes()                         Notes: the slide it is in (state/notes.js)
 //   provideFooter(() => slots.footer)          in Deck: its #footer slot, for every slide to draw
 // What reaches the slide from inside it: components through useSlide(), Notes through
-// useSlideNotes(), v-step through the DOM (directives/step.js finds the slide by its id).
+// useSlideForNotes(), v-step through the DOM (directives/step.js finds the slide by its id).
 const KEY = Symbol('arao-slide')
 const FOOTER = Symbol('arao-footer')
+const IN_NOTES = Symbol('arao-in-notes')
 
 export function provideFooter(get) {
   provide(FOOTER, get)
@@ -31,10 +32,8 @@ export function createSlide({ el, title }) {
   const counts = reactive(new Map())
   const steps = computed(() => Math.max(1, ...counts.keys()))
 
-  // speaker notes (Notes inside this slide) for the presenter view: { id, step, slots } each
-  const notes = shallowReactive([])
   // the stage places it by its position in the template, even when mounted after its neighbours
-  const index = stage.register({ id, steps, title, el, notes })
+  const index = stage.register({ id, steps, title, el })
   const active = computed(() => stage.index.value === index.value)
   // whether its content is drawn: always, but in a thumbnail (only the cover shows there, so only
   // the cover mounts what is in it: its pictures, snippets and components)
@@ -56,14 +55,7 @@ export function createSlide({ el, title }) {
       c > 0 ? counts.set(n, c) : counts.delete(n)
     }
   }
-  function addNote(note) {
-    notes.push(note)
-    return () => {
-      const i = notes.indexOf(note)
-      if (i >= 0) notes.splice(i, 1)
-    }
-  }
-  provide(KEY, { step, registerStep, addNote })
+  provide(KEY, { id, step, registerStep, active, role: stage.role })
   const removeSlide = addSlide(id, { step, active, still, elements, registerStep })
 
   onBeforeUnmount(() => {
@@ -88,6 +80,9 @@ export function createSlide({ el, title }) {
 export function useSlide() {
   const slide = inject(KEY, null)
   if (!slide) throw new Error('[arao] useSlide() must be used inside <Slide>')
+  // inside Notes it reads the step but requires none: notes are drawn in the presenter view only,
+  // and the audience must count the same steps (as v-step there, directives/step.js)
+  const inNotes = inject(IN_NOTES, false)
 
   const releases = []
   const instance = getCurrentInstance()
@@ -106,6 +101,7 @@ export function useSlide() {
   return {
     step: computed(() => slide.step.value - offset.value),
     requireSteps(n) {
+      if (inNotes) return () => {}
       let release = () => {}
       const stop = watch(() => (Number(toValue(n)) || 1) + offset.value, (v) => {
         release()
@@ -118,7 +114,10 @@ export function useSlide() {
   }
 }
 
-// Notes: add(note) → a function that removes it; null outside a slide
-export function useSlideNotes() {
-  return inject(KEY, null)?.addNote ?? null
+// Notes: the slide it is in (its id, its step, whether it is the one on screen, the role of its
+// stage), or null outside a slide. What is inside the Notes requires no steps (useSlide, above)
+export function useSlideForNotes() {
+  provide(IN_NOTES, true)
+  const s = inject(KEY, null)
+  return s && { id: s.id, step: s.step, active: s.active, role: s.role }
 }

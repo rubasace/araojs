@@ -371,7 +371,7 @@ controls; swiping left or right also navigates.
 
 Press `p` (or the controls' screen button, or open the deck's URL with `?presenter`). A separate window
 shows the current slide with the controls under it, a preview of what the next press shows, the
-speaker notes of the slide (the ones that start at the current step are marked), the slide number
+speaker notes of the slide (what the current step brings is marked), the slide number
 and title, the timer and the wall clock.
 
 The timer starts with the first move in any window; it can be paused and reset, and it survives

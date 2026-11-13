@@ -122,7 +122,7 @@ import { useDeck } from '../state/deck'
 import { createSlide } from '../state/slide'
 import { isRatio, tracks } from '../core/layout'
 import { bgKind, blurStyle, blurValue, imagesDir, isBlur, isOpacity, opacityValue } from '../core/image'
-import { Notes } from './Notes'
+import Notes from './Notes.vue'
 import Img from './Img.vue'
 
 const ALIGN = ['start', 'center', 'end']

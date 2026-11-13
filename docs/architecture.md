@@ -66,7 +66,8 @@ heading (else its title prop), which the card shows under the deck's title (its 
 | thumbnail | `provideThumbnail` (in `DeckCover`) | `createDeck` | that the deck inside is a thumbnail, and the ref its cover's title goes in |
 | route | `provideDeckRoute` (`createDeckApp`, on the app) | `createDeck` (not in a thumbnail) | the deck's file name and path: the sync key, the presenter window's URL, the name the export reports |
 | stage | `provideStage` (in the `Stage` part) | `useStage()`: `createSlide`, and `useDeck()` (which merges the stage's position into the face) | the stage a component is drawn in |
-| slide | `createSlide` (in `Slide`) | `useSlide()`, `useSlideNotes()` (Notes) | the slide's step, its step registry, its notes |
+| slide | `createSlide` (in `Slide`) | `useSlide()`, `useSlideForNotes()` (Notes) | the slide's step, its step registry |
+| notes | `useNotesOutlet` (presenter view, export) | `useNotesTarget()` (Notes) | where the Notes of the slide on screen draw themselves (a Teleport target) |
 | footer | `provideFooter` (in `Deck`) | `createSlide` | the Deck's `#footer` slot, drawn by every slide |
 
 Nothing else is provided. The views get the deck's internals from `Deck` as a prop (`deck`), and
@@ -121,8 +122,8 @@ components, `Img`, `Icon`, `Snippet`, `Slide` (its zones, its footer, the slide'
 layouts: `layout-cover`, `layout-section`, `layout-image-left`… are Slide's classes), the addons,
 the views and their parts. Not scoped: a theme or a deck must be able to override any of it, so
 the selectors are the `ar-` classes at the specificity they always had (zero, with `:where()`,
-where a deck's own rule must win). `Notes` draws nothing and has none; the export's notes pages
-are `ExportView`'s.
+where a deck's own rule must win). `Notes` has none: its content is drawn, and styled, where it is
+teleported (the presenter's notes panel, `PresenterView`; the export's notes pages, `ExportView`).
 
 `styles/` keeps what no component owns: `tokens.css` and `base.css`. `tokens.css` declares every
 token the engine reads, with its default, and nowhere else is a default written: no component

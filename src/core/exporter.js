@@ -428,6 +428,8 @@ export async function buildBook({ stage, canvas, book, notes, title, perStep, wi
       pages++
     }
     if (notes?.children.length) {
+      // what the notes hold loads too (a Snippet, a picture): waited for as the page's own
+      await settle(notes, stage.list[i].el.value.dataset.arSlide, stalled)
       const head = document.createElement('header')
       head.className = 'ar-notes-head'
       head.textContent = [`Diapositiva ${i + 1}`, title(i)].filter(Boolean).join(' · ')

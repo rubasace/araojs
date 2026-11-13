@@ -72,7 +72,7 @@ export function createStage({ follow, onMove, role = 'audience' } = {}) {
     go: follow ? noop : move(go),
   }
 
-  // slide = { id, steps, title, el, notes }; el is a ref to its <section>
+  // slide = { id, steps, title, el }; el is a ref to its <section>
   function register(slide) {
     change()
     list.push(slide)

@@ -77,7 +77,8 @@ Do:
   files in `src/images/` or paste SVG into a deck. Colour it like text (`color: var(--ar-accent)`);
   logos are trademarks: use them to name the technology, not as decoration.
 - Write sizes, if any, in canvas px (`gap="24"`, `:size="36"`, `width: 320px`).
-- Put speaker notes in `Notes` inside the slide.
+- Put speaker notes in one `Notes` inside the slide; say what shows at each step with `v-step`
+  inside it, as on the slide.
 - Put components only one talk uses under `src/decks/<talk>/`, and components several decks share
   (like `Card`) under `src/slides/`. Neither is global: the deck imports them in `<script setup>`
   (`import Card from '../slides/Card.vue'`).
@@ -95,7 +96,8 @@ Don't:
   whatever the window; only its scale changes.
 - Don't put a highlight at step 1 (`{ "4": 1 }`): step 1 always shows the code plain.
 - Don't expect Snippet highlights to accumulate: each step shows only its own rules.
-- Don't use `v-step` inside `Notes` (not supported) or outside a `Slide` (warns).
+- Don't use `v-step` outside a `Slide` (warns). Inside `Notes` it follows the slide's steps but
+  adds none: a note at a step the slide does not reach never shows.
 - Don't edit the library (`node_modules/araojs`) to make one deck look right: an engine change
   is a change to Arao, made in its own repository.
 
@@ -106,7 +108,7 @@ Don't:
   `:highlights='{ "2-3": 2 }'` (JSON in single quotes). Without it, `size="36"` is the string
   `"36"` and `line-numbers="false"` the string `"false"`: Vue warns and the line numbers stay.
   Props that take text, or a number written as text, are plain: `gap="sm"`, `ratio="2 1"`,
-  `cols="3"`, `file="App.java"`, `bg-opacity="0.25"`, `Notes(step="2")`, `Icon(size="64")`.
+  `cols="3"`, `file="App.java"`, `bg-opacity="0.25"`, `Icon(size="64")`.
 - **`Img` has no size of its own.** It fills the box its container gives it (the space under the
   title, a column, a cell, a zone, `Center`) and fits the picture inside; in a plain block it is as
   wide as the block. For a fixed size, give it a class with both sizes:
@@ -280,8 +282,7 @@ Slide
   p(v-step="2") Three tiers
   Notes
     p Start with the story of the first customer.
-  Notes(step="2")
-    p Tiers: say why there are exactly three.
+    p(v-step="2") Tiers: say why there are exactly three.
 ```
 
 Body placement (centred by default; the heading always stays on top):
