@@ -330,8 +330,8 @@ const footed = () => !!footerSlot() && (props.footer ?? !flat.value)
    in it still fill it, but their auto rows shrink to their content and move with it (1fr rows,
    as Grid's, still fill), unless they hold something that needs the full height: a Snippet, an
    Img or another piece (those keep the rows as tall as the body, as in a start-aligned body),
-   or set their own --_ar-align-content (Cols align="stretch"). Margins count as part of the content (a full-height body stays
-   exactly as when start-aligned). */
+   or set their own --_ar-align-content (Cols align="stretch"). Margins count as part of the
+   content (a full-height body stays exactly as when start-aligned). */
 .ar-body-center { justify-content: safe center; }
 .ar-body-end { justify-content: safe flex-end; }
 .ar-body-center > :is(.ar-cols, .ar-rows, .ar-grid):not(:has(.ar-snippet, .ar-img, .ar-cols, .ar-rows, .ar-grid, .ar-center)) { align-content: var(--_ar-align-content, safe center); }
