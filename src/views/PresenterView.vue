@@ -9,7 +9,7 @@
      Where the deck is comes from useDeck(); deck (state/deck.js) brings the internals: the stages,
      where one more press leads, the titles. The bar reads and sets the timer itself
      (useTimer, state/timer.js). The presenter window
-     listens to no mouse or touch of its own: only its controls and the keys (Deck.vue) move it. -->
+     listens to no mouse or touch of its own: only its controls and their keys (Controls.vue) move it. -->
 <template>
   <div class="ar-presenter">
     <PresenterBar :title="title" />
@@ -21,7 +21,7 @@
           </Stage>
         </div>
         <div class="ar-p-controls">
-          <Controls ref="controls" docked :titles="titles" />
+          <Controls docked />
         </div>
       </section>
       <div class="ar-p-side">
@@ -86,19 +86,10 @@ onMounted(() => {
 })
 onBeforeUnmount(() => resize?.disconnect())
 
-// every slide's title, for the jump menu, re-read on every move; the title of the slide on screen
-const titles = computed(() => {
+// the title of the slide on screen, re-read on every move
+const title = computed(() => {
   index.value
-  return props.deck.titles()
-})
-const title = computed(() => titles.value[index.value] || '')
-
-// the keys open and close the controls' jump menu (Deck.vue)
-const controls = ref()
-defineExpose({
-  openMenu: (digits) => controls.value.openMenu(digits),
-  toggleMenu: () => controls.value.toggleMenu(),
-  closeMenu: () => controls.value.closeMenu(),
+  return props.deck.titles()[index.value] || ''
 })
 
 // the window says what it is, in its title (once: a remount after an edit does not add it again)

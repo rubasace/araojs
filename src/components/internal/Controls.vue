@@ -1,14 +1,21 @@
-<!-- Built-in deck controls: floating panel, shown on mouse move, hidden when idle.
+<!-- Built-in deck controls: a floating panel (the audience view), or docked under the slide (the
+     presenter view). Its buttons, its two lists (the jump list, the themes) and the deck's keys.
      docked: always shown, in the flow of the page (the presenter view places it under the slide).
-     shown: the floating panel is shown (the audience view: the mouse moved, a tap in the middle).
-     titles: every slide's title, for the jump menu.
-     Where the deck is and what it does come from useDeck(). The view opens and closes the jump
-     menu from the keyboard: openMenu(digits), toggleMenu(), closeMenu(). -->
+     auto-hide: shown for 2.5 s after the mouse moves anywhere in the window, then hidden; the
+       pointer over it or a list open keeps it shown. v-model:shown says whether it is shown, and
+       sets it: true shows it for 4 s, false hides it (the audience view: a tap in the middle).
+       Without auto-hide (and not docked) it is always shown.
+     Where the deck is and what it does come from useDeck() (the slides' titles too); the themes
+     from useTheme(). Which list is open and what is typed in it are its own.
+     The keys (composables/useKeyboard.js), on the window, wherever the focus is: they move the
+     deck, open and close its lists, cycle the theme, toggle fullscreen and open the presenter
+     window (not from the presenter view). Keys never show the panel: only the mouse does. Whoever
+     draws the controls has the keys: the export and thumbnails draw none, and have none. -->
 <template>
   <nav
     class="ar-controls"
     ref="root"
-    :class="{ visible: docked || shown || hovering || open, docked }"
+    :class="{ visible, docked }"
     @mouseenter="hovering = true"
     @mouseleave="hovering = false"
     aria-label="Controles de la presentación"
@@ -124,14 +131,17 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useDeck } from '../../state/deck'
+import { useTheme } from '../../state/theme'
+import { useKeyboard } from '../../composables/useKeyboard'
+import { useMouseIdle } from '../../composables/useMouseIdle'
 
 const props = defineProps({
   docked: Boolean,
-  shown: Boolean,
-  titles: { type: Array, default: () => [] },
+  autoHide: Boolean,
 })
 const deck = useDeck()
-const { theme, themes, setTheme, fullscreen, toggleFullscreen, openPresenter } = deck
+const { fullscreen, toggleFullscreen, openPresenter } = deck
+const { theme, themes, setTheme, cycle: cycleTheme } = useTheme()
 
 const root = ref()
 const hovering = ref(false)
@@ -139,15 +149,28 @@ const open = ref(null) // null | 'slides' | 'themes'
 const atStart = computed(() => deck.index.value === 0 && deck.step.value === 1)
 const atEnd = computed(() => deck.index.value === deck.total.value - 1 && deck.step.value === deck.steps.value)
 
-// ---- jump menu --------------------------------------------------------------
+// ---- auto-hide: the mouse anywhere in the window shows it for 2.5 s -------------------------
+// shown follows the mouse; whoever binds it can set it too (true: 4 s, false: hidden now)
+const shown = defineModel('shown', { type: Boolean, default: false })
+const idle = useMouseIdle(() => (props.autoHide ? window : null), 2500, { idle: true })
+watch(idle.idle, (v) => (shown.value = !v), { immediate: true })
+watch(shown, (v) => {
+  if (v === !idle.idle.value) return
+  v ? idle.wake(4000) : idle.sleep()
+})
+const visible = computed(() => props.docked || !props.autoHide || shown.value || hovering.value || !!open.value)
+
+// ---- jump list --------------------------------------------------------------
 const query = ref('')
 const sel = ref(0)
 const search = ref()
 const listEl = ref()
+// every slide's title, read when the list opens
+const titles = ref([])
 // a number matches by slide number prefix; text matches the title
 const matches = computed(() => {
   const q = query.value.trim().toLowerCase()
-  const all = props.titles.map((t, i) => ({ i, t }))
+  const all = titles.value.map((t, i) => ({ i, t }))
   if (!q) return all
   if (/^\d+$/.test(q)) return all.filter((m) => String(m.i + 1).startsWith(q))
   return all.filter((m) => m.t.toLowerCase().includes(q))
@@ -160,6 +183,7 @@ function move(d) {
   nextTick(() => listEl.value?.querySelector('.sel')?.scrollIntoView({ block: 'nearest' }))
 }
 async function openSlides(initial = '') {
+  titles.value = deck.titles()
   query.value = initial
   open.value = 'slides'
   await nextTick()
@@ -187,17 +211,25 @@ function close() {
   open.value = null
   search.value?.blur()
 }
-// click anywhere outside the controls closes any open panel
+// a press anywhere outside the controls (a click, a tap) closes any open list
 function onPointerDown(e) {
   if (open.value && !root.value?.contains(e.target)) close()
 }
 onMounted(() => document.addEventListener('pointerdown', onPointerDown, true))
 onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown, true))
 
-defineExpose({
-  openMenu: openSlides,
-  toggleMenu: () => toggle('slides'),
-  closeMenu: close,
+// ---- the keys ---------------------------------------------------------------
+useKeyboard({
+  next: deck.next,
+  prev: deck.prev,
+  first: () => deck.go(0),
+  last: () => deck.go(deck.total.value - 1, Infinity),
+  fullscreen: toggleFullscreen,
+  theme: cycleTheme,
+  presenter: deck.role === 'presenter' ? null : openPresenter,
+  menu: () => toggle('slides'),
+  jump: openSlides,
+  close,
 })
 </script>
 
