@@ -1,7 +1,7 @@
 # Architecture
 
 How the engine in `src/` is laid out, for whoever works on Arao itself. Deck authors need none of
-this: [reference.md](reference.md) is their API, [../AGENTS.md](../AGENTS.md) their guide.
+this: [the docs](index.md) are their manual, [../AGENTS.md](../AGENTS.md) their guide.
 
 ## Folders
 
