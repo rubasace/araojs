@@ -1,37 +1,81 @@
-import type { ShallowRef } from 'vue'
+import { getCurrentInstance, onBeforeUnmount, type ShallowRef } from 'vue'
+import { shortcuts as projectShortcuts } from 'virtual:arao/shortcuts'
+import { commandFor, type Command } from '../core/shortcuts'
 import type { DeckFace, DeckMode } from '../state/deck'
 import type { ThemeControls } from '../state/theme'
-import { useKeyboard, type KeyHandlers } from './useKeyboard'
+import { forDeck } from './useKeyboard'
+import { useSlideNumber } from './useSlideNumber'
 import { useTouchGestures, type Zone } from './useTouchGestures'
 
-// Internal. The deck's shortcuts: keys and touch call the deck directly, as its buttons do.
-//   useShortcuts(deck)   in Deck.vue, with what createDeck returned (it is the provider: it cannot
-//                        useDeck()). Only in the audience and presenter views: the export and the
-//                        thumbnails have none.
-// Keys (on the window, composables/useKeyboard.ts):
-//   → ↓ PageDown Space Enter   next        ← ↑ PageUp Backspace   previous
-//   Home   the first slide      End   the last step of the last slide
-//   t   the next theme          f   fullscreen      p   the presenter window (not from the
-//                                                       presenter view: there the key is the browser's)
-// The controls' own keys (g, 0-9, Escape: their lists) are theirs (Controls.vue).
+// Internal. The deck's shortcuts: which key runs which command (core/shortcuts.ts: the engine's
+// defaults and the project's src/shortcuts.ts or .js), and who does each command.
+//   useShortcuts({ next: deck.next, menu: openList, … })
+//       registers what the caller does for each command it names (null: not here, the key is
+//       the browser's); released when the caller unmounts
+//   useDeckShortcuts(deck)
+//       in Deck.vue, with what createDeck returned (it is the provider: it cannot useDeck()):
+//       the deck's commands (next, prev, first, last, theme, fullscreen, presenter), the slide
+//       number (useSlideNumber) and touch. Only in the audience and presenter views: the export
+//       and the thumbnails have none
+// One map (the Vite plugin checked and built it when it started: vite/shortcuts.js), one listener
+// on the window and one registry per window: a press runs at most one thing. A held key repeats
+// only next and prev (holding t does not spin through the themes). A command has one owner: registering one that is already registered throws
+// (two components doing "next" would both run on one key). The deck owns the moves; Controls
+// owns menu (its jump list). Escape and the digits are not commands (core/shortcuts.ts).
+// Keys keep the deck's rules (useKeyboard.ts forDeck): not in text fields, not with Ctrl/Cmd/Alt.
 // Touch (audience view, on its viewport; composables/useTouchGestures.ts): a tap on the right
 // quarter or a swipe left → next; the left quarter or a swipe right → previous. The middle is the
 // controls' (their auto-hide). The presenter view reads no touch.
-const NEXT = ['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter']
-const PREV = ['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace']
+export type CommandHandlers = Partial<Record<Command, (() => void) | null | undefined>>
 
-export function useShortcuts({ mode, face, theme, viewport }: { mode: DeckMode; face: DeckFace; theme: ThemeControls; viewport: ShallowRef<HTMLElement | null> }) {
-  if (mode !== 'audience' && mode !== 'presenter') return
-  const handlers: KeyHandlers = {
-    Home: () => face.go(0),
-    End: () => face.go(face.total.value - 1, Infinity),
-    t: theme.cycle,
-    f: face.toggleFullscreen,
-    p: mode === 'presenter' ? null : face.openPresenter,
+const REPEATS: ReadonlySet<Command> = new Set(['next', 'prev'])
+const registry = new Map<Command, () => void>()
+
+function onKey(e: KeyboardEvent) {
+  if (!forDeck(e)) return
+  const command = commandFor(projectShortcuts, e)
+  const run = command && registry.get(command)
+  if (!run) return
+  if (e.repeat && !REPEATS.has(command)) return e.preventDefault()
+  run()
+  e.preventDefault()
+}
+
+export function useShortcuts(handlers: CommandHandlers) {
+  const mine: Command[] = []
+  for (const [command, run] of Object.entries(handlers) as [Command, (() => void) | null | undefined][]) {
+    if (!run) continue
+    if (registry.has(command)) {
+      // undo this call's own registrations before failing, so nothing is left half-registered
+      for (const c of mine) registry.delete(c)
+      throw new Error(`[arao] shortcuts: the command "${command}" is registered twice (one key would run both); each command has one owner`)
+    }
+    registry.set(command, run)
+    mine.push(command)
   }
-  for (const k of NEXT) handlers[k] = face.next
-  for (const k of PREV) handlers[k] = face.prev
-  useKeyboard(handlers)
+  if (mine.length && registry.size === mine.length) window.addEventListener('keydown', onKey)
+  const release = () => {
+    for (const c of mine) if (registry.get(c) === handlers[c]) registry.delete(c)
+    if (mine.length && !registry.size) window.removeEventListener('keydown', onKey)
+    mine.length = 0
+  }
+  if (getCurrentInstance()) onBeforeUnmount(release)
+  return release
+}
+
+export function useDeckShortcuts({ mode, face, theme, viewport }: { mode: DeckMode; face: DeckFace; theme: ThemeControls; viewport: ShallowRef<HTMLElement | null> }) {
+  if (mode !== 'audience' && mode !== 'presenter') return
+  useShortcuts({
+    next: face.next,
+    prev: face.prev,
+    first: face.first,
+    last: face.last,
+    theme: theme.cycle,
+    fullscreen: face.toggleFullscreen,
+    // not from the presenter view: there the key is the browser's
+    presenter: mode === 'presenter' ? null : face.openPresenter,
+  })
+  useSlideNumber({ go: (n) => face.go(n - 1), total: () => face.total.value })
 
   if (mode === 'audience') {
     const move = (dir: Zone) => (dir === 'next' ? face.next() : dir === 'prev' ? face.prev() : null)

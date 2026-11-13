@@ -19,18 +19,24 @@ Built into `Deck`; nothing to add. A floating panel at the bottom centre of the 
 - Buttons: first, previous, slide counter (`3 / 18`, click = jump menu), step dots (one per step
   when the slide has more than one; click = go to that step), next, last, theme picker (only with
   more than one theme), presenter view, fullscreen.
-- **Jump menu** (`g`, a digit, or the counter): a search box over the slide list; a number
-  filters by slide number prefix, text by title (`Slide(title)` or its first heading). `↑`/`↓`,
-  `Enter`, `Esc`.
+- **Jump to a slide by number**: type its number and press `Enter` (`16` `Enter` goes to slide
+  16), as in PowerPoint or Keynote. Nothing shows on screen, so the audience sees no list; a
+  number that is no slide does nothing; `Backspace` deletes the last digit; `Esc`, any other key,
+  or 2 s without a key clears what was typed. The digits are read by their physical key too, so
+  the number row works on an AZERTY keyboard without Shift.
+- **Jump menu** (`g` or the counter): a search box over the slide list; a number filters by slide
+  number prefix, text by title (`Slide(title)` or its first heading). `↑`/`↓`, `Enter`, `Esc`.
 - **Theme picker**: the deck's `themes`, each with a swatch of its background and accent, as the
   deck would wear them (`default`'s: the defaults with the project's `:root` rules over them).
 - Its look is the `--ar-controls-*` tokens ([Interface](../reference/theme-tokens.md#interface)).
 - Keys (in any window of the deck): see the table below. Ctrl/Cmd/Alt combinations, and keys
   typed into inputs or anywhere in the presenter's duration field (its buttons too), are ignored.
-  `Space`/`Enter` on a focused button press the button.
-- Letter keys are case-sensitive: only lowercase `g`, `t`, `f`, `p` act. With Caps Lock on, or
-  with Shift held, they type `G`, `T`, `F`, `P` and do nothing. Shift does not stop the
-  navigation keys: `Shift`+`→` still moves.
+  `AltGr` combinations count (they type characters on many layouts); on a Mac, keys typed with
+  `Option` are ignored. `Space`/`Enter` on a focused button press the button. A held key
+  repeats only next and previous.
+- Letter keys match either case: `g` and `G` (Shift, Caps Lock) do the same. Shift does not stop
+  the navigation keys: `Shift`+`→` still moves.
+- Every key but `Esc` and the digits can be changed: see [Your own keys](#your-own-keys).
 
 | Key | Action |
 |---|---|
@@ -38,11 +44,52 @@ Built into `Deck`; nothing to add. A floating panel at the bottom centre of the 
 | `←` `↑` `PageUp` `Backspace` | previous step (to the last step of the previous slide) |
 | `Home` / `End` | first slide / last step of the last slide |
 | `g` | toggle the jump menu |
-| `0`–`9` | open the jump menu pre-filled with that digit |
-| `Esc` | close the open panel (jump menu or theme picker) |
+| `0`–`9`, then `Enter` | go to that slide (reserved: cannot be remapped) |
+| `Esc` | close the open panel (jump menu or theme picker); clear a typed number (reserved) |
 | `t` | next theme |
 | `f` | fullscreen |
 | `p` | open or bring forward the presenter window (not in the presenter itself) |
+
+### Your own keys
+
+A clicker, a headset or a pedal that sends a key the deck does not know can drive it: name that
+key in an optional `src/shortcuts.ts` (or `src/shortcuts.js`) of the project. The Vite plugin
+loads it; nothing to import elsewhere. It maps a key to a command:
+
+```ts
+// src/shortcuts.ts
+import { defineShortcuts } from 'araojs'
+
+export default defineShortcuts({
+  MediaTrackNext: 'next',      // the headset's "next track" button
+  MediaTrackPrevious: 'prev',
+  b: 'menu',                   // b opens the jump menu too (g still does)
+  t: null,                     // no theme change by key during the talk
+})
+```
+
+- Commands: `next`, `prev`, `first`, `last`, `theme`, `fullscreen`, `presenter`, `menu`.
+- Your entries are laid over the defaults (the table above), key by key: a key the defaults have
+  is remapped, `null` turns it off (the key does what the browser does with it), a new key is
+  added. Several keys can run one command.
+- A key is written as the browser names it: its `key` (`'g'`, `'ArrowRight'`, `'PageDown'`,
+  `'MediaTrackNext'`) or its `code`, the physical key (`'KeyG'`, `'NumpadAdd'`). A press is
+  looked up by its code first, then by its key. A single letter matches both cases; `'Space'`
+  stands for the space bar.
+- `Esc` and the digits are reserved. Mapping one, naming a command that does not exist, or
+  writing one key twice (`'Space'` and `' '`, `'G'` and `'g'`) is a type error in a `.ts` file
+  written with `defineShortcuts` where TypeScript can tell, and in any case an `[arao]` error
+  naming the file when Vite starts: `vite`, `vite build` and `arao export` stop.
+- The file is read in Node when Vite starts (and again on every edit in development): keep it a
+  plain map. It may import `defineShortcuts` from `araojs` and nothing else of the package. With
+  both `src/shortcuts.ts` and `src/shortcuts.js`, the `.ts` is used (with a warning).
+
+To find what a device sends, open the deck, paste this in the browser's console and press the
+button; it prints the `key` and the `code` to write:
+
+```js
+addEventListener('keydown', (e) => console.log({ key: e.key, code: e.code }))
+```
 
 ### Interface language
 

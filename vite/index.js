@@ -64,6 +64,7 @@ import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'nod
 import vue from '@vitejs/plugin-vue'
 import { normalizePath, searchForWorkspaceRoot } from 'vite'
 import { createIcons, forced } from './icons.js'
+import shortcuts from './shortcuts.js'
 
 const require = createRequire(import.meta.url)
 // the package's own name, so that renaming it on publish needs no change here
@@ -529,7 +530,7 @@ export const ${name}Dir = ${JSON.stringify(folders[name])}`
     },
   }
 
-  return [vue(vueWithPug), plugin]
+  return [vue(vueWithPug), plugin, shortcuts(PACKAGE)]
 }
 
 export { arao }

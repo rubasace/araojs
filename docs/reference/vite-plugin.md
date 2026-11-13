@@ -35,6 +35,10 @@ export default defineConfig({
   `virtual:arao/themes` exports `themes` (the theme names, source after source, sorted in each)
   and `themeSources` (the sources, as messages name them), and `virtual:arao/theme-styles`
   imports every source's CSS files, in order;
+  `virtual:arao/shortcuts` exports `shortcuts`, the key map in effect (key → command): the
+  engine's keys with the project's optional `src/shortcuts.ts` (else `src/shortcuts.js`) over them,
+  checked when Vite starts, which fails on a mistake naming the file
+  ([Your own keys](../guide/presenting.md#your-own-keys));
   `virtual:arao/icons` exports `icons` (`prefix:name` → `{ body, width, height }`, only the icons
   the source uses, plus the `icons` option).
 - It also keeps `araojs` out of Vite's dependency prebundling (it imports those virtual

@@ -49,6 +49,7 @@ src/slides/        components several decks share
 src/snippets/      code files, by name, for Snippet(file="…")
 src/images/        pictures, by name, for Img(file="…") and Slide(bg="…")
 src/themes/        the project's themes, if any: CSS files, loaded by the plugin (no import)
+src/shortcuts.ts   optional: keys remapped/added/turned off (defineShortcuts), loaded by the plugin
 ```
 
 The engine is the library: nothing of it is copied into the project.
