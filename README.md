@@ -25,7 +25,7 @@ slide, with the same line breaks.
   <img src="docs/assets/hero.gif" alt="A slide typed in Pug on the left while the live deck on the right follows each saved line" width="940" />
 </p>
 
-**Contents:** [Why Arao](#why-arao) · [Your first slide](#your-first-slide) · [Features](#features) ·
+**Contents:** [Why Arao](#why-arao) · [Getting started](#getting-started) · [Features](#features) ·
 [Documentation](#documentation) · [License](#license)
 
 ## Why Arao
@@ -46,7 +46,7 @@ diving seabird of the **Cíes islands**, off Vigo.
 </tr>
 </table>
 
-## Your first slide
+## Getting started
 
 ```bash
 npm install araojs vue && npm install -D vite && npm pkg set type=module
@@ -85,7 +85,8 @@ Deck
 npx vite    # open http://localhost:5173
 ```
 
-Steps, code, themes, the PDF and every option: [Getting started](docs/getting-started.md).
+Steps, code, themes, the PDF and every option: [Getting started](docs/getting-started.md). With a
+coding agent: [install the Arao skill](docs/getting-started.md#with-a-coding-agent).
 
 ## Features
 
