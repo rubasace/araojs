@@ -17,17 +17,17 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/types/src/index.d.ts",
+      "types": "./dist/types/index.d.ts",
       "default": "./dist/index.js"
     },
     "./vite": {
-      "types": "./dist/types/vite/index.d.ts",
+      "types": "./dist/types/vite.d.ts",
       "default": "./vite/index.js"
     },
     "./style.css": "./dist/arao.css",
     "./package.json": "./package.json"
   },
-  "types": "./dist/types/src/index.d.ts",
+  "types": "./dist/types/index.d.ts",
   "bin": {
     "arao": "./bin/arao.js"
   },
@@ -43,7 +43,7 @@
   "scripts": {
     "dev": "vite",
     "typecheck": "vue-tsc --noEmit",
-    "build": "vue-tsc --noEmit && vite build && vue-tsc -p tsconfig.build.json",
+    "build": "vue-tsc --noEmit && vite build && vue-tsc -p tsconfig.build.json && node scripts/bundle-types.mjs",
     "prepack": "npm run build",
     "smoke": "node scripts/smoke.mjs",
     "docs:dev": "vitepress dev docs",
@@ -69,6 +69,8 @@
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
+    "rollup": "^4.68.3",
+    "rollup-plugin-dts": "^6.5.1",
     "typescript": "~5.9",
     "vite": "^8.3.8",
     "vitepress": "^1.6.4",

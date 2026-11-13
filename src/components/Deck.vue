@@ -62,7 +62,7 @@ const props = defineProps({
   height: { type: Number, default: 1080 },
   // the themes it can wear, the first by default: 'default' (the engine's tokens) and the names of
   // the project's themes (src/themes); without it, all of them, 'default' first (state/deck.ts)
-  themes: Array as PropType<string[]>,
+  themes: Array as PropType<readonly string[]>,
   // hide the mouse cursor after this many ms without moving it (0 = never)
   hideCursorAfter: { type: Number, default: 5000 },
   // the talk's length, for the presenter view's countdown: 90 or "90" (minutes), "45m", "1h30m",
