@@ -1,13 +1,13 @@
 <!-- The audience view (the default): the deck's slides, full window, and the floating controls.
-     It owns the window's viewport element: the one fullscreen fills (state/deck.js), and the one
+     It owns the window's viewport element: the one fullscreen fills (state/deck.ts), and the one
      the mouse and touch are read from.
        mouse   a move shows the controls for 2.5 s (their auto-hide, Controls.vue), and the cursor
                hides after hideCursorAfter ms without one (0: never); keys never show them
        touch   tap the right quarter → next, the left quarter → previous; swipe left/right →
-               next/previous (the deck's shortcuts, composables/useShortcuts.js, on this
+               next/previous (the deck's shortcuts, composables/useShortcuts.ts, on this
                viewport); a tap in the middle shows or hides the controls (their auto-hide)
      If the browser blocks the presenter window, a notice above the controls links to it.
-     deck: createDeck() (state/deck.js): the stage, the viewport ref, the presenter window. -->
+     deck: createDeck() (state/deck.ts): the stage, the viewport ref, the presenter window. -->
 <template>
   <div
     class="ar-viewport"
@@ -29,22 +29,23 @@
   </div>
 </template>
 
-<script setup>
-import { computed } from 'vue'
-import { useDeck } from '../state/deck'
+<script setup lang="ts">
+import { computed, type PropType } from 'vue'
+import { useDeck, type Deck } from '../state/deck'
 import { useAutoHide } from '../composables/useAutoHide'
 import { lang, t } from '../i18n/i18n'
 import Controls from '../components/internal/Controls.vue'
 import Stage from '../components/internal/Stage.vue'
 
 const props = defineProps({
-  deck: { type: Object, required: true }, // createDeck()
+  deck: { type: Object as PropType<Deck>, required: true }, // createDeck()
   width: { type: Number, required: true }, // of the canvas
   height: { type: Number, required: true },
   hideCursorAfter: { type: Number, required: true },
 })
 const { theme } = useDeck()
-const { presenterWindow } = props.deck
+// an audience window always has one (null only in a thumbnail)
+const presenterWindow = props.deck.presenterWindow!
 const blocked = presenterWindow.blocked
 // the deck's ref: fullscreen fills this element
 const viewport = props.deck.viewport

@@ -28,7 +28,7 @@ export async function startDecksServer({ decks, folders: others = {}, port = 519
     root,
     logLevel: 'warn',
     plugins: [arao({ decks, ...folders(decks), ...others })],
-    resolve: { alias: [{ find: /^araojs$/, replacement: join(REPO, 'src/index.js') }] },
+    resolve: { alias: [{ find: /^araojs$/, replacement: join(REPO, 'src/index.ts') }] },
     server: { host: '127.0.0.1', port, strictPort: false },
   })
   await server.listen()

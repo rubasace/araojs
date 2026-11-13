@@ -57,10 +57,19 @@ const require = createRequire(import.meta.url)
 // the package's own name, so that renaming it on publish needs no change here
 const { name: PACKAGE } = require('../package.json')
 
+/**
+ * arao()'s options: the four folders (paths from the Vite root, or absolute), icon names to
+ * include whatever the source says, and the options of Vue's own plugin (plugin-vue).
+ * @typedef {{ decks?: string, snippets?: string, images?: string, themes?: string, icons?: string[], vue?: import('@vitejs/plugin-vue').Options }} AraoOptions
+ * @typedef {'decks' | 'snippets' | 'images' | 'themes'} Folder
+ */
+
 const IMAGES = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'svg']
+/** @type {Record<Folder, string>} */
 const DEFAULTS = { decks: 'src/decks', snippets: 'src/snippets', images: 'src/images', themes: 'src/themes' }
 
 // what each folder's glob takes, and how; and what a missing folder means
+/** @type {Record<Folder, { pattern: string, options?: string, missing: string }>} */
 const modules = {
   decks: { pattern: '*.vue', options: '{}', missing: 'createDeckApp() has no deck to open' },
   snippets: { pattern: '**/*', options: "{ query: '?raw', import: 'default' }", missing: 'files named in slides will show as missing' },
@@ -71,6 +80,7 @@ const modules = {
 
 // the files of a folder with an extension, by name without it: what import.meta.glob takes for
 // '*<ext>' (files directly in it or symlinks to files, not dotfiles, case-sensitive)
+/** @param {string} folder @param {string} ext @returns {string[]} */
 function filesIn(folder, ext) {
   let entries
   try {
@@ -84,6 +94,7 @@ function filesIn(folder, ext) {
     .map((e) => e.name.slice(0, -ext.length))
     .sort()
 }
+/** @param {string} folder */
 const decksIn = (folder) => filesIn(folder, '.vue')
 
 // the themes a stylesheet names: its [data-theme="<name>"] selectors (quoted or not, any case
@@ -95,13 +106,15 @@ const THEME_SELECTOR = /\[\s*data-theme\s*=\s*(?:"((?:\\[\s\S]|[^"\\])*)"|'((?:\
 const IMPORT = /@import\s+(?:url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s]*))\s*\)|"([^"]*)"|'([^']*)')/gi
 // CSS escapes, as CSS reads them: \<1-6 hex digits> with one white space after them (a code
 // point), \<newline> (a string's line continuation: nothing), \<any other character> (itself)
-const unescapeCss = (s) => s.replace(/\\(?:([0-9a-f]{1,6})(?:\r\n|[ \t\n\r\f])?|(\r\n|[\n\r\f])|([\s\S]))/gi, (_, hex, nl, ch) => {
+/** @param {string} s */
+const unescapeCss = (s) => s.replace(/\\(?:([0-9a-f]{1,6})(?:\r\n|[ \t\n\r\f])?|(\r\n|[\n\r\f])|([\s\S]))/gi, (/** @type {string} */ _, /** @type {string} */ hex, /** @type {string} */ nl, /** @type {string} */ ch) => {
   if (nl) return ''
   if (ch) return ch
   const cp = parseInt(hex, 16)
   return cp === 0 || cp > 0x10ffff || (cp >= 0xd800 && cp <= 0xdfff) ? '�' : String.fromCodePoint(cp)
 })
 // the text without what each :not(…) holds (its parentheses nested; strings and escapes skipped)
+/** @param {string} css */
 function withoutNot(css) {
   let out = ''
   let from = 0
@@ -109,7 +122,7 @@ function withoutNot(css) {
     if (m.index < from) continue // inside a :not(…) already cut
     out += css.slice(from, m.index)
     let i = m.index + m[0].length
-    for (let depth = 1, quote = null; i < css.length && depth; i++) {
+    for (let depth = 1, /** @type {string | null} */ quote = null; i < css.length && depth; i++) {
       const c = css[i]
       if (c === '\\') i++
       else if (quote) quote = c === quote ? null : quote
@@ -121,8 +134,11 @@ function withoutNot(css) {
   }
   return out + css.slice(from)
 }
+/** @param {string} css */
 function themesOf(css) {
+  /** @type {Set<string>} */
   const names = new Set()
+  /** @type {Set<string>} */
   const spaced = new Set()
   const text = css.replace(/\/\*[\s\S]*?\*\//g, '')
   for (const m of withoutNot(text).matchAll(THEME_SELECTOR)) {
@@ -137,6 +153,7 @@ function themesOf(css) {
 // ("/styles/x.css"). A URL, a package's file (what is not next to the sheet) or a missing file is
 // not followed: its themes still work when a deck lists them (state/deck.js finds their rules in
 // the page), but a deck without a list does not offer them
+/** @param {string} path @param {string} from @param {string} root */
 function importedFile(path, from, root) {
   const p = path.replace(/[?#].*$/, '')
   if (!p || /^[a-z][a-z\d+.-]*:/i.test(p) || p.startsWith('//')) return null
@@ -147,15 +164,24 @@ function importedFile(path, from, root) {
 // order between names that differ only in case); the files that give none; the names skipped for
 // their white space ({ file, name }); and every file read (the folder's and the local partials
 // they @import, followed all the way down), for the dev server to follow
+/** @param {string} a @param {string} b */
 const byName = (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }) || (a < b ? -1 : a > b ? 1 : 0)
+/** @param {string} folder @param {string} root */
 function themesIn(folder, root) {
+  /** @type {Set<string>} */
   const names = new Set()
+  /** @type {string[]} */
   const unnamed = []
+  /** @type {{ file: string, name: string }[]} */
   const spaced = []
+  /** @type {Set<string>} */
   const sources = new Set()
   for (const file of filesIn(folder, '.css').map((n) => `${n}.css`)) {
+    /** @type {Set<string>} */
     const found = new Set()
+    /** @type {Set<string>} */
     const seen = new Set()
+    /** @param {string} path */
     const read = (path) => {
       if (seen.has(path)) return
       seen.add(path)
@@ -181,12 +207,19 @@ function themesIn(folder, root) {
 }
 
 // glob syntax in a folder's name is literal: "talk (draft)", "[2024]"
+/** @param {string} s */
 const escapeGlob = (s) => s.replace(/[()[\]{}*?!+@|\\]/g, '\\$&')
 
+/**
+ * @param {AraoOptions} [options]
+ * @returns {import('vite').Plugin[]}
+ */
 export default function arao(options = {}) {
   const { vue: vueOptions = {}, icons: iconsOption, ...rest } = options
-  const folders = {}
-  for (const name of Object.keys(modules)) {
+  const names = /** @type {Folder[]} */ (Object.keys(modules))
+  /** @type {Record<Folder, string>} */
+  const folders = { ...DEFAULTS }
+  for (const name of names) {
     const f = rest[name] ?? DEFAULTS[name]
     if (typeof f !== 'string' || !f.trim()) throw new Error(`[arao] the ${name} folder must be a path, got ${JSON.stringify(f)}`)
     folders[name] = f.trim()
@@ -194,20 +227,27 @@ export default function arao(options = {}) {
   let root = process.cwd()
   let publicDir = ''
   let ssr = false
+  /** @param {Folder} name */
   const dir = (name) => resolve(root, folders[name])
+  /** @param {string} d */
   const isOutside = (d) => {
     const r = relative(root, d)
     return r === '..' || r.startsWith('..' + sep) || isAbsolute(r)
   }
-  const outside = () => Object.keys(modules).map(dir).filter(isOutside)
+  const outside = () => names.map(dir).filter(isOutside)
+  /** @param {string} name */
   const resolved = (name) => `\0virtual:arao/${name}`
+  /** @type {string[] | null} */
   let themeNames = null // the names the themes module was last loaded with
   let themeSources = new Set() // the files they were read from (the folder's, and their partials)
+  /** @param {string} file */
   const unnamedTheme = (file) => logger.warn(`[arao] ${folders.themes}/${file} names no theme (no [data-theme="<name>"] selector): it is loaded, but no deck can wear it`)
+  /** @param {{ file: string, name: string }} s */
   const spacedTheme = ({ file, name }) => logger.warn(`[arao] ${normalizePath(relative(root, file))}: [data-theme=${JSON.stringify(name)}] is no theme (a theme's name has no white space): skipped`)
 
   // icons used in the source: src/ and the decks folder, but not the snippets and images folders
   // (their files are content, not source)
+  /** @type {Pick<import('vite').Logger, 'warn'>} */
   let logger = console
   const icons = createIcons({
     root: () => root,
@@ -226,20 +266,22 @@ export default function arao(options = {}) {
     template: {
       ...template,
       preprocessCustomRequire: template.preprocessCustomRequire
-        ?? ((id) => (id === 'pug' ? require('pug') : createRequire(resolve(root, 'package.json'))(id))),
+        ?? ((/** @type {string} */ id) => (id === 'pug' ? require('pug') : createRequire(resolve(root, 'package.json'))(id))),
     },
   }
 
+  /** @type {import('vite').Plugin & { api: { folders: () => Record<Folder, string>, decks: () => string[] } }} */
   const plugin = {
     name: 'arao',
     // for tools that run the project's Vite config (the export CLI): the folders, resolved
     api: {
-      folders: () => Object.fromEntries(Object.keys(modules).map((n) => [n, dir(n)])),
+      folders: () => /** @type {Record<Folder, string>} */ (Object.fromEntries(names.map((n) => [n, dir(n)]))),
       // the decks' names, sorted: what the decks glob below ('*.vue') takes
       decks: () => decksIn(dir('decks')),
     },
     config(user) {
       root = resolve(user.root ?? process.cwd()) // as Vite resolves it
+      /** @type {import('vite').UserConfig} */
       const config = {
         // one Vue, the project's, also for this package when it is linked (npm link, file:)
         resolve: { dedupe: ['vue'] },
@@ -264,7 +306,7 @@ export default function arao(options = {}) {
       ssr = !!config.build.ssr
       if (config.plugins.filter((p) => p.name === 'vite:vue').length > 1)
         throw new Error('[arao] @vitejs/plugin-vue is in the config twice: arao() already includes it. Remove vue() from plugins; its options go in arao({ vue: { … } })')
-      for (const name of Object.keys(modules)) {
+      for (const name of names) {
         if (rest[name] != null && !existsSync(dir(name)))
           config.logger.warn(`[arao] the ${name} folder "${folders[name]}" does not exist (${dir(name)}): ${modules[name].missing}`)
       }
@@ -274,8 +316,8 @@ export default function arao(options = {}) {
       for (const d of outside()) server.watcher.add(d)
     },
     resolveId(id) {
-      const name = id.startsWith('virtual:arao/') && id.slice('virtual:arao/'.length)
-      return name in modules || name === 'icons' || name === 'theme-styles' ? resolved(name) : null
+      const name = id.startsWith('virtual:arao/') ? id.slice('virtual:arao/'.length) : ''
+      return (name && name in modules) || name === 'icons' || name === 'theme-styles' ? resolved(name) : null
     },
     // a saved file that uses an icon the module lacks: the module goes first in the same update,
     // so its new data is in place when the file's own update renders the Icon
@@ -327,7 +369,7 @@ export default function arao(options = {}) {
 export const themesDir = ${JSON.stringify(folders.themes)}`
       }
       const styles = id === resolved('theme-styles')
-      const name = styles ? 'themes' : Object.keys(modules).find((n) => id === resolved(n))
+      const name = styles ? 'themes' : names.find((n) => id === resolved(n))
       if (!name) return null
       // globs starting with "/" are relative to the root ("/../shared" leaves it); Vite keys
       // each file by its path from the root, so the folder's part is cut off the keys

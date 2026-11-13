@@ -10,16 +10,16 @@
      touch (phones, tablets): tap the right quarter → next, the left quarter → previous, the middle
      → show/hide the controls; swipe left/right → next/previous. Links, buttons and inputs inside a
      slide keep their own taps (add data-ar-touch="ignore" to any other element that needs them).
-     Every window of the same deck in the same browser stays in step (core/sync.js): moving in any of
+     Every window of the same deck in the same browser stays in step (core/sync.ts): moving in any of
      them moves the others, and so does a theme change; the last move wins. A window that opens
      takes the position of the ones already open (and their theme, unless its URL names one).
-     duration="45m" is the talk's length (formats: state/timer.js parseDuration): the presenter view
+     duration="45m" is the talk's length (formats: state/timer.ts parseDuration): the presenter view
      counts down to it, and its bar can change it live for every window (the prop stays the
      default; the change wins until reset, even over an edit of the prop that differs from it).
      The timer starts with the first move of the deck, in any window; timer and changed length
      survive reloading the windows (not closing them).
      Export: ?export prints the deck, one page per step (&per-slide: per slide; &notes: a page of
-     notes after each slide that has them): views/ExportView.vue and core/exporter.js, and
+     notes after each slide that has them): views/ExportView.vue and core/exporter.ts, and
      npm run export for the PDFs.
      Footer: the #footer slot is drawn at the bottom of every slide except covers and sections
      (each Slide draws it, so it fades, prints and shows in the presenter view with its slide);
@@ -27,9 +27,9 @@
        template(#footer="{ number, total }")
          span ACME · Conf 2026
          span {{ number }} / {{ total }}
-     Thumbnail: inside something that called provideThumbnail() (state/deck.js), the deck is its
+     Thumbnail: inside something that called provideThumbnail() (state/deck.ts), the deck is its
      cover, small and still (components/internal/Thumbnail.vue): useDeck().role is 'thumbnail' there.
-     The deck's state is state/deck.js (createDeck); this component only wires it to the view the
+     The deck's state is state/deck.ts (createDeck); this component only wires it to the view the
      window shows (views/: AudienceView, PresenterView or ExportView; internal/Thumbnail). The keys
      are the controls' (components/internal/Controls.vue), drawn by the audience and presenter views. -->
 <template>
@@ -47,8 +47,8 @@
   </AudienceView>
 </template>
 
-<script setup>
-import { useSlots } from 'vue'
+<script setup lang="ts">
+import { useSlots, type PropType } from 'vue'
 import { createDeck } from '../state/deck'
 import { provideFooter } from '../state/slide'
 import { useShortcuts } from '../composables/useShortcuts'
@@ -61,8 +61,8 @@ const props = defineProps({
   width: { type: Number, default: 1920 },
   height: { type: Number, default: 1080 },
   // the themes it can wear, the first by default: 'default' (the engine's tokens) and the names of
-  // the project's themes (src/themes); without it, all of them, 'default' first (state/deck.js)
-  themes: Array,
+  // the project's themes (src/themes); without it, all of them, 'default' first (state/deck.ts)
+  themes: Array as PropType<string[]>,
   // hide the mouse cursor after this many ms without moving it (0 = never)
   hideCursorAfter: { type: Number, default: 5000 },
   // the talk's length, for the presenter view's countdown: 90 or "90" (minutes), "45m", "1h30m",

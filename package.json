@@ -16,11 +16,18 @@
     "node": ">=20.19"
   },
   "exports": {
-    ".": "./dist/index.js",
-    "./vite": "./vite/index.js",
+    ".": {
+      "types": "./dist/types/src/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./vite": {
+      "types": "./dist/types/vite/index.d.ts",
+      "default": "./vite/index.js"
+    },
     "./style.css": "./dist/arao.css",
     "./package.json": "./package.json"
   },
+  "types": "./dist/types/src/index.d.ts",
   "bin": {
     "arao": "./bin/arao.js"
   },
@@ -35,8 +42,9 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "prepack": "vite build",
+    "typecheck": "vue-tsc --noEmit",
+    "build": "vue-tsc --noEmit && vite build && vue-tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
     "smoke": "node scripts/smoke.mjs",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
@@ -60,9 +68,12 @@
     "shiki": "^4.6.0"
   },
   "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "~5.9",
     "vite": "^8.3.8",
     "vitepress": "^1.6.4",
     "vitepress-plugin-llms": "^1.15.0",
-    "vue": "^3.5.45"
+    "vue": "^3.5.45",
+    "vue-tsc": "^3.3.14"
   }
 }

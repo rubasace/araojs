@@ -6,9 +6,9 @@
      its preview one step ahead. A second copy of every slide: each slide and addon mounts again
      there, so its side effects run twice in this window and its element ids repeat (useDeck().role
      is 'preview' in that copy, 'presenter' in the current one).
-     Where the deck is comes from useDeck(); deck (state/deck.js) brings the internals: the stages,
+     Where the deck is comes from useDeck(); deck (state/deck.ts) brings the internals: the stages,
      where one more press leads, the titles. The bar reads and sets the timer itself
-     (useTimer, state/timer.js). The presenter window
+     (useTimer, state/timer.ts). The presenter window
      listens to no mouse or touch of its own: only its controls and their keys (Controls.vue) move it. -->
 <template>
   <div class="ar-presenter" :lang="lang">
@@ -32,7 +32,7 @@
           </header>
           <!-- a copy of the deck: kept away from the pointer, the keyboard and screen readers -->
           <div class="ar-p-screen" :style="{ aspectRatio: ratio }" aria-hidden="true" inert :lang="deckLang">
-            <Stage :stage="deck.preview" :width="width" :height="height" :theme="theme">
+            <Stage :stage="deck.preview!" :width="width" :height="height" :theme="theme">
               <slot />
             </Stage>
             <div class="ar-p-end" v-if="next.end" :lang="lang">{{ t('endOfDeck') }}</div>
@@ -54,17 +54,18 @@
   </div>
 </template>
 
-<script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useDeck } from '../state/deck'
+<script setup lang="ts">
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type PropType } from 'vue'
+import { useDeck, type Deck } from '../state/deck'
 import { useNotesOutlet } from '../state/notes'
+import type { StepElement } from '../directives/step'
 import { lang, t } from '../i18n/i18n'
 import Controls from '../components/internal/Controls.vue'
 import PresenterBar from '../components/internal/PresenterBar.vue'
 import Stage from '../components/internal/Stage.vue'
 
 const props = defineProps({
-  deck: { type: Object, required: true }, // createDeck()
+  deck: { type: Object as PropType<Deck>, required: true }, // createDeck()
   width: { type: Number, required: true }, // of the canvas
   height: { type: Number, required: true },
 })
@@ -75,17 +76,17 @@ const deckLang = document.documentElement.lang
 // next: { index, step, end }, where one more press leads
 const { next } = props.deck
 
-// the notes panel is the outlet of the Notes of the slide on screen (state/notes.js)
+// the notes panel is the outlet of the Notes of the slide on screen (state/notes.ts)
 const notesOutlet = useNotesOutlet()
 // Notes are slide content: what they hold is sized in canvas px (a Snippet, an Icon size). Their
 // box is NOTES_WIDTH canvas px wide, zoomed to the width of the panel; their text keeps the size
 // of the panel (it is divided by the zoom).
 const NOTES_WIDTH = 1000
 const notesZoom = ref(0.5)
-let resize
+let resize: ResizeObserver | undefined
 onMounted(() => {
   resize = new ResizeObserver(([e]) => { notesZoom.value = Math.max(0.1, e.contentRect.width / NOTES_WIDTH) })
-  resize.observe(body.value)
+  resize.observe(body.value!)
 })
 onBeforeUnmount(() => resize?.disconnect())
 
@@ -109,11 +110,11 @@ const nextDetail = computed(() => {
 })
 
 // A new slide starts its notes from the top. A step marks what its v-steps bring into the notes
-// (those of that very step, the directive's record on the element: directives/step.js) and
+// (those of that very step, the directive's record on the element: directives/step.ts) and
 // scrolls it into view. Only the notes box scrolls (scrollIntoView would also scroll the page of
 // a narrow window).
 const FRESH = 'ar-note-fresh'
-const body = ref()
+const body = ref<HTMLElement>()
 watch(() => index.value, () => body.value && (body.value.scrollTop = 0))
 watch(() => step.value, async (s) => {
   await nextTick()
@@ -121,7 +122,7 @@ watch(() => step.value, async (s) => {
   const outlet = notesOutlet.value
   if (!box || !outlet) return
   outlet.querySelectorAll('.' + FRESH).forEach((el) => el.classList.remove(FRESH))
-  const fresh = [...outlet.querySelectorAll('*')].filter((el) => el.__phStep?.n === s && s > 1)
+  const fresh = [...outlet.querySelectorAll<StepElement>('*')].filter((el) => el.__phStep?.n === s && s > 1)
   fresh.forEach((el) => el.classList.add(FRESH))
   if (!fresh.length) return
   // in the box's own px (the notes are zoomed): rects, not offsets

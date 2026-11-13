@@ -37,6 +37,13 @@ import { tmpdir } from 'node:os'
 import { dirname, join, relative, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 
+/**
+ * What the export page reports (src/core/exporter.ts, ExportView.vue): window.__araoReady.
+ * @typedef {{ deck?: string | null, error?: string, code?: string, themes?: string[], theme?: string,
+ *   pages: number, slides: number, steps: number, width: number, height: number,
+ *   missing: string[], stalled?: string[] }} Ready
+ */
+
 const HELP = `Usage: arao export [options]     (in a project: npm run export -- [options])
 
   --deck <name>   just this deck of the project's decks folder (default: every deck, one PDF each)
@@ -66,15 +73,19 @@ Chromium: npx playwright-core install chromium, or ARAO_CHROMIUM=/path/to/chrome
 const root = process.cwd()
 // an error of the export itself (its message is all there is to say), not a bug of this script
 class ExportError extends Error {}
+/** @param {string} msg @returns {never} */
 const fail = (msg) => {
   throw new ExportError(msg)
 }
+/** @param {number} ms */
 const pause = (ms) => new Promise((r) => setTimeout(r, ms))
+/** @param {string} msg @returns {never} */
 const usage = (msg) => {
   console.error(`export: ${msg}\n\n${HELP}`)
   process.exit(1)
 }
 
+/** @type {{ deck?: string, theme?: string, 'per-slide': boolean, 'per-step': boolean, notes: boolean, out?: string, url?: string, help: boolean }} */
 let args
 try {
   args = parseArgs({
@@ -91,7 +102,7 @@ try {
     },
   }).values
 } catch (e) {
-  usage(e.message)
+  usage(/** @type {Error} */ (e).message)
 }
 if (args.help) {
   console.log(HELP)
@@ -104,12 +115,13 @@ const perSlide = args['per-slide']
 // The project's Vite, the one its config is written for (a peer dependency of this package).
 // Its config says where the decks are: the arao() plugin's decks folder.
 const { build, preview, resolveConfig } = await import('vite')
+/** @type {{ folders: () => Record<string, string>, decks: () => string[] } | undefined} */
 let plugin
 try {
   const config = await resolveConfig({ root, logLevel: 'error' }, 'build')
   plugin = config.plugins.find((p) => p.name === 'arao')?.api
 } catch (e) {
-  console.error(`export: cannot load the Vite config of ${root}: ${e.message}`)
+  console.error(`export: cannot load the Vite config of ${root}: ${/** @type {Error} */ (e).message}`)
   process.exit(1)
 }
 if (!plugin) {
@@ -127,7 +139,8 @@ if (!all.length) {
 }
 let decks = all
 if (args.deck != null) {
-  decks = all.filter((d) => d.toLowerCase() === args.deck.toLowerCase()).slice(0, 1)
+  const wanted = args.deck.toLowerCase()
+  decks = all.filter((d) => d.toLowerCase() === wanted).slice(0, 1)
   if (!decks.length) {
     console.error(`export: no deck "${args.deck}" in ${decksWhere} (there are: ${all.join(', ')})`)
     process.exit(1)
@@ -153,6 +166,7 @@ if (args.url != null) {
 }
 // a deck's path is case-insensitive, and so are the file names: such decks open as one, and only
 // the first gets its file
+/** @type {Map<string, string[]>} */
 const byName = new Map()
 for (const d of decks) byName.set(d.toLowerCase(), [...(byName.get(d.toLowerCase()) ?? []), d])
 const sameName = [...byName.values()].filter((g) => g.length > 1)
@@ -160,9 +174,12 @@ if (sameName.length)
   console.warn(`export: deck names that differ only in case open as the same deck and go to the same file: only the first of each is exported, the others fail: ${sameName.map((g) => g.join(' and ')).join('; ')}`)
 
 // where each PDF goes: --out a file (one deck only) or a folder, or exports/ by default
+/** @param {string} p */
 const isDir = async (p) => (await stat(p).catch(() => null))?.isDirectory() ?? false
+/** @param {string} deck @param {string | undefined} theme */
 const fileName = (deck, theme) => `${[deck.toLowerCase(), theme, perSlide && 'slides', args.notes && 'notes'].filter(Boolean).join('-')}.pdf`
 let outDir = join(root, 'exports') // a folder the PDFs go in by their default name
+/** @type {string | null} */
 let outFile = null // or the one file --out names
 if (args.out) {
   const out = resolve(args.out)
@@ -172,6 +189,7 @@ if (args.out) {
   else if (several) outDir = out
   else outFile = out
 }
+/** @param {string} p */
 const show = (p) => relative(process.cwd(), p) || p
 // a place it cannot be written to fails now, not after the whole render
 try {
@@ -180,17 +198,19 @@ try {
   await mkdir(dir, { recursive: true })
   await access(dir, constants.W_OK)
 } catch (e) {
-  console.error(`export: cannot write ${show(outFile ?? outDir)}: ${e.message}`)
+  console.error(`export: cannot write ${show(outFile ?? outDir)}: ${/** @type {Error} */ (e).message}`)
   process.exit(1)
 }
 
 // the deck's URL on the site at site (its base, ending in /): its path, export mode, per step
 // unless --per-slide
+/** @param {string} site @param {string} deck @param {string | undefined} theme */
 const urlOf = (site, deck, theme) => {
   const flags = [theme && `theme=${encodeURIComponent(theme)}`, 'export', perSlide && 'per-slide', args.notes && 'notes'].filter(Boolean)
   return new URL(`${encodeURIComponent(deck.toLowerCase())}?${flags.join('&')}`, site).href
 }
 // a site's URL as its base: no query or hash, a path ending in /
+/** @param {string} url */
 const siteOf = (url) => {
   const u = new URL(url)
   u.search = ''
@@ -200,9 +220,13 @@ const siteOf = (url) => {
 }
 
 // ---- what has to go, however the export ends ------------------------------------------
+/** @type {string | null} */
 let tmp = null // the site's build
+/** @type {string | null} */
 let partial = null // the PDF being written, until it is complete and in place
+/** @type {import('vite').PreviewServer | null} */
 let server = null
+/** @type {import('playwright-core').Browser | null} */
 let browser = null
 // synchronous, so that it also runs on process.exit
 function removeTemp() {
@@ -224,7 +248,7 @@ async function cleanup() {
 }
 process.on('exit', removeTemp)
 let stopping = false
-for (const [signal, code] of [['SIGINT', 130], ['SIGTERM', 143], ['SIGHUP', 129]]) {
+for (const [signal, code] of /** @type {[NodeJS.Signals, number][]} */ ([['SIGINT', 130], ['SIGTERM', 143], ['SIGHUP', 129]])) {
   process.on(signal, () => {
     if (stopping) process.exit(code) // a second one: now (the exit handler still cleans up)
     stopping = true
@@ -235,19 +259,28 @@ for (const [signal, code] of [['SIGINT', 130], ['SIGTERM', 143], ['SIGHUP', 129]
 
 // what a failed wait of Playwright means: the page crashed, the time ran out, or what it says
 const CRASHED = 'the page crashed (its renderer died: out of memory?)'
+/** @param {any} e what a promise rejected with: anything @param {string} timedOut */
 const why = (e, timedOut) => (/crash/i.test(e?.message ?? '') ? CRASHED : e?.name === 'TimeoutError' ? timedOut : String(e?.message ?? e).split('\n')[0])
 
 let unnamed = false // said once: a page that does not name the deck it printed
 // renders one deck of the site at base in a page of its own; resolves to what the deck reported,
 // and the PDF (none when the deck reported an error). Until the deck is ready, an error the page
 // throws fails it at once, and so does a crash, at any point.
+/**
+ * @param {string} base @param {string} deck @param {string | undefined} theme
+ * @returns {Promise<{ ready: Ready, pdf?: Buffer }>}
+ */
 async function render(base, deck, theme) {
   const url = urlOf(base, deck, theme)
-  const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 })
+  const page = await /** @type {import('playwright-core').Browser} */ (browser).newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 })
+  /** @type {Ready | null} */
   let ready = null
-  let stop
-  const trouble = new Promise((_, ko) => (stop = ko))
+  /** @type {(e: Error) => void} */
+  let stop = () => {}
+  /** @type {Promise<never>} */
+  const trouble = new Promise((_, ko) => { stop = ko })
   trouble.catch(() => {})
+  /** @template T @param {Promise<T>} p @returns {Promise<T>} */
   const guard = (p) => Promise.race([p, trouble])
   try {
     page.on('crash', () => stop(new ExportError(CRASHED)))
@@ -265,32 +298,36 @@ async function render(base, deck, theme) {
       .catch((e) => fail(`the deck did not render at ${url}: ${why(e, 'no slide in 60 s')}`)))
     if (await drawn.evaluate((el) => !!el.closest('.ar-decks')))
       fail(`${url} shows the list of decks, not ${deck}: the site does not open its decks at <base><deck>${args.url ? ' (is --url the site\'s base?)' : ''}`)
-    ready = await guard(page.waitForFunction(() => window.__araoReady, null, { timeout: 10 * 60_000, polling: 200 })
-      .then((h) => h.jsonValue(), (e) => fail(why(e, 'the deck did not finish its pages in 10 minutes'))))
+    /** @type {Ready} */
+    const got = await guard(page.waitForFunction(() => /** @type {Window & { __araoReady?: Ready }} */ (window).__araoReady, null, { timeout: 10 * 60_000, polling: 200 })
+      .then((h) => /** @type {Promise<Ready>} */ (h.jsonValue()), (e) => fail(why(e, 'the deck did not finish its pages in 10 minutes'))))
+    ready = got
     // the deck printed is the one asked for, or nothing is written
-    if (typeof ready.deck === 'string' && ready.deck.toLowerCase() !== deck.toLowerCase())
-      fail(`${url} printed the deck "${ready.deck}", not ${deck}: nothing written${args.url ? ` (is --url ${args.url} the site's base?)` : ''}`)
-    if (typeof ready.deck !== 'string' && !unnamed) {
+    if (typeof got.deck === 'string' && got.deck.toLowerCase() !== deck.toLowerCase())
+      fail(`${url} printed the deck "${got.deck}", not ${deck}: nothing written${args.url ? ` (is --url ${args.url} the site's base?)` : ''}`)
+    if (typeof got.deck !== 'string' && !unnamed) {
       unnamed = true
       console.warn('  the page does not say which deck it printed (an app of its own, not createDeckApp?): not checked against the deck asked for')
     }
-    if (ready.error) return { ready }
+    if (got.error) return { ready: got }
     // whatever else is still on its way, for a moment (not when something is known not to come)
-    if (!ready.stalled?.length) await guard(page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {}))
+    if (!got.stalled?.length) await guard(page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {}))
     const pdf = await guard(page.pdf({
-      width: `${ready.width}px`,
-      height: `${ready.height}px`,
+      width: `${got.width}px`,
+      height: `${got.height}px`,
       printBackground: true,
       preferCSSPageSize: true,
     }).catch((e) => fail(`cannot print the PDF: ${why(e, 'no PDF in time')}`)))
-    return { ready, pdf }
+    return { ready: got, pdf }
   } finally {
     await page.close().catch(() => {})
   }
 }
 
 // the files written in this run, by path: the deck each one is of
+/** @type {Map<string, string>} */
 const written = new Map()
+/** @param {string} out @param {string} deck */
 const claim = (out, deck) => {
   const other = written.get(out)
   if (other != null && other !== deck)
@@ -299,6 +336,10 @@ const claim = (out, deck) => {
 
 // exports one deck, in theme (or, fallback, in its first theme); resolves to its page count, or,
 // when the deck does not list the theme and there are several decks, to { notListed: its themes }
+/**
+ * @param {string} base @param {string} deck @param {{ theme?: string, fallback?: boolean }} [options]
+ * @returns {Promise<{ pages: number, notListed?: undefined } | { notListed: string[], pages?: undefined }>}
+ */
 async function exportDeck(base, deck, { theme, fallback = false } = {}) {
   console.log(`Rendering ${deck}${theme ? ` (${theme})` : ''}, one page per ${perSlide ? 'slide' : 'step'}${args.notes ? ', with notes' : ''}…`)
   const out = outFile ?? join(outDir, fileName(deck, theme))
@@ -306,7 +347,7 @@ async function exportDeck(base, deck, { theme, fallback = false } = {}) {
   claim(out, deck) // before the render, not after it
   const { ready, pdf } = await render(base, deck, theme)
   if (ready.code === 'theme-not-listed' && several && !fallback) return { notListed: ready.themes ?? [] }
-  if (ready.error) fail(ready.error)
+  if (ready.error || !pdf) fail(ready.error ?? 'no PDF')
   const stalled = ready.stalled ?? []
 
   // the PDF has as many pages as the book, or a page did not fit the paper
@@ -324,7 +365,7 @@ async function exportDeck(base, deck, { theme, fallback = false } = {}) {
     try {
       rmSync(partial, { force: true })
     } catch {}
-    fail(`cannot write ${where}: ${e.message}`)
+    fail(`cannot write ${where}: ${/** @type {Error} */ (e).message}`)
   } finally {
     partial = null
   }
@@ -337,6 +378,7 @@ async function exportDeck(base, deck, { theme, fallback = false } = {}) {
   return { pages: pages || ready.pages }
 }
 
+/** @type {[string, string][]} */
 const failed = [] // [deck, message]
 let total = 0
 try {
@@ -352,40 +394,45 @@ try {
     })
   } catch (e) {
     // the browser's own stderr says why it did not start; Playwright's first line rarely does
-    const lines = e.message.split('\n')
+    const message = /** @type {Error} */ (e).message
+    const lines = message.split('\n')
     const cause = lines.find((l) => l.includes('[err]'))?.replace(/^.*?\[err\]\s*/, '') ?? lines[0]
-    const hint = /doesn't exist/.test(e.message) ? 'install it with "npx playwright-core install chromium", or set ARAO_CHROMIUM to a Chrome/Chromium'
-      : /shared librar/.test(e.message) ? 'system libraries are missing ("npx playwright-core install-deps chromium" installs them)'
+    const hint = /doesn't exist/.test(message) ? 'install it with "npx playwright-core install chromium", or set ARAO_CHROMIUM to a Chrome/Chromium'
+      : /shared librar/.test(message) ? 'system libraries are missing ("npx playwright-core install-deps chromium" installs them)'
       : 'see below'
     fail(`cannot start Chromium: ${hint}.\n${cause}`)
   }
 
   // a build error stops the run: no deck could be printed
+  /** @type {string} */
   let base
   if (args.url) base = siteOf(args.url)
   else {
     tmp = await mkdtemp(join(tmpdir(), 'arao-export-'))
     console.log('Building…')
     await build({ root, logLevel: 'error', build: { outDir: tmp, emptyOutDir: true } })
-    server = await preview({ root, logLevel: 'error', build: { outDir: tmp }, preview: { host: '127.0.0.1', port: 0, strictPort: true, open: false } })
+    const site = await preview({ root, logLevel: 'error', build: { outDir: tmp }, preview: { host: '127.0.0.1', port: 0, strictPort: true, open: false } })
     // where vite preview serves the site: under the project's base (/, or /talks/)
-    const at = server.resolvedUrls?.local?.[0]
-    base = siteOf(at ?? `http://127.0.0.1:${server.httpServer.address().port}/`)
+    server = site
+    const at = site.resolvedUrls?.local?.[0]
+    base = siteOf(at ?? `http://127.0.0.1:${/** @type {import('node:net').AddressInfo} */ (site.httpServer.address()).port}/`)
   }
 
   // one deck, reported and not thrown if it fails: the next one goes on
+  /** @param {string} deck @param {{ theme?: string, fallback?: boolean }} options */
   const attempt = async (deck, options) => {
     try {
       return await exportDeck(base, deck, options)
     } catch (e) {
       if (stopping) return null
-      const msg = e instanceof ExportError ? e.message : `unexpected error: ${e?.stack ?? e}`
+      const msg = e instanceof ExportError ? e.message : `unexpected error: ${/** @type {Error} */ (e)?.stack ?? e}`
       failed.push([deck, msg])
       console.error(`export: ${deck}: ${msg}`)
       return null
     }
   }
   // one deck after the other; with --theme, those that do not list it wait until the end
+  /** @type {[string, string[]][]} */
   const notListed = [] // [deck, its themes]
   for (const deck of decks) {
     if (stopping) break
@@ -401,7 +448,7 @@ try {
   for (const [deck] of notListed) {
     if (stopping) break
     const done = await attempt(deck, { fallback: true })
-    if (done) total += done.pages
+    if (done?.pages != null) total += done.pages
   }
   if (several && !stopping) {
     const done = decks.length - failed.length
@@ -410,7 +457,7 @@ try {
   if (failed.length) process.exitCode = 1
 } catch (e) {
   // stopping: what broke is what the signal handler is closing, nothing to report
-  if (!stopping) console.error(`export: ${e instanceof ExportError ? e.message : e.stack}`)
+  if (!stopping) console.error(`export: ${e instanceof ExportError ? e.message : /** @type {Error} */ (e).stack}`)
   process.exitCode = 1
 } finally {
   await cleanup()

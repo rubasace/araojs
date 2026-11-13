@@ -37,27 +37,28 @@
   </div>
 </template>
 
-<script>
-import { codeToTokens } from 'shiki'
+<script lang="ts">
+import { codeToTokens, type ThemedToken } from 'shiki'
 
 // One tokenization per code, language and theme, shared by every snippet of the page: the
 // presenter view renders the deck twice, and a theme switched back is already done. A failure
 // is not kept, so the next render tries again.
-const cache = new Map()
-function tokenize(code, lang, theme) {
+const cache = new Map<string, Promise<ThemedToken[][]>>()
+function tokenize(code: string, lang: string, theme: string): Promise<ThemedToken[][]> {
   const key = JSON.stringify([code, lang, theme])
   if (!cache.has(key)) {
-    cache.set(key, codeToTokens(code, { lang, theme }).then((r) => r.tokens, (e) => {
+    // lang and theme: names Shiki checks itself (an unknown one rejects, and is reported)
+    cache.set(key, codeToTokens(code, { lang: lang as never, theme: theme as never }).then((r) => r.tokens, (e) => {
       cache.delete(key)
       throw e
     }))
   }
-  return cache.get(key)
+  return cache.get(key)!
 }
 </script>
 
-<script setup>
-import { computed, nextTick, onMounted, ref, shallowRef, watch, watchEffect } from 'vue'
+<script setup lang="ts">
+import { computed, nextTick, onMounted, ref, shallowRef, watch, watchEffect, type PropType } from 'vue'
 import { bundledLanguages } from 'shiki'
 import { snippets } from 'virtual:arao/snippets'
 import { useDeck } from '../state/deck'
@@ -68,7 +69,7 @@ const props = defineProps({
   code: String, // inline code, instead of file
   lang: String, // defaults to the file extension
   name: String, // title bar; defaults to the file name
-  highlights: { type: Object, default: () => ({}) },
+  highlights: { type: Object as PropType<Record<string, number | string>>, default: () => ({}) },
   lineNumbers: { type: Boolean, default: true },
   fit: Boolean, // window hugs the code instead of the standard frame
   size: Number, // px; overrides the theme's standard size (still shrinks to fit)
@@ -77,7 +78,7 @@ const props = defineProps({
 
 const WORDS = '+++'
 // extension → Shiki language, where they differ
-const EXT_LANG = { yml: 'yaml', kt: 'kotlin', kts: 'kotlin', sh: 'bash', md: 'markdown', py: 'python',
+const EXT_LANG: Record<string, string> = { yml: 'yaml', kt: 'kotlin', kts: 'kotlin', sh: 'bash', md: 'markdown', py: 'python',
   rb: 'ruby', rs: 'rust', ts: 'typescript', js: 'javascript', h: 'c', hpp: 'cpp', cs: 'csharp', txt: 'text',
   factories: 'properties' }
 const ext = computed(() => (props.file?.match(/\.([^./]+)$/)?.[1] || '').toLowerCase())
@@ -117,7 +118,7 @@ const lines = computed(() => source.value.replace(/\s+$/, '').split(/\r?\n/))
 // re-read when the deck theme changes). None (not read yet, or the token set to nothing): plain text
 const root = ref()
 const { theme: deckTheme } = useDeck()
-const tokenTheme = ref(null)
+const tokenTheme = ref<string | null>(null)
 const themeRead = ref(false)
 async function readTokenTheme() {
   await nextTick()
@@ -128,7 +129,7 @@ onMounted(readTokenTheme)
 watch(deckTheme, readTokenTheme)
 const shikiTheme = computed(() => props.theme || tokenTheme.value)
 
-const colored = shallowRef(null)
+const colored = shallowRef<ThemedToken[][] | null>(null)
 const highlighting = ref(false)
 let run = 0 // only the latest tokenization may land (an older, slower one must not overwrite it)
 watchEffect(async () => {
@@ -153,8 +154,8 @@ watchEffect(async () => {
 const busy = computed(() => loadingFile.value || !themeRead.value || highlighting.value)
 
 // ---- steps ---------------------------------------------------------------------------
-function parseLines(spec) {
-  const set = new Set()
+function parseLines(spec: string) {
+  const set = new Set<number>()
   for (const part of String(spec).split(',')) {
     const [a, b = a] = part.split('-').map(Number)
     for (let n = Math.min(a, b); n <= Math.max(a, b); n++) set.add(n)
@@ -175,20 +176,21 @@ const slide = useSlide()
 slide.requireSteps(() => Math.max(1, ...rules.value.map((r) => r.step)))
 
 // ---- render model ------------------------------------------------------------------
-const tokenStyle = (t) => ({
+type Piece = { text: string; style: Record<string, string | undefined> | null; cls?: 'hl' | 'dim' | null }
+const tokenStyle = (t: ThemedToken) => ({
   color: t.color,
-  fontStyle: t.fontStyle & 1 ? 'italic' : undefined,
-  fontWeight: t.fontStyle & 2 ? 'bold' : undefined,
+  fontStyle: (t.fontStyle ?? 0) & 1 ? 'italic' : undefined,
+  fontWeight: (t.fontStyle ?? 0) & 2 ? 'bold' : undefined,
 })
-function baseTokens(i) {
+function baseTokens(i: number): Piece[] {
   const row = colored.value?.[i]
   if (!row) return [{ text: lines.value[i] || ' ', style: null }]
   if (!row.length) return [{ text: ' ', style: null }]
   return row.map((t) => ({ text: t.content, style: tokenStyle(t) }))
 }
 // split tokens at the [start,end) ranges of the given words, tagging pieces hl/dim
-function markWords(tokens, text, words) {
-  const ranges = []
+function markWords(tokens: Piece[], text: string, words: string[]): Piece[] {
+  const ranges: [number, number][] = []
   // whole words only: "Filter" must not light up the end of "LoggingFilter" (a \b is added on
   // the sides of a word that start/end with a word character; "MDC.put(" still matches as is)
   const re = new RegExp(words.map((w) => {
@@ -196,12 +198,12 @@ function markWords(tokens, text, words) {
     return (/^\w/.test(w) ? '\\b' : '') + body + (/\w$/.test(w) ? '\\b' : '')
   }).join('|'), 'g')
   for (let m; (m = re.exec(text)) && m[0]; ) ranges.push([m.index, m.index + m[0].length])
-  const inHl = (p) => ranges.some(([a, b]) => p >= a && p < b)
-  const out = []
+  const inHl = (p: number) => ranges.some(([a, b]) => p >= a && p < b)
+  const out: Piece[] = []
   let pos = 0
   for (const t of tokens) {
     let piece = ''
-    let cls = null
+    let cls: 'hl' | 'dim' | null = null
     for (const ch of t.text) {
       const c = inHl(pos++) ? 'hl' : 'dim'
       if (cls && c !== cls) { out.push({ ...t, text: piece, cls }); piece = '' }

@@ -1,0 +1,13 @@
+{
+  // The public types, emitted by `npm run build` into dist/types: the library's (src/index.ts)
+  // and the Vite plugin's (vite/index.js, from its JSDoc).
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist/types",
+    "rootDir": "."
+  },
+  "include": ["src/index.ts", "src/env.d.ts", "vite/index.js"]
+}

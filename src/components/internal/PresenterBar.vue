@@ -2,7 +2,7 @@
      its own (four times a second), so the rest of the presenter view does not re-render with it.
      Where the deck is comes from useDeck(); the timer and the talk's length, with what changes
      them (play/pause, reset, the length for every window of the deck), from useTimer()
-     (state/timer.js); the presenter view passes the title of the slide on screen.
+     (state/timer.ts); the presenter view passes the title of the slide on screen.
      The length's button opens an editor: the same formats as Deck(duration), from 1 minute to 24
      hours; Enter applies, Escape, a click elsewhere or the focus leaving it cancels. While the
      focus is in it, no key of the deck acts. Closed from inside, it leaves the focus next to the
@@ -49,7 +49,7 @@
           :title="durationLabel"
           aria-haspopup="dialog"
           :aria-expanded="editing"
-          :aria-controls="editing ? ids.editor : null"
+          :aria-controls="editing ? ids.editor : undefined"
         >
           <svg viewBox="0 0 24 24"><path d="M6.5 3h11M6.5 21h11M8 3c0 4.5 4 5 4 9s-4 4.5-4 9M16 3c0 4.5-4 5-4 9s4 4.5 4 9" /></svg>
           <span>{{ duration ? clock(duration) : t('lengthButton') }}</span>
@@ -99,7 +99,7 @@
   </header>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { MIN_DURATION, clock, elapsed, parseDuration, phase, withinBounds } from '../../state/timer'
@@ -116,18 +116,18 @@ const deckLang = document.documentElement.lang
 const { timer, duration, deckDuration, setDuration, toggle, reset: resetTimer } = useTimer()
 
 const now = ref(Date.now())
-let tick
-onMounted(() => (tick = setInterval(() => (now.value = Date.now()), 250)))
+let tick: ReturnType<typeof setInterval> | undefined
+onMounted(() => { tick = setInterval(() => { now.value = Date.now() }, 250) })
 onBeforeUnmount(() => clearInterval(tick))
 // a timer that starts or resumes now is read against now, not against the last tick
-watch(timer, () => (now.value = Date.now()))
+watch(timer, () => { now.value = Date.now() })
 
 // whole seconds, as shown: the time left is what the shown time leaves (45:00 = 44:59 + 0:01)
 const spent = computed(() => Math.floor(elapsed(timer.value, now.value) / 1000) * 1000)
 const left = computed(() => (duration.value ? duration.value - spent.value : null))
-const tone = computed(() => (duration.value ? phase(left.value, duration.value) : 'ok'))
+const tone = computed(() => (duration.value && left.value != null ? phase(left.value, duration.value) : 'ok'))
 const sub = computed(() => {
-  const state = { idle: t('timerIdle'), paused: t('timerPaused') }[timer.value.state]
+  const state = timer.value.state === 'running' ? undefined : { idle: t('timerIdle'), paused: t('timerPaused') }[timer.value.state]
   const rest = left.value == null ? '' : t(left.value >= 0 ? 'timeLeft' : 'timeOver', clock(left.value))
   return [state, rest].filter(Boolean).join(' · ')
 })
@@ -149,11 +149,11 @@ const text = ref('')
 const error = ref('')
 const notice = ref('') // the length changed elsewhere while the editor was open
 let typed = false // something was typed in the field since it opened
-const group = ref()
-const trigger = ref()
-const editor = ref()
-const input = ref()
-const shown = (ms) => (ms ? clock(ms) : '')
+const group = ref<HTMLElement>()
+const trigger = ref<HTMLElement>()
+const editor = ref<HTMLElement>()
+const input = ref<HTMLInputElement>()
+const shown = (ms: number | null) => (ms ? clock(ms) : '')
 
 async function edit() {
   text.value = shown(duration.value)
@@ -173,7 +173,7 @@ function typing() {
 // button keeps them, and would reopen the editor instead of moving the slides), and the next Tab
 // reaches the button. Closing because the focus left (focusout) or a press elsewhere leaves the
 // focus where it went.
-function close(refocus) {
+function close(refocus: boolean) {
   editing.value = false
   if (refocus) group.value?.focus({ preventScroll: true })
 }
@@ -197,16 +197,17 @@ const cancel = () => close(true)
 // The focus left the editor (Tab past its last button, Shift+Tab to the length's button, a click
 // on something focusable): that cancels. The window losing the focus (another window or app)
 // does not: the focus comes back to the field with it. Read once the focus has landed.
-function leaving(e) {
-  if (editor.value?.contains(e.relatedTarget)) return
+function leaving(e: FocusEvent) {
+  if (editor.value?.contains(e.relatedTarget as Node | null)) return
   setTimeout(() => {
     if (editing.value && document.hasFocus() && !editor.value?.contains(document.activeElement)) close(false)
   })
 }
 // a press anywhere else cancels, a button that takes no focus included (the button toggles it on
 // its own)
-useEventListener(document, 'pointerdown', (e) => {
-  if (editing.value && !editor.value?.contains(e.target) && !trigger.value?.contains(e.target)) close(false)
+useEventListener(document, 'pointerdown', (e: PointerEvent) => {
+  const target = e.target as Node | null
+  if (editing.value && !editor.value?.contains(target) && !trigger.value?.contains(target)) close(false)
 }, true)
 // The length changed elsewhere (another window, an edit of the deck) while the editor is open:
 // the field follows it if nothing was typed in it, typed text stays; either way a notice says

@@ -355,7 +355,7 @@ try {
   await notFoundPage('vite build')
 
   browser = await chromium.launch({ executablePath: process.env.ARAO_CHROMIUM || undefined })
-  // every page in English (the engine's UI text follows the browser's language, i18n/i18n.js),
+  // every page in English (the engine's UI text follows the browser's language, i18n/i18n.ts),
   // whatever the machine's, unless a context asks for another locale (5d)
   const newContext = browser.newContext.bind(browser)
   browser.newContext = (options = {}) => newContext({ locale: 'en-US', ...options })
@@ -1002,7 +1002,7 @@ try {
       await pause(300)
       return page
     }
-    // ms as the bar writes it (state/timer.js clock): 1:30:00, 20:00
+    // ms as the bar writes it (state/timer.ts clock): 1:30:00, 20:00
     const clock = (ms) => {
       const t = Math.floor(ms / 1000)
       const [h, m, sec] = [Math.floor(t / 3600), Math.floor(t / 60) % 60, String(t % 60).padStart(2, '0')]

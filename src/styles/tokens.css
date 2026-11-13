@@ -55,7 +55,7 @@
   --ar-gap-lg: 80px;                 /* gap="lg", between zones */
 
   /* ---- motion ---- */
-  --ar-step-duration: .35s;          /* fade of v-step (also read by core/flip.js) */
+  --ar-step-duration: .35s;          /* fade of v-step (also read by core/flip.ts) */
   --ar-slide-duration: .4s;          /* fade from one slide to the next */
 
   /* ---- the theme's default slide background (Slide.vue) ---- */

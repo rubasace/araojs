@@ -3,7 +3,7 @@
   <div class="ar-slide-number">{{ deck.index.value + 1 }} / {{ deck.total.value }}</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useDeck } from '../state/deck'
 const deck = useDeck()
 </script>

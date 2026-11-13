@@ -13,7 +13,7 @@ html, body, #app { margin: 0; height: 100%; }
   background: var(--ar-letterbox);
 }
 
-/* steps (v-step, v-step-from: directives/step.js) */
+/* steps (v-step, v-step-from: directives/step.ts) */
 .ar-step-hidden { opacity: 0 !important; pointer-events: none; }
 .ar-step-collapsed { display: none !important; }
 [data-ar-slide] * { transition: opacity var(--ar-step-duration) ease; }
