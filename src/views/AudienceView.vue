@@ -87,4 +87,7 @@ defineExpose({
 .ar-toast a { color: #8ab4ff; font-weight: 600; white-space: nowrap; }
 .ar-toast-enter-active, .ar-toast-leave-active { transition: opacity .2s, translate .2s; }
 .ar-toast-enter-from, .ar-toast-leave-to { opacity: 0; translate: 0 6px; }
+
+/* the cursor, hidden after hideCursorAfter ms without a move */
+.ar-nocursor, .ar-nocursor * { cursor: none !important; }
 </style>

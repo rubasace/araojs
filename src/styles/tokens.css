@@ -1,0 +1,69 @@
+/* Tokens: every custom property the engine reads, and its default. A theme sets them
+   ([data-theme="x"] { --ar-…: …; }, themes/*.css); slides and components only read them.
+
+   Declared here, as defaults, wherever a theme is applied: the audience's viewport (and the export
+   book inside it), each Stage of the presenter view (views/parts/Stage.vue), and the elements
+   that show a theme of their own (the deck selector, the theme swatches of the controls). Zero
+   specificity: the theme's own [data-theme="x"] rule wins on the same element, and a token set on
+   any element inside (a layout, a slide, a table) wins over both. */
+:where([data-theme]) {
+  /* canvas and slide */
+  --ar-letterbox: #000;              /* around the canvas when the window shape differs */
+  --ar-text-base: 40px;              /* base font size of a slide */
+  --ar-text-small: .75em;            /* .small */
+  --ar-pad: 96px 120px;              /* slide padding, the safe margin */
+  --ar-gap-sm: 24px;                 /* gap="sm" */
+  --ar-gap-md: 48px;                 /* gap="md", the default gap of Cols, Rows, Grid */
+  --ar-gap-lg: 80px;                 /* gap="lg", between zones */
+  --ar-placeholder: currentColor;    /* the missing picture or icon box (the text colour where drawn) */
+  --ar-step-duration: .35s;          /* fade of v-step (also read by core/flip.js) */
+  /* the theme's default slide background (Slide.vue): a CSS background-image, where it sits, how opaque */
+  --ar-slide-bg-image: none;
+  --ar-slide-bg-position: center;
+  --ar-slide-bg-opacity: 1;
+  /* slide zones (Slide.vue): where the body sits (also read by Slide.vue's script), the deck's
+     footer band, list items, the inset of an image zone */
+  --ar-body-align: center;
+  --ar-footer-height: 88px;
+  --ar-footer-size: 24px;
+  --ar-footer-color: var(--ar-muted);
+  --ar-footer-align: space-between;
+  --ar-list-gap: 0;
+  --ar-image-inset: 0;
+  /* tables (Slide.vue) */
+  --ar-table-pad: .4em .8em;
+  --ar-table-head-bg: none;
+  --ar-table-stripe: none;
+  /* code windows (Snippet.vue) */
+  --ar-code-size: 44px;
+  --ar-code-width: 1520px;
+  --ar-code-aspect: 16 / 9;
+  --ar-code-bg: #2b2b2b;
+  --ar-code-bar: #383a40;
+  --ar-code-fg: #eeffff;
+  --ar-code-muted: #8a8f98;
+  --ar-code-title: rgba(255, 255, 255, .92);
+  --ar-code-radius: 22px;
+  /* addons */
+  --ar-progress-height: 8px;         /* ProgressBar */
+}
+
+/* Not declared above, and why:
+   - No default, every theme sets them (both shipped themes do):
+       --ar-bg, --ar-fg, --ar-muted, --ar-accent, --ar-accent-fg, --ar-font-sans, --ar-font-mono,
+       --ar-title (the type scale), --ar-radius (the missing-picture box, Img.vue, falls back to
+       sans-serif and monospace for the fonts)
+   - A default that depends on where it is read, so it stays at the read site, as a var() fallback:
+       --ar-title-size, --ar-title-color, --ar-title-align, --ar-title-gap
+                             each its own for an h1 and an h2 title (Slide.vue)
+       --ar-table-border     2px solid, the text colour at 15 % (Slide.vue)
+       --ar-table-head-color --ar-muted (Slide.vue)
+       --ar-code-hl          --ar-accent (Snippet.vue)
+   - Read by script, with no CSS default:
+       --ar-header-height    unset: no header band (Slide.vue)
+       --ar-code-theme       unset: material-theme-darker (Snippet.vue)
+   - Read where no theme may apply, with fallbacks of their own: the presenter view's docked
+     controls (Controls.vue: --ar-accent, #fff), the deck selector (DeckSelector.vue: system
+     colours, when the project does not import the default theme).
+   - Set by the engine, not by themes: --ar-scale, the canvas's scale (Stage.vue; 1 in the
+     export's book, ExportView.vue). */

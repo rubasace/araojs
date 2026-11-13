@@ -58,3 +58,19 @@ onBeforeUnmount(() => {
   mo?.disconnect()
 })
 </script>
+
+<style>
+/* a Stage: the box the canvas is scaled into (the whole window, or a box of the presenter view) */
+.ar-stage { position: absolute; inset: 0; overflow: hidden; }
+/* the canvas: fixed size, centred and scaled (inline style); the slides' type comes from tokens */
+.ar-canvas {
+  position: absolute; top: 50%; left: 50%;
+  transform-origin: center center;
+  overflow: hidden;
+  background: var(--ar-bg);
+  color: var(--ar-fg);
+  font-family: var(--ar-font-sans);
+  font-size: var(--ar-text-base);
+  line-height: 1.35;
+}
+</style>

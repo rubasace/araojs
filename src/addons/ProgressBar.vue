@@ -17,7 +17,7 @@ const deck = useDeck()
 <style>
 .ar-progress {
   position: absolute; left: 0; right: 0; z-index: 10;
-  height: var(--ar-progress-height, 8px);
+  height: var(--ar-progress-height);
   background: color-mix(in srgb, var(--ar-fg) 12%, transparent);
   pointer-events: none;
 }

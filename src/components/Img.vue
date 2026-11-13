@@ -110,3 +110,42 @@ const picture = computed(() => ({
   ...blurStyle(blurValue(props.blur), true),
 }))
 </script>
+
+<style>
+/* no size of its own: it fills the box its container gives it and fits the picture inside.
+   Zero specificity: a class on it wins (set width and height both, or one plus width/height: auto
+   to follow the picture's shape). Where its container has no height to give (a plain block), the
+   picture's shape, learnt on load, sets it (aspect-ratio). */
+:where(.ar-img) {
+  position: relative; box-sizing: border-box; overflow: hidden;
+  flex: 1 1 0; width: 100%; height: 100%; min-width: 0; min-height: 0;
+}
+.ar-img > img {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: block; object-fit: contain;
+}
+/* in a slide's image zone and in its background it covers its box, edge to edge (fit="contain"
+   still wins) */
+.ar-zone-image > .ar-img > img, .ar-slide-bg > .ar-img > img { object-fit: cover; }
+/* missing file: a dashed box (colour from --ar-placeholder, default the text colour) with its name */
+.ar-img-missing {
+  display: flex; align-items: center; justify-content: center;
+  border: 3px dashed color-mix(in srgb, var(--ar-placeholder) 40%, transparent);
+  border-radius: var(--ar-radius);
+  background: color-mix(in srgb, var(--ar-placeholder) 5%, transparent);
+}
+.ar-img-name {
+  padding: 8px 12px;
+  font: calc(var(--ar-text-base) * .5) / 1.2 var(--ar-font-mono, monospace);
+  color: color-mix(in srgb, var(--ar-placeholder) 85%, transparent);
+  text-align: center; text-transform: none; font-weight: normal;
+  overflow-wrap: anywhere;
+}
+/* the alt, when there is one, is what the picture was meant to say: first and stronger; the file
+   name under it is the secondary line */
+.ar-img-alt { display: block; margin-bottom: 4px; font-family: var(--ar-font-sans, sans-serif); }
+.ar-img-file { opacity: .75; }
+/* a missing background: framed inside the slide, its name in the top-right corner (the bottom
+   corners belong to the addons) */
+.ar-slide-bg > .ar-img-missing { inset: 24px; width: auto; height: auto; align-items: flex-start; justify-content: flex-end; }
+</style>

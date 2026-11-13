@@ -1,0 +1,19 @@
+/* Base: what is global, owned by no component. Every component brings its own CSS in its .vue
+   file; every visual decision is a token (tokens.css) the theme supplies. The Vue plugin imports
+   this file after the components: a rule here wins over a component's rule of the same
+   specificity (the step fade below over Snippet's own transitions). */
+html, body, #app { margin: 0; height: 100%; }
+
+/* the window's viewport: the audience view's, and the export view's (where it holds the book) */
+.ar-viewport {
+  /* touch: we handle taps and horizontal swipes ourselves; keep pinch-zoom */
+  touch-action: pinch-zoom;
+  -webkit-tap-highlight-color: transparent;
+  position: fixed; inset: 0; overflow: hidden;
+  background: var(--ar-letterbox);
+}
+
+/* steps (v-step, v-step-from: directives/step.js) */
+.ar-step-hidden { opacity: 0 !important; pointer-events: none; }
+.ar-step-collapsed { display: none !important; }
+[data-ar-slide] * { transition: opacity var(--ar-step-duration) ease; }

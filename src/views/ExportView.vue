@@ -70,3 +70,52 @@ async function run() {
 }
 onMounted(run)
 </script>
+
+<style>
+/* Export mode (?export, core/exporter.js): a book of pages, each exactly the canvas size (inline
+   width/height; @page gets the same size), in document order, for printing. */
+html:has(.ar-export), html:has(.ar-export) body, html:has(.ar-export) #app { height: auto; }
+.ar-viewport.ar-export { position: static; overflow: visible; background: none; }
+/* the deck itself, walked while the book fills: on screen until the book is done, never printed */
+.ar-export > .ar-stage { position: fixed; }
+.ar-export-done > .ar-stage, .ar-export-notes { display: none; }
+@media print { .ar-export > .ar-stage { display: none; } }
+/* every page as it stands: nothing moves, nothing fades */
+.ar-export, .ar-export *, .ar-export *::before, .ar-export *::after {
+  transition: none !important; animation: none !important;
+}
+/* contain: size makes a page one piece for the printer (monolithic). Without it Chromium splits
+   at the page's bottom edge whatever is laid out across it, clipped or not, and draws the part
+   above as a box of its own (no bottom border or rounded bottom corners, percentages of its
+   height taken from that part): a ring placed with top: 50% and transform: translateY(-50%)
+   printed as an arch. The page has its size from its own width and height, so nothing moves. */
+.ar-page {
+  position: relative; overflow: hidden; box-sizing: border-box; contain: size;
+  break-after: page; break-inside: avoid;
+  print-color-adjust: exact; -webkit-print-color-adjust: exact;
+}
+.ar-page:last-child { break-after: auto; }
+/* the canvas copy fills its page, unscaled (and says so, to whatever sizes itself by the scale) */
+.ar-book { --ar-scale: 1; }
+.ar-page > .ar-canvas { top: 0; left: 0; transform: none !important; }
+/* a page of speaker notes (&notes): plain, for paper, whatever the theme */
+.ar-notes-page {
+  padding: 96px 120px; background: #fff; color: #1c1c22;
+  font: 34px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.ar-notes-head {
+  margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #d4d4da;
+  font-size: 28px; font-weight: 600; color: #5c5c66;
+}
+.ar-notes-body .ar-note { margin-bottom: 28px; }
+.ar-notes-body .ar-note > :first-child { margin-top: 0; }
+.ar-notes-body .ar-note[data-step]:not([data-step="1"])::before {
+  content: "Desde el paso " attr(data-step); display: block; margin-bottom: 6px;
+  font-size: 24px; font-weight: 600; color: #8a5a00;
+}
+/* on screen (?export opened in a browser), the pages one under the other */
+@media screen {
+  .ar-viewport.ar-export { background: #2a2a2e; }
+  .ar-book { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; padding: 24px; }
+}
+</style>
