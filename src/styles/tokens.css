@@ -42,6 +42,7 @@
   --ar-letterbox: #1b2a3a;           /* around the canvas when the window shape differs */
   --ar-font-sans: Georgia, "Times New Roman", serif;
   --ar-font-mono: ui-monospace, Menlo, monospace;
+  /* --ar-font-heading: not declared: headings keep the font around them (Slide.vue) */
   --ar-text-base: 42px;              /* base font size of a slide */
   --ar-text-small: .75em;            /* .small */
   --ar-title: 96px;                  /* the type scale: h1; h2 .6x, cover h1 1.25x, section h1 1.4x */

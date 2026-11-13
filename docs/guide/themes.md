@@ -160,10 +160,13 @@ A theme names its fonts in its tokens, and the build fetches them:
 
 ```css
 [data-theme="venue"] {
+  --ar-font-heading: "Space Grotesk", sans-serif;
   --ar-font-sans: "Inter", sans-serif;
   --ar-font-mono: "JetBrains Mono", monospace;
 }
 ```
+
+`--ar-font-heading` is the headings' font (`h1` to `h6` in a slide); without it they keep the text's.
 
 The [Vite plugin](../reference/vite-plugin.md) reads the families in `font-family` declarations
 and in the `--ar-font-*` tokens. For a family that no stylesheet declares with `@font-face` and

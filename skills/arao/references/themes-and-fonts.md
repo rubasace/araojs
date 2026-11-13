@@ -84,12 +84,13 @@ arao({ themes: ['src/themes', 'src/styles/venues', 'arao-themes'] })
 
 ## Fonts
 
-Fonts are fetched, not installed. A theme names a web font in `--ar-font-sans` / `--ar-font-mono`
-and the build downloads it (Google Fonts, Bunny, Fontshare, Fontsource, or an installed npm font
+Fonts are fetched, not installed. A theme names a web font in `--ar-font-sans` / `--ar-font-mono` /
+`--ar-font-heading` (the headings'; unset, they keep the text's font) and the build downloads it (Google Fonts, Bunny, Fontshare, Fontsource, or an installed npm font
 package) and serves it with the deck, with matched fallbacks:
 
 ```css
 [data-theme="venue"] {
+  --ar-font-heading: "Space Grotesk", sans-serif;
   --ar-font-sans: "Inter", sans-serif;
   --ar-font-mono: "JetBrains Mono", monospace;
 }

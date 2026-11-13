@@ -18,6 +18,7 @@ How themes are written, found and applied: [Themes](../guide/themes.md).
 | `--ar-letterbox` | `#1b2a3a` | around the canvas when the window shape differs |
 | `--ar-font-sans` | `Georgia, "Times New Roman", serif` | text font; a web font named here is fetched at build time ([Fonts](../guide/themes.md#fonts)) |
 | `--ar-font-mono` | `ui-monospace, Menlo, monospace` | code font; a web font named here is fetched at build time |
+| `--ar-font-heading` | none: the font around the heading (the text font) | the headings' font (`h1`–`h6` in a slide, the cover's and the section's titles included); a web font named here is fetched at build time |
 | `--ar-text-base` | `42px` | base font size of a slide |
 | `--ar-title` | `96px` | the type scale: `h1` size; `h2` is 0.6x, cover `h1` 1.25x, section `h1` 1.4x (the slide title's own size is `--ar-title-size`) |
 | `--ar-text-small` | `.75em` | `.small` |

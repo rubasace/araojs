@@ -381,7 +381,10 @@ const footed = () => !!footerSlot() && (props.footer ?? !flat.value)
 .ar-slide-enter-active, .ar-slide-leave-active { transition: opacity var(--ar-slide-duration) ease; }
 .ar-slide-enter-from, .ar-slide-leave-to { opacity: 0; }
 
-/* Content, styled only through tokens */
+/* Content, styled only through tokens. Headings in the theme's heading font (--ar-font-heading),
+   else in the font around them, as before it existed (it has no default: the fallback inherits);
+   zero specificity of the slide: a deck's own heading rule wins. */
+:where(.ar-slide) :is(h1, h2, h3, h4, h5, h6) { font-family: var(--ar-font-heading, inherit); }
 .ar-slide h1 { font-size: var(--ar-title); line-height: 1.05; margin: 0 0 .4em; }
 .ar-slide h2 { font-size: calc(var(--ar-title) * .6); margin: 0 0 .6em; color: var(--ar-accent); }
 .ar-slide p { margin: 0 0 .6em; }

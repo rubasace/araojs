@@ -4,7 +4,8 @@
 //   [data-theme="venue"] { --ar-font-sans: "Inter", sans-serif; --ar-font-mono: "JetBrains Mono", monospace; }
 //
 // fontless (the engine of Nuxt Fonts, as a Vite plugin) reads the families of the CSS the project
-// loads: font-family declarations, and the --ar-font-* tokens (--ar-font-sans, --ar-font-mono).
+// loads: font-family declarations, and the --ar-font-* tokens (--ar-font-sans, --ar-font-mono,
+// --ar-font-heading).
 // For a family no stylesheet declares with @font-face and that is not a system font, it asks the
 // providers in turn (Google Fonts, Bunny Fonts, Fontshare, Fontsource; through unifont), puts its
 // files in the build (assets/_fonts), adds the @font-face rules, and fallbacks with matched
