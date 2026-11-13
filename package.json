@@ -37,7 +37,8 @@
     "build": "vite build",
     "prepack": "vite build",
     "smoke": "node scripts/smoke.mjs",
-    "shots": "node scripts/shots.mjs"
+    "shots": "node scripts/shots.mjs",
+    "hero-gif": "node scripts/hero-gif.mjs"
   },
   "peerDependencies": {
     "vite": "^8.0.0",
