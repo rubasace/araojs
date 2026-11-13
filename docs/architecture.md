@@ -7,7 +7,7 @@ this: [reference.md](reference.md) is their API, [../AGENTS.md](../AGENTS.md) th
 
 | Folder | Role | What is in it |
 |---|---|---|
-| `state/` | what there is | the deck, its stages and its slides: reactive state, made by a `create…` and read by a `use…` (the pair shares a provide/inject key private to its file) |
+| `state/` | what there is | the deck, its stages, its slides and the talk's timer: reactive state, made by a `create…` and read by a `use…` (the pair shares a provide/inject key private to its file) |
 | `composables/` | effects | small internal composables, one per file, that tie the state to the browser: the URL, other windows, keys, touch, the mouse, fullscreen |
 | `core/` | the pure how | plain modules with no Vue component state: sync, timer, exporter, flip, image, icons, layout (the parsers of the layout props: ratio, gap, grid shape) |
 | `views/` | what Arao draws | the four views of a deck and their parts (the scaled canvas, the controls, the presenter's bar); `DeckSelector`, the list of decks `createDeckApp` shows at `/`, and its part `DeckCover` (a deck drawn as its cover) |
@@ -32,7 +32,8 @@ its own (`createApp(MyApp).use(Arao)`) provides no route: then `location.pathnam
 shows one view, by the URL:
 
 ```
-Deck.vue ── createDeck(props) ── state/deck.js: stage(s), theme, timer, fullscreen, URL, sync
+Deck.vue ── createDeck(props) ── state/deck.js: stage(s), theme, fullscreen, URL, sync
+                                   └ createTimer ── state/timer.js: the timer, the talk's length
    │
    ├─ thumbnail ───────▶ ThumbnailView   Stage (role 'thumbnail', standing at the cover)
    ├─ ?export ─────────▶ ExportView      Stage (role 'export')            → core/exporter.js book
@@ -63,6 +64,7 @@ heading (else its title prop), which the card shows under the deck's title (its 
 | Channel | Provided by | Read by | Carries |
 |---|---|---|---|
 | deck | `createDeck` (in `Deck`) | `useDeck()` | the public face (below), never the internals |
+| timer | `createTimer` (in `createDeck`) | `useTimer()` (the presenter's bar) | the timer and the talk's length, with what changes them: start, pause, toggle, reset, setDuration |
 | thumbnail | `provideThumbnail` (in `DeckCover`) | `createDeck` | that the deck inside is a thumbnail, and the ref its cover's title goes in |
 | route | `provideDeckRoute` (`createDeckApp`, on the app) | `createDeck` (not in a thumbnail) | the deck's file name and path: the sync key, the presenter window's URL, the name the export reports |
 | stage | `provideStage` (in the `Stage` part) | `useStage()`: `createSlide`, and `useDeck()` (which merges the stage's position into the face) | the stage a component is drawn in |
@@ -72,7 +74,7 @@ heading (else its title prop), which the card shows under the deck's title (its 
 
 Nothing else is provided. The views get the deck's internals from `Deck` as a prop (`deck`), and
 pass what their parts need as props (the controls' `docked`/`shown`/`titles`, the bar's
-`title`/`setTimer`/`deckDuration`/`setDuration`). `v-step` finds its slide through the DOM
+`title`). `v-step` finds its slide through the DOM
 (`data-ar-slide`, a map in directives/step.js).
 
 ## Composables
@@ -105,8 +107,8 @@ in; outside every stage (the controls, the presenter's bar) it is the deck's own
 | `setTheme(name)`, `toggleFullscreen()`, `openPresenter()` | actions; `setTheme` with a name not in `themes` warns and is ignored |
 
 The face, and each stage's copy of it, is frozen: no component can reassign `go`, `setTheme` or
-any other field. Internals stay off it: slide registration, sync, the writable timer and
-duration (`setTimer`, `setDuration`: the presenter view hands them to its bar), the export.
+any other field. Internals stay off it: slide registration, sync, the export, and what changes the timer and
+the length (`useTimer()`, state/timer.js: the presenter's bar uses it; not exported).
 Frozen, Vue leaves it as it is inside `reactive()` or `data()`: its refs are not unwrapped there.
 
 One rule for the preview (role `'preview'`, the presenter view's next step), and for a thumbnail

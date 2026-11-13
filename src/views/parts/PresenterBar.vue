@@ -1,9 +1,8 @@
 <!-- The presenter view's top bar: where the deck is, the talk's timer, the wall clock. It ticks on
      its own (four times a second), so the rest of the presenter view does not re-render with it.
-     Where the deck is, the timer and the talk's length come from useDeck(); the presenter view
-     passes the rest: title (of the slide on screen), setTimer(t), which replaces the timer
-     (play/pause, reset), deckDuration (the deck's own length in ms, or null) and setDuration(ms),
-     which sets the talk's length for every window of the deck (null: back to the deck's).
+     Where the deck is comes from useDeck(); the timer and the talk's length, with what changes
+     them (play/pause, reset, the length for every window of the deck), from useTimer()
+     (state/timer.js); the presenter view passes the title of the slide on screen.
      The length's button opens an editor: the same formats as Deck(duration), from 1 minute to 24
      hours; Enter applies, Escape, a click elsewhere or the focus leaving it cancels. While the
      focus is in it, no key of the deck acts. Closed from inside, it leaves the focus next to the
@@ -22,7 +21,7 @@
       <button
         class="ar-p-btn"
         @mousedown.prevent
-        @click="setTimer(toggle(timer, Date.now()))"
+        @click="toggle"
         :title="timer.state === 'running' ? 'Pausar el tiempo' : timer.state === 'paused' ? 'Reanudar el tiempo' : 'Empezar el tiempo'"
       >
         <svg v-if="timer.state === 'running'" viewBox="0 0 24 24"><path d="M9 6v12M15 6v12" /></svg>
@@ -31,7 +30,7 @@
       <button
         class="ar-p-btn"
         @mousedown.prevent
-        @click="setTimer(IDLE)"
+        @click="resetTimer"
         :disabled="timer.state === 'idle'"
         title="Poner el tiempo a cero (vuelve a empezar al avanzar)"
       >
@@ -103,17 +102,15 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
-import { IDLE, MIN_DURATION, clock, elapsed, parseDuration, phase, toggle, withinBounds } from '../../core/timer'
+import { MIN_DURATION, clock, elapsed, parseDuration, phase, withinBounds } from '../../core/timer'
 import { useDeck } from '../../state/deck'
+import { useTimer } from '../../state/timer'
 
 const props = defineProps({
   title: { type: String, default: '' },
-  setTimer: { type: Function, required: true },
-  deckDuration: { type: Number, default: null },
-  setDuration: { type: Function, required: true },
 })
 const deck = useDeck()
-const { timer, duration } = deck
+const { timer, duration, deckDuration, setDuration, toggle, reset: resetTimer } = useTimer()
 
 const now = ref(Date.now())
 let tick
@@ -135,11 +132,11 @@ const wall = computed(() => new Date(now.value).toLocaleTimeString([], { hour: '
 
 // ---- the talk's length, edited here --------------------------------------------------------
 // changed: set here (in this window or another), not the deck's own
-const changed = computed(() => duration.value !== props.deckDuration)
+const changed = computed(() => duration.value !== deckDuration.value)
 const durationLabel = computed(() => {
   const d = duration.value
   if (!d) return 'Poner una duración a la charla (cuenta atrás)'
-  const own = props.deckDuration ? `la de la presentación: ${clock(props.deckDuration)}` : 'la presentación no tiene'
+  const own = deckDuration.value ? `la de la presentación: ${clock(deckDuration.value)}` : 'la presentación no tiene'
   return changed.value ? `Duración de la charla: ${clock(d)}, cambiada (${own}). Cambiarla` : `Duración de la charla: ${clock(d)}. Cambiarla`
 })
 const id = useId()
@@ -188,11 +185,11 @@ function apply() {
     input.value?.focus()
     return
   }
-  props.setDuration(ms)
+  setDuration(ms)
   close(true)
 }
 function reset() {
-  props.setDuration(null)
+  setDuration(null)
   close(true)
 }
 const cancel = () => close(true)

@@ -1,12 +1,12 @@
 import { computed, inject, provide, readonly, ref, shallowRef, watch, watchPostEffect } from 'vue'
 import { exportOptions } from '../core/exporter'
-import { IDLE, clock, parseDuration, start, withinBounds } from '../core/timer'
 import { useDeckSync } from '../composables/useDeckSync'
 import { useFullscreen } from '../composables/useFullscreen'
 import { useHashRoute } from '../composables/useHashRoute'
 import { usePresenterWindow } from '../composables/usePresenterWindow'
 import { themes as projectThemes, themesDir } from 'virtual:arao/themes'
 import { ahead, createStage, headingOf, titleOf, useStage } from './stage'
+import { createTimer } from './timer'
 
 // The deck's state: where it stands, the theme it wears, the talk's timer, fullscreen, the
 // presenter window. One per Deck:
@@ -33,11 +33,6 @@ import { ahead, createStage, headingOf, titleOf, useStage } from './stage'
 //   next                where one more press leads: { index, step } or { end: true }
 //   titles()            every slide's title (jump menu)
 //   theme, setTheme, cycleTheme, themes()   themes() is the deck's list, resolved (below)
-//   timer, setTimer     the talk's timer (core/timer.js)
-//   duration            the talk's length in effect, in ms, or null: the presenter's, else the deck's
-//   deckDuration        the deck's own (its duration prop), in ms, or null
-//   setDuration(ms)     sets the presenter's length (ms); null goes back to the deck's. It wins
-//                       until reset, even over a new duration prop, unless that prop equals it
 //   viewport            the element fullscreen fills: the audience view's viewport (it sets it);
 //                       without one (the presenter window), the page. fullscreen is true while
 //                       anything in the window is fullscreen, and "f" then leaves it
@@ -182,41 +177,9 @@ export function createDeck(props) {
     setTheme(list[(list.indexOf(theme.value) + 1) % list.length])
   }
 
-  // ---- the talk's timer and its length, kept by every window (useDeckSync shares both) --------
-  // startTimer() starts the timer if it is idle (the deck's first move); a paused one stays paused.
-  // The length is the deck's (its duration prop, in ms, or null; a value that is no length warns,
-  // and so does one outside 1 min – 24 h, which still counts; once per value) unless the
-  // presenter set another: override, in ms, or null. setDuration(ms) sets it; null, or the deck's
-  // own value, goes back to the deck's (no override left).
-  // An override wins until it is reset, even over a new duration prop (an edit of the deck, HMR).
-  // One equal to the deck's value is dropped, as setting the deck's own value would be: when an
-  // edit of the deck reaches it, or when a window an edit remounted takes it back from
-  // sessionStorage (the drop is a change like any other: the other windows follow).
-  const timer = shallowRef(IDLE)
-  const setTimer = (t) => (timer.value = t)
-  const deckDuration = computed(() => parseDuration(props.duration))
-  const override = shallowRef(null)
-  // anything but a length (a value kept by another version, say) is no override
-  const setOverride = (ms) => (override.value = Number.isFinite(ms) && ms > 0 ? ms : null)
-  const setDuration = (ms) => setOverride(ms === deckDuration.value ? null : ms)
-  const duration = computed(() => override.value ?? deckDuration.value)
-  // (said where the deck is shown, not by each thumbnail of it)
-  if (!thumbnail) {
-    watch(() => props.duration, (v) => {
-      const ms = deckDuration.value
-      if (v != null && String(v).trim() && ms == null) {
-        console.warn(`[arao] Deck duration="${v}" is not a length (90, "45m", "1h30", "45:00"…): the presenter view shows no countdown`)
-      } else if (ms != null && !withinBounds(ms)) {
-        console.warn(`[arao] Deck duration="${v}" is ${clock(ms)}, outside 1 min – 24 h: the presenter view counts it down anyway, but its field takes nothing outside them`)
-      }
-    }, { immediate: true })
-  }
-  watch([override, deckDuration], ([o, d]) => {
-    if (o != null && o === d) setOverride(null)
-  })
-  function startTimer() {
-    if (timer.value.state === 'idle') timer.value = start(timer.value, Date.now())
-  }
+  // ---- the talk's timer and its length (state/timer.js), kept by every window ----------------
+  const talk = createTimer({ duration: () => props.duration, warn: !thumbnail })
+  const { timer, duration } = talk
 
   // ---- fullscreen, the presenter window ----------------------------------------------------
   const viewport = shallowRef(null)
@@ -227,13 +190,13 @@ export function createDeck(props) {
   let sync = null
   if (mode === 'audience' || mode === 'presenter') {
     useHashRoute(stage) // first: the position the URL gives is in place before the windows sync
-    sync = useDeckSync(stage, { path, theme, setTheme, adoptTheme: !query.has('theme'), timer, setTimer, override, setOverride })
+    sync = useDeckSync(stage, { path, theme, setTheme, adoptTheme: !query.has('theme'), timer, setTimer: talk.setTimer, override: talk.override, setOverride: talk.setOverride })
   }
   // A move made here (keys, controls, an addon, the URL; not a position received, nor the deck
   // renumbering its slides after an edit): the other windows follow, and the first one starts the
-  // timer.
+  // timer if it is idle (a paused one stays paused).
   function moved() {
-    if (sync?.moved()) startTimer()
+    if (sync?.moved() && timer.value.state === 'idle') talk.start()
   }
 
   // The public face (useDeck): read-only refs (deeply: the themes' array and the timer's object
@@ -261,7 +224,6 @@ export function createDeck(props) {
   return {
     name: route?.name ?? null, mode, exporting, face, stage, preview, next, titles,
     theme, setTheme, cycleTheme, themes: () => themes.value,
-    timer, setTimer, duration, deckDuration, setDuration,
     viewport, presenterWindow,
   }
 }
