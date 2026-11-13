@@ -1,5 +1,5 @@
 <template lang="pug">
-Deck(:themes="['ocean']")
+Deck(:themes="['ocean', 'sunset', 'midnight', 'default']")
   template(#footer="{ number, total }")
     span ACME · DevConf 2026
     span {{ number }} / {{ total }}
@@ -17,3 +17,7 @@ Deck(:themes="['ocean']")
         h3 #[Icon(name="lucide:panel-bottom")] Zones
         p.muted Title, body, footer
 </template>
+
+<style scoped>
+h3 .ar-icon { color: var(--ar-accent); }
+</style>

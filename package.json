@@ -42,7 +42,8 @@
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
     "shots": "node scripts/shots.mjs",
-    "hero-gif": "node scripts/hero-gif.mjs"
+    "hero-gif": "node scripts/hero-gif.mjs",
+    "feature-gifs": "node scripts/feature-gifs.mjs"
   },
   "peerDependencies": {
     "vite": "^8.0.0",

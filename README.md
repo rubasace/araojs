@@ -25,8 +25,8 @@ slide, with the same line breaks.
   <img src="docs/assets/hero.gif" alt="A slide typed in Pug on the left while the live deck on the right follows each saved line" width="940" />
 </p>
 
-**Contents:** [Why Arao](#why-arao) · [Quick start](#quick-start) · [Code and slide](#code-and-slide) ·
-[Features](#features) · [Documentation](#documentation) · [License](#license)
+**Contents:** [Why Arao](#why-arao) · [Your first slide](#your-first-slide) · [Features](#features) ·
+[Documentation](#documentation) · [License](#license)
 
 ## Why Arao
 
@@ -46,10 +46,10 @@ diving seabird of the **Cíes islands**, off Vigo.
 </tr>
 </table>
 
-## Quick start
+## Your first slide
 
 ```bash
-npm install araojs vue && npm install -D vite
+npm install araojs vue && npm install -D vite && npm pkg set type=module
 ```
 
 ```js
@@ -57,147 +57,188 @@ npm install araojs vue && npm install -D vite
 import { defineConfig } from 'vite'
 import arao from 'araojs/vite'
 export default defineConfig({ plugins: [arao()] })
+```
 
-// src/main.js (and index.html: <div id="app"></div> <script type="module" src="/src/main.js"></script>)
+```js
+// src/main.js
 import { createDeckApp } from 'araojs'
 createDeckApp().mount('#app')
 ```
 
-```bash
-# write src/decks/MyTalk.vue, then:
-npx vite                                # open http://localhost:5173/mytalk
-npx playwright-core install chromium    # once, for the PDF export
-npx arao export --deck mytalk           # exports/mytalk.pdf
+```html
+<!-- index.html -->
+<div id="app"></div>
+<script type="module" src="/src/main.js"></script>
 ```
 
-The whole walkthrough, with a first deck: [Getting started](docs/getting-started.md).
-
-## Code and slide
-
-<table>
-<tr>
-<td width="50%">
-
-<!-- example:cover -->
-
 ```vue
+<!-- src/decks/Hello.vue: a deck is one file -->
 <template lang="pug">
 Deck
   Slide(layout="cover")
-    .bar
-    h1 Building a framework
-    p.muted Jane Doe · VigoJUG 2026
+    h1 Hello, Arao
 </template>
 ```
 
-<!-- /example -->
-
-</td>
-<td width="50%"><img src="docs/assets/shots/cover.png" alt="A cover slide: a title and a speaker line" /></td>
-</tr>
-<tr>
-<td>
-
-<!-- example:split -->
-
-```vue
-<template lang="pug">
-Deck
-  Slide(layout="split")
-    h2 Before and after
-    template(#left)
-      h3 #[Icon(name="lucide:git-fork")] Before
-      ul
-        li Every team rolled its own
-        li Twelve ways to log
-    template(#right)
-      h3(v-step="2") #[Icon(name="lucide:package-check")] After
-      ul(v-step="2")
-        li One starter for all
-        li One version to bump
-</template>
+```bash
+npx vite    # open http://localhost:5173
 ```
 
-<!-- /example -->
-
-</td>
-<td width="50%"><img src="docs/assets/shots/split.png" alt="A split slide: before on the left, after on the right" /></td>
-</tr>
-<tr>
-<td>
-
-<!-- example:snippet -->
-
-```vue
-<template lang="pug">
-Deck
-  Slide
-    h2 A debug filter
-    Snippet(file="DebugFilter.java" :highlights='{ "1": 2, "6-8:isDebug+++MDC.put": 3 }')
-</template>
-```
-
-<!-- /example -->
-
-</td>
-<td><img src="docs/assets/shots/snippet.png" alt="A code window with the words isDebug and MDC.put highlighted" /></td>
-</tr>
-<tr>
-<td>
-
-<!-- example:themes/ocean.css -->
-
-```css
-/* docs/examples/themes/ocean.css: a theme declares only the tokens it changes */
-[data-theme="ocean"] {
-  --ar-bg: #0b1f2a;
-  --ar-fg: #e6f1f5;
-  --ar-muted: #8fb3c2;
-  --ar-accent: #4fd1c5;
-  --ar-accent-fg: #0b1f2a;
-  --ar-letterbox: #06141b;
-  --ar-font-sans: "Inter", system-ui, sans-serif;
-  --ar-title-align: center;
-  --ar-footer-color: var(--ar-accent);
-}
-```
-
-<!-- /example -->
-
-</td>
-<td><img src="docs/assets/shots/theme.png" alt="Three columns of headings with icons, light on a deep blue background" /></td>
-</tr>
-</table>
-
-Every picture is drawn from the deck beside it ([docs/examples](docs/examples/)).
+Steps, code, themes, the PDF and every option: [Getting started](docs/getting-started.md).
 
 ## Features
 
 <table>
 <tr>
-<td width="33%" align="center"><a href="docs/guide/steps.md"><img src="docs/assets/shots/steps-1.png" alt="A slide at its first step, one bullet shown" /></a><br/><b><a href="docs/guide/steps.md">Steps</a></b></td>
-<td width="33%" align="center"><a href="docs/guide/composition.md"><img src="docs/assets/shots/grid.png" alt="Five cards in a 3 + 2 grid, icons in the accent colour" /></a><br/><b><a href="docs/guide/composition.md">Composition</a></b></td>
-<td width="33%" align="center"><a href="docs/guide/code.md"><img src="docs/assets/shots/snippet-2.png" alt="A code window with one line highlighted" /></a><br/><b><a href="docs/guide/code.md">Code with highlights</a></b></td>
+<td width="58%"><img src="docs/assets/features/canvas.gif" alt="The same slide in windows of four shapes, scaled whole and letterboxed" width="480" /></td>
+<td>
+
+**One canvas, every screen**
+
+A slide is drawn once, on a 1920x1080 canvas, and scaled whole to any window: it never
+reflows, it letterboxes.
+
+[Concepts](docs/guide/concepts.md#one-fixed-canvas)
+
+</td>
 </tr>
 <tr>
-<td width="33%" align="center"><a href="docs/guide/icons.md"><img src="docs/assets/shots/icons.png" alt="The Vue, Vite and Pug logos, large" /></a><br/><b><a href="docs/guide/icons.md">Icons by name</a></b></td>
-<td width="33%" align="center"><a href="docs/guide/presenting.md"><img src="docs/assets/shots/presenter.png" alt="The presenter view: current slide, next step, notes and timer" /></a><br/><b><a href="docs/guide/presenting.md">Presenter view</a></b></td>
-<td width="33%" align="center"><a href="docs/guide/project.md#the-list-of-decks"><img src="docs/assets/shots/deck-list.png" alt="The deck list: each deck shown by its cover" /></a><br/><b><a href="docs/guide/project.md#the-list-of-decks">Every deck, one URL</a></b></td>
+<td>
+
+**Steps**
+
+Reveal a slide one press at a time with `v-step`. The slide counts its own steps, and the URL
+says where you are.
+
+[Steps](docs/guide/steps.md)
+
+</td>
+<td width="58%"><img src="docs/assets/features/steps.gif" alt="A list revealed one item per key press" width="480" /></td>
+</tr>
+<tr>
+<td width="58%"><img src="docs/assets/features/layouts.gif" alt="A cover, a split, a grid of cards, a picture beside the text and a section slide" width="480" /></td>
+<td>
+
+**Layouts and composition**
+
+A cover, a split, a grid, a picture beside the text, a section: one prop or one component each,
+no CSS.
+
+[Layouts](docs/guide/slides-and-layouts.md) · [Composition](docs/guide/composition.md)
+
+</td>
+</tr>
+<tr>
+<td>
+
+**Code that walks itself**
+
+A code window coloured by [Shiki](https://shiki.style/), from a file named in the slide. Each
+step lights up its own lines or words.
+
+[Code](docs/guide/code.md)
+
+</td>
+<td width="58%"><img src="docs/assets/features/code.gif" alt="A Vue code window: one line highlighted, then two words" width="480" /></td>
+</tr>
+<tr>
+<td width="58%"><img src="docs/assets/features/icons.png" alt="The Vue, Vite, Pug, TypeScript, Kubernetes and Docker logos in their colours" width="480" /></td>
+<td>
+
+**Icons by name**
+
+Any [Iconify](https://icon-sets.iconify.design/) icon or technology logo by its name, built in
+and offline, in the theme's colours or the brand's own.
+
+[Icons](docs/guide/icons.md)
+
+</td>
+</tr>
+<tr>
+<td>
+
+**Pictures and backgrounds**
+
+Name a file of the images folder: a picture behind the slide, beside the text, or faded and
+blurred under it.
+
+[Images](docs/guide/images-and-backgrounds.md)
+
+</td>
+<td width="58%"><img src="docs/assets/features/images.gif" alt="A cover over a picture, the picture beside the text, then faded behind it" width="480" /></td>
+</tr>
+<tr>
+<td width="58%"><img src="docs/assets/features/themes.gif" alt="One slide in four themes, switched with the t key" width="480" /></td>
+<td>
+
+**Themes are tokens**
+
+A theme is a handful of CSS variables. Press `t` and the same slides go to another venue.
+
+[Themes](docs/guide/themes.md)
+
+</td>
+</tr>
+<tr>
+<td>
+
+**Presenter view**
+
+Press `p`: the slide, what the next press shows, the notes of this step and a countdown, in
+step with every window.
+
+[Presenting](docs/guide/presenting.md#presenter-view)
+
+</td>
+<td width="58%"><img src="docs/assets/features/presenter.gif" alt="The presenter view following key presses: next step, notes, timer running" width="480" /></td>
+</tr>
+<tr>
+<td width="58%"><img src="docs/assets/features/decks.gif" alt="The list of decks with their covers; one is opened at its own URL" width="480" /></td>
+<td>
+
+**A URL per deck**
+
+Every talk is one file and one address. `/` lists them all, each by its cover.
+
+[The project](docs/guide/project.md#the-list-of-decks)
+
+</td>
+</tr>
+<tr>
+<td>
+
+**Keyboard and touch**
+
+Arrows to move, `g` to jump to any slide by number or title, taps and swipes on a phone.
+
+[Controls](docs/guide/presenting.md#controls)
+
+</td>
+<td width="58%"><img src="docs/assets/features/jump.gif" alt="The jump menu opened with g, filtered by a word, and Enter" width="480" /></td>
+</tr>
+<tr>
+<td width="58%"><img src="docs/assets/features/export.png" alt="The export command, its summary line and the nine pages of the PDF" width="480" /></td>
+<td>
+
+**PDF export**
+
+One command, one PDF: a page per step (or per slide), text kept as text.
+
+[Export](docs/guide/export.md)
+
+</td>
+</tr>
+<tr>
+<td colspan="2" align="center">
+
+**Written by people or by agents**
+
+[AGENTS.md](AGENTS.md) ships with the package: point your coding agent at it and it writes decks
+the way this README shows them.
+
+</td>
 </tr>
 </table>
-
-- **One fixed canvas**, 1920x1080 by default, scaled to any window: [Concepts](docs/guide/concepts.md)
-- **Steps** that a slide counts on its own, and reusable ones: [Steps](docs/guide/steps.md)
-- **Layouts and composition** by props, no CSS: [Layouts](docs/guide/slides-and-layouts.md) · [Composition](docs/guide/composition.md)
-- **Code windows** with [Shiki](https://shiki.style/) colours and highlights per step: [Code](docs/guide/code.md)
-- **Icons**: any [Iconify](https://icon-sets.iconify.design/) icon by name, offline: [Icons](docs/guide/icons.md)
-- **Pictures and backgrounds** named from a folder: [Images](docs/guide/images-and-backgrounds.md)
-- **Themes as tokens**, switched live with `t`: [Themes](docs/guide/themes.md)
-- **Presenter view**: next step, notes, a countdown, every window in step: [Presenting](docs/guide/presenting.md)
-- **A URL per deck**, and `/` lists them with their covers: [The project](docs/guide/project.md#the-list-of-decks)
-- **Keyboard and touch**: keys, a jump menu, taps and swipes: [Controls](docs/guide/presenting.md#controls)
-- **PDF export**, a page per step or per slide, text kept as text: [Export](docs/guide/export.md)
-- **Written by people or by agents**: [AGENTS.md](AGENTS.md) ships with the package
 
 ## Documentation
 
