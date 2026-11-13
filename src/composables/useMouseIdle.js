@@ -7,7 +7,7 @@ import { useEventListener } from '@vueuse/core'
 //             the `idle` option (default false: idle only after a first move and ms without one)
 //   ms        a number, or a ref or getter of one, read at each move; ms <= 0: never idle
 //   wake(ms)  not idle now, idle again after ms (default: the same ms), for what is not the mouse
-//             (the audience view: a tap in the middle shows the controls for 4 s); sleep(): idle now
+//             (the controls: a tap in the middle shows them for 4 s); sleep(): idle now
 // A browser follows a touch tap with a compatibility mousemove: that one is not the mouse, and
 // does not count (a mousemove within TAP_ECHO_MS of a touch or pen on target).
 // target: an element, or a ref or getter of one; null watches nothing (idle stays as it is).

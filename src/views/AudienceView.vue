@@ -1,8 +1,8 @@
 <!-- The audience view (the default): the deck's slides, full window, and the floating controls.
      It owns the window's viewport element: the one fullscreen fills (state/deck.js), and the one
      the mouse and touch are read from.
-       mouse   a move shows the controls for 2.5 s, and the cursor hides after hideCursorAfter ms
-               without one (0: never); keys never show them (Deck.vue wires the keys)
+       mouse   a move shows the controls for 2.5 s (their auto-hide, Controls.vue), and the cursor
+               hides after hideCursorAfter ms without one (0: never); keys never show them
        touch   tap the right quarter → next, the left quarter → previous, the middle → show/hide the
                controls (4 s); swipe left/right → next/previous (composables/useTouchNav.js)
      If the browser blocks the presenter window, a notice above the controls links to it.
@@ -17,7 +17,7 @@
     <Stage :stage="deck.stage" :width="width" :height="height">
       <slot />
     </Stage>
-    <Controls ref="controls" :shown="hud" :titles="titles" />
+    <Controls auto-hide v-model:shown="hud" />
     <!-- the browser blocked the presenter window: the same URL as a link, which it does not block -->
     <Transition name="ar-toast">
       <div class="ar-toast" v-if="blocked" role="status">
@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { useDeck } from '../state/deck'
 import { useMouseIdle } from '../composables/useMouseIdle'
 import { useTouchNav } from '../composables/useTouchNav'
@@ -47,31 +47,15 @@ const { stage, presenterWindow } = props.deck
 const blocked = presenterWindow.blocked
 // the deck's ref: fullscreen fills this element
 const viewport = props.deck.viewport
-const controls = ref()
 
-// ---- the mouse shows the controls for 2.5 s (a tap in the middle, for 4 s) and hides the cursor
-// after hideCursorAfter; keys never show them
-const controlsIdle = useMouseIdle(viewport, 2500, { idle: true })
-const hud = computed(() => !controlsIdle.idle.value)
+// ---- the controls hide themselves (auto-hide); a tap in the middle shows them for 4 s, or hides
+// them. The cursor hides after hideCursorAfter
+const hud = ref(false)
 const { idle: cursorHidden } = useMouseIdle(viewport, () => props.hideCursorAfter)
 useTouchNav(viewport, {
   next: stage.next,
   prev: stage.prev,
-  tap: () => controls.value?.closeMenu(),
-  middle: () => (hud.value ? controlsIdle.sleep() : controlsIdle.wake(4000)),
-})
-
-// slide titles for the jump menu, re-read whenever the controls show up
-const titles = computed(() => {
-  hud.value
-  return props.deck.titles()
-})
-
-// the keys open and close the controls' jump menu (Deck.vue)
-defineExpose({
-  openMenu: (digits) => controls.value.openMenu(digits),
-  toggleMenu: () => controls.value.toggleMenu(),
-  closeMenu: () => controls.value.closeMenu(),
+  middle: () => (hud.value = !hud.value),
 })
 </script>
 

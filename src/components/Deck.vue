@@ -30,8 +30,8 @@
      Thumbnail: inside something that called provideThumbnail() (state/deck.js), the deck is its
      cover, small and still (components/internal/Thumbnail.vue): useDeck().role is 'thumbnail' there.
      The deck's state is state/deck.js (createDeck); this component only wires it to the view the
-     window shows (views/: AudienceView, PresenterView or ExportView; internal/Thumbnail) and to the
-     keys, which the audience and presenter views listen to. -->
+     window shows (views/: AudienceView, PresenterView or ExportView; internal/Thumbnail). The keys
+     are the controls' (components/internal/Controls.vue), drawn by the audience and presenter views. -->
 <template>
   <Thumbnail v-if="deck.mode === 'thumbnail'" :deck="deck" :width="width" :height="height">
     <slot />
@@ -39,19 +39,18 @@
   <ExportView v-else-if="deck.mode === 'export'" :deck="deck" :width="width" :height="height">
     <slot />
   </ExportView>
-  <PresenterView v-else-if="deck.mode === 'presenter'" ref="view" :deck="deck" :width="width" :height="height">
+  <PresenterView v-else-if="deck.mode === 'presenter'" :deck="deck" :width="width" :height="height">
     <slot />
   </PresenterView>
-  <AudienceView v-else ref="view" :deck="deck" :width="width" :height="height" :hide-cursor-after="hideCursorAfter">
+  <AudienceView v-else :deck="deck" :width="width" :height="height" :hide-cursor-after="hideCursorAfter">
     <slot />
   </AudienceView>
 </template>
 
 <script setup>
-import { ref, useSlots } from 'vue'
+import { useSlots } from 'vue'
 import { createDeck } from '../state/deck'
 import { provideFooter } from '../state/slide'
-import { useKeyboard } from '../composables/useKeyboard'
 import AudienceView from '../views/AudienceView.vue'
 import ExportView from '../views/ExportView.vue'
 import PresenterView from '../views/PresenterView.vue'
@@ -76,22 +75,4 @@ const slots = useSlots()
 provideFooter(() => slots.footer)
 
 const deck = createDeck(props)
-
-// the keys, in the audience and presenter views; the view opens and closes the jump menu
-const view = ref()
-if (deck.mode === 'audience' || deck.mode === 'presenter') {
-  const { stage } = deck
-  useKeyboard({
-    next: stage.next,
-    prev: stage.prev,
-    first: () => stage.go(0),
-    last: stage.last,
-    fullscreen: deck.face.toggleFullscreen,
-    theme: deck.cycleTheme,
-    presenter: deck.mode === 'presenter' ? null : deck.face.openPresenter,
-    menu: () => view.value.toggleMenu(),
-    jump: (digit) => view.value.openMenu(digit),
-    close: () => view.value.closeMenu(),
-  })
-}
 </script>

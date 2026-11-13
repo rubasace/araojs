@@ -646,6 +646,72 @@ try {
     for (const c of complaints) fail(`dev useDeck() face: ${c}`)
   }
 
+  // the controls (components/internal/Controls.vue), in the audience view of the playground's deck:
+  // their keys open and close the jump list (g, a digit, Escape) and move the deck; auto-hide: hidden
+  // until the mouse moves, shown on a move, hidden again 2.5 s later; a tap in the middle (touch)
+  // shows them, another hides them. Any console warning, error or page error fails.
+  async function controls(base) {
+    const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, hasTouch: true })
+    const page = await context.newPage()
+    const complaints = []
+    page.on('console', (m) => ['warning', 'error'].includes(m.type()) && complaints.push(`console ${m.type()}: ${m.text()}`))
+    page.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
+    const state = () => page.evaluate(() => ({
+      hash: location.hash,
+      visible: !!document.querySelector('.ar-controls.visible'),
+      list: !!document.querySelector('.ar-slides'),
+      query: document.querySelector('.ar-slides .ar-search')?.value ?? null,
+    }))
+    try {
+      await page.goto(new URL('playground', base).href)
+      await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
+      await pause(500)
+      let s = await state()
+      if (s.visible) complaints.push('the controls show before the mouse moves')
+      await page.keyboard.press('g')
+      await pause(300)
+      s = await state()
+      if (!s.list) complaints.push('g opens no jump list')
+      await page.keyboard.press('Escape')
+      await pause(300)
+      if ((await state()).list) complaints.push('Escape leaves the jump list open')
+      await page.keyboard.press('3')
+      await pause(300)
+      s = await state()
+      if (!s.list || s.query !== '3') complaints.push(`a digit opens ${s.list ? `the list with "${s.query}"` : 'no list'}, not the list with "3"`)
+      await page.keyboard.press('Enter')
+      await page.waitForFunction(() => location.hash.startsWith('#/3/'), null, { timeout: 5_000 }).catch(() => {})
+      await pause(400) // the list's leave transition
+      s = await state()
+      if (!s.hash.startsWith('#/3/') || s.list) complaints.push(`Enter in the list: ${s.hash}, list ${s.list ? 'open' : 'closed'}, not #/3/ and closed`)
+      await page.keyboard.press('ArrowRight')
+      await pause(200)
+      await page.keyboard.press('Home')
+      await page.waitForFunction(() => location.hash === '#/1/1', null, { timeout: 5_000 }).catch(() => {})
+      if ((await state()).hash !== '#/1/1') complaints.push('Home does not go back to #/1/1')
+      if ((await state()).visible) complaints.push('keys showed the controls')
+      // auto-hide
+      await page.mouse.move(400, 400)
+      await page.mouse.move(420, 410)
+      await pause(300)
+      if (!(await state()).visible) complaints.push('a mouse move does not show the controls')
+      await pause(2800)
+      if ((await state()).visible) complaints.push('the controls stay shown 2.5 s after the mouse stopped')
+      // a tap in the middle shows them, another hides them (the tap's echo mousemove is not the mouse)
+      await page.touchscreen.tap(960, 400)
+      await pause(400)
+      if (!(await state()).visible) complaints.push('a tap in the middle does not show the controls')
+      await page.touchscreen.tap(960, 400)
+      await pause(400)
+      if ((await state()).visible) complaints.push('a second tap in the middle does not hide the controls')
+      if ((await state()).hash !== '#/1/1') complaints.push('a tap in the middle moved the deck')
+      console.log(`  dev controls: ${complaints.length ? 'problems below' : 'keys, jump list, auto-hide and taps as expected'}`)
+    } finally {
+      await context.close()
+    }
+    for (const c of complaints) fail(`dev controls: ${c}`)
+  }
+
   // speaker notes, on the third deck (5c above); any console warning, error or page error fails
   async function notes(base) {
     const context = await browser.newContext({ viewport: { width: 1280, height: 720 } })
@@ -1126,6 +1192,7 @@ try {
       if (mode === 'dev') {
         await face(base)
         await themes(base)
+        await controls(base)
         await notes(base)
         await duration(base)
         await presenter(base)

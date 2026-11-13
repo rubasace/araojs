@@ -27,6 +27,7 @@ const deck = useDeck()
 | `duration` | computed, Number or `null` | the talk's length in effect, in ms: the one set in the presenter view, else `Deck(duration)`; `null` when there is none |
 | `next()`, `prev()` | functions | move one step |
 | `go(i, step = 1)` | function | go to slide `i` (0-based) at `step` (clamped; `Infinity` = last step); out-of-range `i` is ignored |
+| `titles()` | function | every slide's title, in order (`''` for a slide without one): what the jump list (`g`) shows |
 | `setTheme(name)` | function | wear another of the deck's `themes` (written in the URL, followed by the other windows); any other name warns and is ignored |
 | `toggleFullscreen()` | function | enter or leave fullscreen (as `f`) |
 | `openPresenter()` | function | open the presenter window, or bring it forward (as `p`) |

@@ -7,7 +7,7 @@ this: [the docs](index.md) are their manual, [../AGENTS.md](../AGENTS.md) their 
 
 | Folder | Role | What is in it |
 |---|---|---|
-| `state/` | what there is | the deck, its stages, its slides and the talk's timer: reactive state, made by a `create…` and read by a `use…` (the pair shares a provide/inject key private to its file) |
+| `state/` | what there is | the deck, its stages, its slides, its theme and the talk's timer: reactive state, made by a `create…` and read by a `use…` (the pair shares a provide/inject key private to its file) |
 | `composables/` | effects | small internal composables, one per file, that tie the state to the browser: the URL, other windows, keys, touch, the mouse, fullscreen |
 | `core/` | the pure how | plain modules with no Vue component state: sync, exporter, flip, image, icons |
 | `views/` | full screens | what a window shows: the deck's `AudienceView`, `PresenterView` and `ExportView`, and `DeckSelectorView`, the list of decks `createDeckApp` shows at `/` |
@@ -32,20 +32,22 @@ its own (`createApp(MyApp).use(Arao)`) provides no route: then `location.pathnam
 
 ## Views
 
-`Deck.vue` makes the deck (`createDeck(props)`), wires the keys (every view but the export's) and
-shows one view, by the URL:
+`Deck.vue` makes the deck (`createDeck(props)`) and shows one view, by the URL. The keys are the
+controls' (`Controls` calls `useKeyboard`): only the audience and presenter views draw controls,
+so only they have keys.
 
 ```
-Deck.vue ── createDeck(props) ── state/deck.js: stage(s), theme, fullscreen, URL, sync
+Deck.vue ── createDeck(props) ── state/deck.js: stage(s), fullscreen, URL hash, sync
+                                   └ createTheme ── state/theme.js: the deck's themes, the one it wears, ?theme=
                                    └ createTimer ── state/timer.js: the timer, the talk's length, and their pure helpers (parseDuration, clock…)
    │
    ├─ thumbnail ───────▶ Thumbnail       Stage (role 'thumbnail', standing at the cover)
    ├─ ?export ─────────▶ ExportView      Stage (role 'export')            → core/exporter.js book
    ├─ ?presenter ──────▶ PresenterView   PresenterBar
-   │                                     Stage (role 'presenter')  + Controls (docked)
+   │                                     Stage (role 'presenter')  + Controls (docked) + keys
    │                                     Stage (role 'preview', one step ahead) + notes
-   └─ (default) ───────▶ AudienceView    Stage (role 'audience')   + Controls + blocked-window notice
-                                         mouse idle (controls 2.5 s, cursor), touch nav
+   └─ (default) ───────▶ AudienceView    Stage (role 'audience')   + Controls (auto-hide) + keys + blocked-window notice
+                                         mouse idle (cursor), touch nav (a middle tap shows/hides the controls)
 ```
 
 `?export` wins over `?presenter`. Each `Stage` (components/internal/Stage.vue) draws the deck's default
@@ -68,6 +70,7 @@ heading (else its title prop), which the card shows under the deck's title (its 
 | Channel | Provided by | Read by | Carries |
 |---|---|---|---|
 | deck | `createDeck` (in `Deck`) | `useDeck()` | the public face (below), never the internals |
+| theme | `createTheme` (in `createDeck`) | `useTheme()` (the controls: the themes list, "t") | the deck's themes, the one it wears, setTheme, cycle |
 | timer | `createTimer` (in `createDeck`) | `useTimer()` (the presenter's bar) | the timer and the talk's length, with what changes them: start, pause, toggle, reset, setDuration |
 | thumbnail | `provideThumbnail` (in `DeckCover`) | `createDeck` | that the deck inside is a thumbnail, and the ref its cover's title goes in |
 | route | `provideDeckRoute` (`createDeckApp`, on the app) | `createDeck` (not in a thumbnail) | the deck's file name and path: the sync key, the presenter window's URL, the name the export reports |
@@ -77,18 +80,19 @@ heading (else its title prop), which the card shows under the deck's title (its 
 | footer | `provideFooter` (in `Deck`) | `createSlide` | the Deck's `#footer` slot, drawn by every slide |
 
 Nothing else is provided. The views get the deck's internals from `Deck` as a prop (`deck`), and
-pass what their parts need as props (the controls' `docked`/`shown`/`titles`, the bar's
-`title`). `v-step` finds its slide through the DOM
+pass what their parts need as props (the controls' `docked`/`auto-hide`/`v-model:shown`, the
+bar's `title`). The controls read the slides' titles (`useDeck().titles()`) and the themes
+(`useTheme()`) themselves; which list is open and what is typed in it are their own. No view
+exposes anything, and `Deck` holds no ref to its view. `v-step` finds its slide through the DOM
 (`data-ar-slide`, a map in directives/step.js).
 
 ## Composables
 
 | Composable | Effect |
 |---|---|
-| `useHashRoute(stage)` | the URL hash is the position (`#/slide/step`): read on mount and on `hashchange`, written on every move |
 | `useDeckSync(stage, …)` | every window of the deck in step through core/sync.js: position, theme, timer, the duration set in the presenter view (the last two kept through a reload) |
 | `usePresenterWindow()` | opens the presenter window or brings it forward; `blocked` when the browser blocks it |
-| `useKeyboard(actions)` | the deck's keys on the window (VueUse `onKeyStroke`); keys inside a text field or an element marked `data-ar-own-keys` (the presenter's duration editor) are left to it |
+| `useKeyboard(actions)` | the deck's keys on the window, called by `Controls` (VueUse `onKeyStroke`); keys inside a text field or an element marked `data-ar-own-keys` (the presenter's duration editor) are left to it |
 | `useTouchNav(el, …)` | taps (edges, middle) and swipes, from pointer events: touch and pen (VueUse's `useSwipe` reads touch events only, so the pen would lose its swipes) |
 | `useMouseIdle(el, ms)` | whether the mouse has been still over the element; ignores a tap's echo mousemove, `wake(ms)` for a time of its own (VueUse's `useIdle` has neither) |
 | `useFullscreen(el)` | `fullscreen` is true while anything in the window is fullscreen; `toggle()` leaves it if so, else makes the element fullscreen; the standard API only (VueUse's `useFullscreen` counts only its own element and falls back to prefixed APIs) |
@@ -108,11 +112,13 @@ in; outside every stage (the controls, the presenter's bar) it is the deck's own
 | `theme`, `themes`, `fullscreen`, `timer` | read-only refs, deeply (`themes.value`, `timer.value` cannot be edited in place) |
 | `duration` | computed: the talk's length in effect, in ms, or null (the presenter's, else `Deck(duration)`) |
 | `next()`, `prev()`, `go(i, step)` | moves |
+| `titles()` | every slide's title, in order (`''` for one without): the controls' jump list |
 | `setTheme(name)`, `toggleFullscreen()`, `openPresenter()` | actions; `setTheme` with a name not in `themes` warns and is ignored |
 
 The face, and each stage's copy of it, is frozen: no component can reassign `go`, `setTheme` or
 any other field. Internals stay off it: slide registration, sync, the export, and what changes the timer and
-the length (`useTimer()`, state/timer.js: the presenter's bar uses it; not exported).
+the length (`useTimer()`, state/timer.js: the presenter's bar uses it; not exported), and cycling
+the theme (`useTheme()`, state/theme.js: the controls use it; not exported).
 Frozen, Vue leaves it as it is inside `reactive()` or `data()`: its refs are not unwrapped there.
 
 One rule for the preview (role `'preview'`, the presenter view's next step), and for a thumbnail
