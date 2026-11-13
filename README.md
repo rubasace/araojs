@@ -6,12 +6,12 @@
 </picture>
 
 <p>
-  <a href="https://github.com/rubasace/araojs/actions/workflows/ci.yml"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/github/ci/rubasace/araojs.svg?variant=secondary&size=sm&workflow=ci.yml&branch=main&mode=dark" /><img alt="CI status" src="https://shieldcn.dev/github/ci/rubasace/araojs.svg?variant=secondary&size=sm&workflow=ci.yml&branch=main&mode=light" /></picture></a>
-  <a href="https://www.npmjs.com/package/araojs"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/npm/araojs.svg?variant=secondary&size=sm&mode=dark" /><img alt="npm version" src="https://shieldcn.dev/npm/araojs.svg?variant=secondary&size=sm&mode=light" /></picture></a>
-  <a href="LICENSE"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/badge/license-Apache--2.0.svg?variant=secondary&size=sm&mode=dark" /><img alt="licence: Apache-2.0" src="https://shieldcn.dev/badge/license-Apache--2.0.svg?variant=secondary&size=sm&mode=light" /></picture></a>
-  <picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/badge/node-%3E%3D20.19.svg?variant=secondary&size=sm&logo=nodedotjs&mode=dark" /><img alt="requires Node 20.19 or newer" src="https://shieldcn.dev/badge/node-%3E%3D20.19.svg?variant=secondary&size=sm&logo=nodedotjs&mode=light" /></picture>
-  <a href="https://vuejs.org/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/badge/vue-3.svg?variant=secondary&size=sm&logo=vuedotjs&mode=dark" /><img alt="Vue 3" src="https://shieldcn.dev/badge/vue-3.svg?variant=secondary&size=sm&logo=vuedotjs&mode=light" /></picture></a>
-  <a href="https://vite.dev/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/badge/vite-8.svg?variant=secondary&size=sm&logo=vite&mode=dark" /><img alt="Vite 8" src="https://shieldcn.dev/badge/vite-8.svg?variant=secondary&size=sm&logo=vite&mode=light" /></picture></a>
+  <a href="https://github.com/rubasace/araojs/actions/workflows/ci.yml"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/github/ci/rubasace/araojs.svg?variant=secondary&size=sm&workflow=ci.yml&branch=main&logo=githubactions&logoColor=2088FF&mode=dark" /><img alt="CI status" src="https://shieldcn.dev/github/ci/rubasace/araojs.svg?variant=secondary&size=sm&workflow=ci.yml&branch=main&logo=githubactions&logoColor=2088FF&mode=light" /></picture></a>
+  <a href="https://www.npmjs.com/package/araojs"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/npm/araojs.svg?variant=secondary&size=sm&logo=npm&logoColor=CB3837&mode=dark" /><img alt="npm version" src="https://shieldcn.dev/npm/araojs.svg?variant=secondary&size=sm&logo=npm&logoColor=CB3837&mode=light" /></picture></a>
+  <a href="LICENSE"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/badge/license-Apache--2.0.svg?variant=secondary&size=sm&logo=apache&logoColor=D22128&mode=dark" /><img alt="licence: Apache-2.0" src="https://shieldcn.dev/badge/license-Apache--2.0.svg?variant=secondary&size=sm&logo=apache&logoColor=D22128&mode=light" /></picture></a>
+  <picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/badge/node-%3E%3D20.19.svg?variant=secondary&size=sm&logo=nodedotjs&logoColor=5FA04E&mode=dark" /><img alt="requires Node 20.19 or newer" src="https://shieldcn.dev/badge/node-%3E%3D20.19.svg?variant=secondary&size=sm&logo=nodedotjs&logoColor=5FA04E&mode=light" /></picture>
+  <a href="https://vuejs.org/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/badge/vue-3.svg?variant=secondary&size=sm&logo=vuedotjs&logoColor=4FC08D&mode=dark" /><img alt="Vue 3" src="https://shieldcn.dev/badge/vue-3.svg?variant=secondary&size=sm&logo=vuedotjs&logoColor=4FC08D&mode=light" /></picture></a>
+  <a href="https://vite.dev/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/badge/vite-8.svg?variant=secondary&size=sm&logo=vite&logoColor=9135FF&mode=dark" /><img alt="Vite 8" src="https://shieldcn.dev/badge/vite-8.svg?variant=secondary&size=sm&logo=vite&logoColor=9135FF&mode=light" /></picture></a>
 </p>
 
 
@@ -90,8 +90,8 @@ Steps, code, themes, the PDF and every option: [Getting started](docs/getting-st
 
 <table>
 <tr>
-<td width="58%"><img src="docs/assets/features/canvas.gif" alt="The same slide in windows of four shapes, scaled whole and letterboxed" width="480" /></td>
-<td>
+<td width="400"><img src="docs/assets/features/canvas.gif" alt="The same slide in windows of four shapes, scaled whole and letterboxed" width="380" /></td>
+<td width="340">
 
 **One canvas, every screen**
 
@@ -103,7 +103,7 @@ reflows, it letterboxes.
 </td>
 </tr>
 <tr>
-<td>
+<td width="340">
 
 **Steps**
 
@@ -113,11 +113,11 @@ says where you are.
 [Steps](docs/guide/steps.md)
 
 </td>
-<td width="58%"><img src="docs/assets/features/steps.gif" alt="A list revealed one item per key press" width="480" /></td>
+<td width="400"><img src="docs/assets/features/steps.gif" alt="A list revealed one item per key press" width="380" /></td>
 </tr>
 <tr>
-<td width="58%"><img src="docs/assets/features/layouts.gif" alt="A cover, a split, a grid of cards, a picture beside the text and a section slide" width="480" /></td>
-<td>
+<td width="400"><img src="docs/assets/features/layouts.gif" alt="A cover, a split, a grid of cards, a picture beside the text and a section slide" width="380" /></td>
+<td width="340">
 
 **Layouts and composition**
 
@@ -129,7 +129,7 @@ no CSS.
 </td>
 </tr>
 <tr>
-<td>
+<td width="340">
 
 **Code that walks itself**
 
@@ -139,11 +139,11 @@ step lights up its own lines or words.
 [Code](docs/guide/code.md)
 
 </td>
-<td width="58%"><img src="docs/assets/features/code.gif" alt="A Vue code window: one line highlighted, then two words" width="480" /></td>
+<td width="400"><img src="docs/assets/features/code.gif" alt="A Vue code window: one line highlighted, then two words" width="380" /></td>
 </tr>
 <tr>
-<td width="58%"><img src="docs/assets/features/icons.png" alt="The Vue, Vite, Pug, TypeScript, Kubernetes and Docker logos in their colours" width="480" /></td>
-<td>
+<td width="400"><img src="docs/assets/features/icons.png" alt="The Vue, Vite, Pug, TypeScript, Kubernetes and Docker logos in their colours" width="380" /></td>
+<td width="340">
 
 **Icons by name**
 
@@ -155,7 +155,7 @@ and offline, in the theme's colours or the brand's own.
 </td>
 </tr>
 <tr>
-<td>
+<td width="340">
 
 **Pictures and backgrounds**
 
@@ -165,11 +165,11 @@ blurred under it.
 [Images](docs/guide/images-and-backgrounds.md)
 
 </td>
-<td width="58%"><img src="docs/assets/features/images.gif" alt="A cover over a picture, the picture beside the text, then faded behind it" width="480" /></td>
+<td width="400"><img src="docs/assets/features/images.gif" alt="A cover over a picture, the picture beside the text, then faded behind it" width="380" /></td>
 </tr>
 <tr>
-<td width="58%"><img src="docs/assets/features/themes.gif" alt="One slide in four themes, switched with the t key" width="480" /></td>
-<td>
+<td width="400"><img src="docs/assets/features/themes.gif" alt="One slide in four themes, switched with the t key" width="380" /></td>
+<td width="340">
 
 **Themes are tokens**
 
@@ -180,7 +180,7 @@ A theme is a handful of CSS variables. Press `t` and the same slides go to anoth
 </td>
 </tr>
 <tr>
-<td>
+<td width="340">
 
 **Presenter view**
 
@@ -190,11 +190,11 @@ step with every window.
 [Presenting](docs/guide/presenting.md#presenter-view)
 
 </td>
-<td width="58%"><img src="docs/assets/features/presenter.gif" alt="The presenter view following key presses: next step, notes, timer running" width="480" /></td>
+<td width="400"><img src="docs/assets/features/presenter.gif" alt="The presenter view following key presses: next step, notes, timer running" width="380" /></td>
 </tr>
 <tr>
-<td width="58%"><img src="docs/assets/features/decks.gif" alt="The list of decks with their covers; one is opened at its own URL" width="480" /></td>
-<td>
+<td width="400"><img src="docs/assets/features/decks.gif" alt="The list of decks with their covers; one is opened at its own URL" width="380" /></td>
+<td width="340">
 
 **A URL per deck**
 
@@ -205,7 +205,7 @@ Every talk is one file and one address. `/` lists them all, each by its cover.
 </td>
 </tr>
 <tr>
-<td>
+<td width="340">
 
 **Keyboard and touch**
 
@@ -214,11 +214,11 @@ Arrows to move, `g` to jump to any slide by number or title, taps and swipes on 
 [Controls](docs/guide/presenting.md#controls)
 
 </td>
-<td width="58%"><img src="docs/assets/features/jump.gif" alt="The jump menu opened with g, filtered by a word, and Enter" width="480" /></td>
+<td width="400"><img src="docs/assets/features/jump.gif" alt="The jump menu opened with g, filtered by a word, and Enter" width="380" /></td>
 </tr>
 <tr>
-<td width="58%"><img src="docs/assets/features/export.png" alt="The export command, its summary line and the nine pages of the PDF" width="480" /></td>
-<td>
+<td width="400"><img src="docs/assets/features/export.png" alt="The export command, its summary line and the nine pages of the PDF" width="380" /></td>
+<td width="340">
 
 **PDF export**
 
