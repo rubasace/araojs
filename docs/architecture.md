@@ -25,7 +25,7 @@ The engine is strict TypeScript. Each `state/` pair names its public face as an 
 (`DeckFace`, `SlideControls`, `TimerControls`, `ThemeControls`), its refs read-only, and keys its
 provide/inject with an `InjectionKey`, so a component that injects it gets its type. The
 package ships `.d.ts` files for what `index.ts` exports and for the Vite plugin
-(`dist/types/`, built from `tsconfig.build.json`); `vite/` and `bin/`, which Node runs unbuilt,
+(`dist/types/index.d.ts` and `vite.d.ts`: emitted from `tsconfig.build.json`, bundled into one file each by `scripts/bundle-types.mjs`); `vite/` and `bin/`, which Node runs unbuilt,
 stay JavaScript with JSDoc types, checked by `npm run typecheck`.
 
 `index.ts` is the only barrel (the public API); every other module imports the file it uses.

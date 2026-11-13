@@ -42,8 +42,58 @@ jobs:
       - name: Smoke test (packaged consumer)
         run: node scripts/smoke.mjs "${{ steps.pack.outputs.tarball }}"
 
+      # a TypeScript project against the packed types: bundler and nodenext, skipLibCheck off
+      - name: Type-check a consumer project
+        run: node scripts/types-consumer.mjs "${{ steps.pack.outputs.tarball }}"
+
       - uses: actions/upload-artifact@v7
         with:
           name: package
           path: ${{ steps.pack.outputs.tarball }}
           if-no-files-found: error
+
+  # building the library needs Node 22.18 (vite.config.js loads src/i18n/*.ts with Node's own
+  # type stripping): the oldest Node that builds it
+  build-node-floor:
+    name: Build on Node 22.18
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.18
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+  # using the package needs Node 20.19 (package.json engines): the package the build job packed,
+  # smoke-tested on it
+  smoke-node-floor:
+    name: Smoke-test the package on Node 20.19
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20.19
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: package
+          path: ${{ runner.temp }}/package
+
+      - name: Install Chromium
+        run: npx playwright-core install --with-deps chromium
+
+      - name: Smoke test (packaged consumer)
+        run: node scripts/smoke.mjs "$(ls "${{ runner.temp }}"/package/*.tgz)"

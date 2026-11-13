@@ -32,4 +32,37 @@ export type { DeckFace } from './state/deck'
 export type { SlideControls } from './state/slide'
 export type { Role } from './state/stage'
 export type { Timer } from './state/timer'
+
+// Global components and directives (app.use(Arao) registers them, plugin.ts): typed for the
+// templates of a TypeScript project (Volar / vue-tsc check their props).
+import type DeckComponent from './components/Deck.vue'
+import type SlideComponent from './components/Slide.vue'
+import type ImgComponent from './components/Img.vue'
+import type IconComponent from './components/Icon.vue'
+import type SnippetComponent from './components/Snippet.vue'
+import type NotesComponent from './components/Notes.vue'
+import type ColsComponent from './components/layout/Cols.vue'
+import type RowsComponent from './components/layout/Rows.vue'
+import type GridComponent from './components/layout/Grid.vue'
+import type CenterComponent from './components/layout/Center.vue'
+import type { default as StepDirective, stepFrom as StepFromDirective } from './directives/step'
+declare module 'vue' {
+  export interface GlobalComponents {
+    Deck: typeof DeckComponent
+    Slide: typeof SlideComponent
+    Img: typeof ImgComponent
+    Icon: typeof IconComponent
+    Snippet: typeof SnippetComponent
+    Notes: typeof NotesComponent
+    Cols: typeof ColsComponent
+    Rows: typeof RowsComponent
+    Grid: typeof GridComponent
+    Center: typeof CenterComponent
+  }
+  export interface GlobalDirectives {
+    vStep: typeof StepDirective
+    vStepFrom: typeof StepFromDirective
+  }
+}
+
 import 'virtual:arao/theme-styles'
