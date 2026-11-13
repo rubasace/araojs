@@ -100,7 +100,7 @@
   --ar-code-light-2: #febc2e;
   --ar-code-light-3: #28c840;
   --ar-code-duration: .3s;           /* lines and words dimming and lighting up */
-  /* --ar-code-hl: below */
+  /* --ar-code-hl, --ar-code-hl-bg: below */
 
   /* ---- addons ---- */
   --ar-progress-height: 8px;         /* ProgressBar */
@@ -222,6 +222,8 @@
   --_ar-table-border: var(--ar-table-border, 2px solid color-mix(in srgb, var(--ar-fg) 15%, transparent));
   --_ar-table-head-color: var(--ar-table-head-color, var(--ar-muted));
   --_ar-code-hl: var(--ar-code-hl, var(--ar-accent));
+  --_ar-code-hl-line: var(--ar-code-hl-bg, color-mix(in srgb, var(--_ar-code-hl) 14%, transparent));
+  --_ar-code-hl-word: var(--ar-code-hl-bg, color-mix(in srgb, var(--_ar-code-hl) 22%, transparent));
   --_ar-controls-accent: var(--ar-controls-accent, var(--ar-accent));
   --_ar-h1-size: var(--ar-title-size, var(--ar-title));
   --_ar-h2-size: var(--ar-title-size, calc(var(--ar-title) * .6));

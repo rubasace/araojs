@@ -102,7 +102,8 @@ table.dense(style="--ar-table-pad: 12px 20px")
 | `--ar-code-muted` | `#8b95a1` | line numbers |
 | `--ar-code-title` | `#3b4048` | title bar text |
 | `--ar-code-title-size` | `34px` | title bar text size |
-| `--ar-code-hl` | `--ar-accent` | highlight colour |
+| `--ar-code-hl` | `--ar-accent` | highlight colour: the line numbers of highlighted lines, and the highlight background unless `--ar-code-hl-bg` says |
+| `--ar-code-hl-bg` | `--ar-code-hl` at 14 % (a line) or 22 % (a word) | background of highlighted lines and words; a pale colour keeps the code's colours legible on a light window (the tint of a dark highlight colour lowers their contrast) |
 | `--ar-code-radius` | `14px` | window corner radius |
 | `--ar-code-shadow` | `0 30px 70px rgba(0,0,0,.35), 0 8px 20px rgba(0,0,0,.2), inset 0 0 0 1px rgba(255,255,255,.06)` | the window's shadow |
 | `--ar-code-light-1` / `-2` / `-3` | `#ff5f57` / `#febc2e` / `#28c840` | the title bar's three lights, left to right |

@@ -313,14 +313,16 @@ const vars = computed(() => {
 
 /* steps */
 .ar-snippet-line.dim { opacity: .28; }
-.ar-snippet-line.hl .ar-snippet-tx { background: color-mix(in srgb, var(--sn-hl) 14%, transparent); }
+/* the highlight's background: --ar-code-hl-bg, else the highlight colour at 14 % (a line) or 22 % (a
+   word): tokens.css */
+.ar-snippet-line.hl .ar-snippet-tx { background: var(--_ar-code-hl-line); }
 /* a run of highlighted lines reads as one block */
 .ar-snippet-line.hl + .ar-snippet-line.hl .ar-snippet-tx { border-top-left-radius: 0; border-top-right-radius: 0; }
 .ar-snippet-line.hl:has(+ .ar-snippet-line.hl) .ar-snippet-tx { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 .ar-snippet-line.hl .ar-snippet-ln { color: var(--sn-hl); border-right-color: var(--sn-hl); }
 .ar-snippet-line.words .ar-snippet-tx .dim { opacity: .28; }
 .ar-snippet-line.words .ar-snippet-tx .hl {
-  background: color-mix(in srgb, var(--sn-hl) 22%, transparent); border-radius: .15em;
+  background: var(--_ar-code-hl-word); border-radius: .15em;
 }
 /* in speaker notes (Notes, wherever they are drawn: the presenter's panel, the export's notes
    pages), a box with no height of its own: the window takes its natural size, its full code at its
