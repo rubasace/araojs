@@ -52,10 +52,25 @@ function cssOrderError(css) {
   return null
 }
 
+// The project's themes go after all of the engine's CSS, so that a theme's rule wins over an
+// engine rule of the same specificity: in the project's build, CSS is in import order, and the
+// entry imports ./arao.css first and virtual:arao/theme-styles (the themes folder's CSS) last. The
+// bundler hoists every import to the top of the chunk, in the order the modules run (src/index.js
+// imports the themes last for that): the theme styles must be the last import, after ./arao.css.
+const THEME_STYLES = 'virtual:arao/theme-styles'
+function themeStylesError(code) {
+  const imports = [...code.matchAll(/^import\s+(?:[\w$*{}\s,]+\s+from\s+)?["']([^"']+)["']/gm)].map((m) => m[1])
+  const at = imports.indexOf(THEME_STYLES)
+  if (at < 0) return `no import of ${THEME_STYLES} in the entry`
+  if (at !== imports.length - 1) return `${THEME_STYLES} must be the entry's last import, not before ${imports.slice(at + 1).join(', ')}`
+  if (!imports.slice(0, at).includes(`./${CSS}`)) return `./${CSS} must be imported before ${THEME_STYLES}`
+  return null
+}
+
 // The library's CSS comes with its JS: the entry imports it, so a project needs no import of its
 // own (it is built by Vite in any case: the virtual modules require the plugin). No theme ships
 // with it: the defaults in tokens.css are the default theme, and a project's themes are its own
-// (src/themes, loaded by the plugin).
+// (src/themes, loaded by the plugin, after it: themeStylesError above).
 function css() {
   return {
     name: 'arao:css',
@@ -68,6 +83,8 @@ function css() {
         const order = cssOrderError(typeof source === 'string' ? source : new TextDecoder().decode(source))
         if (order) this.error(`CSS order: ${order}`)
         entry.code = `import './${CSS}'\n${entry.code}`
+        const themes = themeStylesError(entry.code)
+        if (themes) this.error(`theme styles: ${themes}: keep their import last in src/index.js`)
       },
     },
   }

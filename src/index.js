@@ -8,7 +8,8 @@
 // images (and the icons they use) through virtual modules only that plugin provides. Its CSS comes along with it.
 // The plugin goes first: its imports set the order of the CSS in the build. The project's themes
 // (every CSS file of its themes folder, virtual:arao/theme-styles) go last, after all of the
-// engine's CSS, as when a project imported them itself.
+// engine's CSS, as when a project imported them itself (the library build fails if that import is
+// not the last: vite.config.js, themeStylesError).
 export { default } from './plugin'
 export { default as Deck } from './components/Deck.vue'
 export { default as Slide } from './components/Slide.vue'
