@@ -52,6 +52,8 @@ const shownNotes = computed(() => (stage.current.value?.notes ?? []).filter((n) 
 const report = (value) => reportReady({ ...value, deck: props.deck.name })
 
 async function run() {
+  // the deck's themes, as state/deck.js resolves them: a listed theme from outside the themes
+  // folder (imported by hand) is one of them, so arao export --theme takes it
   const list = themes.value
   if (!list.includes(theme.value))
     return report({ error: `theme "${theme.value}" is not one of the deck's themes: ${list.join(', ')}`, code: 'theme-not-listed', themes: list })
