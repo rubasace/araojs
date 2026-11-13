@@ -6,10 +6,8 @@ import { useEventListener } from '@vueuse/core'
 //     tap(zone)    a tap: zone 'prev' (the left quarter of target), 'next' (the right quarter) or
 //                  'middle' (the rest)
 //     swipe(dir)   a swipe: 'next' (to the left) or 'prev' (to the right)
-//   useTouchNav(target, { next, prev })        the deck's moves: a tap on the right quarter or a
-//                                              swipe left → next(); the left quarter or a swipe
-//                                              right → prev(). The middle is not a move: it is
-//                                              the controls' (useAutoHide's tap)
+// Its users: useShortcuts (edge taps and swipes move the deck) and useAutoHide (the middle tap
+// shows or hides the controls).
 // The mouse is not touch. Links, buttons, inputs and the deck's own controls keep their taps, and
 // so does any element with data-ar-touch="ignore".
 // Taps and swipes are both read from pointer events (touch and pen), not from VueUse's useSwipe,
@@ -37,9 +35,4 @@ export function useTouchGestures(target, { tap, swipe }) {
     tap?.(e.clientX > w * 0.75 ? 'next' : e.clientX < w * 0.25 ? 'prev' : 'middle')
   })
   useEventListener(target, 'pointercancel', () => (touch = null))
-}
-
-export function useTouchNav(target, { next, prev }) {
-  const move = (dir) => (dir === 'next' ? next() : dir === 'prev' ? prev() : null)
-  useTouchGestures(target, { tap: move, swipe: move })
 }

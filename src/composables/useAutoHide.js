@@ -1,6 +1,6 @@
 import { onBeforeUnmount, readonly, ref, toValue } from 'vue'
 import { useEventListener } from '@vueuse/core'
-import { useTouchGestures } from './useTouchNav'
+import { useTouchGestures } from './useTouchGestures'
 
 // Internal. Something that shows while the mouse moves and hides on its own: the floating
 // controls, the cursor.
@@ -9,7 +9,7 @@ import { useTouchGestures } from './useTouchNav'
 //   after     ms the mouse must be still (anywhere in the window) for it to hide; a number, or a
 //             ref or getter of one, read at each move; <= 0: it never hides once shown
 //   tap       optional: a tap (touch, pen) in the middle of the window shows it for tap ms, and
-//             another one while it is shown hides it now (useTouchNav.js says what the middle is,
+//             another one while it is shown hides it now (useTouchGestures.js says what the middle is,
 //             and which taps are not the window's: the controls' own, links, buttons…)
 //   visible   where it starts (default false: hidden until the mouse moves); shown at the start,
 //             it stays shown until a move and after ms without another

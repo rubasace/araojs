@@ -1140,6 +1140,10 @@ try {
       const two = await at(win)
       if (two === one) complaints.push('ArrowRight did not move the presenter window')
       else if (!(await reaches(audience, two))) complaints.push(`the audience did not follow the presenter window to ${two} (at ${await at(audience)})`)
+      // "p" is no shortcut of the presenter view: it opens no other window there
+      const extra = context.waitForEvent('page', { timeout: 1_500 }).then(() => true, () => false)
+      await win.keyboard.press('p')
+      if (await extra) complaints.push('"p" in the presenter window opened another window')
       const stranger = await context.newPage()
       await opened(stranger, encodeURIComponent(other))
       await audience.keyboard.press('ArrowLeft')

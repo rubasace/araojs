@@ -7,10 +7,10 @@
        change afterwards. Without auto-hide (and not docked) it is always shown.
      Where the deck is and what it does come from useDeck() (the slides' titles too); the themes
      from useTheme(). Which list is open and what is typed in it are its own.
-     The keys (composables/useKeyboard.js), on the window, wherever the focus is: they move the
-     deck, open and close its lists, cycle the theme, toggle fullscreen and open the presenter
-     window (not from the presenter view). Keys never show the panel: only the mouse does. Whoever
-     draws the controls has the keys: the export and thumbnails draw none, and have none. -->
+     Its own keys (composables/useKeyboard.js), on the window, wherever the focus is: g opens or
+     closes the jump list, a digit opens it with that number typed, Escape closes any list. The
+     deck's other keys (moves, theme, fullscreen, presenter) are its shortcuts
+     (composables/useShortcuts.js, Deck.vue). Keys never show the panel: only the mouse does. -->
 <template>
   <nav
     class="ar-controls"
@@ -141,7 +141,7 @@ const props = defineProps({
 })
 const deck = useDeck()
 const { fullscreen, toggleFullscreen, openPresenter } = deck
-const { theme, themes, setTheme, cycle: cycleTheme } = useTheme()
+const { theme, themes, setTheme } = useTheme()
 
 const root = ref()
 const hovering = ref(false)
@@ -211,19 +211,10 @@ function onPointerDown(e) {
 onMounted(() => document.addEventListener('pointerdown', onPointerDown, true))
 onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown, true))
 
-// ---- the keys ---------------------------------------------------------------
-useKeyboard({
-  next: deck.next,
-  prev: deck.prev,
-  first: () => deck.go(0),
-  last: () => deck.go(deck.total.value - 1, Infinity),
-  fullscreen: toggleFullscreen,
-  theme: cycleTheme,
-  presenter: deck.role === 'presenter' ? null : openPresenter,
-  menu: () => toggle('slides'),
-  jump: openSlides,
-  close,
-})
+// ---- its own keys: g, a digit, Escape (the deck's other keys: composables/useShortcuts.js) ----
+const keys = { g: () => toggle('slides'), Escape: close }
+for (const d of '0123456789') keys[d] = openSlides
+useKeyboard(keys)
 </script>
 
 <style>
