@@ -209,7 +209,8 @@ Keep every deck side by side, sharing components, code and pictures. Open the pr
 
 **Keyboard and touch**
 
-Arrows to move, `g` to jump to any slide by number or title, taps and swipes on a phone.
+Arrows to move, taps and swipes on a phone. Type a slide number and `Enter` to go straight
+there, as in Keynote; or press `g` to search the slides by title and see where you are.
 
 [Controls](docs/guide/presenting.md#controls)
 
