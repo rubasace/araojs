@@ -3,23 +3,25 @@
      rest of the slide under its title, a zone, a cell of another piece) and takes v-step like any
      element. Sizes are canvas px.
        Rows(ratio="auto 1" gap="md")
-     ratio: one entry per row, a share, auto or a px size (core/layout.js); an invalid ratio warns
+     ratio: one entry per row, a share, auto or a px size (layout.js); an invalid ratio warns
             in development and is ignored. Without ratio: equal rows, one per child. Children
             beyond the ratio's entries get equal rows.
-     gap:   sm | md | lg, a number of px or a length in px, em or rem (core/layout.js). Default md;
+     gap:   sm | md | lg, a number of px or a length in px, em or rem (layout.js). Default md;
             an invalid gap warns and keeps md.
      Overflow: widths hold, heights grow. A child is never wider than the piece and what is wider
      inside it is clipped at its edge; rows grow to fit their content, so rows never overlap; if
      they do not fit, the piece overflows its container at the bottom.
      .collapse: rows are positional, so a child collapsed by v-step.collapse frees its row and the
-     children after it shift back one until it shows again. -->
+     children after it shift back one until it shows again.
+     CSS: what every piece shares is in layout.css; its props reach its own rules (below) as
+     custom properties. -->
 <template>
   <div class="ar-rows" :style="style"><slot /></div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import { gapValue, isGap, isRatio, tracks } from '../../core/layout'
+import { gapValue, isGap, isRatio, tracks } from './layout'
 
 defineOptions({ name: 'Rows' })
 
@@ -28,20 +30,20 @@ const props = defineProps({
   gap: { type: [String, Number], validator: isGap },
 })
 
+// the props as the custom properties its CSS reads (below); an unset one keeps the CSS default
 const style = computed(() => ({
-  gridTemplateRows: props.ratio ? tracks(props.ratio, 'auto') : undefined,
-  gap: gapValue(props.gap),
+  '--_ar-tracks': props.ratio ? tracks(props.ratio, 'auto') : undefined,
+  '--_ar-gap': gapValue(props.gap),
 }))
 </script>
 
+<style src="./layout.css"></style>
 <style>
-/* fills the free space of its container; equal rows unless ratio says otherwise */
+/* equal rows, one per child; with a ratio, its rows (--_ar-tracks), and equal rows for the
+   children beyond them */
 .ar-rows {
-  box-sizing: border-box; flex: 1 1 auto; min-width: 0; min-height: 0;
-  display: grid; gap: var(--ar-gap-md);
-  grid-template-columns: minmax(0, 1fr); grid-auto-rows: 1fr;
+  --_ar-tracks: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr); grid-template-rows: var(--_ar-tracks); grid-auto-rows: 1fr;
 }
-/* widths hold, heights grow: a child is never wider than the piece and what is wider inside it
-   is clipped at its edge (the y axis stays visible). Zero specificity: a child's own rule wins. */
-:where(.ar-rows) > * { max-width: 100%; overflow-x: clip; }
 </style>

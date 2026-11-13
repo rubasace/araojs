@@ -28,7 +28,7 @@
      bottom padding: the body (split's and image-*'s zones too) ends where the footer begins.
      ratio="2 1" sizes the two zones left to right, whichever holds the image (default "1 1").
        Two entries, each a share (proportions: "2 1" = "0.5 0.25"), auto or a px size, as in
-       Cols (core/layout.js); an invalid ratio warns in development and the zones stay "1 1".
+       Cols (layout/layout.js); an invalid ratio warns in development and the zones stay "1 1".
      A zone keeps its width: content wider than it is clipped at its edge, never painted over
      the other zone; heights do not clip.
      Title: put it first. A #title slot renders first in every layout, then the default slot.
@@ -120,7 +120,7 @@
 import { Comment, Fragment, Text, cloneVNode, computed, h, onMounted, ref, useSlots, watch, watchEffect } from 'vue'
 import { useDeck } from '../state/deck'
 import { createSlide } from '../state/slide'
-import { isRatio, tracks } from '../core/layout'
+import { isRatio, tracks } from './layout/layout'
 import { bgKind, blurStyle, blurValue, imagesDir, isBlur, isOpacity, opacityValue } from '../core/image'
 import Notes from './Notes.vue'
 import Img from './Img.vue'
@@ -329,12 +329,13 @@ const footed = () => !!footerSlot() && (props.footer ?? !flat.value)
    does not fit overflows at the bottom, as in a start-aligned body (safe). Pieces placed directly
    in it still fill it, but their auto rows shrink to their content and move with it (1fr rows,
    as Grid's, still fill), unless they hold something that needs the full height: a Snippet, an
-   Img or another piece (those keep the rows as tall as the body, as in a start-aligned body).
-   Margins count as part of the content (a full-height body stays exactly as when start-aligned). */
+   Img or another piece (those keep the rows as tall as the body, as in a start-aligned body),
+   or set their own --_ar-align-content (Cols align="stretch"). Margins count as part of the content (a full-height body stays
+   exactly as when start-aligned). */
 .ar-body-center { justify-content: safe center; }
 .ar-body-end { justify-content: safe flex-end; }
-.ar-body-center > :is(.ar-cols, .ar-rows, .ar-grid):not(:has(.ar-snippet, .ar-img, .ar-cols, .ar-rows, .ar-grid, .ar-center)) { align-content: safe center; }
-.ar-body-end > :is(.ar-cols, .ar-rows, .ar-grid):not(:has(.ar-snippet, .ar-img, .ar-cols, .ar-rows, .ar-grid, .ar-center)) { align-content: safe end; }
+.ar-body-center > :is(.ar-cols, .ar-rows, .ar-grid):not(:has(.ar-snippet, .ar-img, .ar-cols, .ar-rows, .ar-grid, .ar-center)) { align-content: var(--_ar-align-content, safe center); }
+.ar-body-end > :is(.ar-cols, .ar-rows, .ar-grid):not(:has(.ar-snippet, .ar-img, .ar-cols, .ar-rows, .ar-grid, .ar-center)) { align-content: var(--_ar-align-content, safe end); }
 
 /* The deck's footer (Deck #footer): a band --ar-footer-height tall at the bottom of the slide, with
    the slide's side padding, its children in a row (--ar-footer-align: space-between puts one at
