@@ -472,10 +472,10 @@ dist/               the build (npm run build): index.js, arao.css
 `scripts/smoke.mjs` checks the package the way a user gets it. It packs the library (or takes the
 tarball it is given), installs it into a new slides project in a temporary folder with the
 playground's decks, images and snippets, a theme of its own in `src/themes` (with a second one in a
-partial it `@import`s), another imported by hand from `src/styles` (and four tiny decks of its
-own: the second with a duration and a list of themes, the third with neither, the fourth with a
-file name and a cover heading far too long for a card, the fifth listing the hand-imported theme
-first), and then:
+partial it `@import`s; its `src/main.js` imports no theme), and four tiny decks of its own: the
+second with a duration and a list of themes, the third with neither, the fourth with a file name
+and a cover heading far too long for a card (listing that theme first), the fifth listing first a
+theme from outside `src/themes`, declared in its own `<style>`. Then it:
 
 1. runs `vite build`, which must also write `dist/404.html`, a copy of `dist/index.html`;
 2. opens every deck at its path under the dev server (Vue's own warnings only show up in dev) and
@@ -485,7 +485,9 @@ first), and then:
    its title the file name in words (written out in the test) from the list's first render, and
    the same once the covers are in, the second and the fourth deck's cover heading under its
    title, its path shown as its link's (decoded), every card as tall as the others, its title,
-   cover heading and path on one line each (the fourth deck's cut), and the page's URL untouched;
+   cover heading and path on one line each (the fourth deck's cut), each cover in its deck's first
+   theme (the fifth's from outside `src/themes`, the others' discovered), and the page's URL
+   untouched;
    each link must open its deck (the first one followed with the keyboard) and keep the page's
    query, and the covers stay covers on `/?presenter`; `?deck=<name>` must move to `/<name>`
    keeping the rest of the query and the hash; an unknown path, and an unknown `?deck=`, must show
@@ -496,8 +498,8 @@ first), and then:
    deck: it lists `default` and the project's two themes, `t` and `?theme=` wear the first, the
    defaults reach the presenter view (outside every theme), and a `:root` rule of the project's
    wins over a default (`default`'s swatch shows it, and `--ar-controls-accent` reaches the
-   docked controls) while a theme wins over that rule; the fifth deck wears the hand-imported
-   theme with no warning;
+   docked controls) while a theme wins over that rule; the fifth deck wears its theme from outside
+   `src/themes` with no warning;
 5. changes the talk's duration in the presenter view of the second deck (`duration="15m"`), under
    the dev server: `1h30` typed with real keys moves no slide and opens no jump menu, the
    countdown follows and an audience window gets it; after an apply or `Esc` from the keyboard,
@@ -517,15 +519,17 @@ first), and then:
    and windows at `/` and `/<second>` move together, either way, `/` staying `/` (`p` there
    opens `/<second>?presenter`); `createDeckApp({ deckList: 'always' })` lists it at `/`, with
    its cover; `createDeckApp({ deckList: 'sometimes' })` opens it, with one `[arao]` warning. On a
-   decks folder holding a deck that lists a theme there is not: it opens in the next one it
-   lists, with one `[arao]` warning. On a decks folder of 14 decks, at 390x844: the covers far
+   decks folder holding a deck that lists a theme there is not before the project's, and one that
+   lists no theme there is: `/` lists them with no warning, their covers in the project's theme
+   and in `default`, and each opens in that theme with one `[arao]` warning. On a decks folder
+   of 14 decks, at 390x844: the covers far
    below the screen are not drawn until scrolled to, a deck that throws as it is drawn shows "Sin
    vista previa" (one `[arao]` warning), and `/café` is shown as such;
 9. runs `<bin> export` with no `--deck` and checks one PDF per deck at its default name, each with
    as many pages (counted in the PDF itself) as steps, as its summary line says and as the walk
-   counted, plus the total line (the fifth deck's line says it is printed in the hand-imported
-   theme); then `<bin> export --deck <name> --per-slide`, whose PDF must
-   have as many pages as slides;
+   counted, plus the total line (the fifth deck's line says it is printed in its theme from outside
+   `src/themes`); then `<bin> export --deck <name> --per-slide`, whose PDF must have as many
+   pages as slides;
 10. runs `<bin> export --deck <other> --url` against `vite preview`: with a deck's own URL it must
    warn, naming the base meant, and then fail on the deck printed; with a URL under which the
    second deck opens, it must fail on the deck printed, with no warning; both exit 1 and write
@@ -538,8 +542,8 @@ first), and then:
    which warns and exports every deck; `--theme` over a deck that lists it and one that falls back
    (a symlinked deck, next to a dotfile that must not count), a theme no deck lists (exit 1,
    nothing written), a deck that throws at runtime (the others exported, exit 1), and decks that
-   resolve to the same file (the second fails), and `--theme` with the hand-imported theme over a
-   deck that lists it.
+   resolve to the same file (the second fails), and `--theme` with a theme from outside
+   `src/themes` (in the deck's `<style>`) over a deck that lists it.
 
 The package name and the CLI's name come from `package.json`. CI runs it on every pull request and
 on every push to `main`. To run it locally:
