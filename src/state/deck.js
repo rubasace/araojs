@@ -32,7 +32,9 @@ import { createTimer } from './timer'
 //                       the copy that follows it one step ahead (null elsewhere)
 //   next                where one more press leads: { index, step } or { end: true }
 //   titles()            every slide's title (the presenter view's bar)
-//   viewport            the element fullscreen fills: the audience view's viewport (it sets it);
+//   theme               the theme's controls (state/theme.js): the shortcuts' "t" cycles them
+//   viewport            the element fullscreen fills and touch is read on (the shortcuts,
+//                       composables/useShortcuts.js): the audience view's viewport (it sets it);
 //                       without one (the presenter window), the page. fullscreen is true while
 //                       anything in the window is fullscreen, and "f" then leaves it
 //   presenterWindow     { name, blocked, dismiss } (composables/usePresenterWindow.js); null in
@@ -139,7 +141,7 @@ export function createDeck(props) {
 
   return {
     name: route?.name ?? null, mode, exporting, face, stage, preview, next, titles,
-    viewport, presenterWindow,
+    theme: look.controls, viewport, presenterWindow,
   }
 }
 

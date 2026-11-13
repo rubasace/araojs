@@ -32,22 +32,25 @@ its own (`createApp(MyApp).use(Arao)`) provides no route: then `location.pathnam
 
 ## Views
 
-`Deck.vue` makes the deck (`createDeck(props)`) and shows one view, by the URL. The keys are the
-controls' (`Controls` calls `useKeyboard`): only the audience and presenter views draw controls,
-so only they have keys.
+`Deck.vue` makes the deck (`createDeck(props)`), turns its shortcuts on (`useShortcuts(deck)`)
+and shows one view, by the URL. The shortcuts call the deck directly, as its buttons do: keys move
+it, cycle the theme, toggle fullscreen and open the presenter window; touch (the audience view's
+viewport) moves it. Only the audience and presenter views have them. The controls keep their own
+keys (`g`, a digit, `Escape`: their lists), and the middle tap (their auto-hide).
 
 ```
 Deck.vue ── createDeck(props) ── state/deck.js: stage(s), fullscreen, URL hash, sync
+   │  └ useShortcuts(deck) ── composables/useShortcuts.js: keys, touch → the deck (audience, presenter)
                                    └ createTheme ── state/theme.js: the deck's themes, the one it wears, ?theme=
                                    └ createTimer ── state/timer.js: the timer, the talk's length, and their pure helpers (parseDuration, clock…)
    │
    ├─ thumbnail ───────▶ Thumbnail       Stage (role 'thumbnail', standing at the cover)
    ├─ ?export ─────────▶ ExportView      Stage (role 'export')            → core/exporter.js book
    ├─ ?presenter ──────▶ PresenterView   PresenterBar
-   │                                     Stage (role 'presenter')  + Controls (docked) + keys
+   │                                     Stage (role 'presenter')  + Controls (docked)
    │                                     Stage (role 'preview', one step ahead) + notes
-   └─ (default) ───────▶ AudienceView    Stage (role 'audience')   + Controls (auto-hide) + keys + blocked-window notice
-                                         cursor auto-hide, touch nav (edges, swipes; the middle tap is the controls' auto-hide)
+   └─ (default) ───────▶ AudienceView    Stage (role 'audience')   + Controls (auto-hide) + blocked-window notice
+                                         cursor auto-hide (its viewport is where the shortcuts read touch)
 ```
 
 `?export` wins over `?presenter`. Each `Stage` (components/internal/Stage.vue) draws the deck's default
@@ -92,8 +95,9 @@ exposes anything, and `Deck` holds no ref to its view. `v-step` finds its slide 
 |---|---|
 | `useDeckSync(stage, …)` | every window of the deck in step through core/sync.js: position, theme, timer, the duration set in the presenter view (the last two kept through a reload) |
 | `usePresenterWindow()` | opens the presenter window or brings it forward; `blocked` when the browser blocks it |
-| `useKeyboard(actions)` | the deck's keys on the window, called by `Controls` (VueUse `onKeyStroke`); keys inside a text field or an element marked `data-ar-own-keys` (the presenter's duration editor) are left to it |
-| `useTouchNav(el, …)` | taps on the edges and swipes move the deck (`useTouchGestures`: the taps, by zone, and swipes, from pointer events: touch and pen; VueUse's `useSwipe` reads touch events only, so the pen would lose its swipes) |
+| `useShortcuts(deck)` | the deck's shortcuts, called by `Deck.vue` (audience and presenter only): the key map (next, previous, Home, End, `t` theme, `f` fullscreen, `p` presenter but in the presenter view) and, in the audience view, edge taps and swipes, all calling the deck directly |
+| `useKeyboard(handlers)` | key → handler on the window (VueUse `onKeyStroke`), with the rules every key of the deck keeps: keys inside a text field or an element marked `data-ar-own-keys` (the presenter's duration editor) are left to it, so are Ctrl/Cmd/Alt + key, a focused button keeps Space and Enter. Used by `useShortcuts` and `Controls` (`g`, digits, `Escape`) |
+| `useTouchGestures(el, { tap, swipe })` | taps, by zone (left quarter, right quarter, middle), and swipes, from pointer events: touch and pen (VueUse's `useSwipe` reads touch events only, so the pen would lose its swipes). Used by `useShortcuts` (edges, swipes) and `useAutoHide` (the middle) |
 | `useAutoHide({ after, tap })` | `visible`: shown on a mouse move, hidden after `after` ms without one; optionally a tap in the middle shows it for `tap` ms or hides it; ignores a tap's echo mousemove. The controls' auto-hide and the audience view's cursor (VueUse's `useIdle` counts keys too, with a fixed timeout and no tap) |
 | `useFullscreen(el)` | `fullscreen` is true while anything in the window is fullscreen; `toggle()` leaves it if so, else makes the element fullscreen; the standard API only (VueUse's `useFullscreen` counts only its own element and falls back to prefixed APIs) |
 
