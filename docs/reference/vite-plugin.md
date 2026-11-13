@@ -4,7 +4,8 @@
 `@vitejs/plugin-vue` (do not add `vue()` as well: Vite stops with an error) with Pug for the
 templates (no need to install `pug`; HTML templates need nothing), and exposes the project's
 folders as virtual modules, so slides name files and need no imports, and themes (from folders or
-packages) need no import either. It also resolves the [icons](../guide/icons.md) the source uses.
+packages) need no import either. It also resolves the [icons](../guide/icons.md) the source uses, and fetches the
+[web fonts](../guide/themes.md#fonts) the themes name.
 
 ```js
 // vite.config.js
@@ -21,6 +22,7 @@ export default defineConfig({
 | `images` | `'src/images'` | `Img(file)`, `Slide(bg)` | `png jpg jpeg gif webp avif svg` (any case), as URLs, eager |
 | `themes` | `'src/themes'` | `Deck(:themes)`, `?theme=`, `t` | the theme sources, one or a list, in order: a folder (`'src/themes'`, `'./themes'`) or an installed package's name (a bare lowercase name, `'arao-themes'`, `'@acme/arao-themes'`: its `themes/` folder, or the folder inside it that its `package.json` names in `"arao": { "themes": "<folder>" }`); anything that is not a bare lowercase name is a folder. Symlinks are resolved, and a folder named twice counts once. The `.css` files directly in each folder are loaded after the engine's CSS; their `[data-theme="<name>"]` selectors, and those of the local partials they `@import`, name the themes ([Themes](../guide/themes.md)). A package not installed, or one that gives no theme, stops the build |
 | `icons` | `[]` | `Icon` | names (`'lucide:sun'`) built in even when the source does not spell them out (built at runtime); one that is in no installed set is reported when the module is built |
+| `fonts` | `true` | themes' font tokens | web fonts the CSS names (`font-family`, `--ar-font-*`) fetched at build time from Google Fonts, Bunny Fonts, Fontshare, Fontsource or an installed font package, and served with the deck: weights 400, 600 and 700, upright and italic; system fonts never ([Fonts](../guide/themes.md#fonts)). `false` turns it off; an object is passed to [fontless](https://github.com/unjs/fontaine/tree/main/packages/fontless#configuration) over those defaults (`throwOnError: true` fails the build when a font cannot be fetched) |
 | `vue` | `{}` | — | options for `@vitejs/plugin-vue`, passed through |
 
 - A folder is relative to the Vite root, or absolute. One outside the root (`../shared/images`)

@@ -16,8 +16,8 @@ How themes are written, found and applied: [Themes](../guide/themes.md).
 | `--ar-accent` | `#2a7de1` | `h2`, cover bar, section background, progress, highlights |
 | `--ar-accent-fg` | `#fff` | text on accent (section slides) |
 | `--ar-letterbox` | `#1b2a3a` | around the canvas when the window shape differs |
-| `--ar-font-sans` | `Georgia, "Times New Roman", serif` | text font |
-| `--ar-font-mono` | `ui-monospace, Menlo, monospace` | code font |
+| `--ar-font-sans` | `Georgia, "Times New Roman", serif` | text font; a web font named here is fetched at build time ([Fonts](../guide/themes.md#fonts)) |
+| `--ar-font-mono` | `ui-monospace, Menlo, monospace` | code font; a web font named here is fetched at build time |
 | `--ar-text-base` | `42px` | base font size of a slide |
 | `--ar-title` | `96px` | the type scale: `h1` size; `h2` is 0.6x, cover `h1` 1.25x, section `h1` 1.4x (the slide title's own size is `--ar-title-size`) |
 | `--ar-text-small` | `.75em` | `.small` |
@@ -116,7 +116,7 @@ inside the theme the deck wears; the presenter view and the list of decks sit ou
 
 | Token | Default | Meaning |
 |---|---|---|
-| `--ar-ui-font` | `system-ui, -apple-system, "Segoe UI", Roboto, sans-serif` | the interface's font (and the notes pages') |
+| `--ar-ui-font` | `system-ui, -apple-system, "Segoe UI", Roboto, sans-serif` | the interface's font (and the notes pages'); not fetched: a system font, or `arao({ fonts: { families: [{ name, global: true }] } })` |
 | `--ar-ui-mono` | `ui-monospace, "SFMono-Regular", Menlo, monospace` | code in the presenter's notes |
 | `--ar-ui-text` | `16px` | the interface's base text size; its other sizes are multiples of it |
 | `--ar-ui-duration` | `.2s` | panels, notices and step dots coming and going |

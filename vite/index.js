@@ -58,11 +58,16 @@
 // resolved here, at build time: the source is read for the names it uses and only those go into
 // virtual:arao/icons (icons.js). arao({ icons: ['lucide:rocket'] }) adds names the source
 // does not spell out (built at runtime).
+//
+// Fonts: a font family a theme names in --ar-font-sans / --ar-font-mono is fetched from a font
+// provider (Google Fonts, Bunny…) and served with the deck (fonts.js, fontless).
+// arao({ fonts: false }) turns it off; arao({ fonts: { … } }) passes fontless's options.
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import vue from '@vitejs/plugin-vue'
 import { normalizePath, searchForWorkspaceRoot } from 'vite'
+import { fonts } from './fonts.js'
 import { createIcons, forced } from './icons.js'
 import shortcuts from './shortcuts.js'
 
@@ -73,8 +78,8 @@ const { name: PACKAGE } = require('../package.json')
 /**
  * arao()'s options: the three content folders (paths from the Vite root, or absolute), the theme
  * sources (a folder or a package, or a list of them), icon names to include whatever the source
- * says, and the options of Vue's own plugin (plugin-vue).
- * @typedef {{ decks?: string, snippets?: string, images?: string, themes?: string | string[], icons?: string[], vue?: import('@vitejs/plugin-vue').Options }} AraoOptions
+ * says, the web fonts (fonts.js), and the options of Vue's own plugin (plugin-vue).
+ * @typedef {{ decks?: string, snippets?: string, images?: string, themes?: string | string[], icons?: string[], fonts?: import('./fonts.js').FontsOption, vue?: import('@vitejs/plugin-vue').Options }} AraoOptions
  * @typedef {'decks' | 'snippets' | 'images'} Folder
  * @typedef {{ spec: string, dir: string, pkg: string | null, label: string }} ThemeSource
  */
@@ -331,7 +336,7 @@ const escapeGlob = (s) => s.replace(/[()[\]{}*?!+@|\\]/g, '\\$&')
  * @returns {import('vite').Plugin[]}
  */
 export default function arao(options = {}) {
-  const { vue: vueOptions = {}, icons: iconsOption, themes: themesOption, ...rest } = options
+  const { vue: vueOptions = {}, icons: iconsOption, themes: themesOption, fonts: fontsOption, ...rest } = options
   const names = /** @type {Folder[]} */ (Object.keys(modules))
   /** @type {Record<Folder, string>} */
   const folders = { ...DEFAULTS }
@@ -530,7 +535,7 @@ export const ${name}Dir = ${JSON.stringify(folders[name])}`
     },
   }
 
-  return [vue(vueWithPug), plugin, shortcuts(PACKAGE)]
+  return [vue(vueWithPug), plugin, shortcuts(PACKAGE), ...fonts(fontsOption)]
 }
 
 export { arao }
