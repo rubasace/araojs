@@ -19,7 +19,6 @@
     ".": "./dist/index.js",
     "./vite": "./vite/index.js",
     "./style.css": "./dist/arao.css",
-    "./themes/*": "./dist/themes/*",
     "./package.json": "./package.json"
   },
   "bin": {

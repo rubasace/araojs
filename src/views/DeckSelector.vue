@@ -9,10 +9,12 @@
      (one line each, cut with an ellipsis), so the cards of a row are as tall as each other with
      no gap inside any. Each card is one link, to the deck's path; it keeps the page's query, not
      its hash (/?presenter&theme=x links to /<name>?presenter&theme=x).
-     Its own dark look, as the presenter view's and the controls', whatever the decks' themes: each
-     cover wears its deck's first theme, in the card's frame (a deck of another shape than the
-     frame shows the frame around it, not its theme's letterbox). Until a cover is drawn, a soft
-     sheen goes by in its frame (a still tint when the reader asks for reduced motion).
+     Its own dark look, as the presenter view's and the controls', whatever the decks' themes (its
+     --ar-selector-* tokens, styles/tokens.css: it sits in no theme, so a :root rule restyles it):
+     each cover wears its deck's first theme (the first of its list that is a theme, else
+     'default'), in the card's frame (a deck of another shape than the frame shows the frame
+     around it, not its theme's letterbox). Until a cover is drawn, a soft sheen goes by in its
+     frame (a still tint when the reader asks for reduced motion).
      Its text is in Spanish, like the rest of the engine's own UI, and says so (lang="es")
      whatever the page's <html lang>. -->
 <template>
@@ -82,50 +84,40 @@ const query = kept.length ? `?${kept.join('&')}` : ''
 </script>
 
 <style>
-/* Window px, not canvas px. Not a theme's: its own palette (the presenter view's), in private
-   custom properties (--d-*, not tokens). Each rule is one ar- class; the states it depends on go
-   in :where(), so that a later rule of the same class wins (the reduced-motion ones below). */
+/* Window px, not canvas px. Not a theme's: its own look, in the --ar-selector-* tokens (set at the
+   root, styles/tokens.css), its type in multiples of --ar-ui-text. Each rule is one ar- class; the
+   states it depends on go in :where(), so that a later rule of the same class wins (the
+   reduced-motion ones below). */
 html:has(.ar-decks) {
-  --d-bg: #14161b;
-  --d-panel: #1c1f26;
-  --d-raised: #222631;
-  --d-frame: #0d0f13;
-  --d-line: #2b2f39;
-  --d-line-hover: #3c4252;
-  --d-edge: rgba(255, 255, 255, .08);
-  --d-sheen: rgba(255, 255, 255, .11);
-  --d-still: rgba(255, 255, 255, .05);
-  --d-fg: #eceef2;
-  --d-dim: #949bab;
-  --d-accent: #5b9dff;
-  --d-shadow: 0 18px 40px rgba(0, 0, 0, .38), 0 2px 8px rgba(0, 0, 0, .24);
-  --d-radius: 14px;
-  background: var(--d-bg);
+  background: var(--ar-selector-bg);
   color-scheme: dark;
 }
 .ar-decks {
   box-sizing: border-box;
   min-height: 100%;
   padding: clamp(28px, 6vw, 72px) clamp(16px, 4vw, 48px) clamp(40px, 6vw, 80px);
-  background: var(--d-bg);
-  color: var(--d-fg);
-  font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--ar-selector-bg);
+  color: var(--ar-selector-fg);
+  font: var(--ar-ui-text)/1.45 var(--ar-ui-font);
 }
 .ar-decks-page { max-width: 1200px; margin-inline: auto; }
 
 .ar-decks-head { margin-bottom: clamp(24px, 4vw, 40px); }
-.ar-decks-heading { margin: 0; font-size: clamp(28px, 3.2vw, 40px); font-weight: 700; line-height: 1.1; letter-spacing: -.01em; }
+.ar-decks-heading {
+  margin: 0; font-size: clamp(calc(var(--ar-ui-text) * 1.75), 3.2vw, calc(var(--ar-ui-text) * 2.5));
+  font-weight: 700; line-height: 1.1; letter-spacing: -.01em;
+}
 .ar-decks-heading::before {
   content: ''; display: block;
   width: 48px; height: 5px; margin-bottom: 18px;
-  border-radius: 3px; background: var(--d-accent);
+  border-radius: 3px; background: var(--ar-selector-accent);
 }
-.ar-decks-count { margin: 8px 0 0; color: var(--d-dim); font-size: 15px; font-variant-numeric: tabular-nums; }
+.ar-decks-count { margin: 8px 0 0; color: var(--ar-selector-dim); font-size: calc(var(--ar-ui-text) * .9375); font-variant-numeric: tabular-nums; }
 
 .ar-decks-missing {
   margin: 0 0 28px; padding: 14px 18px;
-  border: 1px solid var(--d-line); border-left: 4px solid var(--d-accent);
-  border-radius: 10px; background: var(--d-panel);
+  border: 1px solid var(--ar-selector-line); border-left: 4px solid var(--ar-selector-accent);
+  border-radius: calc(var(--ar-selector-radius) * 5 / 7); background: var(--ar-selector-panel);
   overflow-wrap: anywhere;
 }
 
@@ -138,44 +130,45 @@ html:has(.ar-decks) {
 .ar-decks-card {
   position: relative;
   display: flex; flex-direction: column;
-  border: 1px solid var(--d-line); border-radius: var(--d-radius);
-  background: var(--d-panel);
-  transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease, translate .18s ease;
+  border: 1px solid var(--ar-selector-line); border-radius: var(--ar-selector-radius);
+  background: var(--ar-selector-panel);
+  transition: border-color var(--ar-ui-duration) ease, background-color var(--ar-ui-duration) ease,
+    box-shadow var(--ar-ui-duration) ease, translate var(--ar-ui-duration) ease;
 }
 .ar-decks-card:where(:hover) {
-  border-color: var(--d-line-hover);
-  background: var(--d-raised);
-  box-shadow: var(--d-shadow);
+  border-color: var(--ar-selector-line-hover);
+  background: var(--ar-selector-raised);
+  box-shadow: var(--ar-selector-shadow);
   translate: 0 -2px;
 }
 /* its link is the card's one focusable element (the cover is inert) */
 .ar-decks-card:where(:has(:focus-visible)) {
-  border-color: var(--d-accent);
-  outline: 2px solid var(--d-accent); outline-offset: 3px;
+  border-color: var(--ar-selector-accent);
+  outline: 2px solid var(--ar-selector-accent); outline-offset: 3px;
 }
 
 /* the cover's frame: 16:9, its own edge drawn over it; empty (a soft sheen going by) until the
    cover is drawn in it, or says it cannot be. A cover of another shape is letterboxed in the
    frame's own colour */
 .ar-decks-preview {
-  position: relative; overflow: hidden; color: var(--d-dim);
+  position: relative; overflow: hidden; color: var(--ar-selector-dim);
   aspect-ratio: 16 / 9; margin: 7px 7px 0;
-  border-radius: calc(var(--d-radius) - 7px);
-  background: var(--d-frame);
+  border-radius: calc(var(--ar-selector-radius) * .5);
+  background: var(--ar-selector-frame);
 }
 .ar-decks-preview::after {
   content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
-  border-radius: inherit; box-shadow: inset 0 0 0 1px var(--d-edge);
+  border-radius: inherit; box-shadow: inset 0 0 0 1px var(--ar-selector-edge);
 }
 .ar-decks-preview:where(:not(:has(.ar-thumb, .ar-cover-failed)))::before {
   content: ''; position: absolute; inset: 0;
-  background: linear-gradient(100deg, transparent 20%, var(--d-sheen) 50%, transparent 80%);
-  animation: ar-decks-sheen 1.4s ease-in-out infinite;
+  background: linear-gradient(100deg, transparent 20%, var(--ar-selector-sheen) 50%, transparent 80%);
+  animation: ar-decks-sheen calc(var(--ar-ui-duration) * 7) ease-in-out infinite;
 }
 @keyframes ar-decks-sheen { from { translate: -100% 0; } to { translate: 100% 0; } }
 /* the cover paints no letterbox of its own (views/ThumbnailView.vue): the frame shows around it.
    Two classes, so that it wins over .ar-thumb's own rule whatever their order in arao.css */
-.ar-decks-preview .ar-thumb { background: none; animation: ar-decks-in .3s ease both; }
+.ar-decks-preview .ar-thumb { background: none; animation: ar-decks-in calc(var(--ar-ui-duration) * 1.5) ease both; }
 @keyframes ar-decks-in { from { opacity: 0; } }
 
 .ar-decks-link {
@@ -186,27 +179,33 @@ html:has(.ar-decks) {
 .ar-decks-link::after { content: ''; position: absolute; inset: 0; z-index: 2; border-radius: inherit; }
 /* title, cover heading, path: one line each, whatever their length, so every card has one shape */
 .ar-decks-title, .ar-decks-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ar-decks-title { font-size: 17px; font-weight: 650; line-height: 22px; height: 22px; }
-.ar-decks-sub { font-size: 14px; line-height: 20px; height: 20px; color: var(--d-dim); }
+.ar-decks-title {
+  font-size: calc(var(--ar-ui-text) * 1.0625); font-weight: 650;
+  line-height: calc(var(--ar-ui-text) * 1.375); height: calc(var(--ar-ui-text) * 1.375);
+}
+.ar-decks-sub {
+  font-size: calc(var(--ar-ui-text) * .875); color: var(--ar-selector-dim);
+  line-height: calc(var(--ar-ui-text) * 1.25); height: calc(var(--ar-ui-text) * 1.25);
+}
 .ar-decks-foot { margin-top: 6px; display: flex; align-items: center; gap: 12px; }
 .ar-decks-path {
   flex: 1; min-width: 0;
-  font: 13px/1.3 ui-monospace, "SFMono-Regular", Menlo, monospace; color: var(--d-dim);
+  font: calc(var(--ar-ui-text) * .8125)/1.3 var(--ar-ui-mono); color: var(--ar-selector-dim);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .ar-decks-go {
   flex: none; width: 18px; height: 18px;
-  fill: none; stroke: var(--d-dim); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
-  transition: stroke .18s ease, translate .18s ease;
+  fill: none; stroke: var(--ar-selector-dim); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  transition: stroke var(--ar-ui-duration) ease, translate var(--ar-ui-duration) ease;
 }
-:where(.ar-decks-card:is(:hover, :has(:focus-visible))) .ar-decks-go { stroke: var(--d-accent); translate: 3px 0; }
+:where(.ar-decks-card:is(:hover, :has(:focus-visible))) .ar-decks-go { stroke: var(--ar-selector-accent); translate: 3px 0; }
 
-.ar-decks-empty { margin: 0; color: var(--d-dim); }
+.ar-decks-empty { margin: 0; color: var(--ar-selector-dim); }
 
 /* nothing moves: no lift, no arrow going by, no fade-in; a still tint instead of the sheen */
 @media (prefers-reduced-motion: reduce) {
   .ar-decks-card, .ar-decks-go { transition: none; translate: none; }
   .ar-decks-preview .ar-thumb { animation: none; }
-  .ar-decks-preview::before { animation: none; background: var(--d-still); }
+  .ar-decks-preview::before { animation: none; background: var(--ar-selector-still); }
 }
 </style>

@@ -55,5 +55,5 @@ onBeforeUnmount(() => io?.disconnect())
 
 <style>
 .ar-cover { position: absolute; inset: 0; }
-.ar-cover-failed { margin: 0; height: 100%; display: grid; place-items: center; font-size: 14px; opacity: .6; }
+.ar-cover-failed { margin: 0; height: 100%; display: grid; place-items: center; font-size: calc(var(--ar-ui-text) * .875); opacity: .6; }
 </style>

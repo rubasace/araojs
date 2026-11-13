@@ -1,5 +1,5 @@
 // arao export: PDFs of a project's decks, run in a slides project (the current directory):
-//   arao export [--deck framework] [--theme vigojug] [--per-slide] [--notes] [--out exports/]
+//   arao export [--deck framework] [--theme dark] [--per-slide] [--notes] [--out exports/]
 //   (npm run export -- …, when the project's "export" script is "arao export")
 // Run by bin/arao.js: its options are what follows the command.
 // Without --deck it exports every deck of the project, one PDF each, one after the other; with
@@ -20,7 +20,7 @@
 // before its pages are ready, crashes its page, cannot be printed or written) is reported and
 // does not stop the others; the exit code is 1 if any failed. Two decks of one run never write the
 // same file: the second one fails instead (deck names that differ only in case, or a deck named
-// like another's themed file: Alpha in vigojug and alpha-vigojug in its first theme).
+// like another's themed file: Alpha in dark and alpha-dark in its first theme).
 // --theme with several decks: the decks that list that theme are printed in it, the others in
 // their first theme, after them (their summary line says so, and their file name has no theme);
 // a theme no deck lists is an error, and nothing is written. With --deck, a theme the deck does

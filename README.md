@@ -23,8 +23,9 @@ your laptop, the projector, the presenter view and the PDF all show the same sli
 line breaks. Themes are only CSS tokens, layouts are props, and a deck needs little or no CSS of
 its own.
 
-Arao is a library (the `araojs` package: the engine, its components, addons, themes, a Vite plugin
-and the PDF export). Decks live in a **slides project** of their own that depends on it.
+Arao is a library (the `araojs` package: the engine, its components, addons, its default theme,
+a Vite plugin and the PDF export). Decks live in a **slides project** of their own that depends on
+it.
 
 > **Status:** the first release is not on npm yet (the `araojs` name holds a placeholder). Until
 > then a project uses it from a checkout, `"araojs": "file:../araojs"` (run `npm run build` here
@@ -58,8 +59,9 @@ fixed canvas, absolute steps and themes made of tokens. eagle.js had its bird; s
   by name, resolved at build time. Offline when presenting, vectors in the PDF.
 - **Pictures and backgrounds.** `Img(file=…)` and `Slide(bg=…)` with fit, position, opacity and
   blur; a dashed placeholder names a missing file.
-- **Themes as tokens.** A theme is a block of `--ar-*` CSS variables. Same slides, another venue:
-  only the theme changes, live (`t`, the picker, `?theme=`).
+- **Themes as tokens.** A theme is a block of `--ar-*` CSS variables over the defaults, in a file
+  of `src/themes`, found on its own. Same slides, another venue: only the theme changes, live
+  (`t`, the picker, `?theme=`).
 - **Presenter view.** Current slide, next step, speaker notes, a timer with countdown (its duration
   can be changed live) and the wall clock; every window of the deck stays in step.
 - **A URL per deck.** `/mytalk`, under any base; `/` shows every deck of the project as a card
@@ -90,8 +92,6 @@ export default defineConfig({ plugins: [arao()] })
 ```js
 // src/main.js
 import { createDeckApp } from 'araojs'
-import 'araojs/themes/default.css'
-import 'araojs/themes/vigojug.css'
 
 createDeckApp().mount('#app')
 ```
@@ -110,13 +110,14 @@ That is the whole setup:
 
 - `arao()` is the only Vite plugin: it brings `@vitejs/plugin-vue` and Pug along (don't add
   `vue()` too; Vue's options go in `arao({ vue: { … } })`), serves the project's folders (decks in
-  `src/decks`, code files in `src/snippets`, pictures in `src/images`, each one an option) and
-  builds in the icons the source names.
+  `src/decks`, code files in `src/snippets`, pictures in `src/images`, themes in `src/themes`,
+  each one an option) and builds in the icons the source names.
 - `createDeckApp()` creates the Vue app with the engine installed and renders the deck the URL's
   path names (`/mytalk`), or at `/` the list of decks (a project with one deck opens it there;
   `createDeckApp({ deckList: 'always' })` lists it anyway). A project with its own app shell uses
   `createApp(MyApp).use(Arao)` instead (`import Arao from 'araojs'`).
-- The engine's CSS comes with `'araojs'`; the themes the decks wear are imported one by one.
+- The engine's CSS comes with `'araojs'`, and so do the project's themes: every CSS file of
+  `src/themes` is loaded with nothing to import ([Themes](#themes)).
 
 ### A first deck
 
@@ -124,7 +125,7 @@ Create `src/decks/MyTalk.vue` (and put a `DebugFilter.java` in `src/snippets/`):
 
 ```pug
 <template lang="pug">
-Deck(:themes="['default', 'vigojug']" duration="30m")
+Deck(duration="30m")
   ProgressBar
   SlideNumber
 
@@ -160,7 +161,7 @@ directives. Each file picks its own syntax; the `<script setup>` does not change
 
 ```vue
 <template>
-  <Deck :themes="['default', 'vigojug']" duration="30m">
+  <Deck duration="30m">
     <ProgressBar />
     <SlideNumber />
 
@@ -202,7 +203,7 @@ Then `npm run dev` and open `http://localhost:5173/`:
 |---|---|
 | `/` | the list of the project's decks: a card each, with its cover drawn in it (a project with one deck opens it, and `/` and `/mytalk` are then the same deck to every window) |
 | `/mytalk` | the deck `src/decks/MyTalk.vue` (the name is case-insensitive) |
-| `/mytalk?theme=vigojug` | the same deck with another of its themes |
+| `/mytalk?theme=acme` | the same deck with another of its themes |
 | `/mytalk#/5/2` | slide 5, step 2 (the hash follows you as you move) |
 | `/mytalk?presenter` | the presenter view |
 | `/mytalk?export` | the deck as a book of pages, for printing |
@@ -218,13 +219,13 @@ package.json        depends on araojs; scripts dev, build, export
 vite.config.js      plugins: [arao()]
 index.html          <div id="app"> and /src/main.js
 src/
-  main.js           createDeckApp().mount('#app'), after the theme imports
+  main.js           createDeckApp().mount('#app')
   decks/            one .vue file per deck (/<file name>)
     <talk>/         components only that talk uses
   slides/           components shared by several decks
   snippets/         code files shown by Snippet(file="…"), by name (subfolders allowed)
   images/           pictures used by Img(file="…") and Slide(bg="…"), by name (subfolders allowed)
-  themes/           the project's own themes, if any
+  themes/           the project's themes, if any: CSS files, each [data-theme="<name>"] a theme
 ```
 
 A component written for one talk goes in `src/decks/<talk>/`; one that several decks use goes in
@@ -319,25 +320,32 @@ appear in the source, so nothing is fetched while presenting. Sets and their lic
 
 ### Themes
 
-A theme is one rule of tokens, imported in `src/main.js` and listed in `Deck(:themes)`:
+Every token has a default, and the defaults are the `default` theme: a light page, Georgia, a
+blue accent, a light code window. A theme is a rule of tokens in a CSS file of `src/themes` that
+declares only what it changes; the plugin finds the file and loads it, with nothing to import:
 
 ```css
 /* src/themes/acme.css */
 [data-theme="acme"] {
-  --ar-bg: #f6f3ec;
-  --ar-fg: #1b2a3a;
-  --ar-accent: #2a7de1;
-  --ar-font-sans: Georgia, serif;
+  --ar-bg: #0f1115;
+  --ar-fg: #e8e8ea;
+  --ar-accent: #ff6a3d;
+  --ar-font-sans: "Inter", system-ui, sans-serif;
   /* … */
 }
 ```
 
-Tokens cover colours, fonts, sizes, title and body placement, footer, tables and code colours;
-some have no fallback and every theme must set them
-([Theme tokens](docs/reference.md#theme-tokens)). The shipped themes, `default` and `vigojug`,
-are imported from the package: `import 'araojs/themes/vigojug.css'`. In a slide, style through
-tokens (`color: var(--ar-accent)`) rather than fixed colours. Utility classes (`.muted`,
-`.center`, `.upper`, `.small`) are there as an escape hatch.
+The theme's name is the one in its selector (`acme`), not the file's: one file may hold several
+themes. A deck without `themes` offers all of them, `default` first and then the project's in
+alphabetical order; `Deck(:themes="['acme', 'default']")` picks some, in its order (the first is
+the one it opens in). A theme from anywhere else (a CSS file the project imports itself from
+`src/styles`, a package, a `.scss` file) is worn by a deck that lists it in `themes`, but not
+offered by one without a list ([Themes](docs/reference.md#themes)). Tokens cover colours, fonts,
+sizes, title and body placement, footer,
+tables, code, and the deck's own interface (controls, presenter view, export notes)
+([Theme tokens](docs/reference.md#theme-tokens)). No theme ships with the package but the
+defaults. In a slide, style through tokens (`color: var(--ar-accent)`) rather than fixed colours.
+Utility classes (`.muted`, `.center`, `.upper`, `.small`) are there as an escape hatch.
 
 ## Presenting
 
@@ -388,7 +396,7 @@ In a slides project (`"export": "arao export"` in its scripts; `npx arao export 
 npx playwright-core install chromium      # once: the Chromium that playwright-core drives
 npm run export                                        # every deck: exports/<deck>.pdf each
 npm run export -- --deck mytalk                       # exports/mytalk.pdf
-npm run export -- --deck mytalk --theme vigojug --per-slide --notes --out talk.pdf
+npm run export -- --deck mytalk --theme acme --per-slide --notes --out talk.pdf
 ```
 
 | Option | Meaning |
@@ -427,7 +435,7 @@ Node 20.19 or newer.
 | Script | What it does |
 |---|---|
 | `npm run dev` | the playground, on the library's source, on 127.0.0.1:5173 (`ARAO_PUBLIC_HOST` allows a tunnel host) |
-| `npm run build` | the library into `dist/`: `index.js` (ESM, imports its CSS), `arao.css`, `themes/*.css`; also run by `npm pack` / `npm publish` |
+| `npm run build` | the library into `dist/`: `index.js` (ESM, imports its CSS) and `arao.css`; also run by `npm pack` / `npm publish` |
 | `npm run smoke [-- <file.tgz>]` | the packaged-consumer smoke test (below) |
 
 In a slides project, `npm run dev` is the Vite dev server with hot reload, `npm run build` a
@@ -449,24 +457,25 @@ src/
   components/       Deck, Slide, Img, Icon, Snippet, Notes; layout/: Cols, Rows, Grid, Center
   directives/       v-step and v-step-from (step.js)
   addons/           ProgressBar, SlideNumber: things drawn over every slide
-  styles/           only what is global: tokens.css (every token's default), base.css (page, viewport, steps);
-                    every component brings its own CSS in its .vue file
-  themes/           the shipped themes (default.css, vigojug.css)
+  styles/           only what is global: tokens.css (every token and its default: the default theme),
+                    base.css (page, viewport, steps); every component brings its own CSS in its .vue file
 vite/               the Vite plugin (araojs/vite; icons.js resolves the icons)
 bin/                the arao command (arao export)
 playground/         a tiny slides project on the library's source, for developing it
 docs/reference.md   the full reference
 docs/architecture.md how the engine is built: folders, views, provide/inject, useDeck's face
-dist/               the build (npm run build): index.js, arao.css, themes/
+dist/               the build (npm run build): index.js, arao.css
 ```
 
 ### Smoke test
 
 `scripts/smoke.mjs` checks the package the way a user gets it. It packs the library (or takes the
 tarball it is given), installs it into a new slides project in a temporary folder with the
-playground's decks, images and snippets (and three tiny decks of its own: the second with a
-duration, the third without, the fourth with a file name and a cover heading far too long for a
-card), and then:
+playground's decks, images and snippets, a theme of its own in `src/themes` (with a second one in a
+partial it `@import`s; its `src/main.js` imports no theme), and four tiny decks of its own: the
+second with a duration and a list of themes, the third with neither, the fourth with a file name
+and a cover heading far too long for a card (listing that theme first), the fifth listing first a
+theme from outside `src/themes`, declared in its own `<style>`. Then it:
 
 1. runs `vite build`, which must also write `dist/404.html`, a copy of `dist/index.html`;
 2. opens every deck at its path under the dev server (Vue's own warnings only show up in dev) and
@@ -476,14 +485,21 @@ card), and then:
    its title the file name in words (written out in the test) from the list's first render, and
    the same once the covers are in, the second and the fourth deck's cover heading under its
    title, its path shown as its link's (decoded), every card as tall as the others, its title,
-   cover heading and path on one line each (the fourth deck's cut), and the page's URL untouched;
+   cover heading and path on one line each (the fourth deck's cut), each cover in its deck's first
+   theme (the fifth's from outside `src/themes`, the others' discovered), and the page's URL
+   untouched;
    each link must open its deck (the first one followed with the keyboard) and keep the page's
    query, and the covers stay covers on `/?presenter`; `?deck=<name>` must move to `/<name>`
    keeping the rest of the query and the hash; an unknown path, and an unknown `?deck=`, must show
    the list with a notice and one warning;
 4. checks `useDeck()` on the second deck, under the dev server: the object is frozen, writes
    through its refs change nothing, `setTheme` of a name the deck has not gives one `[arao]`
-   warning, and in the presenter view's preview no function acts;
+   warning, and in the presenter view's preview no function acts; and the themes, on the third
+   deck: it lists `default` and the project's two themes, `t` and `?theme=` wear the first, the
+   defaults reach the presenter view (outside every theme), and a `:root` rule of the project's
+   wins over a default (`default`'s swatch shows it, and `--ar-controls-accent` reaches the
+   docked controls) while a theme wins over that rule; the fifth deck wears its theme from outside
+   `src/themes` with no warning;
 5. changes the talk's duration in the presenter view of the second deck (`duration="15m"`), under
    the dev server: `1h30` typed with real keys moves no slide and opens no jump menu, the
    countdown follows and an audience window gets it; after an apply or `Esc` from the keyboard,
@@ -503,13 +519,17 @@ card), and then:
    and windows at `/` and `/<second>` move together, either way, `/` staying `/` (`p` there
    opens `/<second>?presenter`); `createDeckApp({ deckList: 'always' })` lists it at `/`, with
    its cover; `createDeckApp({ deckList: 'sometimes' })` opens it, with one `[arao]` warning. On a
-   decks folder of 14 decks, at 390x844: the covers far below the screen are not drawn until
-   scrolled to, a deck that throws as it is drawn shows "Sin vista previa" (one `[arao]`
-   warning), and `/café` is shown as such;
+   decks folder holding a deck that lists a theme there is not before the project's, and one that
+   lists no theme there is: `/` lists them with no warning, their covers in the project's theme
+   and in `default`, and each opens in that theme with one `[arao]` warning. On a decks folder
+   of 14 decks, at 390x844: the covers far
+   below the screen are not drawn until scrolled to, a deck that throws as it is drawn shows "Sin
+   vista previa" (one `[arao]` warning), and `/café` is shown as such;
 9. runs `<bin> export` with no `--deck` and checks one PDF per deck at its default name, each with
    as many pages (counted in the PDF itself) as steps, as its summary line says and as the walk
-   counted, plus the total line; then `<bin> export --deck <name> --per-slide`, whose PDF must
-   have as many pages as slides;
+   counted, plus the total line (the fifth deck's line says it is printed in its theme from outside
+   `src/themes`); then `<bin> export --deck <name> --per-slide`, whose PDF must have as many
+   pages as slides;
 10. runs `<bin> export --deck <other> --url` against `vite preview`: with a deck's own URL it must
    warn, naming the base meant, and then fail on the deck printed; with a URL under which the
    second deck opens, it must fail on the deck printed, with no warning; both exit 1 and write
@@ -522,7 +542,8 @@ card), and then:
    which warns and exports every deck; `--theme` over a deck that lists it and one that falls back
    (a symlinked deck, next to a dotfile that must not count), a theme no deck lists (exit 1,
    nothing written), a deck that throws at runtime (the others exported, exit 1), and decks that
-   resolve to the same file (the second fails).
+   resolve to the same file (the second fails), and `--theme` with a theme from outside
+   `src/themes` (in the deck's `<style>`) over a deck that lists it.
 
 The package name and the CLI's name come from `package.json`. CI runs it on every pull request and
 on every push to `main`. To run it locally:

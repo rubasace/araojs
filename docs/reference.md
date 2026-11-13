@@ -20,7 +20,7 @@ Contents: [Setup](#setup) · [Deck](#deck) · [Slide](#slide) ([zones](#zones-he
 [Img](#img) · [Icon](#icon) · [Snippet](#snippet) · [Notes](#notes) · [Controls](#controls) ·
 [Presenter view](#presenter-view) · [Export mode](#export-mode) · [useDeck()](#usedeck) ·
 [useSlide()](#useslide) · [Addons](#addons) · [Vite plugin](#vite-plugin) ·
-[Theme tokens](#theme-tokens) · [URLs](#urls) · [Hosting](#hosting)
+[Themes](#themes) · [Theme tokens](#theme-tokens) · [URLs](#urls) · [Hosting](#hosting)
 
 How the engine itself is built (folders, views, provide/inject channels): [architecture.md](architecture.md).
 
@@ -44,8 +44,6 @@ export default defineConfig({ plugins: [arao()] })
 ```js
 // src/main.js (index.html: <div id="app"></div> and <script type="module" src="/src/main.js">)
 import { createDeckApp } from 'araojs'
-import 'araojs/themes/default.css'
-import 'araojs/themes/vigojug.css'
 createDeckApp().mount('#app')
 ```
 
@@ -56,20 +54,21 @@ createDeckApp().mount('#app')
 - `arao()` is the only plugin: it includes `@vitejs/plugin-vue` and Pug ([Vite plugin](#vite-plugin)).
 - `createDeckApp(options?)` creates the Vue app with the engine installed and renders the deck
   the URL's path names, `/<name>` ([URLs](#urls)). At `/` it lists the decks: a card per deck,
-  in alphabetical order, with the deck's cover (its first slide at step 1, in its first theme)
-  drawn live and small in it, its title and its path. The title is the file name in words
-  (`my-talk` → "My talk", `MyTalk` → "My Talk"), there from the start; under it, once the cover
-  is drawn, its first heading (else its `Slide(title)`), unless it says the same. Title, heading
-  and path take one line each (cut with an ellipsis), so every card has the same height. A deck
-  whose canvas is not 16:9 shows in the card's frame, letterboxed in the frame's colour. A cover
-  is drawn when its card nears the viewport, and is a picture: nothing in it reacts, nothing plays,
-  it touches neither the URL nor other windows (`useDeck().role` is `'thumbnail'` there; only
-  the cover slide draws its content, but code a deck runs when it mounts runs there too). The
-  page has its own dark look, like the presenter view (its colours are its own: a theme does not
-  restyle it). A deck that cannot be drawn (its code fails to load, or throws as it is drawn)
-  shows "Sin vista previa" in its card, with one console warning. Each card is a link that keeps the page's
-  query, not its hash: on `/?presenter&theme=vigojug` they lead to
-  `/<name>?presenter&theme=vigojug`. A path that names no deck warns in the console and shows
+  in alphabetical order, with the deck's cover (its first slide at step 1, in the first theme of
+  its list: [Themes](#themes)) drawn live and small in it, its title and its path. The title is
+  the file name in words (`my-talk` → "My talk", `MyTalk` → "My Talk"), there from the start;
+  under it, once the cover is drawn, its first heading (else its `Slide(title)`), unless it says
+  the same. Title, heading and path take one line each (cut with an ellipsis), so every card has
+  the same height. A deck whose canvas is not 16:9 shows in the card's frame, letterboxed in the
+  frame's colour. A cover is drawn when its card nears the viewport, and is a picture: nothing in
+  it reacts, nothing plays, it touches neither the URL nor other windows (`useDeck().role` is
+  `'thumbnail'` there; only the cover slide draws its content, but code a deck runs when it
+  mounts runs there too). The page has its own dark look, like the presenter view: its
+  `--ar-selector-*` tokens ([Interface](#interface)), which a `:root` rule restyles (the page
+  sits in no theme). A deck that cannot be drawn (its code fails to load, or throws as it is
+  drawn) shows "Sin vista previa" in its card, with one console warning. Each card is a link that
+  keeps the page's query, not its hash: on `/?presenter&theme=acme` they lead to
+  `/<name>?presenter&theme=acme`. A path that names no deck warns in the console and shows
   the list, with a notice. Two deck files whose names differ only in case (`Talk.vue`,
   `talk.vue`) are one deck to the path: the first in code-point order (`Talk`) is kept, with a
   warning in the dev server.
@@ -82,14 +81,14 @@ createDeckApp().mount('#app')
   `/<name>`: windows at either stay in step, and its presenter window opens at `/<name>?presenter`.
 
   Any other option, or a value that is none of these, warns in the console and is ignored.
-- The engine's CSS (structure, layouts, controls) comes with `'araojs'`; themes are imported
-  one by one: `araojs/themes/<name>.css` for the shipped ones (`default`, `vigojug`), your own
-  from `src/themes/` ([Theme tokens](#theme-tokens)).
+- The engine's CSS (structure, layouts, controls, and the tokens' defaults, which are the
+  `default` theme) comes with `'araojs'`; the project's themes are the CSS files of
+  `src/themes/`, which the plugin loads with nothing to import ([Themes](#themes)).
 - Own app shell instead of `createDeckApp`: `createApp(MyApp).use(Arao)` with
   `import Arao from 'araojs'`; it registers the components and directives above.
 - Package entry points: `araojs` (engine, `createDeckApp`, components, `step`/`stepFrom`,
-  composables, addons), `araojs/vite` (the plugin), `araojs/themes/*.css`,
-  `araojs/style.css` (the engine's CSS, already imported by `araojs`); the `arao` command
+  composables, addons), `araojs/vite` (the plugin), `araojs/style.css` (the engine's CSS,
+  already imported by `araojs`); the `arao` command
   ([Export mode](#export-mode)).
 
 ### Pug or HTML
@@ -128,7 +127,7 @@ view and export mode. One per deck file (`src/decks/<Name>.vue`).
 
 | Prop | Type | Default | Notes |
 |---|---|---|---|
-| `themes` | Array of strings | `['default']` | the themes this deck can wear; the first is the default. Each must exist as a `[data-theme="<name>"]` token block imported in `src/main.js` (`araojs/themes/<name>.css` for the shipped ones). |
+| `themes` | Array of strings | every theme there is: `default`, then the project's in alphabetical order | the themes this deck can wear, in this order; the first is the one it opens in. Each is `default` (the defaults), the name of a project theme (a `[data-theme="<name>"]` rule in a CSS file of `src/themes`), or the name of a theme the project imports itself from anywhere else, whose rule is in a stylesheet the page has loaded ([Themes](#themes)); any other name warns once (`[arao]`) and is skipped (a list left empty is `['default']`). |
 | `duration` | String or Number | none | the talk's length, for the presenter's countdown. `90` / `"90"` / `"7.5"` (minutes), `"45m"`, `"45min"`, `"1h30m"`, `"1h 30m"`, `"1h30"`, `"90s"`, `"45:00"` (m:ss), `"1:30:00"` (h:mm:ss). Anything else warns and shows no countdown; a length under 1 minute or over 24 hours warns and still counts. It is the default: the presenter can change it live, without editing the deck, and that change wins until it is reset ([Presenter view](#presenter-view)). |
 | `width` | Number | `1920` | canvas width in px |
 | `height` | Number | `1080` | canvas height in px |
@@ -143,7 +142,7 @@ Slots:
   in the presenter view; each slide draws its own copy, which fades with it.
 
 ```pug
-Deck(:themes="['default']")
+Deck
   template(#footer="{ number, total }")
     span ACME · DevConf 2026
     span {{ number }} / {{ total }}
@@ -154,8 +153,8 @@ Deck(:themes="['default']")
 Behaviour:
 - The hash `#/<slide>/<step>` (both 1-based) is kept up to date and read on load and on change.
 - `?theme=<name>` picks the theme; `t` or the picker cycles through `themes`. A name that is not
-  in `themes` is applied anyway in the normal view (no tokens match: the slides look unstyled) and
-  is an error in export mode.
+  in `themes` is applied anyway in the normal view (no theme rule matches it: the slides wear the
+  defaults) and is an error in export mode.
 - All windows of the same deck in the same browser stay in step (position, theme, timer, the
   duration set in the presenter view) through a `BroadcastChannel` keyed by the deck's path and
   the page's query, ignoring `presenter` and `theme`. The deck's path is the one the list links
@@ -164,7 +163,7 @@ Behaviour:
   already open, unless its URL names a theme.
 
 ```pug
-Deck(:themes="['default', 'vigojug']" duration="45m")
+Deck(:themes="['default', 'acme']" duration="45m")
   ProgressBar
   SlideNumber
   Slide
@@ -610,7 +609,7 @@ A code window: macOS-style title bar, Shiki syntax colours, line numbers, per-st
 | `line-numbers` | Boolean | `true` | `:line-numbers="false"` hides them |
 | `fit` | Boolean | `false` | the window hugs the code instead of the standard frame (small inline snippets) |
 | `size` | Number | theme's `--ar-code-size` | font size in px (`:size="36"`); still shrinks to fit |
-| `theme` | String | theme's `--ar-code-theme`, else `material-theme-darker` | a Shiki theme name for this snippet |
+| `theme` | String | theme's `--ar-code-theme` (`github-light` by default) | a Shiki theme name for this snippet |
 
 **Frame and size.** Every snippet window has the slide's shape (`--ar-code-aspect`, 16/9) and is as
 large as fits in the space it gets, up to `--ar-code-width` (1520 px): on a slide with a title that
@@ -691,7 +690,9 @@ Built into `Deck`; nothing to add. A floating panel at the bottom centre of the 
 - **Jump menu** (`g`, a digit, or the counter): a search box over the slide list; a number
   filters by slide number prefix, text by title (`Slide(title)` or its first heading). `↑`/`↓`,
   `Enter`, `Esc`.
-- **Theme picker**: the deck's `themes`, each with a swatch from its tokens.
+- **Theme picker**: the deck's `themes`, each with a swatch of its background and accent, as the
+  deck would wear them (`default`'s: the defaults with the project's `:root` rules over them).
+- Its look is the `--ar-controls-*` tokens ([Interface](#interface)).
 - Keys (in any window of the deck): see the table below. Ctrl/Cmd/Alt combinations, and keys
   typed into inputs or anywhere in the presenter's duration field (its buttons too), are ignored.
   `Space`/`Enter` on a focused button press the button.
@@ -721,7 +722,8 @@ Opened with `p`, the controls' screen button, or `?presenter` in the deck's URL 
 window (named per deck: pressing `p` again brings it forward instead of reloading it). If the
 browser blocks it, a notice above the controls links to it.
 
-Layout (its own dark look, whatever the deck theme; only the slides wear the theme):
+Layout (its own dark look, whatever the deck theme, from the `--ar-presenter-*` tokens:
+[Interface](#interface); only the slides wear the theme):
 - **Top bar**: slide `n / total` and title; the timer (elapsed, state, remaining) with
   play/pause and reset buttons and the talk's duration (a button); the wall clock.
 - **Current slide**, large, with the controls docked under it (always visible).
@@ -801,7 +803,7 @@ page, cannot be printed or written) is reported and the others still export; the
 if any failed. The decks are the plugin's (the same `*.vue` the app lists: symlinks included,
 dotfiles not). Two decks never write the same file in one run: the second fails instead (names
 that differ only in case, which also open as one deck and are warned about; or `Alpha` with
-`--theme vigojug` and a deck `alpha-vigojug` in its first theme). `--theme` with several decks:
+`--theme acme` and a deck `alpha-acme` in its first theme). `--theme` with several decks:
 the decks that list it are printed in it, then the others in their first theme (their summary
 line says so and their file name has no theme); a theme no deck lists is an error and nothing is
 written; with `--deck`, a theme the deck does not list is an error. Chromium:
@@ -891,7 +893,7 @@ const deck = useDeck()
 | `steps` | computed, Number | steps of the current slide |
 | `progress` | computed, 0..1 | position over every step of the deck |
 | `theme` | readonly ref, String | current theme name |
-| `themes` | readonly ref, Array of strings | the deck's `themes` |
+| `themes` | readonly ref, Array of strings | the deck's themes: its `themes` prop (names that are no theme left out), or every theme there is |
 | `fullscreen` | readonly ref, Boolean | the window is fullscreen (whatever element is: `f` then leaves it) |
 | `timer` | readonly ref, Object | the talk's timer: `{ state: 'idle' \| 'running' \| 'paused', acc, since }` (ms counted before `since`, and when it last started running) |
 | `duration` | computed, Number or `null` | the talk's length in effect, in ms: the one set in the presenter view, else `Deck(duration)`; `null` when there is none |
@@ -993,14 +995,15 @@ onBeforeUnmount(() => clearInterval(timer))
 
 `arao()` from `araojs/vite` is all a slides project puts in its Vite config. It includes
 `@vitejs/plugin-vue` (do not add `vue()` as well: Vite stops with an error) with Pug for the
-templates (no need to install `pug`; HTML templates need nothing), and exposes three project folders as virtual modules, so
-slides name files and need no imports. It also resolves the [icons](#icon) the source uses.
+templates (no need to install `pug`; HTML templates need nothing), and exposes four project
+folders as virtual modules, so slides name files and need no imports, and themes need no import
+either. It also resolves the [icons](#icon) the source uses.
 
 ```js
 // vite.config.js
 import arao from 'araojs/vite'
 export default defineConfig({
-  plugins: [arao({ decks: 'src/decks', snippets: 'src/snippets', images: 'src/images' })],
+  plugins: [arao({ decks: 'src/decks', snippets: 'src/snippets', images: 'src/images', themes: 'src/themes' })],
 })
 ```
 
@@ -1009,18 +1012,21 @@ export default defineConfig({
 | `decks` | `'src/decks'` | `createDeckApp()`, `arao export` | the `.vue` files directly in it (not in subfolders), one lazily loaded chunk each, each opened at `/<file name>` |
 | `snippets` | `'src/snippets'` | `Snippet(file)` | every file, as raw text, loaded lazily |
 | `images` | `'src/images'` | `Img(file)`, `Slide(bg)` | `png jpg jpeg gif webp avif svg` (any case), as URLs, eager |
+| `themes` | `'src/themes'` | `Deck(:themes)`, `?theme=`, `t` | the `.css` files directly in it (not in subfolders), loaded after the engine's CSS; their `[data-theme="<name>"]` selectors, and those of the local partials they `@import`, name the themes ([Themes](#themes)) |
 | `icons` | `[]` | `Icon` | names (`'lucide:sun'`) built in even when the source does not spell them out (built at runtime); one that is in no installed set is reported when the module is built |
 | `vue` | `{}` | — | options for `@vitejs/plugin-vue`, passed through |
 
 - A folder is relative to the Vite root, or absolute. One outside the root (`../shared/images`)
   works too: it is added to `server.fs.allow` and watched.
 - A folder that was set explicitly but does not exist is reported when Vite starts.
-- Subfolders are allowed; files are named by their path inside the folder; names are
-  case-sensitive.
+- Subfolders are allowed (snippets, images); files are named by their path inside the folder;
+  names are case-sensitive.
 - Adding or removing a picture during development updates the slides in place.
 - Modules: `virtual:arao/decks` exports `decks` (file name → loader) and `decksDir`;
   `virtual:arao/snippets` exports `snippets` (path → loader) and `snippetsDir`;
   `virtual:arao/images` exports `images` (path → URL) and `imagesDir`;
+  `virtual:arao/themes` exports `themes` (the project's theme names, sorted) and `themesDir`, and
+  `virtual:arao/theme-styles` imports the themes folder's CSS files;
   `virtual:arao/icons` exports `icons` (`prefix:name` → `{ body, width, height }`, only the icons
   the source uses, plus the `icons` option).
 - It also keeps `araojs` out of Vite's dependency prebundling (it imports those virtual
@@ -1029,50 +1035,120 @@ export default defineConfig({
 
 ---
 
+## Themes
+
+Every token the engine reads has a default ([Theme tokens](#theme-tokens), declared in
+`styles/tokens.css`), and the defaults are the `default` theme: a light page, Georgia, a blue
+accent, a light code window. It has no file; `default` is always a valid theme name.
+
+A project theme is a CSS rule `[data-theme="<name>"] { --ar-…: …; }` in a CSS file of the
+project's themes folder (`src/themes`; the [plugin](#vite-plugin)'s `themes` option). It declares
+only the tokens it changes, over the defaults. The plugin loads every CSS file directly in that
+folder, after the engine's CSS, with nothing to import, and names the project's themes by their
+selectors:
+
+- a theme's name is the one in `[data-theme="<name>"]` (quoted or not), not the file's: one file
+  may hold several themes (`[data-theme="venue"]` and `[data-theme="venue-dark"]`), and rules for
+  several at once (`[data-theme^="venue"] { … }`, which names none by itself); comments do not
+  count;
+- a file that names no theme is still loaded (shared rules, `@font-face`) and Vite warns about
+  it;
+- a selector inside `:not(…)` names no theme; a name is read as the browser reads it (CSS escapes
+  resolved, nothing trimmed), and one with white space in it is no theme's (Vite warns and it is
+  skipped);
+- subfolders hold what the themes use (pictures, `@import`-ed partials) and are not loaded on
+  their own. The plugin follows a file's `@import` of a local partial (a path relative to the file,
+  or from the project's root, `/styles/x.css`), all the way down, and its selectors name themes
+  too; an `@import` of a package or a URL is not followed;
+- a file added, removed or renamed while `npm run dev` runs is picked up, and so is an edit of a
+  partial it imports (the page reloads when the theme names change).
+
+**Where a theme can come from.** Two places:
+
+1. **`src/themes`** (the plugin's `themes` folder): loaded with nothing to import, and offered by
+   every deck without `themes`. The usual place.
+2. **Any other stylesheet the project imports itself**: a CSS file in `src/styles` imported by
+   `src/main.js` (after `'araojs'`, so that it comes after the engine's CSS, as `src/themes`
+   does), a package's theme (`import 'some-theme/theme.css'`), a `.scss` file (with `sass`
+   installed), a deck's own `<style>`, or a partial imported in a way the plugin does not follow.
+   The plugin does not read these, so a deck without `themes` does not offer them; a deck that
+   lists the name in `themes` wears it all the same, and `arao export --theme` takes it: before
+   skipping a listed name, the engine looks for a `[data-theme="<name>"]` selector (outside
+   `:not(…)`) in every stylesheet the page has loaded, inside `@media`, `@supports`, `@layer`,
+   `@container`, nested rules and `@import`-ed sheets (a sheet of another origin that does not let
+   its rules be read is passed over). It looks when the deck's list is read, as the deck opens:
+   a stylesheet loaded later does not count.
+
+`Deck(:themes)` picks the themes a deck can wear, in its order (the first is the one it opens in);
+without it, the deck offers every theme there is: `default`, then the project's in alphabetical
+order. A name there that is neither `default`, nor a project theme, nor a theme some stylesheet
+of the page declares (above), is skipped, with one `[arao]` warning. `?theme=<name>` and `t`
+(or the controls' picker) change the theme while presenting; `useDeck().themes` is the deck's
+list.
+
+Where tokens apply, from weakest to strongest:
+
+1. the defaults, declared at the root with zero specificity (`:where(:root)`): they reach
+   everything Arao draws, inside a theme or not (the presenter view and its notes, the deck
+   list);
+2. any rule of the project's own, `:root { --ar-accent: … }` included, which wins over a default;
+3. the theme's rule, on the element that wears it (the audience's window, each slide area of the
+   presenter view, the export's book);
+4. a token set on any element inside (a layout, a slide, a table, `style="--ar-…"`).
+
+A token whose default is another token (`--ar-footer-color` is `--ar-muted`, the slide title's
+colour is `--ar-accent`) follows that token wherever it is read: a theme that changes `--ar-muted`
+changes the footer too, unless it sets `--ar-footer-color`. The deck's own interface (the
+controls, the presenter view, the export's notes pages) has tokens too: a theme restyles the
+controls and the notes pages (they sit inside it); the presenter view sits outside every theme,
+so its tokens are set at `:root`.
+
+---
+
 ## Theme tokens
 
-A theme is a CSS rule `[data-theme="<name>"] { --ar-…: …; }` in a CSS file imported in
-`src/main.js` and listed in `Deck(:themes)`: `import 'araojs/themes/default.css'` for a shipped
-one, `src/themes/<name>.css` in the project for your own. Themes set tokens only; layouts read them
-(the engine's CSS: each component's styles, and `styles/base.css`). Unset tokens use the default below,
-declared in `styles/tokens.css` (or, where it depends on the context, at the rule that reads it). Rows marked
-**theme** have no engine fallback: every theme must set them (both shipped themes do).
+Every token, with its default (the `default` theme). Themes set tokens only; the engine's CSS
+(each component's styles, and `styles/base.css`) reads them. Sizes on the canvas are canvas px;
+the interface's are window px.
 
 ### Colours and type
 
-| Token | Default (`default` theme / fallback) | Meaning |
+| Token | Default | Meaning |
 |---|---|---|
-| `--ar-bg` | `#0f1115` (theme) | slide background colour |
-| `--ar-fg` | `#e8e8ea` (theme) | text colour |
-| `--ar-muted` | `#9aa0a6` (theme) | secondary text (`.muted`, slide number) |
-| `--ar-accent` | `#ff6a3d` (theme) | `h2`, cover bar, section background, progress, highlights |
-| `--ar-accent-fg` | `#0f1115` (theme) | text on accent (section slides) |
-| `--ar-letterbox` | `#000` | around the canvas when the window shape differs |
-| `--ar-font-sans` | `"Inter", system-ui, …` (theme) | text font |
-| `--ar-font-mono` | `"JetBrains Mono", ui-monospace, …` (theme) | code font |
-| `--ar-text-base` | `40px` | base font size of a slide |
-| `--ar-title` | `88px` (theme) | the type scale: `h1` size; `h2` is 0.6x, cover `h1` 1.25x, section `h1` 1.4x (the slide title's own size is `--ar-title-size`) |
+| `--ar-bg` | `#f6f3ec` | slide background colour |
+| `--ar-fg` | `#1b2a3a` | text colour |
+| `--ar-muted` | `#5b6b7b` | secondary text (`.muted`, slide number, footer) |
+| `--ar-accent` | `#2a7de1` | `h2`, cover bar, section background, progress, highlights |
+| `--ar-accent-fg` | `#fff` | text on accent (section slides) |
+| `--ar-letterbox` | `#1b2a3a` | around the canvas when the window shape differs |
+| `--ar-font-sans` | `Georgia, "Times New Roman", serif` | text font |
+| `--ar-font-mono` | `ui-monospace, Menlo, monospace` | code font |
+| `--ar-text-base` | `42px` | base font size of a slide |
+| `--ar-title` | `96px` | the type scale: `h1` size; `h2` is 0.6x, cover `h1` 1.25x, section `h1` 1.4x (the slide title's own size is `--ar-title-size`) |
 | `--ar-text-small` | `.75em` | `.small` |
-| `--ar-placeholder` | text colour | colour of the missing-picture box |
+| `--ar-placeholder` | `currentColor` (the text colour where drawn) | colour of the missing-picture and missing-icon boxes |
 
 ### Spacing and shape
 
 | Token | Default | Meaning |
 |---|---|---|
-| `--ar-pad` | `96px 120px` | slide padding, the safe margin (and the text side of `image-*`); the footer band, when shown, takes the place of its bottom |
-| `--ar-radius` | `16px` (theme) | corner radius (`Img rounded`, placeholders) |
-| `--ar-gap-sm` / `-md` / `-lg` | `24px` / `48px` / `80px` | `gap="sm\|md\|lg"`; `md` is the default gap of `Cols`/`Rows`/`Grid`; `lg` between zones |
+| `--ar-pad` | `110px 140px` | slide padding, the safe margin (and the text side of `image-*`); the footer band, when shown, takes the place of its bottom |
+| `--ar-radius` | `4px` | corner radius (`Img rounded`, placeholders) |
+| `--ar-gap-sm` / `-md` / `-lg` | `24px` / `48px` / `80px` | `gap="sm\|md\|lg"`; `md` is the default gap of `Cols`/`Rows`/`Grid`; `lg` between zones; `sm` between the footer's children |
 | `--ar-image-inset` | `0` | padding around the picture in an `image-*` zone |
 
-### Background, steps, addons
+### Background, motion, addons
 
 | Token | Default | Meaning |
 |---|---|---|
 | `--ar-slide-bg-image` | `none` | default slide background: a gradient, or `url(…)` relative to the theme file |
 | `--ar-slide-bg-position` | `center` | its position |
 | `--ar-slide-bg-opacity` | `1` | its opacity |
-| `--ar-step-duration` | `.35s` | fade time of `v-step` |
+| `--ar-step-duration` | `.35s` | fade time of `v-step` (and of the glide of `.collapse` steps) |
+| `--ar-slide-duration` | `.4s` | fade from one slide to the next |
 | `--ar-progress-height` | `8px` | `ProgressBar` height |
+| `--ar-progress-duration` | `.35s` | `ProgressBar`'s move to the new position |
+| `--ar-slide-number-size` | `24px` | `SlideNumber`'s text size |
 
 A theme can leave a layout without its default background:
 `[data-theme="x"] .layout-section { --ar-slide-bg-image: none; }`.
@@ -1087,9 +1163,9 @@ keep `--ar-title`. Without them the title looks as any `h2` (or `h1`) does.
 |---|---|---|
 | `--ar-title-size` | an `h2`: 0.6x `--ar-title`; an `h1`: `--ar-title` | the title's font size |
 | `--ar-title-color` | an `h2`: `--ar-accent`; an `h1`: the text colour | the title's colour |
-| `--ar-title-align` | as the slide's text | `start`, `center`, `end` |
+| `--ar-title-align` | `match-parent` (as the slide's text) | `start`, `center`, `end` |
 | `--ar-title-gap` | `.6em` under an `h2`, `.4em` under an `h1` | space between the title and the body (em: the title's size; under a header band, give px) |
-| `--ar-header-height` | none (as tall as the title) | a header band: the header is at least this tall, the title centred in it, `--ar-title-gap` under the band |
+| `--ar-header-height` | `auto` (as tall as the title) | a length: a header band, at least this tall, the title centred in it, `--ar-title-gap` under the band |
 | `--ar-body-align` | `center` | `start`, `center` or `end`: where the body sits, unless `Slide(align)` says (anything else warns and centres) |
 | `--ar-list-gap` | `0` | space between list items |
 | `--ar-footer-height` | `88px` | the footer band, at the bottom of the slide, in place of the bottom padding |
@@ -1101,9 +1177,9 @@ keep `--ar-title`. Without them the title looks as any `h2` (or `h1`) does.
 |---|---|---|
 | `--ar-table-pad` | `.4em .8em` | cell padding |
 | `--ar-table-border` | `2px solid` the text colour at 15 % | the line under every row (a CSS `border`) |
-| `--ar-table-head-bg` | none | header cells' background |
+| `--ar-table-head-bg` | `none` | header cells' background |
 | `--ar-table-head-color` | `--ar-muted` | header cells' text colour |
-| `--ar-table-stripe` | none | background of every other body row |
+| `--ar-table-stripe` | `none` | background of every other body row |
 
 Tokens may be set per layout, or on any element, like every token:
 
@@ -1120,39 +1196,127 @@ table.dense(style="--ar-table-pad: 12px 20px")
 
 Rules of thumb for a 1920x1080 canvas (and what the defaults do):
 
-- **Safe margin** ≈ 5 % of each side, for projectors that crop the edges: `--ar-pad` (96 x 120 px).
+- **Safe margin** ≈ 5–7 % of each side, for projectors that crop the edges: `--ar-pad`
+  (110 x 140 px).
 - **Header** ≈ 12–15 % of the height for the title zone (a band, if any: `--ar-header-height`).
 - **Footer** ≈ 5–8 % of the height: the default band is 88 px, in place of the bottom padding,
   with 24 px text.
-- **Body text** 36–44 px (`--ar-text-base`: 40 px); nothing under ≈ 28 px except the footer and
+- **Body text** 36–44 px (`--ar-text-base`: 42 px); nothing under ≈ 28 px except the footer and
   dense code.
 
 ### Code (Snippet)
 
 | Token | Default | Meaning |
 |---|---|---|
-| `--ar-code-theme` | `material-theme-darker` | Shiki theme (`vigojug`: `github-light`) |
-| `--ar-code-size` | `44px` | standard code font size |
+| `--ar-code-theme` | `github-light` | Shiki theme; set to nothing, the code shows without colours |
+| `--ar-code-size` | `42px` | standard code font size |
 | `--ar-code-width` | `1520px` | standard window width |
 | `--ar-code-aspect` | `16 / 9` | window shape (width / height); the window is as large as fits with this shape |
-| `--ar-code-bg` | `#2b2b2b` | window background |
-| `--ar-code-bar` | `#383a40` | title bar |
-| `--ar-code-fg` | `#eeffff` | text before colours load |
-| `--ar-code-muted` | `#8a8f98` | line numbers |
-| `--ar-code-title` | `rgba(255,255,255,.92)` | title bar text |
+| `--ar-code-bg` | `#ffffff` | window background |
+| `--ar-code-bar` | `#e9e6df` | title bar |
+| `--ar-code-fg` | `#24292e` | text before colours load |
+| `--ar-code-muted` | `#8b95a1` | line numbers |
+| `--ar-code-title` | `#3b4048` | title bar text |
+| `--ar-code-title-size` | `34px` | title bar text size |
 | `--ar-code-hl` | `--ar-accent` | highlight colour |
-| `--ar-code-radius` | `22px` | window corner radius |
+| `--ar-code-radius` | `14px` | window corner radius |
+| `--ar-code-shadow` | `0 30px 70px rgba(0,0,0,.35), 0 8px 20px rgba(0,0,0,.2), inset 0 0 0 1px rgba(255,255,255,.06)` | the window's shadow |
+| `--ar-code-light-1` / `-2` / `-3` | `#ff5f57` / `#febc2e` / `#28c840` | the title bar's three lights, left to right |
+| `--ar-code-duration` | `.3s` | lines and words dimming and lighting up between steps |
+
+### Interface
+
+The deck's own interface, outside the canvas (window px): the controls, the notice above them,
+the presenter view, the list of decks, the export. The controls and the export's notes pages sit
+inside the theme the deck wears; the presenter view and the list of decks sit outside every theme
+(set their tokens at `:root`).
+
+| Token | Default | Meaning |
+|---|---|---|
+| `--ar-ui-font` | `system-ui, -apple-system, "Segoe UI", Roboto, sans-serif` | the interface's font (and the notes pages') |
+| `--ar-ui-mono` | `ui-monospace, "SFMono-Regular", Menlo, monospace` | code in the presenter's notes |
+| `--ar-ui-text` | `16px` | the interface's base text size; its other sizes are multiples of it |
+| `--ar-ui-duration` | `.2s` | panels, notices and step dots coming and going |
+| `--ar-ui-duration-fast` | `.15s` | hover and press feedback |
+| `--ar-ui-duration-slow` | `.25s` | the floating controls showing and hiding |
+
+Controls (frosted glass) and the notice above them (the presenter window was blocked):
+
+| Token | Default | Meaning |
+|---|---|---|
+| `--ar-controls-bg` | `rgba(28, 28, 34, .84)` | the bar's tint |
+| `--ar-controls-panel-bg` | `rgba(28, 28, 34, .92)` | the jump menu's and theme picker's tint |
+| `--ar-controls-sheen` | a white top-down gradient, `.16` → `.02` | the glass's sheen, over the tint |
+| `--ar-controls-blur` | `blur(28px) saturate(180%) brightness(1.05)` | the backdrop filter |
+| `--ar-controls-shadow` | a drop shadow and a specular edge | the bar's and panels' `box-shadow` |
+| `--ar-controls-border` | `rgba(255, 255, 255, .16)` | the bar's and panels' border |
+| `--ar-controls-fg` | `rgba(255, 255, 255, .94)` | text and icons |
+| `--ar-controls-dim` | `rgba(255, 255, 255, .5)` | secondary text, step dots |
+| `--ar-controls-line` | `rgba(255, 255, 255, .14)` | dividers, the search field's border, swatch edges |
+| `--ar-controls-hover` / `--ar-controls-hover-shadow` | `rgba(255, 255, 255, .1)` / `inset 0 1px 0 rgba(255, 255, 255, .1)` | a button or item under the pointer |
+| `--ar-controls-active` | `rgba(255, 255, 255, .16)` | the button of the open panel |
+| `--ar-controls-field-bg` / `--ar-controls-field-shadow` | `rgba(255, 255, 255, .08)` / `inset 0 1px 2px rgba(0, 0, 0, .25)` | the search field |
+| `--ar-controls-scrollbar` | `rgba(255, 255, 255, .2)` | the jump menu's scrollbar |
+| `--ar-controls-accent` | `--ar-accent` (docked in the presenter view: `--ar-controls-fg`) | the current step dot, the current slide's number, the focused field |
+| `--ar-controls-radius` | `8px` | items; buttons and the field 1.125x, the bar and panels 2x, the notice 1.5x, swatches .625x |
+| `--ar-toast-bg` / `--ar-toast-shadow` / `--ar-toast-link` | `#1c1c22` / `0 12px 32px rgba(0, 0, 0, .35)` / `#8ab4ff` | the notice (its text and border are the controls') |
+
+Presenter view (its own dark look, whatever the deck theme):
+
+| Token | Default | Meaning |
+|---|---|---|
+| `--ar-presenter-bg` | `#14161b` | the page |
+| `--ar-presenter-bar` | `#101216` | the top bar |
+| `--ar-presenter-panel` | `#1c1f26` | the next step's and the notes' panels, buttons, the length editor |
+| `--ar-presenter-hover` | `#272b34` | a button under the pointer |
+| `--ar-presenter-frame` | `#0d0f13` | where the next step would be, after the last one |
+| `--ar-presenter-line` | `#2b2f39` | borders |
+| `--ar-presenter-edge` | `rgba(255, 255, 255, .16)` | the slides' own edge |
+| `--ar-presenter-fg` / `-dim` / `-strong` | `#eceef2` / `#949bab` / `#fff` | text, secondary text, bold text in the notes |
+| `--ar-presenter-accent` | `#5b9dff` | the notes of the step just reached, a changed length, focus rings |
+| `--ar-presenter-low` / `-over` | `#f5b13d` / `#ff5a4f` | the countdown's last minutes / past the end (and an invalid length) |
+| `--ar-presenter-code-bg` | `#2a2e38` | inline code in the notes |
+| `--ar-presenter-scrollbar` | `#3a3f4b` | the notes' scrollbar |
+| `--ar-presenter-shadow` | `0 16px 40px color-mix(in srgb, var(--ar-presenter-bg) 85%, transparent)` | the length editor's shadow (it follows `--ar-presenter-bg` set at `:root`) |
+| `--ar-presenter-radius` | `10px` | buttons, the slides' corners; panels 1.4x, the length editor 1.2x, its fields .8x, inline code .5x |
+| `--ar-presenter-notes-size` | `clamp(18px, .85vw + 9px, 28px)` | the notes' text size |
+
+List of decks (`/`, its own dark look, whatever the decks' themes; its text sizes are multiples of
+`--ar-ui-text`, and each cover wears its deck's theme):
+
+| Token | Default | Meaning |
+|---|---|---|
+| `--ar-selector-bg` | `#14161b` | the page |
+| `--ar-selector-panel` / `-raised` | `#1c1f26` / `#222631` | a card (and the notice of a missing deck) / a card under the pointer |
+| `--ar-selector-frame` | `#0d0f13` | a cover's frame: around a cover of another shape, and until it is drawn |
+| `--ar-selector-line` / `-line-hover` | `#2b2f39` / `#3c4252` | borders / a card's border under the pointer |
+| `--ar-selector-edge` | `rgba(255, 255, 255, .08)` | a cover frame's own edge |
+| `--ar-selector-sheen` / `-still` | `rgba(255, 255, 255, .11)` / `rgba(255, 255, 255, .05)` | going by in a frame until its cover is drawn / its still tint (reduced motion) |
+| `--ar-selector-fg` / `-dim` | `#eceef2` / `#949bab` | text / the count, a cover's heading, a path, the arrow |
+| `--ar-selector-accent` | `#5b9dff` | the heading's bar, the notice's edge, focus rings, the arrow under the pointer |
+| `--ar-selector-shadow` | `0 18px 40px rgba(0, 0, 0, .38), 0 2px 8px rgba(0, 0, 0, .24)` | a card under the pointer |
+| `--ar-selector-radius` | `14px` | a card; a cover's frame .5x, the notice 5/7 |
+
+Export (`?export`; canvas px for the notes pages):
+
+| Token | Default | Meaning |
+|---|---|---|
+| `--ar-export-bg` | `#2a2a2e` | behind the pages, on screen |
+| `--ar-notes-page-bg` / `-fg` | `#fff` / `#1c1c22` | a notes page (`&notes`) |
+| `--ar-notes-page-muted` / `-line` | `#5c5c66` / `#d4d4da` | its head (the slide's number and title) and the rule under it |
+| `--ar-notes-page-step` | `#8a5a00` | "Desde el paso n" over a step's notes |
+| `--ar-notes-page-text` / `-head-size` / `-step-size` | `34px` / `28px` / `24px` | its text sizes |
 
 Set by the engine, read-only: `--ar-scale` (the stage's current scale factor; `1` in export).
 
 ```css
-/* src/themes/venue.css, then import it in src/main.js and add 'venue' to Deck(:themes) */
+/* src/themes/venue.css: found and loaded by the plugin; Deck(:themes) may name 'venue' */
 [data-theme="venue"] {
   --ar-letterbox: #111; --ar-bg: #fff; --ar-fg: #222; --ar-muted: #777;
-  --ar-accent: #0a7; --ar-accent-fg: #fff;
-  --ar-font-sans: system-ui, sans-serif; --ar-font-mono: ui-monospace, monospace;
+  --ar-accent: #0a7;
+  --ar-font-sans: system-ui, sans-serif;
   --ar-title: 88px; --ar-radius: 12px;
-  --ar-code-theme: github-light; --ar-code-bg: #f6f8fa; --ar-code-bar: #e6e8eb;
+  --ar-code-bg: #f6f8fa; --ar-code-bar: #e6e8eb;
 }
 ```
 
@@ -1166,7 +1330,7 @@ A deck is a path; how it shows is the query; where it stands is the hash:
 | Part | Example | Effect |
 |---|---|---|
 | path | `/framework` | the deck file in the decks folder (`src/decks/Framework.vue`; case-insensitive), the first path segment after the app's base. `/` (the base) → the list of decks, or the project's only deck (`createDeckApp`'s `deckList`); a name that is no deck → the list, with a notice and a console warning. The list's links keep the page's query (`theme`, `presenter`, `export`…) |
-| `theme` | `?theme=vigojug` | the theme; also keeps this window's theme when it joins other windows |
+| `theme` | `?theme=acme` | the theme; also keeps this window's theme when it joins other windows |
 | `presenter` | `?presenter` | the presenter view |
 | `export` | `?export` | export mode (wins over `presenter`); `export=0\|false\|no\|off` = off |
 | `per-slide` | `?export&per-slide` | export: one page per slide, each at its last step (default: one per step) |

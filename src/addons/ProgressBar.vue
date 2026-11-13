@@ -25,6 +25,6 @@ const deck = useDeck()
 .ar-progress.bottom { bottom: 0; }
 .ar-progress-fill {
   height: 100%; background: var(--ar-accent);
-  transition: width .35s ease;
+  transition: width var(--ar-progress-duration) ease;
 }
 </style>

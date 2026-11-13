@@ -1,7 +1,7 @@
 <!-- For developing the library (npm run dev): one slide per moving part. The real decks live in
      the slides projects that use the library. -->
 <template lang="pug">
-Deck(:themes="['default', 'vigojug']")
+Deck
   ProgressBar
   SlideNumber
   //- on every slide but the cover and the sections (the last one asks for it)

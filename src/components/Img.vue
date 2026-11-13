@@ -136,14 +136,14 @@ const picture = computed(() => ({
 }
 .ar-img-name {
   padding: 8px 12px;
-  font: calc(var(--ar-text-base) * .5) / 1.2 var(--ar-font-mono, monospace);
+  font: calc(var(--ar-text-base) * .5) / 1.2 var(--ar-font-mono);
   color: color-mix(in srgb, var(--ar-placeholder) 85%, transparent);
   text-align: center; text-transform: none; font-weight: normal;
   overflow-wrap: anywhere;
 }
 /* the alt, when there is one, is what the picture was meant to say: first and stronger; the file
    name under it is the secondary line */
-.ar-img-alt { display: block; margin-bottom: 4px; font-family: var(--ar-font-sans, sans-serif); }
+.ar-img-alt { display: block; margin-bottom: 4px; font-family: var(--ar-font-sans); }
 .ar-img-file { opacity: .75; }
 /* a missing background: framed inside the slide, its name in the top-right corner (the bottom
    corners belong to the addons) */

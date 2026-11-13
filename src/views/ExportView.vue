@@ -52,6 +52,8 @@ const shownNotes = computed(() => (stage.current.value?.notes ?? []).filter((n) 
 const report = (value) => reportReady({ ...value, deck: props.deck.name })
 
 async function run() {
+  // the deck's themes, as state/deck.js resolves them: a listed theme from outside the themes
+  // folder (imported by hand) is one of them, so arao export --theme takes it
   const list = themes.value
   if (!list.includes(theme.value))
     return report({ error: `theme "${theme.value}" is not one of the deck's themes: ${list.join(', ')}`, code: 'theme-not-listed', themes: list })
@@ -103,24 +105,25 @@ html:has(.ar-export), html:has(.ar-export) body, html:has(.ar-export) #app { hei
 /* the canvas copy fills its page, unscaled (and says so, to whatever sizes itself by the scale) */
 .ar-book { --ar-scale: 1; }
 .ar-page > .ar-canvas { top: 0; left: 0; transform: none !important; }
-/* a page of speaker notes (&notes): plain, for paper, whatever the theme */
+/* a page of speaker notes (&notes): plain, for paper, the same whatever the deck theme unless the
+   theme sets the --ar-notes-page-* tokens */
 .ar-notes-page {
-  padding: 96px 120px; background: #fff; color: #1c1c22;
-  font: 34px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  padding: 96px 120px; background: var(--ar-notes-page-bg); color: var(--ar-notes-page-fg);
+  font: var(--ar-notes-page-text)/1.45 var(--ar-ui-font);
 }
 .ar-notes-head {
-  margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #d4d4da;
-  font-size: 28px; font-weight: 600; color: #5c5c66;
+  margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid var(--ar-notes-page-line);
+  font-size: var(--ar-notes-page-head-size); font-weight: 600; color: var(--ar-notes-page-muted);
 }
 .ar-notes-body .ar-note { margin-bottom: 28px; }
 .ar-notes-body .ar-note > :first-child { margin-top: 0; }
 .ar-notes-body .ar-note[data-step]:not([data-step="1"])::before {
   content: "Desde el paso " attr(data-step); display: block; margin-bottom: 6px;
-  font-size: 24px; font-weight: 600; color: #8a5a00;
+  font-size: var(--ar-notes-page-step-size); font-weight: 600; color: var(--ar-notes-page-step);
 }
 /* on screen (?export opened in a browser), the pages one under the other */
 @media screen {
-  .ar-viewport.ar-export { background: #2a2a2e; }
+  .ar-viewport.ar-export { background: var(--ar-export-bg); }
   .ar-book { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; padding: 24px; }
 }
 </style>

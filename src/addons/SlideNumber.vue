@@ -11,6 +11,6 @@ const deck = useDeck()
 <style>
 .ar-slide-number {
   position: absolute; right: 40px; bottom: 28px; z-index: 10;
-  font-size: 24px; color: var(--ar-muted); pointer-events: none;
+  font-size: var(--ar-slide-number-size); color: var(--ar-muted); pointer-events: none;
 }
 </style>

@@ -113,7 +113,8 @@ const source = computed(() => props.code ?? fileCode.value)
 const lines = computed(() => source.value.replace(/\s+$/, '').split(/\r?\n/))
 
 // ---- syntax colours (async; plain text until ready, same layout) --------------------
-// Shiki theme: prop, else the deck theme's --ar-code-theme token (re-read when the deck theme changes)
+// Shiki theme: prop, else the deck theme's --ar-code-theme token (its default is in tokens.css;
+// re-read when the deck theme changes). None (not read yet, or the token set to nothing): plain text
 const root = ref()
 const { theme: deckTheme } = useDeck()
 const tokenTheme = ref(null)
@@ -125,7 +126,7 @@ async function readTokenTheme() {
 }
 onMounted(readTokenTheme)
 watch(deckTheme, readTokenTheme)
-const shikiTheme = computed(() => props.theme || tokenTheme.value || 'material-theme-darker')
+const shikiTheme = computed(() => props.theme || tokenTheme.value)
 
 const colored = shallowRef(null)
 const highlighting = ref(false)
@@ -136,7 +137,8 @@ watchEffect(async () => {
   const theme = shikiTheme.value
   const mine = ++run
   colored.value = null
-  highlighting.value = true
+  highlighting.value = !!theme
+  if (!theme) return
   try {
     const tokens = await tokenize(code, lang, theme)
     if (mine === run) colored.value = tokens
@@ -238,12 +240,12 @@ const vars = computed(() => {
 
 <style>
 .ar-snippet {
-  /* code window palette: tokens (defaults in tokens.css: a dark editor, like a real Mac window) */
+  /* code window palette: tokens (defaults in tokens.css: a light editor, like a real Mac window) */
   --sn-bg: var(--ar-code-bg);
   --sn-bar: var(--ar-code-bar);
   --sn-fg: var(--ar-code-fg);
   --sn-muted: var(--ar-code-muted);
-  --sn-hl: var(--ar-code-hl, var(--ar-accent));
+  --sn-hl: var(--_ar-code-hl);
   --sn-radius: var(--ar-code-radius);
   --sn-size-std: var(--sn-size, var(--ar-code-size));
   /* window box: fixed shape, as large as fits (cq units resolve against this element: they are
@@ -262,21 +264,20 @@ const vars = computed(() => {
   display: flex; flex-direction: column; overflow: hidden;
   background: var(--sn-bg); color: var(--sn-fg);
   border-radius: var(--sn-radius);
-  box-shadow: 0 30px 70px rgba(0, 0, 0, .35), 0 8px 20px rgba(0, 0, 0, .2),
-    inset 0 0 0 1px rgba(255, 255, 255, .06);
+  box-shadow: var(--ar-code-shadow);
 }
 .ar-snippet-header {
   flex: none; height: 80px; padding: 0 30px;
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
   background: var(--sn-bar);
-  font: 400 34px/1 var(--ar-font-sans);
+  font: 400 var(--ar-code-title-size)/1 var(--ar-font-sans);
   color: var(--ar-code-title);
 }
 .ar-snippet-lights { display: flex; gap: 18px; }
 .ar-snippet-lights i { width: 24px; height: 24px; border-radius: 50%; }
-.ar-snippet-lights .r { background: #ff5f57; }
-.ar-snippet-lights .y { background: #febc2e; }
-.ar-snippet-lights .g { background: #28c840; }
+.ar-snippet-lights .r { background: var(--ar-code-light-1); }
+.ar-snippet-lights .y { background: var(--ar-code-light-2); }
+.ar-snippet-lights .g { background: var(--ar-code-light-3); }
 .ar-snippet-name { grid-column: 2; white-space: nowrap; }
 .ar-snippet-body { flex: 1; min-height: 0; padding: 36px 48px 40px 28px; overflow: hidden; }
 .ar-snippet.fit { --sn-w: min(100cqw, var(--ar-code-width)); --sn-h: 100cqh; }
@@ -293,7 +294,7 @@ const vars = computed(() => {
 }
 .ar-snippet-line {
   display: flex; white-space: pre;
-  transition: opacity .3s;
+  transition: opacity var(--ar-code-duration);
 }
 .ar-snippet-ln {
   flex: none; box-sizing: content-box;
@@ -304,9 +305,9 @@ const vars = computed(() => {
 /* the code side of a line: highlights shade this, not the line numbers */
 .ar-snippet-tx {
   flex: 1; min-width: 0; padding-left: .5ch; border-radius: .2em;
-  transition: background-color .3s;
+  transition: background-color var(--ar-code-duration);
 }
-.ar-snippet-tx > span { transition: opacity .3s; }
+.ar-snippet-tx > span { transition: opacity var(--ar-code-duration); }
 
 /* steps */
 .ar-snippet-line.dim { opacity: .28; }
