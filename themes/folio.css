@@ -32,7 +32,7 @@
   --ar-code-hl-bg: #fdf4dc;          /* a pale marker: every code colour keeps 4.5:1 on it */
   --ar-code-title: #4a4236;
   --ar-code-radius: 6px;
-  --ar-code-shadow: 0 24px 60px rgb(60 40 20 / .16), 0 2px 6px rgb(60 40 20 / .1), inset 0 0 0 1px rgb(31 27 22 / .1);
+  --ar-code-shadow: 0 10px 30px rgb(60 40 20 / .13), 0 2px 6px rgb(60 40 20 / .08), inset 0 0 0 1px rgb(31 27 22 / .1);
   --ar-code-light-1: #d6cdbd;
   --ar-code-light-2: #d6cdbd;
   --ar-code-light-3: #d6cdbd;
