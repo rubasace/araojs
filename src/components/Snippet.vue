@@ -284,6 +284,9 @@ const vars = computed(() => {
 .ar-snippet-lights .g { background: var(--ar-code-light-3); }
 .ar-snippet-name { grid-column: 2; white-space: nowrap; }
 .ar-snippet-body { flex: 1; min-height: 0; padding: 36px 48px 40px 28px; overflow: hidden; }
+/* in a column, cell or zone (they clip what is wider than them) the window keeps room beside it
+   for its shadow, so the shadow is never cut at the column's edge */
+:where(.ar-cols, .ar-rows, .ar-grid, .ar-zone) .ar-snippet { box-sizing: border-box; padding-inline: var(--ar-code-shadow-room); }
 .ar-snippet.fit { --sn-w: min(100cqw, var(--ar-code-width)); --sn-h: 100cqh; }
 .ar-snippet.fit .ar-snippet-window { width: auto; height: auto; max-width: 100%; max-height: 100%; }
 .ar-snippet-code {

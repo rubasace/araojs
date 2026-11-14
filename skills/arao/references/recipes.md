@@ -60,7 +60,7 @@ exists, for a deck without a footer; don't use both.
 Slide(layout="cover" title="Opening")
   .bar
   h1 Building a framework
-  p.muted Rubén Pahíno · VigoJUG 2026
+  p.muted Jane Doe · DevConf 2026
 ```
 
 ## Section divider
