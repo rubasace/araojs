@@ -25,7 +25,7 @@ Numbering rules:
 - Several elements may share a number: they appear together.
 
 Behaviour:
-- Works in nested components (it finds its slide through the DOM) and in `#background`.
+- Works in nested components (it finds its slide through the DOM) and in a `Background`.
 - Outside a `Slide` it warns and does nothing.
 - Fade duration: `--ar-step-duration` (default `.35s`).
 - With `.collapse`, the elements around it glide to their new place (FLIP). Slides not on screen,

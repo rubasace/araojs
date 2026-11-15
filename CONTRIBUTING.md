@@ -37,7 +37,7 @@ src/
   composables/      the effects (internal): useDeckSync, usePresenterWindow, useShortcuts, useSlideNumber, useKeyboard, useTouchGestures, useAutoHide, useFullscreen
   core/             plain modules: sync, exporter, image, icons, flip, shortcuts
   views/            full screens: AudienceView, PresenterView, ExportView; DeckSelectorView (createDeckApp's list of decks)
-  components/       what authors write: Deck, Slide, Img, Icon, Snippet, Notes; layout/: Cols, Rows, Grid, Center, layout.ts (their props' parsers), layout.css
+  components/       what authors write: Deck, Slide, Background, Img, Icon, Snippet, Notes; layout/: Cols, Rows, Grid, Center, layout.ts (their props' parsers), layout.css
     internal/       the engine's components, which no author names: Stage (the scaled canvas), Controls, PresenterBar, Thumbnail, DeckCover (a deck's cover in the list)
   directives/       v-step and v-step-from (step.ts)
   addons/           ProgressBar, SlideNumber: things drawn over every slide
@@ -45,6 +45,7 @@ src/
   styles/           only what is global: tokens.css (every token and its default: the default theme),
                     base.css (page, viewport, steps); every component brings its own CSS in its .vue file
 themes/             the built-in themes, one CSS file each, named as the theme (default.css names the defaults): the library's theme source (arao({ builtinThemes }) says which load)
+layouts/            the slide layouts, one CSS file each, named as the layout (cover, section, split, image-left, image-right): Slide has no code for any of them; a project's src/layouts adds or replaces some
 vite/               the Vite plugin (araojs/vite; icons.js resolves the icons)
 bin/                the arao command (arao export)
 playground/         a tiny slides project on the library's source, for developing it
@@ -91,13 +92,16 @@ The site deploys to GitHub Pages from `main` (`.github/workflows/docs.yml`), onc
 
 `scripts/smoke.mjs` checks the package the way a user gets it. It packs the library (or takes the
 tarball it is given), installs it into a new slides project in a temporary folder with the
-playground's decks, images and snippets, a theme of its own in `src/themes` (with a second one in a
+playground's decks, images, snippets and layouts, a theme of its own in `src/themes` (with a second one in a
 partial it `@import`s; its `src/main.js` imports no theme), and four tiny decks of its own: the
 second with a duration and a list of themes, the third with neither, the fourth with a file name
 and a cover heading far too long for a card (listing that theme first), the fifth listing first a
 theme from outside `src/themes`, declared in its own `<style>`. Then it:
 
-1. runs `vite build`, which must also write `dist/404.html`, a copy of `dist/index.html`;
+1. runs `vite build`, which must also write `dist/404.html`, a copy of `dist/index.html`, and hold
+   the CSS of every layout, the library's and the project's (the playground's `quote`); with a
+   project `src/layouts/cover.css` the library's cover is not in the build and a message says so,
+   and a layout file whose name is no layout's, or that names no `.layout-<name>`, warns;
 2. opens every deck at its path under the dev server (Vue's own warnings only show up in dev) and
    under `vite preview`, and walks each one with ArrowRight to its last step, and the playground's
    deck again in each built-in theme (the installed package's `themes/`). Any console warning or

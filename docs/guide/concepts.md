@@ -34,9 +34,10 @@ changes.
 
 ## Three zones
 
-A content slide is a header (the `h1`/`h2` it starts with), a body (everything else, centred
-vertically by default) and the deck's footer. Nothing to declare: the slide finds them
-([Zones](slides-and-layouts.md#zones-header-body-footer)).
+A content slide is a header (the `h1`/`h2` it starts with), a body (everything else, from the
+top, right under the header, on every slide alike) and the deck's footer. Nothing to declare: the
+slide finds them ([Zones](slides-and-layouts.md#zones-header-body-footer)). A layout
+(`Slide(layout="cover")`) is CSS that arranges those same zones another way.
 
 ## Steps are absolute
 

@@ -150,6 +150,12 @@ Where tokens apply, from weakest to strongest:
    presenter view, the export's book);
 4. a token set on any element inside (a layout, a slide, a table, `style="--ar-…"`).
 
+Layouts have tokens too, `--ar-layout-<layout>-<thing>` (the section's colours, the cover's title
+size, which layouts show the footer, the image layouts' proportions), set in a theme like any
+other: `[data-theme="venue"] { --ar-layout-section-bg: #0b3d2e; --ar-layout-cover-footer: flex; }`
+([Layout tokens](../reference/theme-tokens.md#layouts)). So is where a slide's body sits:
+`--ar-body-align: center` centres every body, as decks used to by default.
+
 A token whose default is another token (`--ar-footer-color` is `--ar-muted`, the slide title's
 colour is `--ar-accent`) follows that token wherever it is read: a theme that changes `--ar-muted`
 changes the footer too, unless it sets `--ar-footer-color`. The deck's own interface (the
@@ -260,7 +266,7 @@ Rules of thumb for a 1920x1080 canvas (and what the defaults do):
 - **Safe margin** ≈ 5–7 % of each side, for projectors that crop the edges: `--ar-pad`
   (110 x 140 px).
 - **Header** ≈ 12–15 % of the height for the title zone (a band, if any: `--ar-header-height`).
-- **Footer** ≈ 5–8 % of the height: the default band is 88 px, in place of the bottom padding,
-  with 24 px text.
+- **Footer** ≈ 5–8 % of the height: the default band is 88 px, over the bottom padding (keep that
+  padding at least as tall), with 24 px text.
 - **Body text** 36–44 px (`--ar-text-base`: 42 px); nothing under ≈ 28 px except the footer and
   dense code.

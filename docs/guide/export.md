@@ -69,7 +69,7 @@ Chromium prints differently from what it shows:
   visible solid border is drawn into the picture too. Left as Chromium prints them: elements with a
   `border-image` of their own, a border that is not `solid` in one colour, a `filter`, and inline or
   table-part boxes.
-- Pictures with a `filter` of blur and colour functions (`Img(blur)`, `Slide(bg-blur)` on a picture)
+- Pictures with a `filter` of blur and colour functions (`Img(blur)`, `Background(blur)`)
   are drawn with that filter on a canvas, fitted by `object-fit`/`object-position`, and printed
   unfiltered: Chromium blurs only what is inside the clip, so the soft edge of the blur showed inside
   the box (a dark frame around a blurred background). Left as Chromium prints them: pictures from

@@ -3,7 +3,8 @@
 // declarations of every module into dist/types-tmp (tsconfig.build.json).
 // One file, so a consumer resolves it whatever its moduleResolution (bundler, node16, nodenext):
 // no relative imports without an extension, no imports of .vue files. What the engine imports
-// for its side effects (its CSS, the project's themes through virtual:arao/theme-styles) is
+// for its side effects (its CSS, the layouts and themes through virtual:arao/layout-styles and
+// virtual:arao/theme-styles) is
 // dropped: those modules exist only in the library's build and in a project with the Vite plugin.
 import { readFile, rm, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
@@ -25,7 +26,7 @@ export type { AraoOptions } from './index'
 `
 
 // side-effect-only imports of the engine: an empty module, so nothing of them reaches the types
-const SIDE_EFFECTS = /^virtual:arao\/theme-styles$|\.css$/
+const SIDE_EFFECTS = /^virtual:arao\/(?:layout|theme)-styles$|\.css$/
 const dropSideEffects = {
   name: 'arao-drop-side-effects',
   resolveId: (id) => (SIDE_EFFECTS.test(id) ? `\0empty:${id}` : null),

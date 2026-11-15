@@ -17,8 +17,10 @@ src/
     <talk>/         components only that talk uses
   slides/           components shared by several decks
   snippets/         code files shown by Snippet(file="…"), by name (subfolders allowed)
-  images/           pictures used by Img(file="…") and Slide(bg="…"), by name (subfolders allowed)
+  images/           pictures used by Img(file="…") and Background(src="…"), by name (subfolders allowed)
   themes/           the project's themes, if any: CSS files, each [data-theme="<name>"] a theme
+  layouts/          the project's layouts, if any: one CSS file per layout, quote.css for
+                    Slide(layout="quote")
 ```
 
 Paths like `src/decks` are the plugin's default folders; each one is an option of `arao()`
@@ -59,8 +61,8 @@ At `/` the app lists the decks: a card per deck, in alphabetical order, with the
 small in it, its title and its path.
 
 - The title is the file name in words (`my-talk` → "My talk", `MyTalk` → "My Talk"), there from
-  the start; under it, once the cover is drawn, its first heading (else its `Slide(title)`),
-  unless it says the same. Name the file after the talk, and give the cover the talk's name as
+  the start; under it, once the cover is drawn, its first heading, unless it says the
+  same. Name the file after the talk, and give the cover the talk's name as
   its heading.
 - Title, heading and path take one line each (cut with an ellipsis), so every card has the same
   height. A deck whose canvas is not 16:9 shows in the card's frame, letterboxed in the frame's

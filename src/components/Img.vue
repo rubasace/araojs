@@ -4,7 +4,8 @@
      Size: an Img has no size of its own. It takes the box its container gives it (the rest of the
      slide under the title, a column of Cols, a cell of Grid, a zone, Center) and fits the picture in:
        fit="contain"   the whole picture, centred, with empty bands if the shapes differ (default)
-       fit="cover"     fills the box and crops what does not fit (default in #image and backgrounds)
+       fit="cover"     fills the box and crops what does not fit (default in the image zone of
+                       image-left and image-right, and in a Background)
      In a plain block (no flex or grid around it) it is as wide as the block and as tall as the
      picture's shape makes it. For a box of your own, size it with a class: width and height, or
      one of them and the other auto to follow the picture's shape (.icon { height: 1em; width: auto }).
@@ -124,9 +125,6 @@ const picture = computed(() => ({
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   display: block; object-fit: contain;
 }
-/* in a slide's image zone and in its background it covers its box, edge to edge (fit="contain"
-   still wins) */
-.ar-zone-image > .ar-img > img, .ar-slide-bg > .ar-img > img { object-fit: cover; }
 /* missing file: a dashed box (colour from --ar-placeholder, default the text colour) with its name */
 .ar-img-missing {
   display: flex; align-items: center; justify-content: center;
@@ -145,7 +143,4 @@ const picture = computed(() => ({
    name under it is the secondary line */
 .ar-img-alt { display: block; margin-bottom: 4px; font-family: var(--ar-font-sans); }
 .ar-img-file { opacity: .75; }
-/* a missing background: framed inside the slide, its name in the top-right corner (the bottom
-   corners belong to the addons) */
-.ar-slide-bg > .ar-img-missing { inset: 24px; width: auto; height: auto; align-items: flex-start; justify-content: flex-end; }
 </style>

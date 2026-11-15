@@ -13,14 +13,14 @@ How themes are written, found and applied: [Themes](../guide/themes.md).
 | `--ar-bg` | `#f6f3ec` | slide background colour |
 | `--ar-fg` | `#1b2a3a` | text colour |
 | `--ar-muted` | `#5b6b7b` | secondary text (`.muted`, slide number, footer) |
-| `--ar-accent` | `#2a7de1` | `h2`, cover bar, section background, progress, highlights |
+| `--ar-accent` | `#2a7de1` | `h2`, cover bar, section background (their layouts' defaults), progress, highlights |
 | `--ar-accent-fg` | `#fff` | text on accent (section slides) |
 | `--ar-letterbox` | `#1b2a3a` | around the canvas when the window shape differs |
 | `--ar-font-sans` | `Georgia, "Times New Roman", serif` | text font; a web font named here is fetched at build time ([Fonts](../guide/themes.md#fonts)) |
 | `--ar-font-mono` | `ui-monospace, Menlo, monospace` | code font; a web font named here is fetched at build time |
 | `--ar-font-heading` | none: the font around the heading (the text font) | the headings' font (`h1`–`h6` in a slide, the cover's and the section's titles included); a web font named here is fetched at build time |
 | `--ar-text-base` | `42px` | base font size of a slide |
-| `--ar-title` | `96px` | the type scale: `h1` size; `h2` is 0.6x, cover `h1` 1.25x, section `h1` 1.4x (the slide title's own size is `--ar-title-size`) |
+| `--ar-title` | `96px` | the type scale: `h1` size; `h2` is 0.6x; the cover's `h1` 1.25x and the section's 1.4x by default ([Layouts](#layouts)) (the slide title's own size is `--ar-title-size`) |
 | `--ar-text-small` | `.75em` | `.small` |
 | `--ar-placeholder` | `currentColor` (the text colour where drawn) | colour of the missing-picture and missing-icon boxes |
 
@@ -28,16 +28,15 @@ How themes are written, found and applied: [Themes](../guide/themes.md).
 
 | Token | Default | Meaning |
 |---|---|---|
-| `--ar-pad` | `110px 140px` | slide padding, the safe margin (and the text side of `image-*`); the footer band, when shown, takes the place of its bottom |
+| `--ar-pad` | `110px 140px` | slide padding, the safe margin (and the text side of `image-*`); the footer band, when shown, sits over its bottom: keep that at least `--ar-footer-height` |
 | `--ar-radius` | `4px` | corner radius (`Img rounded`, placeholders) |
-| `--ar-gap-sm` / `-md` / `-lg` | `24px` / `48px` / `80px` | `gap="sm\|md\|lg"`; `md` is the default gap of `Cols`/`Rows`/`Grid`; `lg` between zones; `sm` between the footer's children |
-| `--ar-image-inset` | `0` | padding around the picture in an `image-*` zone |
+| `--ar-gap-sm` / `-md` / `-lg` | `24px` / `48px` / `80px` | `gap="sm\|md\|lg"`; `md` is the default gap of `Cols`/`Rows`/`Grid`; `lg` between `split`'s zones; `sm` between the footer's children |
 
 ## Background, motion, addons
 
 | Token | Default | Meaning |
 |---|---|---|
-| `--ar-slide-bg-image` | `none` | default slide background: a gradient, or `url(…)` relative to the theme file |
+| `--ar-slide-bg-image` | `none` | default slide background: a gradient, or `url(…)` relative to the theme file; drawn over the slide's own colour (a section's accent, `style="background: …"`), not on a slide with a `Background` |
 | `--ar-slide-bg-position` | `center` | its position |
 | `--ar-slide-bg-opacity` | `1` | its opacity |
 | `--ar-step-duration` | `.35s` | fade time of `v-step` (and of the glide of `.collapse` steps) |
@@ -46,14 +45,15 @@ How themes are written, found and applied: [Themes](../guide/themes.md).
 | `--ar-progress-duration` | `.35s` | `ProgressBar`'s move to the new position |
 | `--ar-slide-number-size` | `24px` | `SlideNumber`'s text size |
 
-A theme can leave a layout without its default background:
-`[data-theme="x"] .layout-section { --ar-slide-bg-image: none; }`.
+A theme can leave a layout without its default background, and a slide can too:
+`[data-theme="x"] .layout-section { --ar-slide-bg-image: none; }`, `Slide(style="--ar-slide-bg-image: none")`.
 
 ## Slide zones and content
 
-The title tokens style the slide's title (`.ar-title`: the header's heading, the heading of
-`split`'s header and of `image-*`'s text side), not every `h1`/`h2`; cover and section headings
-keep `--ar-title`. Without them the title looks as any `h2` (or `h1`) does.
+The title tokens style the slide's title (`.ar-title`: the heading its header starts with, in
+every layout), not every `h1`/`h2`. Without them the title looks as any `h2` (or `h1`) does. The
+cover's and the section's `h1` take their size from their layout ([Layouts](#layouts)), and a
+section's title its text colour.
 
 | Token | Default | Meaning |
 |---|---|---|
@@ -62,9 +62,9 @@ keep `--ar-title`. Without them the title looks as any `h2` (or `h1`) does.
 | `--ar-title-align` | `match-parent` (as the slide's text) | `start`, `center`, `end` |
 | `--ar-title-gap` | `.6em` under an `h2`, `.4em` under an `h1` | space between the title and the body (em: the title's size; under a header band, give px) |
 | `--ar-header-height` | `auto` (as tall as the title) | a length: a header band, at least this tall, the title centred in it, `--ar-title-gap` under the band |
-| `--ar-body-align` | `center` | `start`, `center` or `end`: where the body sits, unless `Slide(align)` says (anything else warns and centres) |
+| `--ar-body-align` | `start` | `start`, `center` or `end`: where the body sits (on one slide, the classes `.top`, `.center`, `.bottom` set it); anything else is `start` |
 | `--ar-list-gap` | `0` | space between list items |
-| `--ar-footer-height` | `88px` | the footer band, at the bottom of the slide, in place of the bottom padding |
+| `--ar-footer-height` | `88px` | the footer band, at the bottom of the slide, over its bottom padding |
 | `--ar-footer-size` | `24px` | footer text size |
 | `--ar-footer-color` | `--ar-muted` (on a section: its text colour) | footer text colour |
 | `--ar-footer-align` | `space-between` | how the footer's children spread: `flex-start`, `center`, `flex-end`, `space-between` |
@@ -86,6 +86,37 @@ Tokens may be set per layout, or on any element, like every token:
 
 ```pug
 table.dense(style="--ar-table-pad: 12px 20px")
+```
+
+## Layouts
+
+Each layout's CSS file (the library's `layouts/`, the project's `src/layouts`) reads tokens of its
+own, `--ar-layout-<layout>-<thing>`. Set them in a theme, at the project's `:root`, or on one
+slide (`Slide(layout="image-right" style="--ar-layout-image-right-columns: 3fr 2fr")`). A
+`*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows it; a slide's
+`.no-footer` or `.with-footer` wins over it.
+
+| Token | Default | Meaning |
+|---|---|---|
+| `--ar-layout-cover-title` | 1.25x `--ar-title` | the cover's `h1` size |
+| `--ar-layout-cover-bar` | `--ar-accent` | the colour of its `.bar` |
+| `--ar-layout-cover-footer` | `none` | the deck's footer on covers |
+| `--ar-layout-section-bg` | `--ar-accent` | a section's background (the theme's `--ar-slide-bg-image` is drawn over it) |
+| `--ar-layout-section-fg` | `--ar-accent-fg` | its text, its title and its footer |
+| `--ar-layout-section-title` | 1.4x `--ar-title` | its `h1` size |
+| `--ar-layout-section-footer` | `none` | the deck's footer on sections |
+| `--ar-layout-split-columns` | `1fr 1fr` | the widths of `#left` and `#right`, as CSS grid columns |
+| `--ar-layout-split-gap` | `--ar-gap-lg` | the space between them |
+| `--ar-layout-image-left-columns` / `--ar-layout-image-right-columns` | `1fr 1fr` | the two sides' widths, left to right, as CSS grid columns (`3fr 2fr`, `1fr 720px`) |
+| `--ar-layout-image-left-inset` / `--ar-layout-image-right-inset` | `0px` | padding around the picture in its zone |
+| `--ar-layout-image-left-footer` / `--ar-layout-image-right-footer` | `flex` | the deck's footer on those slides, over the picture |
+| `--ar-layout-image-left-footer-bg` / `--ar-layout-image-right-footer-bg` | `none` | a backdrop under that footer (a colour, a gradient), to keep it legible over a photo |
+
+```css
+[data-theme="venue"] {
+  --ar-layout-section-bg: #0b3d2e;
+  --ar-layout-image-right-footer-bg: linear-gradient(transparent, rgb(0 0 0 / .45));
+}
 ```
 
 ## Code (Snippet)

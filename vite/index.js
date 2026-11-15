@@ -10,7 +10,8 @@
 //   images    <Img file="team.jpg">       default src/images     (URLs; subfolders allowed)
 //   themes    Deck(:themes="['venue']")   default src/themes     (each .css file directly in it;
 //                                                                 a list of folders and packages)
-//   arao({ decks: 'src/decks', snippets: 'src/snippets', images: 'src/images', themes: 'src/themes' })
+//   layouts   Slide(layout="quote")       default src/layouts    (each .css file directly in it)
+//   arao({ decks: 'src/decks', snippets: 'src/snippets', images: 'src/images', themes: 'src/themes', layouts: 'src/layouts' })
 // A folder is a path relative to the Vite root, or an absolute path. One outside the root
 // ("../shared/images") works the same: the dev server is allowed to serve it (server.fs.allow)
 // and watches it. A folder that was set but does not exist is reported when Vite starts.
@@ -60,6 +61,18 @@
 // A theme no source gives (a CSS file the project imports itself) is not one: a deck that lists it
 // is warned and does not wear it. Its folder or its package goes in arao({ themes }).
 //
+// Layouts are CSS, one file per layout, named as the layout: <name>.css styles the slides of
+// Slide(layout="<name>"), whose section carries the class layout-<name>; the engine has no code of
+// its own for any of them. First the library's own (its layouts/ folder: cover, section, split,
+// image-left, image-right), then the project's, arao({ layouts }), one folder (default
+// 'src/layouts'): every .css file directly in it. All of them are loaded, with nothing to import
+// (virtual:arao/layout-styles), after the engine's CSS and before the themes' (so a theme's rule
+// wins over a layout's of the same specificity), the library's first. A project file named like a
+// library one replaces it: the library's file is not loaded at all, and Vite says so. A file whose
+// name is no layout's (letters, digits, - and _), or that never names .layout-<name>, is loaded
+// all the same, and Vite warns. Subfolders hold what the layouts use, and are not loaded on their
+// own.
+//
 // Icons: <Icon name="lucide:rocket"> draws an icon of an installed Iconify set (@iconify-json/<prefix>),
 // resolved here, at build time: the source is read for the names it uses and only those go into
 // virtual:arao/icons (icons.js). arao({ icons: ['lucide:rocket'] }) adds names the source
@@ -85,9 +98,10 @@ const { name: PACKAGE } = require('../package.json')
 /**
  * arao()'s options: the three content folders (paths from the Vite root, or absolute), the theme
  * sources (a folder or a package, or a list of them), the built-in themes to load (true: all,
- * false: none but default, or their names), icon names to include whatever the source
- * says, the web fonts (fonts.js), and the options of Vue's own plugin (plugin-vue).
- * @typedef {{ decks?: string, snippets?: string, images?: string, themes?: string | string[], builtinThemes?: boolean | string[], icons?: string[], fonts?: import('./fonts.js').FontsOption, vue?: import('@vitejs/plugin-vue').Options }} AraoOptions
+ * false: none but default, or their names), the project's layouts folder, icon names to include
+ * whatever the source says, the web fonts (fonts.js), and the options of Vue's own plugin
+ * (plugin-vue).
+ * @typedef {{ decks?: string, snippets?: string, images?: string, themes?: string | string[], builtinThemes?: boolean | string[], layouts?: string, icons?: string[], fonts?: import('./fonts.js').FontsOption, vue?: import('@vitejs/plugin-vue').Options }} AraoOptions
  * @typedef {'decks' | 'snippets' | 'images'} Folder
  * @typedef {{ spec: string, dir: string, pkg: string | null, label: string, files?: string[] }} ThemeSource
  */
@@ -102,6 +116,12 @@ const DEFAULT_THEMES = 'src/themes'
 // with no theme falls back to (state/theme.ts); the others are loaded as builtinThemes says
 const BUILTIN_THEMES = fileURLToPath(new URL('../themes', import.meta.url))
 const DEFAULT_THEME = 'default'
+// the library's own layouts: the layouts/ folder at the package's root, one file per layout, named
+// as the layout (<name>.css), always loaded but where the project has a file of the same name
+const BUILTIN_LAYOUTS = fileURLToPath(new URL('../layouts', import.meta.url))
+const DEFAULT_LAYOUTS = 'src/layouts'
+// what a layout's name may be: it becomes a class, layout-<name>
+const LAYOUT_NAME = /^[A-Za-z0-9_-]+$/
 // a source that is a package's name, not a path: a bare lowercase npm name, 'name' or
 // '@scope/name' (npm's rules: lowercase letters, digits, - . _ ~); anything else, or a name
 // written with './', is a folder
@@ -362,12 +382,39 @@ function themesOfSources(sources, root) {
 /** @param {string} s */
 const escapeGlob = (s) => s.replace(/[()[\]{}*?!+@|\\]/g, '\\$&')
 
+// The layouts: the library's files (by name, without .css), the project folder's, the library's
+// that a project file replaces (shadowed), and the library's to load (loaded). And what each
+// project file gets wrong, for a warning: its name is no layout's (badName), or it never names
+// .layout-<name> (unstyled). The library's own files are trusted.
+/** @param {string} folder */
+function layoutsOf(folder) {
+  const builtin = filesIn(BUILTIN_LAYOUTS, '.css')
+  const project = filesIn(folder, '.css')
+  const shadowed = builtin.filter((n) => project.includes(n))
+  const loaded = builtin.filter((n) => !project.includes(n))
+  const badName = project.filter((n) => !LAYOUT_NAME.test(n))
+  const unstyled = project.filter((n) => LAYOUT_NAME.test(n) && !stylesLayout(join(folder, `${n}.css`), n))
+  return { builtin, project, shadowed, loaded, badName, unstyled }
+}
+// whether a stylesheet names .layout-<name> (outside its comments); an unreadable file does not
+/** @param {string} file @param {string} name */
+function stylesLayout(file, name) {
+  let css
+  try {
+    css = readFileSync(file, 'utf8')
+  } catch {
+    return false
+  }
+  // name is a layout's (LAYOUT_NAME): nothing in it is special in a pattern
+  return new RegExp(`\\.layout-${name}(?![\\w-])`).test(css.replace(/\/\*[\s\S]*?\*\//g, ''))
+}
+
 /**
  * @param {AraoOptions} [options]
  * @returns {import('vite').Plugin[]}
  */
 export default function arao(options = {}) {
-  const { vue: vueOptions = {}, icons: iconsOption, themes: themesOption, builtinThemes = true, fonts: fontsOption, ...rest } = options
+  const { vue: vueOptions = {}, icons: iconsOption, themes: themesOption, builtinThemes = true, layouts: layoutsOption, fonts: fontsOption, ...rest } = options
   const names = /** @type {Folder[]} */ (Object.keys(modules))
   /** @type {Record<Folder, string>} */
   const folders = { ...DEFAULTS }
@@ -396,6 +443,11 @@ export default function arao(options = {}) {
       throw new Error(`[arao] builtinThemes: no built-in theme ${unknown.map((n) => JSON.stringify(n)).join(', ')} (there are: ${builtinNames.join(', ')})`)
     enabledBuiltins = builtinNames.filter((n) => n === DEFAULT_THEME || builtinThemes.includes(n))
   } else throw new Error(`[arao] builtinThemes must be true, false or a list of built-in themes' names, got ${JSON.stringify(builtinThemes)}`)
+  // the project's layouts folder
+  const layoutsFolder = layoutsOption ?? DEFAULT_LAYOUTS
+  if (typeof layoutsFolder !== 'string' || !layoutsFolder.trim()) throw new Error(`[arao] the layouts folder must be a path, got ${JSON.stringify(layoutsFolder)}`)
+  if (!filesIn(BUILTIN_LAYOUTS, '.css').length)
+    throw new Error(`[arao] the library's own layouts folder (${BUILTIN_LAYOUTS}) has no layout: the package is incomplete, install it again`)
   /** @type {ThemeSource[]} */
   let themeSources = [] // resolved once the root is known (configResolved)
   let root = process.cwd()
@@ -403,12 +455,13 @@ export default function arao(options = {}) {
   let ssr = false
   /** @param {Folder} name */
   const dir = (name) => resolve(root, folders[name])
+  const layoutsDir = () => resolve(root, layoutsFolder.trim())
   /** @param {string} d */
   const isOutside = (d) => {
     const r = relative(root, d)
     return r === '..' || r.startsWith('..' + sep) || isAbsolute(r)
   }
-  const outside = () => [...names.map(dir), ...themeSources.map((t) => t.dir)].filter(isOutside)
+  const outside = () => [...names.map(dir), ...themeSources.map((t) => t.dir), real(BUILTIN_LAYOUTS), layoutsDir()].filter(isOutside)
   /** @param {string} name */
   const resolved = (name) => `\0virtual:arao/${name}`
   /** @type {string | null} */
@@ -424,6 +477,18 @@ export default function arao(options = {}) {
   const inThemeFolder = (file) => file.endsWith('.css') && themeSources.some((t) => relative(t.dir, file) === basename(file))
   /** @param {{ file: string, name: string }} s */
   const spacedTheme = ({ file, name }) => logger.warn(`[arao] ${normalizePath(relative(root, file))}: [data-theme=${JSON.stringify(name)}] is no theme (a theme's name has no white space): skipped`)
+  /** @type {string | null} */
+  let layoutsLoaded = null // the library's layouts the styles module was last loaded with
+  /** @param {string} name */
+  const layoutFile = (name) => normalizePath(relative(root, join(layoutsDir(), `${name}.css`)))
+  /** @param {string} name */
+  const badLayout = (name) => logger.warn(`[arao] ${layoutFile(name)}: "${name}" is no layout's name (letters, digits, - and _ only): it is loaded, but no slide can name it in its layout`)
+  /** @param {string} name */
+  const unstyledLayout = (name) => logger.warn(`[arao] ${layoutFile(name)} names no .layout-${name}: it is loaded, but styles no slide of Slide(layout="${name}")`)
+  /** @param {string} name */
+  const shadowLayout = (name) => logger.info(`[arao] layout "${name}" of ${layoutFile(name)} replaces the library's one of that name (${PACKAGE}'s layouts/${name}.css is not loaded)`)
+  /** @param {string} file */
+  const inLayoutsFolder = (file) => file.endsWith('.css') && relative(layoutsDir(), file) === basename(file)
 
   // icons used in the source: src/ and the decks folder, but not the snippets and images folders
   // (their files are content, not source)
@@ -491,6 +556,8 @@ export default function arao(options = {}) {
         if (rest[name] != null && !existsSync(dir(name)))
           config.logger.warn(`[arao] the ${name} folder "${folders[name]}" does not exist (${dir(name)}): ${modules[name].missing}`)
       }
+      if (layoutsOption != null && !existsSync(layoutsDir()))
+        config.logger.warn(`[arao] the layouts folder "${layoutsFolder.trim()}" does not exist (${layoutsDir()}): the project's layouts are missing`)
       themeSources = resolveThemeSources(themeSpecs, root, enabledBuiltins)
       const given = themesOfSources(themeSources, root)
       for (const t of themeSources.slice(1)) {
@@ -507,7 +574,7 @@ export default function arao(options = {}) {
     },
     resolveId(id) {
       const name = id.startsWith('virtual:arao/') ? id.slice('virtual:arao/'.length) : ''
-      return (name && name in modules) || name === 'icons' || name === 'themes' || name === 'theme-styles' ? resolved(name) : null
+      return (name && name in modules) || name === 'icons' || name === 'themes' || name === 'theme-styles' || name === 'layout-styles' ? resolved(name) : null
     },
     // a saved file that uses an icon the module lacks: the module goes first in the same update,
     // so its new data is in place when the file's own update renders the Icon
@@ -535,6 +602,24 @@ export default function arao(options = {}) {
         if (type !== 'delete') {
           if (isTheme && unnamed.some((u) => normalizePath(u) === normalizePath(file))) unnamedTheme(file)
           for (const s of spaced) if (normalizePath(s.file) === normalizePath(file)) spacedTheme(s)
+        }
+      }
+      // a layout file of the project's folder added or removed: if it changes which of the
+      // library's are loaded (it replaces one, or no longer does), the styles module is loaded
+      // again and the page reloads; else the module's glob follows the files on its own, and an
+      // edit is a plain CSS update (what the file gets wrong is reported here)
+      if (inLayoutsFolder(file)) {
+        const { loaded, badName, unstyled } = layoutsOf(layoutsDir())
+        const mod = this.environment.moduleGraph.getModuleById(resolved('layout-styles'))
+        if (mod && JSON.stringify(loaded) !== layoutsLoaded) {
+          this.environment.moduleGraph.invalidateModule(mod)
+          this.environment.hot.send({ type: 'full-reload' })
+          return []
+        }
+        const name = basename(file, '.css')
+        if (type !== 'delete') {
+          if (badName.includes(name)) badLayout(name)
+          if (unstyled.includes(name)) unstyledLayout(name)
         }
       }
       if (!(await icons.update(type, file, read))) return
@@ -574,6 +659,22 @@ export const themeSources = ${JSON.stringify(themeSources.map((t) => t.label))}`
           const pick = i ? '*' : loaded.length > 1 ? `{${loaded.map(escapeGlob).join(',')}}` : loaded.map(escapeGlob)[0]
           return pick ? `import.meta.glob(${JSON.stringify((rel ? `/${escapeGlob(rel)}/` : '/') + pick + '.css')}, { eager: true })` : ''
         }).filter(Boolean).join('\n')
+      }
+      // the layouts' CSS: the library's own (but those the project replaces), then every file of
+      // the project's folder (a folder missing gives nothing), each imported for its styles alone
+      if (id === resolved('layout-styles')) {
+        const { shadowed, loaded, badName, unstyled } = layoutsOf(layoutsDir())
+        for (const n of badName) badLayout(n)
+        for (const n of unstyled) unstyledLayout(n)
+        for (const n of shadowed) shadowLayout(n)
+        layoutsLoaded = JSON.stringify(loaded)
+        /** @param {string} folder @param {string} pick */
+        const glob = (folder, pick) => {
+          const rel = relative(root, folder).split(sep).join('/')
+          return `import.meta.glob(${JSON.stringify((rel ? `/${escapeGlob(rel)}/` : '/') + pick + '.css')}, { eager: true })`
+        }
+        const pick = loaded.length > 1 ? `{${loaded.map(escapeGlob).join(',')}}` : loaded.map(escapeGlob)[0]
+        return [pick ? glob(real(BUILTIN_LAYOUTS), pick) : '', glob(layoutsDir(), '*')].filter(Boolean).join('\n')
       }
       const name = names.find((n) => id === resolved(n))
       if (!name) return null

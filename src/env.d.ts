@@ -21,6 +21,7 @@ declare module 'virtual:arao/themes' {
 declare module 'virtual:arao/shortcuts' {
   export const shortcuts: Readonly<Record<string, import('./core/shortcuts').Command>>
 }
+declare module 'virtual:arao/layout-styles'
 declare module 'virtual:arao/theme-styles'
 declare module '*.vue' {
   import type { DefineComponent } from 'vue'

@@ -13,14 +13,18 @@
 // shortcuts file (src/shortcuts.ts: SHORTCUTS), a theme of
 // its own in src/themes (THEME, in a file of another name: the plugin names it by its selector;
 // and THEME-extra, in a partial that file @import-s), ROOM in src/venues, IMPORTED in a theme
-// package it depends on (vendor/, its CSS in the folder its package.json names), the playground's decks, images
-// and snippets as content, and four tiny decks of its own (so that the project has several and /
+// package it depends on (vendor/, its CSS in the folder its package.json names), the playground's decks, images,
+// snippets and layouts (src/layouts) as content, and four tiny decks of its own (so that the project has several and /
 // lists them; the second has a duration and lists its themes, the third neither: it gets every
 // theme there is; the fourth a file name and a cover heading far too long for its card, and THEME
 // first; the fifth lists first IMPORTED, the theme package's).
 // Then, in order:
 //   1. npm install
-//   2. vite build                      must pass, and write dist/404.html, a copy of index.html;
+//   2. vite build                      must pass, and write dist/404.html, a copy of index.html,
+//      and hold the CSS of every layout: the installed package's layouts/ and the project's
+//      src/layouts; a project cover.css replaces the library's (a message says so, and its CSS is
+//      not in the build), and a layout file whose name is no layout's, or that names no
+//      .layout-<name>, warns and is loaded;
 //      with a theme source that is a package not installed, one that gives no theme, one whose
 //      themes folder is outside it, or a bare name that is a root folder, it must stop with an
 //      [arao] error (the last one with the "./" hint); a name two sources give warns once (a
@@ -145,7 +149,7 @@ const lib = JSON.parse(await readFile(join(repo, 'package.json'), 'utf8'))
 const PKG = lib.name
 const BIN = typeof lib.bin === 'string' ? PKG.replace(/^@[^/]+\//, '') : Object.keys(lib.bin ?? {})[0]
 if (!BIN) throw new Error('package.json has no "bin"')
-const CONTENT = ['decks', 'images', 'snippets'] // from the playground's src/
+const CONTENT = ['decks', 'images', 'snippets', 'layouts'] // from the playground's src/
 // a deck of the smoke project only: with the playground's, the project has several. MARK, its
 // heading, tells it from the others once open. Faces keeps every useDeck() it is handed (one per
 // drawing of the deck) in window.__faces, for the face check and the duration check (15 min:
@@ -202,7 +206,7 @@ const DURATION = 15 * 60000
 const SECOND = ['Second.vue', `<template lang="pug">
 Deck(:themes="['default', '${THEME}']" duration="15m")
   Faces
-  Slide(layout="cover" title="Second")
+  Slide(layout="cover")
     h1 ${MARK}
   Slide
     h2 Picked from the list
@@ -220,7 +224,7 @@ const Faces = { setup: () => ((window.__faces ??= []).push(useDeck()), () => nul
 // step the slide does not reach
 const UNTIMED = ['Untimed.vue', `<template lang="pug">
 Deck
-  Slide(layout="cover" title="Untimed")
+  Slide(layout="cover")
     h1 A deck without duration
   Slide
     h2 No countdown
@@ -238,7 +242,7 @@ Deck
 const LONG_HEADING = 'A cover heading just as long, far longer than the one line its card keeps for it under the title'
 const LONG = ['TheDeckWhoseFileName-is_so-long-that-no-card-of-the-list-could-ever-hold-it-on-one-line.vue', `<template lang="pug">
 Deck(:themes="['${THEME}', 'default']")
-  Slide(layout="cover" title="Long")
+  Slide(layout="cover")
     h1 ${LONG_HEADING}
   Slide
     h2 A long name
@@ -249,7 +253,7 @@ Deck(:themes="['${THEME}', 'default']")
 // a fifth deck of the smoke project only: it lists IMPORTED, the theme package's, first
 const VENUE = ['Venue.vue', `<template lang="pug">
 Deck(:themes="['${IMPORTED}', 'default']")
-  Slide(layout="cover" title="Venue")
+  Slide(layout="cover")
     h1 A deck in a theme of its own
   Slide
     h2 From a theme package
@@ -524,6 +528,42 @@ try {
       for (const p of ['arao-empty-themes', 'arao-escape-themes']) await rm(join(project, 'node_modules', p), { recursive: true, force: true })
       await rm(join(project, 'src', 'dupes'), { recursive: true, force: true })
       await rm(join(project, 'src', 'over'), { recursive: true, force: true })
+    }
+    await run(process.execPath, [viteBin, 'build'], project) // the project's own build back in dist/
+  }
+
+  // layouts: the library's (the installed package's layouts/) and the project's (src/layouts, the
+  // playground's quote.css) are in the build; a project file named like a library one replaces it
+  // (a message says so, and the library file's CSS is not in the build); a file whose name is no
+  // layout's, and one that names no .layout-<name>, are loaded, each with a warning
+  {
+    const builtCss = async () => {
+      const assets = join(project, 'dist', 'assets')
+      return (await Promise.all((await readdir(assets)).filter((f) => f.endsWith('.css')).map((f) => readFile(join(assets, f), 'utf8')))).join('\n')
+    }
+    const library = (await readdir(join(project, 'node_modules', PKG, 'layouts'))).filter((f) => f.endsWith('.css')).map((f) => basename(f, '.css'))
+    const own = (await readdir(join(project, 'src', 'layouts')).catch(() => [])).filter((f) => f.endsWith('.css')).map((f) => basename(f, '.css'))
+    let css = await builtCss()
+    const missing = [...library, ...own].filter((n) => !css.includes(`.layout-${n}`))
+    if (!library.length || !own.length) fail(`layouts: ${library.length} in the package's layouts/, ${own.length} in src/layouts (the playground's): both are wanted`)
+    else if (missing.length) fail(`vite build: no CSS for the layouts ${missing.join(', ')} in the build`)
+    else console.log(`  layouts: ${library.join(', ')} (the library's) and ${own.join(', ')} (the project's) in the build`)
+    const added = { 'cover.css': '.layout-cover { --smoke-own-cover: 1; }\n', 'bad name.css': '.x { --smoke-bad: 1; }\n', 'plain.css': ':root { --smoke-plain: 1; }\n' }
+    try {
+      for (const [f, text] of Object.entries(added)) await writeFile(join(project, 'src', 'layouts', f), text)
+      const { code, out, err } = await exec(process.execPath, [viteBin, 'build'], project)
+      const said = out + err
+      css = await builtCss()
+      const what = 'vite build with src/layouts/cover.css, "bad name.css" and plain.css'
+      if (code !== 0) fail(`${what}: exited with ${code}`)
+      else if (!/\[arao\] layout "cover" of src\/layouts\/cover\.css replaces the library's one/.test(said)) fail(`${what}: nothing says the project's cover replaces the library's`)
+      else if (!/\[arao\] src\/layouts\/bad name\.css: "bad name" is no layout's name/.test(said)) fail(`${what}: no warning about "bad name"`)
+      else if (!/\[arao\] src\/layouts\/plain\.css names no \.layout-plain/.test(said)) fail(`${what}: no warning about plain.css`)
+      else if (!['--smoke-own-cover', '--smoke-bad', '--smoke-plain'].every((t) => css.includes(t))) fail(`${what}: the project's files are not all in the build`)
+      else if (css.includes('--_ar-cover-bar')) fail(`${what}: the library's cover.css is in the build`)
+      else console.log('  layouts: a project cover replaces the library\'s, saying so; a file with a bad name, and one naming no layout, warn and load')
+    } finally {
+      for (const f of Object.keys(added)) await rm(join(project, 'src', 'layouts', f), { force: true })
     }
     await run(process.execPath, [viteBin, 'build'], project) // the project's own build back in dist/
   }
@@ -1585,7 +1625,7 @@ try {
   // tiny decks, for the decks folders of the cases below: a cover and a slide of two steps
   const tiny = (title, themes, script = '') => `<template lang="pug">
 Deck(:themes="${JSON.stringify(themes).replace(/"/g, "'")}")
-  Slide(layout="cover" title="${title}")
+  Slide(layout="cover")
     h1 ${title}
   Slide
     h2 Two steps

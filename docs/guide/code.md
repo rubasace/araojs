@@ -43,7 +43,7 @@ Gotchas: a missing file warns and shows `// missing snippet: <file>`. In this po
 fonts may render proportional; that is the environment, not the engine.
 
 ```pug
-Slide(title="A debug filter")
+Slide
   h2 A debug filter
   Snippet(file="DebugFilter.java" :highlights='{ "2": 2, "8-10:isDebug+++MDC.put": 3 }')
 

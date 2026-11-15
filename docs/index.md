@@ -15,11 +15,11 @@ How to do things, with examples.
 |---|---|
 | [Concepts](guide/concepts.md) | the canvas, decks and slides, zones, steps, themes, Pug or HTML |
 | [The project](guide/project.md) | the folders, the scripts, `createDeckApp`, the list of decks |
-| [Slides and layouts](guide/slides-and-layouts.md) | layouts, the header, body and footer zones, lists and tables |
+| [Slides and layouts](guide/slides-and-layouts.md) | layouts (and writing your own), the header, body and footer zones, placing the body, lists and tables |
 | [Steps](guide/steps.md) | revealing a slide bit by bit, reusable steps |
 | [Composition](guide/composition.md) | `Cols`, `Rows`, `Grid`, `Center` |
 | [Code](guide/code.md) | `Snippet`: the code window and its highlights per step |
-| [Images and backgrounds](guide/images-and-backgrounds.md) | `Img`, slide backgrounds |
+| [Images and backgrounds](guide/images-and-backgrounds.md) | `Img`, `Background`, a slide's colour |
 | [Icons](guide/icons.md) | `Icon`: sets, how they get into the build, licences |
 | [Presenting](guide/presenting.md) | keys, controls, the interface language, speaker notes, the presenter view and its timer |
 | [Themes](guide/themes.md) | writing a theme, where themes are found, how tokens apply |
@@ -34,10 +34,10 @@ Every prop, slot, token, option and URL, exactly.
 
 | Page | What it lists |
 |---|---|
-| [Components](reference/components.md) | `Deck`, `Slide`, `Cols`, `Rows`, `Grid`, `Center`, `Img`, `Icon`, `Snippet`, `Notes`, the addons, utility classes |
+| [Components](reference/components.md) | `Deck`, `Slide` and its layouts, `Background`, `Cols`, `Rows`, `Grid`, `Center`, `Img`, `Icon`, `Snippet`, `Notes`, the addons, utility classes |
 | [Directives](reference/directives.md) | `v-step`, `v-step-from` |
 | [Composables](reference/composables.md) | `useDeck()`, `useSlide()` |
-| [Theme tokens](reference/theme-tokens.md) | every `--ar-*` token and its default |
+| [Theme tokens](reference/theme-tokens.md) | every `--ar-*` token and its default, the layouts' included |
 | [Vite plugin](reference/vite-plugin.md) | `arao()` and its options |
 | [CLI](reference/cli.md) | `arao export` and its options |
 | [URLs](reference/urls.md) | paths, query parameters and the hash |

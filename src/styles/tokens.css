@@ -33,21 +33,23 @@
    radii are proportions of its radius token.
 
    Not declared here: --ar-scale, the canvas's scale, set by the engine (Stage.vue; 1 in the
-   export's book, ExportView.vue). */
+   export's book, ExportView.vue); and the layouts' own tokens (--ar-layout-<name>-…), which each
+   layout's CSS file declares and documents (layouts/ at the package's root, src/layouts in a
+   project). */
 :where(:root) {
   /* ---- the slide: colours and type (Stage.vue, Slide.vue) ---- */
   --ar-bg: #f6f3ec;                  /* slide background */
   --ar-fg: #1b2a3a;                  /* text */
   --ar-muted: #5b6b7b;               /* secondary text: .muted, the slide number, the footer */
-  --ar-accent: #2a7de1;              /* h2, cover bar, section background, progress, highlights */
-  --ar-accent-fg: #fff;              /* text on the accent (section slides) */
+  --ar-accent: #2a7de1;              /* h2, cover bar, section background (layouts/), progress, highlights */
+  --ar-accent-fg: #fff;              /* text on the accent (section slides, layouts/section.css) */
   --ar-letterbox: #1b2a3a;           /* around the canvas when the window shape differs */
   --ar-font-sans: Georgia, "Times New Roman", serif;
   --ar-font-mono: ui-monospace, Menlo, monospace;
   /* --ar-font-heading: not declared: headings keep the font around them (Slide.vue) */
   --ar-text-base: 42px;              /* base font size of a slide */
   --ar-text-small: .75em;            /* .small */
-  --ar-title: 96px;                  /* the type scale: h1; h2 .6x, cover h1 1.25x, section h1 1.4x */
+  --ar-title: 96px;                  /* the type scale: h1; h2 .6x (the cover's and the section's h1: layouts/) */
   --ar-radius: 4px;                  /* Img rounded, the missing-picture box */
   --ar-placeholder: currentColor;    /* the missing picture or icon box (the text colour where drawn) */
 
@@ -55,7 +57,7 @@
   --ar-pad: 110px 140px;             /* slide padding, the safe margin */
   --ar-gap-sm: 24px;                 /* gap="sm", the footer's children */
   --ar-gap-md: 48px;                 /* gap="md", the default gap of Cols, Rows, Grid */
-  --ar-gap-lg: 80px;                 /* gap="lg", between zones */
+  --ar-gap-lg: 80px;                 /* gap="lg", between split's zones (layouts/split.css) */
 
   /* ---- motion ---- */
   --ar-step-duration: .35s;          /* fade of v-step (also read by core/flip.ts) */
@@ -67,7 +69,8 @@
   --ar-slide-bg-opacity: 1;
 
   /* ---- slide zones (Slide.vue) ---- */
-  --ar-body-align: center;           /* start | center | end (also read by Slide.vue's script) */
+  --ar-body-align: start;            /* the body's place: start | center | end (classes top, center,
+                                        bottom set it on one slide) */
   --ar-header-height: auto;          /* a length: the header is a band that tall (read by script too) */
   --ar-title-align: match-parent;    /* the slide title: start | center | end */
   /* --ar-title-size, --ar-title-color, --ar-title-gap: below (their defaults are other tokens) */
@@ -76,7 +79,6 @@
   --ar-footer-align: space-between;
   /* --ar-footer-color: below */
   --ar-list-gap: 0;                  /* between list items */
-  --ar-image-inset: 0;               /* padding of an image zone */
 
   /* ---- tables (Slide.vue) ---- */
   --ar-table-pad: .4em .8em;

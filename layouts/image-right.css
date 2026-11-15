@@ -1,0 +1,59 @@
+/* image-right: a picture beside the text. The #image zone fills the right of the slide, full
+   height and edge to edge (no padding); the left is the text side, padded like any slide: its
+   title on top, at the height of every other slide's, then its body. The deck's footer stays, over
+   the picture.
+     Slide(layout="image-right")
+       template(#image)
+         Img(file="city.jpg" alt="The city at night")
+       h2 One picture, one idea
+       p The picture fills its side, edge to edge.
+
+   Tokens, and their defaults (a theme, the project's :root or one slide sets them; why each is
+   resolved on the slide: cover.css):
+     --ar-layout-image-right-columns     the two sides' widths, text then picture, as CSS grid
+                                         columns (one slide: style="--ar-layout-image-right-columns:
+                                         3fr 2fr")                                        1fr 1fr
+     --ar-layout-image-right-inset       padding around the picture in its zone           0px
+     --ar-layout-image-right-footer      the deck's footer: flex shows it, none hides it  flex
+     --ar-layout-image-right-footer-bg   a backdrop under the footer (a colour, a gradient), to
+                                         keep it legible over a photo                     none
+   In the image zone an Img, an img or a video covers it (fit="contain" still wins); any other
+   element fills it. */
+:where(.layout-image-right) {
+  --_ar-image-right-columns: var(--ar-layout-image-right-columns, 1fr 1fr);
+  --_ar-image-right-inset: var(--ar-layout-image-right-inset, 0px);
+  --_ar-image-right-footer: var(--ar-layout-image-right-footer, flex);
+  --_ar-image-right-footer-bg: var(--ar-layout-image-right-footer-bg, none);
+}
+
+/* the slide is a grid with no padding of its own: the text side in the first column (its header,
+   then its body), the picture in the second, across both rows */
+.layout-image-right {
+  display: grid;
+  grid-template-columns: var(--_ar-image-right-columns);
+  grid-template-rows: auto minmax(0, 1fr);
+  padding: 0;
+}
+/* the text side carries the slide's padding: the header its top, the body its bottom (all of it
+   when there is no header), both its sides. The header's band (--ar-header-height) is under the
+   padding, as on any slide. */
+.layout-image-right > :is(.ar-header, .ar-body) { grid-column: 1; min-width: 0; padding: var(--ar-pad); }
+.layout-image-right > .ar-header { grid-row: 1; padding-bottom: 0; box-sizing: content-box; }
+.layout-image-right > .ar-body { grid-row: 2; }
+.layout-image-right > .ar-header + .ar-body { padding-top: 0; }
+
+/* the picture: edge to edge (a theme may inset it), whatever is in it filling it */
+.layout-image-right > .ar-zone-image {
+  grid-column: 2; grid-row: 1 / -1;
+  position: relative; overflow: hidden; box-sizing: border-box;
+  padding: var(--_ar-image-right-inset);
+}
+:where(.layout-image-right > .ar-zone-image) > * { flex: 1 1 0; min-height: 0; }
+.layout-image-right > .ar-zone-image > :is(img, video, picture, svg, canvas) { display: block; width: 100%; height: 100%; object-fit: cover; }
+.layout-image-right > .ar-zone-image > .ar-img > img { object-fit: cover; }
+
+/* the footer, over the picture */
+.layout-image-right > .ar-footer {
+  display: var(--_ar-image-right-footer);
+  background: var(--_ar-image-right-footer-bg);
+}

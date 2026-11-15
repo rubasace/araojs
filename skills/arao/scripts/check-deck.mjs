@@ -5,9 +5,11 @@
 // Run it from the slides project (it imports playwright-core, a dependency of araojs). Chromium
 // once: npx playwright-core install chromium.
 // Prints: console warnings/errors and page errors, the slide count, the highest step reached on
-// each slide, slides whose content overflows, and saves a screenshot of every step in outDir
-// (default ./deck-check), named s<slide>-<step>.png. Exit code 1 if any warning, error, overflow,
-// quirks mode (no <!doctype html>) or no slide rendered.
+// each slide, slides whose content overflows, Slide API that is gone (a removed prop is no error
+// in Vue: it lands on the slide as a plain HTML attribute and does nothing), and saves a
+// screenshot of every step in outDir (default ./deck-check), named s<slide>-<step>.png. Exit code
+// 1 if any warning, error, overflow, removed Slide API, quirks mode (no <!doctype html>) or no
+// slide rendered.
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { createRequire } from 'node:module'
@@ -62,6 +64,25 @@ if ((await page.evaluate(() => document.compatMode)) === 'BackCompat') {
 }
 const slides = await page.locator('.ar-slide').count()
 
+// Slide API that is gone (araojs 0.5): its props fall through to the slide's section as plain
+// attributes, and template(#background) is a zone like any other (.ar-zone-background)
+const removed = await page.evaluate(() => {
+  const now = {
+    bg: 'Background(src="…") inside the slide, or style="background: …" for a colour',
+    bgopacity: 'Background(opacity)', bgposition: 'Background(position)', bgblur: 'Background(blur)', bgfit: 'Background(fit)',
+    ratio: 'style="--ar-layout-<layout>-columns: 2fr 1fr"',
+    align: 'the classes top, center, bottom (the body starts at the top by default)',
+    footer: 'the classes no-footer, with-footer',
+    title: "the slide's first heading, which names it",
+  }
+  return [...document.querySelectorAll('.ar-slide')].flatMap((slide, i) => {
+    const found = [...slide.attributes].map((a) => a.name).filter((n) => now[n.replace(/-/g, '')])
+      .map((n) => `${n} (now ${now[n.replace(/-/g, '')]})`)
+    if (slide.querySelector(':scope > .ar-zone-background')) found.push('template(#background) (now Background inside the slide)')
+    return found.length ? [`slide ${i + 1}: ${found.join('; ')}`] : []
+  })
+})
+
 const hash = () => page.evaluate(() => location.hash)
 const parse = (h) => (h.match(/^#\/(\d+)\/(\d+)/) || []).slice(1).map(Number)
 const steps = {}
@@ -92,7 +113,8 @@ await browser.close()
 console.log(`slides: ${slides}`)
 console.log(`steps per slide: ${Object.entries(steps).map(([k, v]) => `${k}:${v}`).join(' ')}`)
 if (overflow.size) console.log(`overflow on slides: ${[...overflow].join(', ')}`)
+if (removed.length) console.log(`removed Slide API (${removed.length} slides):\n  ${removed.join('\n  ')}`)
 if (problems.length) console.log(`console problems (${problems.length}):\n  ${problems.join('\n  ')}`)
 else console.log('console: clean')
 console.log(`screenshots: ${outDir}/`)
-process.exit(problems.length || overflow.size ? 1 : 0)
+process.exit(problems.length || overflow.size || removed.length ? 1 : 0)

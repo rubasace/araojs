@@ -4,7 +4,7 @@ import { exportOptions } from '../core/exporter'
 import { useDeckSync } from '../composables/useDeckSync'
 import { useFullscreen } from '../composables/useFullscreen'
 import { usePresenterWindow } from '../composables/usePresenterWindow'
-import { ahead, createStage, headingOf, titleOf, useStage, type Role, type Stage } from './stage'
+import { ahead, createStage, titleOf, useStage, type Role, type Stage } from './stage'
 import { createTheme } from './theme'
 import { createTimer, type Timer } from './timer'
 
@@ -51,7 +51,7 @@ export type Deck = ReturnType<typeof createDeck>
 // first slide at step 1, on a stage that cannot move; no URL read or written, no keys, no other
 // window, no presenter window, and every action of its face does nothing.
 //   provideThumbnail({ title })    title: a ref the deck fills with its cover's title (its first
-//                                  heading, else its title prop), '' if it has neither
+//                                  heading), '' if it has none
 // Which deck it is: provideDeckRoute(app, { name, path }), from the app that picked it (app.ts):
 // its file name and its path as the list writes it (/talk, under the app's base). Its windows
 // sync on that path (core/sync.ts deckKey) and its presenter window opens there, whatever the
@@ -109,7 +109,7 @@ export function createDeck(props: DeckProps) {
   if (coverTitle) {
     watchPostEffect(() => {
       const cover = stage.list[0]
-      coverTitle.value = cover ? headingOf(cover) || cover.title.value || '' : ''
+      coverTitle.value = cover ? titleOf(cover) : ''
     })
   }
 

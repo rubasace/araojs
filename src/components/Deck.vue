@@ -21,8 +21,9 @@
      Export: ?export prints the deck, one page per step (&per-slide: per slide; &notes: a page of
      notes after each slide that has them): views/ExportView.vue and core/exporter.ts, and
      npm run export for the PDFs.
-     Footer: the #footer slot is drawn at the bottom of every slide except covers and sections
-     (each Slide draws it, so it fades, prints and shows in the presenter view with its slide);
+     Footer: the #footer slot is drawn at the bottom of every slide whose layout shows it (all but
+     covers and sections; a slide's no-footer or with-footer class decides for it: Slide.vue). Each
+     Slide draws it, so it fades, prints and shows in the presenter view with its slide;
      its slot props are { number, total }, the slide's number (1-based) and the slide count:
        template(#footer="{ number, total }")
          span ACME · Conf 2026

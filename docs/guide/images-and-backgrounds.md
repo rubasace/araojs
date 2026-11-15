@@ -1,8 +1,8 @@
 # Images and backgrounds
 
 Pictures are named from the images folder (`src/images`, subfolders allowed, case-sensitive),
-never imported: `Img(file="team.jpg")` in a slide, `Slide(bg="team.jpg")` behind it. Every prop:
-[Img](../reference/components.md#img) and [Slide](../reference/components.md#slide).
+never imported: `Img(file="team.jpg")` in a slide, `Background(src="team.jpg")` behind it. Every
+prop: [Img](../reference/components.md#img) and [Background](../reference/components.md#background).
 
 ## Pictures: Img
 
@@ -30,50 +30,63 @@ Cols
 
 ## Backgrounds
 
-The background is a layer under the content, as big as the slide, that never catches the pointer.
-`bg` is read in this order:
+A slide's background is a layer under its content, as big as the slide, that never catches the
+pointer. Without anything of the slide's own, it shows the theme's default background, if the theme
+sets one (`--ar-slide-bg-*`, [Theme tokens](../reference/theme-tokens.md#background-motion-addons)).
 
-1. **URL**: starts with a scheme or `/` (`https://…`, `data:…`, `/from-public.jpg`). Root-relative
-   paths are served under Vite's `base`.
-2. **File**: a file in the images folder (`city.jpg`, `team/ana.png`, `"photo (1).jpg"`), or a
-   name that looks like a file (ends in an extension) but is not there: shown as missing, with a
-   warning.
-3. **CSS**: anything else, as a CSS `background` (`"#1d2b4a"`, `"linear-gradient(…)"`).
-   `url(…)` here is plain CSS, relative to the page, not processed by Vite: name the file instead.
-   An invalid value warns in development.
+### A picture, a video, anything: Background
 
-A blank `bg` is no bg. `#background` slot: every element in it covers the whole slide, stacked in
-order (a picture, then a tint over it); `v-step` works inside. With both, `bg` is drawn first and
-the slot above it. With neither (a slot that renders nothing counts as none), the theme's default
-background shows (`--ar-slide-bg-*`), and the `bg-*` props tune it. Headings inside the
-background are not used as the slide's title.
+`Background`, anywhere inside a `Slide` (first is clearest), draws behind all of the slide's
+content, edge to edge, instead of the theme's default background:
 
 ```pug
-Slide(layout="split" ratio="2 1")
-  h2 Before and after
-  template(#left)
-    p Every team rolled its own.
-  template(#right)
-    p(v-step="2") One starter, one version.
-
-Slide(layout="image-right" ratio="3 2")
-  template(#image)
-    Img(file="demo/landscape.svg" alt="A landscape")
-  h2 One picture, one idea
-  p The picture fills its side edge to edge.
-
-Slide(bg="demo/city.svg" bg-opacity="0.25")
-  h2 Built for the city
-
-Slide(bg="linear-gradient(135deg, #1d2b4a, #0f1115)")
-  h2 A gradient background
-
 Slide
-  template(#background)
+  Background(src="demo/city.svg" opacity="0.25")
+  h2 Built for the city
+```
+
+- `src` is a URL when it starts with a scheme or `/` (`https://…`, `data:…`, `/from-public.jpg`,
+  served under Vite's `base`), else a file of the images folder, as `Img(file)`: one that is not
+  there shows as a dashed box with its name, and warns.
+- `opacity` (`0`..`1`, over the slide's colour), `blur` (px), `position` (what stays in view when
+  cropped, as CSS `object-position`), `fit` (`cover`, the default, or `contain`).
+- Without `src`, what is inside it is the background: a video, an `svg`, a `div` with a gradient.
+  Each element of it covers the whole slide, stacked in order (a picture, then a tint over it);
+  `fit` and `position` apply to its pictures and videos, `opacity` and `blur` to all of it, and
+  `v-step` works inside.
+- A class or a style on it goes on what it draws (`Background.dim(src="city.jpg")`). Several
+  stack in order. Headings inside it are not the slide's title.
+
+```pug
+Slide
+  Background
     Img(file="demo/landscape.svg" blur="6")
     .veil
   h2 A softened background
+
+Slide
+  Background
+    video(src="/loop.mp4" autoplay muted loop)
+  h2 A moving one
 ```
 
 (`.veil` is a class of the deck, e.g.
 `.veil { background: color-mix(in srgb, var(--ar-bg) 70%, transparent); }`.)
+
+### A colour or a gradient: CSS
+
+A plain colour or a gradient needs no component: it is CSS on the slide, a `style` or a class of
+the deck. The theme's default background, if it has one, is drawn over it, as over every slide's
+colour; `--ar-slide-bg-image: none` leaves it out on that slide:
+
+```pug
+Slide(style="background: linear-gradient(135deg, #1d2b4a, #0f1115); color: #fff; --ar-slide-bg-image: none")
+  h2 A gradient background
+
+Slide.night
+  h2 A class of the deck
+```
+
+```css
+.night { background: #0f1115; color: #e8e8ea; --ar-title-color: #fff; }
+```

@@ -41,7 +41,7 @@ Deck
         tr(v-for="r in rows" :key="r[0]")
           td(v-for="c in r" :key="c") {{ c }}
 
-  Slide(layout="image-right" ratio="3 2")
+  Slide(layout="image-right" style="--ar-layout-image-right-columns: 3fr 2fr")
     template(#image)
       Img(file="cies.svg" alt="The Cíes islands at dusk")
     h2 One picture, one idea
@@ -78,7 +78,7 @@ Deck
         p.muted It reloads as you type.
       Snippet(code="npm install\nnpm run dev\nnpm run export" lang="bash" name="terminal" fit :line-numbers="false")
 
-  Slide(layout="cover" :footer="true")
+  Slide.with-footer(layout="cover")
     h1 Thank you
     p.muted Questions? · #[code janedoe.dev]
 </template>

@@ -33,16 +33,22 @@ node <skill>/scripts/check-deck.mjs <the URL Vite printed><name> deck-check
 - collects `console` warnings/errors and page errors: expect none. Two kinds:
   - Vue's own, `[Vue warn]: Invalid prop: …`, when a prop fails its type or validator
     (`gap="huge"`, `size="36"` without the colon, `fit="fill"`);
-  - Arao's, prefixed `[arao]`: missing files or icons, values it cannot use (`bg`, `duration`),
-    `v-step` or `Notes` outside a slide, a path that names no deck, an unknown theme name;
+  - Arao's, prefixed `[arao]`: missing files or icons, values it cannot use (`duration`),
+    `v-step`, `Notes` or `Background` outside a slide, a path that names no deck, an unknown
+    theme name;
+- reports "removed Slide API": a slide carrying a prop older Arao had (`title`, `align`,
+  `footer`, `ratio`, `bg`, `bg-*`), which is now a plain HTML attribute that does nothing, or a
+  leftover `template(#background)` (a `.ar-zone-background` zone); the fixes:
+  [troubleshooting.md](troubleshooting.md#decks-written-for-an-older-arao);
 - flags quirks mode (an `index.html` without `<!doctype html>`: tables lose their theme);
 - counts the slides and presses `→` until the hash stops changing, recording the highest step per
   slide: compare with what you meant;
 - flags slides whose content overflows (`scrollHeight`/`scrollWidth` over the client size);
 - saves a screenshot of every step (`deck-check/s<slide>-<step>.png`): look at them.
 
-It exits 1 on any warning, error, quirks mode or overflow, and when no slide renders at the URL
-(wrong URL or port, server not running): it then prints the console problems it collected.
+It exits 1 on any warning, error, removed Slide API, quirks mode or overflow, and when no slide
+renders at the URL (wrong URL or port, server not running): it then prints the console problems it
+collected.
 Without the script, do the same with Playwright by hand.
 
 ## 3. Export
