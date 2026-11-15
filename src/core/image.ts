@@ -1,4 +1,4 @@
-// Helpers shared by Img and Slide, and the one place that reads the images folder.
+// Helpers shared by Img and Background, and the one place that reads the images folder.
 import { shallowRef } from 'vue'
 import { images as folder, imagesDir as folderName } from 'virtual:arao/images'
 
@@ -6,8 +6,8 @@ import { images as folder, imagesDir as folderName } from 'virtual:arao/images'
 export const imagesDir: string = folderName
 
 // The images folder: file path inside it → URL. A picture added to (or removed from) the folder
-// during development replaces the map here, in place: the Imgs and the slides whose bg names a
-// file re-render, and nothing remounts. The map has no prototype, so a name like "constructor"
+// during development replaces the map here, in place: the Imgs (a Background's too) re-render,
+// and nothing remounts. The map has no prototype, so a name like "constructor"
 // is just a missing file.
 const images = shallowRef(folder)
 if (import.meta.hot) {
@@ -34,23 +34,11 @@ export function withBase<T extends string | undefined>(url: T, base: string = im
   return base.replace(/\/$/, '') + url
 }
 
-// Slide(bg="…") is one of three things, tried in this order:
-//   'url'   starts with a scheme or a slash: https://…, data:…, //cdn…, /from-public.jpg
-//   'file'  a file in the images folder, whatever its name ("photo (1).jpg", "a.jpg?v=2"); or
-//           a name that looks like a file (ends in an extension, no parentheses or commas) but is
-//           not there yet: it shows as missing, with a warning
-//   'css'   anything else is a CSS background: a colour, a gradient, url(…) (#123, linear-gradient(…))
-// Blank is no bg at all (null).
+// Background(src="…") is a URL when it starts with a scheme or a slash (https://…, data:…,
+// //cdn…, /from-public.jpg), else a file in the images folder, whatever its name ("photo (1).jpg",
+// "a.jpg?v=2"; one not there shows as missing, with a warning).
 const URL_LIKE = /^(?:[a-z][a-z\d+.-]*:|\/)/i
-const FILE_LIKE = /^[^()'",;]+\.[a-z][a-z\d]{1,4}$/i
-export type BgKind = 'url' | 'file' | 'css'
-export function bgKind(value: string | null | undefined): BgKind | null {
-  const v = value?.trim()
-  if (!v) return null
-  if (URL_LIKE.test(v)) return 'url'
-  if (fileUrl(v) || FILE_LIKE.test(v.split(/[?#]/)[0])) return 'file'
-  return 'css'
-}
+export const isUrl = (value: string) => URL_LIKE.test(value.trim())
 
 // opacity: a number from 0 to 1 ("0.5", .5); undefined when absent or invalid
 export const opacityValue = (v: unknown) => {

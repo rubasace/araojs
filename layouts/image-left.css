@@ -1,0 +1,63 @@
+/* image-left: a picture beside the text. The #image zone fills the left of the slide, full height
+   and edge to edge (no padding); the right is the text side, padded like any slide: its title on
+   top, at the height of every other slide's, then its body. The deck's footer stays, over the
+   picture.
+     Slide(layout="image-left")
+       template(#image)
+         Img(file="city.jpg" alt="The city at night")
+       h2 One picture, one idea
+       p The picture fills its side, edge to edge.
+
+   Tokens, and their defaults (a theme, the project's :root or one slide sets them; why each is
+   resolved on the slide: cover.css):
+     --ar-layout-image-left-columns     the two sides' widths, picture then text, as CSS grid
+                                        columns (one slide: style="--ar-layout-image-left-columns:
+                                        2fr 3fr")                                         1fr 1fr
+     --ar-layout-image-left-inset       padding around the picture in its zone            0px
+     --ar-layout-image-left-footer      the deck's footer: flex shows it, none hides it   flex
+     --ar-layout-image-left-footer-bg   a backdrop under the footer (a colour, a gradient), to
+                                        keep it legible over a photo                      none
+   In the image zone an Img, an img or a video covers it (fit="contain" still wins); any other
+   element fills it. The zone comes after the text in the page (Slide.vue renders the named zones
+   after the header and the body, whatever side a layout puts them on): a screen reader, the tab
+   order and a copy of the text read the text first, then the picture. */
+:where(.layout-image-left) {
+  --_ar-image-left-columns: var(--ar-layout-image-left-columns, 1fr 1fr);
+  --_ar-image-left-inset: var(--ar-layout-image-left-inset, 0px);
+  --_ar-image-left-footer: var(--ar-layout-image-left-footer, flex);
+  --_ar-image-left-footer-bg: var(--ar-layout-image-left-footer-bg, none);
+}
+
+/* the slide is a grid with no padding of its own: the picture in the first column, across both
+   rows, the text side in the second (its header, then its body) */
+.layout-image-left {
+  display: grid;
+  grid-template-columns: var(--_ar-image-left-columns);
+  grid-template-rows: auto minmax(0, 1fr);
+  padding: 0;
+}
+/* the text side carries the slide's padding: the header its top, the body its bottom (all of it
+   when there is no header), both its sides. The header's band (--ar-header-height) is under the
+   padding, as on any slide. */
+.layout-image-left > :is(.ar-header, .ar-body) { grid-column: 2; min-width: 0; padding: var(--ar-pad); }
+.layout-image-left > .ar-header { grid-row: 1; padding-bottom: 0; box-sizing: content-box; }
+.layout-image-left > .ar-body { grid-row: 2; }
+.layout-image-left > .ar-header + .ar-body { padding-top: 0; }
+/* where the footer shows (.ar-footed, Slide.vue), the text side ends above it, as any slide does */
+.layout-image-left.ar-footed > .ar-body { padding-bottom: max(var(--ar-footer-height), var(--_ar-pad-bottom, 0px)); }
+
+/* the picture: edge to edge (a theme may inset it), whatever is in it filling it */
+.layout-image-left > .ar-zone-image {
+  grid-column: 1; grid-row: 1 / -1;
+  position: relative; overflow: hidden; box-sizing: border-box;
+  padding: var(--_ar-image-left-inset);
+}
+:where(.layout-image-left > .ar-zone-image) > * { flex: 1 1 0; min-height: 0; }
+.layout-image-left > .ar-zone-image > :is(img, video, picture, svg, canvas) { display: block; width: 100%; height: 100%; object-fit: cover; }
+.layout-image-left > .ar-zone-image > .ar-img > img { object-fit: cover; }
+
+/* the footer, over the picture */
+.layout-image-left > .ar-footer {
+  display: var(--_ar-image-left-footer);
+  background: var(--_ar-image-left-footer-bg);
+}

@@ -36,6 +36,7 @@
     "vite",
     "bin",
     "themes",
+    "layouts",
     "docs",
     "!docs/.vitepress",
     "!docs/assets",

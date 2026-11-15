@@ -321,7 +321,7 @@ async function printableShadows(page: Element, drawn: Map<string, Promise<Pictur
 }
 
 // ---- filtered pictures, drawn with their filter -----------------------------------------
-// Chromium prints a filtered element (Img blur, Slide bg-blur: filter: blur() on an img) by
+// Chromium prints a filtered element (Img blur, Background(src blur): filter: blur() on an img) by
 // filtering only what is inside its clip: a blurred picture, grown past its box so that the soft
 // edge of the blur falls outside the view (image.ts blurStyle), prints with that edge inside,
 // fading into what is behind it (a dark frame around a blurred background). So in the book each

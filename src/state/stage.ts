@@ -5,7 +5,6 @@ export type Role = 'audience' | 'presenter' | 'preview' | 'export' | 'thumbnail'
 export interface StageSlide {
   id: string
   steps: ComputedRef<number>
-  title: Readonly<Ref<string | undefined>>
   el: Readonly<Ref<HTMLElement | null | undefined>>
 }
 export interface Position { index: number; step: number }
@@ -91,7 +90,7 @@ export function createStage({ follow, onMove, role = 'audience' }: StageOptions 
     last: follow ? noop : move(last),
   }
 
-  // slide = { id, steps, title, el }; el is a ref to its <section>
+  // slide = { id, steps, el }; el is a ref to its <section>
   function register(slide: StageSlide) {
     change()
     list.push(slide)
@@ -184,11 +183,10 @@ export function createStage({ follow, onMove, role = 'audience' }: StageOptions 
   }
 }
 
-// A slide's title, for the jump menu, the presenter view and the notes pages: Slide(title="…"),
-// else its first heading outside the background and the footer (headingOf: that heading's text).
+// A slide's title, for the jump menu, the presenter view and the notes pages: the text of its
+// first heading outside the background and the footer.
 const HEADING = ':is(h1, h2, h3):not(.ar-slide-bg *, .ar-footer *)'
-export const headingOf = (slide: StageSlide) => slide.el.value?.querySelector(HEADING)?.textContent?.replace(/\s+/g, ' ').trim() || ''
-export const titleOf = (slide: StageSlide) => slide.title.value || headingOf(slide)
+export const titleOf = (slide: StageSlide) => slide.el.value?.querySelector(HEADING)?.textContent?.replace(/\s+/g, ' ').trim() || ''
 
 // Where the audience will be after one more press: the next step of the same slide, else the
 // next slide at its first step; at the very end, { end: true }.

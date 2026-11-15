@@ -3,6 +3,7 @@
 ## Contents
 
 - Props and attributes
+- Decks written for an older Arao
 - Pictures and icons
 - Layout surprises
 - Titles, covers and the deck list
@@ -15,8 +16,34 @@
   and objects need the colon: `:size="36"`, `:line-numbers="false"`, `:themes="['default']"`,
   `:highlights='{ "2-3": 2 }'` (JSON in single quotes). Without it, `size="36"` is the string
   `"36"` and `line-numbers="false"` the string `"false"`: Vue warns and the line numbers stay.
-- Props that take text, or a number written as text, are plain: `gap="sm"`, `ratio="2 1"`,
-  `cols="3"`, `file="App.java"`, `bg-opacity="0.25"`, `Icon(size="64")`.
+- Props that take text, or a number written as text, are plain: `gap="sm"`, `Cols(ratio="2 1")`,
+  `cols="3"`, `file="App.java"`, `Background(opacity="0.25")`, `Icon(size="64")`.
+
+## Decks written for an older Arao
+
+`Slide` has one prop, `layout`. What a deck for araojs 0.4 or older wrote:
+- **A removed prop is silently an HTML attribute on the slide**, no warning: `title`, `align`,
+  `footer`, `ratio`, `bg`, `bg-opacity`, `bg-position`, `bg-blur`, `bg-fit` do nothing (a
+  `title` even shows as a tooltip). `check-deck.mjs` reports them as "removed Slide API". Fix:
+  - `title="…"` → drop it; the slide's first heading names it.
+  - `align="start"` → drop it (the default now); `align="center"` → `Slide.center`
+    (it centres the text too); `align="end"` → `Slide.bottom`.
+  - `:footer="false"` → `Slide.no-footer`; `:footer="true"` → `Slide.with-footer`.
+  - `ratio="3 2"` → `style="--ar-layout-image-right-columns: 3fr 2fr"` (`image-left`:
+    `--ar-layout-image-left-columns`; `split`: `--ar-layout-split-columns`).
+  - `bg="city.jpg" bg-opacity="0.4"` → `Background(src="city.jpg" opacity="0.4")` inside the
+    slide (`position`, `blur`, `fit` likewise); `bg="#1d2b4a"` or a gradient →
+    `style="background: …"` on the slide.
+- **A leftover `template(#background)` renders as a zone** (`.ar-zone-background`, in the flow,
+  under the body) instead of behind the slide: put its content in a `Background`.
+- **Slides start at the top now.** The body sits right under the title on every slide (it used to
+  be centred): `Slide.center` centres one, or a theme sets `--ar-body-align: center`.
+- `layout="two-cols"` is gone: use `Cols` or `layout="split"`.
+- A theme's `--ar-image-inset` does nothing now: it is `--ar-layout-image-left-inset` and
+  `--ar-layout-image-right-inset`, one per layout.
+- `.center` on a block used to set `text-align: center` only; it now also centres the block's
+  content vertically when the block is taller than it (`align-content`), and on a `Slide` it
+  centres the body both ways. For the old effect alone, `style="text-align: center"`.
 
 ## Pictures and icons
 
@@ -24,7 +51,7 @@
   title, a column, a cell, a zone, `Center`) and fits the picture inside; in a plain block it is
   as wide as the block. Fixed size: a class with both sizes,
   `.avatar { flex: none; width: 320px; height: 320px; }`.
-- Pictures are named, never imported: `Img(file="team.jpg")` and `Slide(bg="team.jpg")` read
+- Pictures are named, never imported: `Img(file="team.jpg")` and `Background(src="team.jpg")` read
   `src/images/` (subfolders ok, case-sensitive). A missing file warns `[arao]`.
 - **Icon names must be written out in the source.** The build includes only the icons whose full
   name (`lucide:rocket`) appears in `src/`, in a template or in data (`{ icon: 'lucide:rocket' }`
@@ -38,24 +65,27 @@
 
 ## Layout surprises
 
-- **The body is centred, but what fills stays full height.** `Img`, `Snippet`, an element with
-  `flex: 1`, `Grid` (its rows are `1fr`) and pieces holding any of those fill the body; `Cols` of
-  plain content shrinks to its content and is centred (`Cols(align="stretch")` keeps full-height
-  columns).
-- `.collapse` steps re-centre the body as they come and go: use plain `v-step` (keeps its space)
-  when the rest must not move.
-- **The footer takes the bottom margin.** On slides that show it, the body ends where the footer
-  band begins (88 px from the bottom by default). `cover` and `section` hide it unless
-  `:footer="true"`; `Slide(:footer="false")` hides it on one slide. With a footer, prefer
-  `{{ number }} / {{ total }}` inside it to `SlideNumber`.
-- Content overflows the slide: split it (one idea per slide), reveal with steps, or use
-  `Slide(align="start")` for a long list. Don't shrink fonts with `%`, `vw` or media queries.
+- **What fills stays full height, whatever the body's placement.** `Img`, `Snippet`, an element
+  with `flex: 1`, `Grid` (its rows are `1fr`) and pieces holding any of those fill the body;
+  `Cols` of plain content is as tall as its content (`Cols(align="stretch")` keeps full-height
+  columns), so `.center` on the slide centres it.
+- `.collapse` steps in a `.center` slide re-centre the body as they come and go: use plain
+  `v-step` (keeps its space) when the rest must not move.
+- **The footer sits in the bottom margin.** Where it shows, that margin is at least the band's
+  height, so the content never runs under it. `cover` and `section` hide it (their layout's
+  token); `.no-footer` hides it on one slide, `.with-footer` shows it. In `image-left`/`image-right` it shows over the
+  picture. With a footer, prefer `{{ number }} / {{ total }}` inside it to `SlideNumber`.
+- Content overflows the slide: split it (one idea per slide) or reveal with steps. Don't shrink
+  fonts with `%`, `vw` or media queries.
+- **A `layout` with no CSS is the default layout**, silently: a typo (`layout="covr"`, `"Cover"`: names are case-sensitive)
+  or a project layout whose file is not `src/layouts/<name>.css`. Vite warns about a layout file
+  that names no `.layout-<name>`.
 - Snippet highlights don't accumulate: each step shows only its own rules; step 1 is always plain.
 
 ## Titles, covers and the deck list
 
-- **Headings inside `#background` are ignored for the slide's title** (jump menu, presenter, notes
-  pages). Put the heading in the content, or use `Slide(title="…")`.
+- **The slide's name (jump menu, presenter, notes pages) is its first heading**, never one inside a
+  `Background` or the footer. A slide with no heading has no name: give it one.
 - A content slide with something before its heading (a kicker line) has no header: use
   `template(#title)`.
 - **The list of decks (`/`) draws each deck's cover.** Its card is titled by the file name in

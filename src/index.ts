@@ -6,13 +6,15 @@
 //   ProgressBar, SlideNumber: the addons, imported by the decks that use them
 // It needs the Vite plugin (araojs/vite): the engine reads the project's decks, snippets and
 // images (and the icons they use) through virtual modules only that plugin provides. Its CSS comes along with it.
-// The plugin goes first: its imports set the order of the CSS in the build. The project's themes
-// (every CSS file of its theme sources' folders, virtual:arao/theme-styles) go last, after all of the
-// engine's CSS, as when a project imported them itself (the library build fails if that import is
-// not the last: vite.config.js, themeStylesError).
+// The plugin goes first: its imports set the order of the CSS in the build. The layouts (the
+// library's layouts/ and the project's src/layouts, virtual:arao/layout-styles) come after all of
+// the engine's CSS, and the themes (every CSS file of the theme sources' folders,
+// virtual:arao/theme-styles) last, as when a project imported them itself (the library build fails
+// if those imports are not the last two, in that order: vite.config.js, themeStylesError).
 export { default } from './plugin'
 export { default as Deck } from './components/Deck.vue'
 export { default as Slide } from './components/Slide.vue'
+export { default as Background } from './components/Background.vue'
 export { default as Img } from './components/Img.vue'
 export { default as Icon } from './components/Icon.vue'
 export { default as Snippet } from './components/Snippet.vue'
@@ -39,6 +41,7 @@ export type { Timer } from './state/timer'
 // templates of a TypeScript project (Volar / vue-tsc check their props).
 import type DeckComponent from './components/Deck.vue'
 import type SlideComponent from './components/Slide.vue'
+import type BackgroundComponent from './components/Background.vue'
 import type ImgComponent from './components/Img.vue'
 import type IconComponent from './components/Icon.vue'
 import type SnippetComponent from './components/Snippet.vue'
@@ -52,6 +55,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     Deck: typeof DeckComponent
     Slide: typeof SlideComponent
+    Background: typeof BackgroundComponent
     Img: typeof ImgComponent
     Icon: typeof IconComponent
     Snippet: typeof SnippetComponent
@@ -67,4 +71,5 @@ declare module 'vue' {
   }
 }
 
+import 'virtual:arao/layout-styles'
 import 'virtual:arao/theme-styles'

@@ -1,0 +1,31 @@
+/* split: the slide's header (and the body, when there is one: a lead line) across the top, then
+   two zones side by side, #left and #right, filling the rest of the slide.
+     Slide(layout="split")
+       h2 Before and after
+       template(#left)
+         p Every team rolled its own.
+       template(#right)
+         p(v-step="2") One starter, one version.
+
+   Tokens, and their defaults (a theme, the project's :root or one slide sets them; why each is
+   resolved on the slide: cover.css):
+     --ar-layout-split-columns   the two zones' widths, left to right, as CSS grid columns
+                                 (one slide: style="--ar-layout-split-columns: 2fr 1fr")   1fr 1fr
+     --ar-layout-split-gap       the space between them                      --ar-gap-lg
+   A zone keeps its width: what is wider is clipped at its edge (Slide.vue's .ar-zone). */
+:where(.layout-split) {
+  --_ar-split-columns: var(--ar-layout-split-columns, 1fr 1fr);
+  --_ar-split-gap: var(--ar-layout-split-gap, var(--ar-gap-lg));
+}
+
+/* rows: the header, the body (each as tall as its content, none when absent), the zones */
+.layout-split {
+  display: grid;
+  grid-template-columns: var(--_ar-split-columns);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  column-gap: var(--_ar-split-gap);
+}
+.layout-split > .ar-header { grid-column: 1 / -1; grid-row: 1; }
+.layout-split > .ar-body { grid-column: 1 / -1; grid-row: 2; }
+.layout-split > .ar-zone-left { grid-column: 1; grid-row: 3; }
+.layout-split > .ar-zone-right { grid-column: 2; grid-row: 3; }

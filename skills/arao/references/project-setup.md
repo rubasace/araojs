@@ -41,8 +41,8 @@ createDeckApp().mount('#app')
   `vue()` too; Vue's options go in `arao({ vue: { … } })`.
 - `createDeckApp()` renders the deck the URL's path names, or the list of decks at `/`. With only
   one deck, `/` opens it; `createDeckApp({ deckList: 'always' })` lists it anyway.
-- The engine's CSS comes with `'araojs'`; the project's themes are loaded by the plugin. Nothing
-  else to import.
+- The engine's CSS comes with `'araojs'`; the layouts and the project's themes are loaded by
+  the plugin. Nothing else to import.
 
 Then write `src/decks/<Name>.vue` (start from [recipes.md](recipes.md)) and run `npm run dev`.
 
@@ -57,13 +57,15 @@ src/decks/         one .vue file per deck (/<file name>)
 src/decks/<talk>/  components only that talk uses
 src/slides/        components several decks share
 src/snippets/      code files, by name, for Snippet(file="…")
-src/images/        pictures, by name, for Img(file="…") and Slide(bg="…")
+src/images/        pictures, by name, for Img(file="…") and Background(src="…")
 src/themes/        the project's themes, if any: CSS files, loaded by the plugin (no import)
+src/layouts/       the project's layouts, if any: <name>.css styles Slide(layout="<name>"),
+                   loaded by the plugin (no import); one named like a library layout replaces it
 src/shortcuts.ts   optional: keys remapped/added/turned off (see shortcuts.md)
 ```
 
 Folders can be moved with plugin options:
-`arao({ decks: 'src/decks', snippets: 'src/snippets', images: 'src/images', themes: 'src/themes' })`.
+`arao({ decks: 'src/decks', snippets: 'src/snippets', images: 'src/images', themes: 'src/themes', layouts: 'src/layouts' })`.
 Every option: `docs/reference/vite-plugin.md`.
 
 ## URLs

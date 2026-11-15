@@ -22,7 +22,7 @@ Deck(duration="20m")
       p(v-step="2") Metrics: nobody asked for them, everybody used them.
       p(v-step="3") Upgrades: one version to bump, once.
 
-  Slide(title="A debug filter")
+  Slide
     h2 A debug filter
     Snippet(file="DebugFilter.java" :highlights='{ "1": 2, "6-8:isDebug+++MDC.put": 3 }')
     Notes

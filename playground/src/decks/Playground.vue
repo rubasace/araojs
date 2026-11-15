@@ -8,7 +8,7 @@ Deck
   template(#footer)
     span Arao · playground
 
-  Slide(layout="cover" title="Playground")
+  Slide(layout="cover")
     .bar
     h1 Arao playground
     p.muted The library's source, served as a slides project
@@ -22,20 +22,29 @@ Deck
     Notes
       p Notes show in the presenter view.
 
-  Slide(align="start")
-    h2 Body from the top
-    p The body is centred by default; align="start" reads it from the top.
-    p.muted align="end" puts it at the bottom, over the footer.
+  Slide.center
+    h2 A centred body
+    p The body starts under the title on every slide; .center centres it both ways.
+    p.muted .bottom puts it at the bottom, .top back at the top.
 
-  Slide(title="A snippet")
+  Slide
     h2 A snippet
     Snippet(file="Hello.java" :highlights='{ "4": 2, "5:println": 3 }')
 
-  Slide(layout="image-right" ratio="3 2")
+  Slide(layout="image-right" style="--ar-layout-image-right-columns: 3fr 2fr")
     template(#image)
       Img(file="shapes.svg" alt="Shapes")
     h2 A picture
-    p It fills its side edge to edge, down to the footer.
+    p It fills its side edge to edge, top to bottom; the footer stays, over it.
+
+  Slide
+    Background(src="shapes.svg" opacity="0.15")
+    h2 A background
+    p Behind everything, edge to edge, wherever it is written in the slide.
+    //- a tint from step 2 (v-step on it), a wash from step 3 (v-step around it)
+    Background.tint(v-step="2")
+    div(v-step="3")
+      Background.wash
 
   Slide
     h2 Composition
@@ -59,14 +68,18 @@ Deck
           td {{ z.name }}
           td {{ z.what }}
 
-  Slide
+  Slide.no-footer
     h2 #[Icon(name="lucide:shapes")] Icons
     Grid(cols="3" gap="lg")
       Center(v-for="(t, i) in tech" :key="t.icon" v-step="i + 1")
         Icon(:name="t.icon" size="120" :label="t.label")
         p {{ t.label }}
 
-  Slide(layout="section" :footer="true")
+  Slide(layout="quote")
+    blockquote A layout is a CSS file: this one is the project's, src/layouts/quote.css.
+    p.muted The playground
+
+  Slide.with-footer(layout="section")
     h1 The end
 </template>
 
@@ -82,7 +95,13 @@ const tech = [
 
 const zones = [
   { name: 'Header', what: 'The heading the slide starts with' },
-  { name: 'Body', what: 'Everything else, centred unless align says otherwise' },
+  { name: 'Body', what: 'Everything else, from the top unless the slide or the theme says otherwise' },
   { name: 'Footer', what: 'The deck’s #footer, on every slide but covers and sections' },
 ]
 </script>
+
+<style scoped>
+/* classes on a Background go on what it draws, scoped styles included */
+.tint { background: rgb(0 0 0 / .08); }
+.wash { background: linear-gradient(transparent 60%, color-mix(in srgb, var(--ar-accent) 25%, transparent)); }
+</style>

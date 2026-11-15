@@ -1,4 +1,4 @@
-import { computed, getCurrentInstance, inject, onBeforeUnmount, onMounted, onUpdated, provide, reactive, ref, toValue, watch, type ComputedRef, type InjectionKey, type MaybeRefOrGetter, type Ref, type Slot } from 'vue'
+import { computed, getCurrentInstance, inject, onBeforeUnmount, onMounted, onUpdated, provide, reactive, ref, toValue, watch, type ComputedRef, type InjectionKey, type MaybeRefOrGetter, type Ref, type ShallowRef, type Slot } from 'vue'
 import { addSlide, scopesVersion, stepOffset, sweep, type StepElement } from '../directives/step'
 import { useStage, type Role } from './stage'
 
@@ -8,6 +8,7 @@ interface SlideContext {
   registerStep: (n: number) => () => void
   active: ComputedRef<boolean>
   role: Role
+  layer: Readonly<ShallowRef<HTMLElement | null>>
 }
 // what useSlide() gives a component inside a Slide
 export interface SlideControls {
@@ -16,17 +17,19 @@ export interface SlideControls {
 }
 
 // One slide's state: its place in the stage it is drawn in, and its steps.
-//   const slide = createSlide({ el, title })   in Slide.vue: el, a ref to its <section>; title, a
-//                                              ref of its title prop. Registers it with its stage
-//                                              (which orders it by its place in the template) and
-//                                              provides it to what is inside it. drawn: whether
-//                                              Slide draws its content (not in a thumbnail, but
-//                                              for the cover)
+//   const slide = createSlide({ el, layer })   in Slide.vue: el, a ref to its <section>; layer, a
+//                                              ref to its background layer. Registers it with its
+//                                              stage (which orders it by its place in the
+//                                              template) and provides it to what is inside it.
+//                                              drawn: whether Slide draws its content (not in a
+//                                              thumbnail, but for the cover)
 //   useSlide()                                 public: for components inside a Slide (below)
 //   useSlideForNotes()                         Notes: the slide it is in (state/notes.ts)
+//   useSlideLayer()                            Background: the slide's background layer (below)
 //   provideFooter(() => slots.footer)          in Deck: its #footer slot, for every slide to draw
 // What reaches the slide from inside it: components through useSlide(), Notes through
-// useSlideForNotes(), v-step through the DOM (directives/step.ts finds the slide by its id).
+// useSlideForNotes(), Background through useSlideLayer(), v-step through the DOM
+// (directives/step.ts finds the slide by its id).
 const KEY: InjectionKey<SlideContext> = Symbol('arao-slide')
 const FOOTER: InjectionKey<() => Slot | undefined> = Symbol('arao-footer')
 const IN_NOTES: InjectionKey<boolean> = Symbol('arao-in-notes')
@@ -35,7 +38,7 @@ export function provideFooter(get: () => Slot | undefined) {
   provide(FOOTER, get)
 }
 
-export function createSlide({ el, title }: { el: Readonly<Ref<HTMLElement | null | undefined>>; title: Readonly<Ref<string | undefined>> }) {
+export function createSlide({ el, layer }: { el: Readonly<Ref<HTMLElement | null | undefined>>; layer: Readonly<ShallowRef<HTMLElement | null>> }) {
   const stage = useStage()
   if (!stage) throw new Error('[arao] <Slide> must be inside <Deck>')
   // export mode (core/exporter.ts) and thumbnails: no slide transition, no glide of collapsed steps
@@ -47,7 +50,7 @@ export function createSlide({ el, title }: { el: Readonly<Ref<HTMLElement | null
   const steps = computed(() => Math.max(1, ...counts.keys()))
 
   // the stage places it by its position in the template, even when mounted after its neighbours
-  const index = stage.register({ id, steps, title, el })
+  const index = stage.register({ id, steps, el })
   const active = computed(() => stage.index.value === index.value)
   // whether its content is drawn: always, but in a thumbnail (only the cover shows there, so only
   // the cover mounts what is in it: its pictures, snippets and components)
@@ -69,7 +72,7 @@ export function createSlide({ el, title }: { el: Readonly<Ref<HTMLElement | null
       c > 0 ? counts.set(n, c) : counts.delete(n)
     }
   }
-  provide(KEY, { id, step, registerStep, active, role: stage.role })
+  provide(KEY, { id, step, registerStep, active, role: stage.role, layer })
   const removeSlide = addSlide(id, { step, active, still, elements, registerStep })
 
   onBeforeUnmount(() => {
@@ -135,4 +138,10 @@ export function useSlideForNotes() {
   provide(IN_NOTES, true)
   const s = inject(KEY, null)
   return s && { id: s.id, step: s.step, active: s.active, role: s.role }
+}
+
+// Background: the layer of the slide it is in, where it draws itself (behind the slide's content,
+// edge to edge), once the slide has drawn it; null outside a slide
+export function useSlideLayer(): Readonly<ShallowRef<HTMLElement | null>> | null {
+  return inject(KEY, null)?.layer ?? null
 }

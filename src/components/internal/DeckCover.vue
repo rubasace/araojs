@@ -6,7 +6,7 @@
      instead ("No preview", in the reader's language), with one warning: the rest of the list goes on.
        load    the deck's loader (virtual:arao/decks)
        name    the deck's name, for the warning
-       @title  the cover's title once it is drawn (its first heading, else its title prop), or '' -->
+       @title  the cover's title once it is drawn (its first heading), or '' -->
 <template>
   <div class="ar-cover" ref="root">
     <p class="ar-cover-failed" v-if="failed">{{ t('noPreview') }}</p>

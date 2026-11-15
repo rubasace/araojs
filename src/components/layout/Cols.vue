@@ -9,8 +9,8 @@
      gap:   sm | md | lg, a number of px or a length in px, em or rem (layout.ts). Default md;
             an invalid gap warns and keeps md.
      align: start | center | end | stretch, vertical placement in each column. Default stretch.
-            In a centred (or end-aligned) slide body the row is only as tall as its content and
-            sits centred (Slide.vue); align="stretch", written out, keeps it full height there too.
+            Placed directly in a slide's body, the row is only as tall as its content and moves
+            with the body (Slide.vue); align="stretch", written out, keeps it full height there.
      Overflow: widths hold, heights grow. A child is never wider than its column and what is wider
      inside it is clipped at the column's edge, so it never paints over its neighbour (wrap the
      text, shrink the code). Wrapped rows grow to fit their content, so rows never overlap; if they
@@ -44,7 +44,7 @@ const style = computed(() => {
     '--_ar-flow': columns ? 'row' : undefined,
     '--_ar-gap': gapValue(props.gap),
     '--_ar-align': props.align,
-    // an explicit stretch keeps the columns full height in a centred body (Slide.vue)
+    // an explicit stretch keeps the columns full height in a slide's body (Slide.vue)
     '--_ar-align-content': props.align === 'stretch' ? 'stretch' : undefined,
   }
 })

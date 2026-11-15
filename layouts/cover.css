@@ -1,0 +1,39 @@
+/* cover: the deck's opening slide (and its closing one). Its content, title and all, is one group
+   centred vertically, left-aligned like any slide; its h1 is larger; a .bar element draws a short
+   bar in the accent; the deck's footer is hidden.
+     Slide(layout="cover")
+       .bar
+       h1 Building a framework
+       p.muted Jane Doe · DevConf 2026
+
+   A layout is this: CSS for the slides of Slide(layout="<name>"), whose section carries the class
+   layout-<name>. The engine renders every slide the same way (its header, its body, a zone per
+   named template, the footer: Slide.vue) and has no code for any layout.
+
+   Tokens, and their defaults. Set them in a theme ([data-theme="x"] { … }), at the project's
+   :root, or on one slide (Slide(layout="cover" style="--ar-layout-cover-bar: gold")):
+     --ar-layout-cover-title    the h1's size                 1.25 x --ar-title
+     --ar-layout-cover-bar      the .bar's colour             --ar-accent
+     --ar-layout-cover-footer   the deck's footer: none hides it, flex shows it      none
+   Each default is another token, so it is resolved on the slide itself, into a private --_ar-…
+   the rules read: declared at :root, var() would be resolved there, and a theme's --ar-accent
+   would never reach it (tokens.css says why). A slide's with-footer or no-footer class wins over
+   the footer's token (Slide.vue). */
+:where(.layout-cover) {
+  --_ar-cover-title: var(--ar-layout-cover-title, calc(var(--ar-title) * 1.25));
+  --_ar-cover-bar: var(--ar-layout-cover-bar, var(--ar-accent));
+  --_ar-cover-footer: var(--ar-layout-cover-footer, none);
+  /* no header band on a cover: its title is part of the centred group */
+  --ar-header-height: auto;
+}
+
+/* the header and the body as tall as their content, the two of them centred (what does not fit
+   overflows at the bottom, never at the top) */
+.layout-cover { justify-content: safe center; }
+.layout-cover > .ar-body { flex: none; }
+.layout-cover h1 { font-size: var(--_ar-cover-title); }
+.layout-cover .bar {
+  width: 160px; height: 10px; border-radius: 5px; margin: 0 0 48px;
+  background: var(--_ar-cover-bar);
+}
+.layout-cover > .ar-footer { display: var(--_ar-cover-footer); }

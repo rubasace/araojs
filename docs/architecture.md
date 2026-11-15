@@ -11,11 +11,11 @@ this: [the docs](index.md) are their manual, [the Arao skill](../skills/arao/) t
 | `composables/` | effects | small internal composables, one per file, that tie the state to the browser: the URL, other windows, keys, touch, the mouse, fullscreen |
 | `core/` | the pure how | plain modules with no Vue component state: sync, exporter, flip, image, icons |
 | `views/` | full screens | what a window shows: the deck's `AudienceView`, `PresenterView` and `ExportView`, and `DeckSelectorView`, the list of decks `createDeckApp` shows at `/` |
-| `components/` | what deck authors write | `Deck`, `Slide`, `Img`, `Icon`, `Snippet`, `Notes`; `internal/` holds the engine's own components, which no author names: `Stage` (the scaled canvas), `Controls`, `PresenterBar`, `Thumbnail` (a deck drawn as its cover) and `DeckCover` (a cover in the list); `layout/` holds the layout components (`Cols`, `Rows`, `Grid`, `Center`), the parsers of their props (`layout.ts`: ratio, gap, grid shape; Slide's zones use it too) and the CSS they share (`layout.css`), `directives/` holds `v-step` and `v-step-from` |
+| `components/` | what deck authors write | `Deck`, `Slide`, `Background`, `Img`, `Icon`, `Snippet`, `Notes`; `internal/` holds the engine's own components, which no author names: `Stage` (the scaled canvas), `Controls`, `PresenterBar`, `Thumbnail` (a deck drawn as its cover) and `DeckCover` (a cover in the list); `layout/` holds the layout components (`Cols`, `Rows`, `Grid`, `Center`), the parsers of their props (`layout.ts`: ratio, gap, grid shape) and the CSS they share (`layout.css`), `directives/` holds `v-step` and `v-step-from` |
 | `addons/` | drawn over every slide | `ProgressBar`, `SlideNumber` |
 | `i18n/` | the UI's words | the engine's own text, one catalogue per language (`en.ts`, `es.ts`, `de.ts`, `fr.ts`, `it.ts`, `pl.ts`, `ja.ts`, `zh-Hans.ts`), and `i18n.ts`, the lookup: `t(key, ...values)` and `lang` ([Interface language](#interface-language)) |
 | `env.d.ts` | types | the shapes of the virtual modules the Vite plugin gives the engine (`virtual:arao/decks`, `…/images`, `…/themes`…) |
-| `styles/` | CSS | only what is global: `tokens.css` (every token and its default: the `default` theme), `base.css` (the page, the viewport, the steps). Everything else comes with its component ([CSS](#css)); the themes are not here but in the package's `themes/` folder, a theme source ([Themes](#themes)) |
+| `styles/` | CSS | only what is global: `tokens.css` (every token and its default: the `default` theme), `base.css` (the page, the viewport, the steps). Everything else comes with its component ([CSS](#css)); the themes are not here but in the package's `themes/` folder, a theme source ([Themes](#themes)), and the slide layouts in its `layouts/` folder ([Layouts](#layouts)) |
 
 The rule: `components/` is what an author names or imports (registered by `plugin.ts` or exported
 by `index.ts`, explicitly, never by folder); `components/internal/` is the engine's components that
@@ -109,7 +109,7 @@ before and after the number as private custom properties (`--_ar-from-step-befor
 | thumbnail | `provideThumbnail` (in `DeckCover`) | `createDeck` | that the deck inside is a thumbnail, and the ref its cover's title goes in |
 | route | `provideDeckRoute` (`createDeckApp`, on the app) | `createDeck` (not in a thumbnail) | the deck's file name and path: the sync key, the presenter window's URL, the name the export reports |
 | stage | `provideStage` (in the `Stage` part) | `useStage()`: `createSlide`, and `useDeck()` (which merges the stage's position into the face) | the stage a component is drawn in |
-| slide | `createSlide` (in `Slide`) | `useSlide()`, `useSlideForNotes()` (Notes) | the slide's step, its step registry |
+| slide | `createSlide` (in `Slide`) | `useSlide()`, `useSlideForNotes()` (Notes), `useSlideLayer()` (Background) | the slide's step, its step registry, its background layer (a Teleport target) |
 | notes | `useNotesOutlet` (presenter view, export) | `useNotesTarget()` (Notes) | where the Notes of the slide on screen draw themselves (a Teleport target) |
 | footer | `provideFooter` (in `Deck`) | `createSlide` | the Deck's `#footer` slot, drawn by every slide |
 
@@ -167,9 +167,9 @@ and fullscreen.
 ## CSS
 
 Every component carries its own CSS, in the `<style>` block of its `.vue` file: the layout
-components, `Img`, `Icon`, `Snippet`, `Slide` (its zones, its footer, the slide's content and the
-layouts: `layout-cover`, `layout-section`, `layout-image-left`… are Slide's classes), the addons,
-the views and their parts. Not scoped: a theme or a deck must be able to override any of it, so
+components, `Img`, `Icon`, `Snippet`, `Slide` (its zones, its footer, the slide's content, the
+utility classes), `Background`, the addons, the views and their parts. The slide layouts are not
+components' CSS: each is a file of its own ([Layouts](#layouts)). Not scoped: a theme or a deck must be able to override any of it, so
 the selectors are the `ar-` classes at the specificity they always had (zero, with `:where()`,
 where a deck's own rule must win); they are hooks for that, not classes a deck writes. `Notes` has
 none: its content is drawn, and styled, where it is teleported (the presenter's notes panel,
@@ -204,17 +204,43 @@ export views share, and the classes `v-step` sets.
 
 The library build concatenates it all into `dist/arao.css` in import order, and order decides
 between two rules of the same specificity on the same element. `plugin.ts` imports in that order
-and its header says why: `tokens.css`; the views (through `Deck`); `Snippet` before `Slide` (a
-Snippet in an image zone takes the zone's `flex`); `Img` before `Slide`; `Slide` before `Icon`
-and the layout components (they keep their own `flex` in an image zone); `Img` before the layout
-components (their children clip `overflow-x`); `base.css` last (its step fade wins over Snippet's
-own transitions); the library build fails if `dist/arao.css` loses three of them (Snippet's
-`flex`, the `overflow-x` of an `Img` in a layout piece, the step fade), or if it holds `layout.css`
-more than once (a later copy would beat the pieces' own rules): `vite.config.js`, `CSS_ORDER` and
-`CSS_ONCE`. `index.ts` then adds the addons, `app.ts` the deck
-selector, and last the project's themes (`virtual:arao/theme-styles`), after all of the engine's
-CSS; the library build fails if that import is not the entry's last, after `./arao.css`
+and its header says why: `tokens.css`; the views (through `Deck`); `Snippet`, `Img` (with
+`Background`), `Slide`, `Icon` and the layout components: `Img` before the layout components
+(their children clip `overflow-x`); `base.css` last (its step fade wins over Snippet's own
+transitions); the library build fails if `dist/arao.css` loses two of them (the `overflow-x` of an
+`Img` in a layout piece, the step fade), or if it holds `layout.css` more than once (a later copy
+would beat the pieces' own rules): `vite.config.js`, `CSS_ORDER` and `CSS_ONCE`. `index.ts` then
+adds the addons, `app.ts` the deck selector, then the layouts (`virtual:arao/layout-styles`) and
+last the themes (`virtual:arao/theme-styles`), after all of the engine's CSS, so that a layout's
+rule wins over an engine rule of the same specificity and a theme's over both; the library build
+fails if those two imports are not the entry's last two, in that order, after `./arao.css`
 (`vite.config.js`, `themeStylesError`).
+
+## Layouts
+
+`Slide` has one prop, `layout`, and no code for any layout: its section carries the class
+`layout-<name>`, and it renders every slide the same way (the background layer, the header and the
+body it finds in its default slot, a zone `.ar-zone-<name>` per named slot, the footer). The rest
+is CSS: one file per layout, named as it. The library's are its `layouts/` folder, at the
+package's root (`cover`, `section`, `split`, `image-left`, `image-right`); the project's are
+the plugin's `layouts` folder (default `src/layouts`). The Vite plugin loads both through
+`virtual:arao/layout-styles` (an eager glob of the library's files, all but those a project file
+of the same name replaces, then one of the project's folder); when a project file starts or stops
+replacing a library one in the dev server, the module is reloaded with the page. A file states
+what it does and its tokens, `--ar-layout-<name>-<thing>`: their defaults are other tokens
+(`--ar-accent`, `--ar-title`), so, as in `tokens.css`, they cannot sit at the root; each file
+resolves them on its own slides (`:where(.layout-<name>)`) into private `--_ar-…` properties its
+rules read, and a theme, the project's `:root` or one slide sets the public ones. What every
+layout shares is the engine's: where the body sits (`--ar-body-align`, the classes `top`,
+`center`, `bottom`), and the footer's classes `no-footer` and `with-footer`, which win over a
+layout's own footer token. Two facts CSS alone cannot give are read by `Slide` from the computed
+style, as the header band is: whether the footer shows (its `display`: the slide then carries
+`.ar-footed`, whose bottom padding is at least the band) and the bottom of the `--ar-pad`
+shorthand (copied into `scroll-padding`, whose longhands the style resolves: `--_ar-pad-bottom`). A slide's background is a component, `Background`, which renders a hidden element where it is
+written (what `v-step` applies to) and teleports what it draws into the slide's background layer
+(`useSlideLayer()`), where a CSS rule hides the theme's default background behind it; the drawn
+layer follows the step classes of that element and of the elements around it, and stacks in their
+document order.
 
 ## Themes
 

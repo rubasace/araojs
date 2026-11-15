@@ -75,7 +75,7 @@ Deck(duration="30m")
     Notes
       p Speaker notes: only the presenter view shows them.
 
-  Slide(title="The code")
+  Slide
     h2 The code
     Snippet(file="DebugFilter.java" :highlights='{ "8-10": 2 }')
 
@@ -116,7 +116,7 @@ picks its own syntax; the `<script setup>` does not change.
       <Notes><p>Speaker notes: only the presenter view shows them.</p></Notes>
     </Slide>
 
-    <Slide title="The code">
+    <Slide>
       <h2>The code</h2>
       <Snippet file="DebugFilter.java" :highlights='{ "8-10": 2 }' />
     </Slide>

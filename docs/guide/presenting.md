@@ -25,7 +25,7 @@ Built into `Deck`; nothing to add. A floating panel at the bottom centre of the 
   or 2 s without a key clears what was typed. The digits are read by their physical key too, so
   the number row works on an AZERTY keyboard without Shift.
 - **Jump menu** (`g` or the counter): a search box over the slide list; a number filters by slide
-  number prefix, text by title (`Slide(title)` or its first heading). `↑`/`↓`, `Enter`, `Esc`.
+  number prefix, text by title (the slide's first heading). `↑`/`↓`, `Enter`, `Esc`.
 - **Theme picker**: the deck's `themes`, each with a swatch of its background and accent, as the
   deck would wear them (`default`'s: the defaults with the project's `:root` rules over them).
 - Its look is the `--ar-controls-*` tokens ([Interface](../reference/theme-tokens.md#interface)).

@@ -4,8 +4,8 @@ Every component a deck writes: their props, slots and rules. Sizes are canvas px
 1920x1080 unless `Deck` says otherwise). Examples are Pug, the recommended form; the same props,
 slots and directives work in an HTML template ([Pug or HTML](../guide/concepts.md#pug-or-html)).
 
-Globally registered: `Deck`, `Slide`, `Img`, `Icon`, `Snippet`, `Notes`, `Cols`, `Rows`, `Grid`,
-`Center`, and the directives `v-step` and `v-step-from` ([Directives](directives.md)). Imported
+Globally registered: `Deck`, `Slide`, `Background`, `Img`, `Icon`, `Snippet`, `Notes`, `Cols`,
+`Rows`, `Grid`, `Center`, and the directives `v-step` and `v-step-from` ([Directives](directives.md)). Imported
 by hand from `'araojs'`: the [addons](#addons) (`ProgressBar`, `SlideNumber`) and the
 [composables](composables.md) (`useDeck`, `useSlide`).
 
@@ -16,7 +16,7 @@ also declares a global component of its own under one of them (its own global `I
 `TS2717: Subsequent property declarations must have the same type`. Give yours another name
 (`AppIcon`), or import it where it is used instead of registering it globally.
 
-Contents: [Deck](#deck) · [Slide](#slide) · [Cols, Rows, Grid, Center](#cols-rows-grid-center) ·
+Contents: [Deck](#deck) · [Slide](#slide) · [Background](#background) · [Cols, Rows, Grid, Center](#cols-rows-grid-center) ·
 [Utility classes](#utility-classes) · [Img](#img) · [Icon](../guide/icons.md) · [Snippet](#snippet) ·
 [Notes](#notes) · [Addons](#addons)
 
@@ -36,8 +36,9 @@ view and export mode. One per deck file (`src/decks/<Name>.vue`).
 Slots:
 - default: the slides and the addons, in any order. Slide order is the order in the template
   (document order), even for slides mounted later by `v-if` or moved by a keyed `v-for`.
-- `#footer`: the deck's footer, drawn at the bottom of every slide except `cover` and `section`
-  ([Zones](../guide/slides-and-layouts.md#zones-header-body-footer)). Slot props: `{ number, total }`, the slide's number
+- `#footer`: the deck's footer, drawn at the bottom of every slide whose layout shows it (all but
+  `cover` and `section`; the classes `no-footer` and `with-footer` decide on one slide:
+  [Zones](../guide/slides-and-layouts.md#zones-header-body-footer)). Slot props: `{ number, total }`, the slide's number
   (1-based) and the number of slides. Real DOM in the theme's fonts, so it prints as text and shows
   in the presenter view; each slide draws its own copy, which fades with it.
 
@@ -72,48 +73,89 @@ Deck(:themes="['default', 'acme']" duration="45m")
 
 ## Slide
 
-One slide, inside its padding (`--ar-pad`). A content slide has three zones, top to bottom: the
-header (its title), the body (everything else) and the deck's footer
-([Zones](../guide/slides-and-layouts.md#zones-header-body-footer)).
+One slide. Its one prop names its layout; the rest is CSS: its section carries the class
+`layout-<name>`, and the layout's CSS arranges the slide's parts, which every slide finds the
+same way: the header (its title), the body (the rest of the default slot), a zone per named
+template and the deck's footer ([Zones](../guide/slides-and-layouts.md#zones-header-body-footer)).
 
 | Prop | Type | Default | Accepted values |
 |---|---|---|---|
-| `layout` | String | `default` | `default`, `cover`, `section`, `split`, `image-left`, `image-right`, `two-cols`; any other value adds the class `layout-<value>` (for a theme to style) and works as `default` |
-| `title` | String | first `h1`/`h2`/`h3` of the slide (outside the background and the footer) | name in the jump menu, the presenter bar and the notes pages |
-| `align` | String | the theme's `--ar-body-align` (`center` by default) | `start`, `center`, `end`: where the body sits vertically (`default` layout) |
-| `footer` | Boolean | shown, except on `cover` and `section` | `:footer="false"` hides the deck's footer on this slide; `:footer="true"` shows it on a `cover` or `section` |
-| `ratio` | String | `"1 1"` | zone widths for `split`, `image-left`, `image-right`, left to right. Exactly two entries; each a positive number (a share), `auto`, or `<n>px`. Shares are proportions: `"2 1"` = `"66 33"`. Invalid → warning, `"1 1"`. |
-| `bg` | String | none | background: a URL, an images-folder file, or a CSS colour/gradient ([Backgrounds](../guide/images-and-backgrounds.md#backgrounds)) |
-| `bg-opacity` | Number or String | `1` | `0`..`1`: the picture's opacity over the slide colour |
-| `bg-position` | String | `center` | CSS `object-position` / `background-position`, e.g. `"center 30%"` |
-| `bg-blur` | Number or String | `0` | blur radius in px (`4` or `"4px"`) |
-| `bg-fit` | String | `cover` | `cover` or `contain` |
+| `layout` | String | `default` | a layout's name: the library's (below) or the project's (`src/layouts/<name>.css`: [A layout of your own](../guide/slides-and-layouts.md#a-layout-of-your-own)). Any other name works as `default`, with the class `layout-<name>` for a theme or a deck to style |
+
+Slots, all with `{ step }` (the slide's current step) as slot props:
+- default: the header (the `h1`/`h2` it starts with, and the headings right after it) and the
+  body (the rest).
+- `#title`: the header instead, for a header with more than a heading (a kicker line, a logo);
+  the whole default slot is then the body.
+- any other name (`#image`, `#left`, `#right`, your own): a zone, a column with the class
+  `ar-zone-<name>`, which the layout's CSS places.
+
+The slide's name in the jump menu, the presenter bar and the notes pages is the text of its first
+`h1`/`h2`/`h3` (outside its background and the footer).
+
+A class or a style on a `Slide` goes on its section, so CSS sets anything for one slide: a colour
+or a gradient (`style="background: …"`: [Backgrounds](../guide/images-and-backgrounds.md#a-colour-or-a-gradient-css)),
+any token (`style="--ar-layout-image-right-columns: 3fr 2fr"`), and the classes the engine knows:
+
+| Class | Effect |
+|---|---|
+| `.top` | the body from the top (the default, unless the theme's `--ar-body-align` says otherwise) |
+| `.center` | the body centred both ways, its text (the title's too) centred |
+| `.bottom` | the body at the bottom |
+| `.no-footer` | no deck footer on this slide, whatever its layout says |
+| `.with-footer` | the deck footer on this slide, whatever its layout says |
 
 ### Layouts
 
+Each is one CSS file of the library (its `layouts/` folder), whose comment says what it does; its
+tokens, with their defaults, are in [Theme tokens](theme-tokens.md#layouts). A project file of the
+same name replaces it.
+
 | Layout | What it does | Slots |
 |---|---|---|
-| `default` | zones: the header (the heading the slot starts with), the body (the rest, centred by default), the footer | `#title` (optional, for a complex header), default |
-| `cover` | content centred vertically; `h1` at 1.25x `--ar-title`; a `.bar` element draws a short accent bar; no footer unless `:footer="true"` | default |
-| `section` | everything centred, slide filled with `--ar-accent`, text `--ar-accent-fg`; `h1` at 1.4x `--ar-title`; no footer unless `:footer="true"` | default |
-| `split` | a header (the default slot: the heading, maybe a lead line) above two zones side by side | `#title`, default (header), `#left`, `#right` |
-| `image-left` / `image-right` | the `#image` zone fills its half edge to edge (no padding, inset `--ar-image-inset`); the default slot is the text side, padded like a slide | `#image`, `#title`, default (text side) |
-| `two-cols` | legacy: a child with class `.cols` becomes a two-column grid. Prefer `split` or `Cols`. | default |
+| `default` | the header, then the body filling the rest, inside the slide's padding; the body from the top (`--ar-body-align`); the footer shown | default, `#title` |
+| `cover` | the header and the body as one group, centred vertically, left-aligned; `h1` at 1.25x `--ar-title`; a `.bar` element draws a short bar in the accent; no footer | default, `#title` |
+| `section` | everything centred both ways, on `--ar-accent` in `--ar-accent-fg` (the title and the footer too); `h1` at 1.4x `--ar-title`; no footer | default, `#title` |
+| `split` | the header (and the body, as a lead line) across the top, then `#left` and `#right` side by side, filling the rest (`--ar-layout-split-columns`, default `1fr 1fr`) | default, `#title`, `#left`, `#right` |
+| `image-left` / `image-right` | `#image` fills its side, full height and edge to edge (no padding); the other side is the text, padded like any slide: the header at the height of every other slide's title, then the body. The footer stays, over the picture. Widths: `--ar-layout-image-left-columns` / `--ar-layout-image-right-columns`, left to right (default `1fr 1fr`) | default (the text side), `#title`, `#image` |
 
-All slots receive `{ step }` (the slide's current step) as slot props.
-
-- `#title` always renders first; in `image-*` it tops the text column, never the image.
 - A zone keeps its width: wider content is clipped at the zone's edge. Heights do not clip.
-- `ratio` in `image-*` sizes the zones left to right, whichever side holds the image:
-  `image-right` with `ratio="3 2"` is text 3/5, image 2/5.
-- `split` and `image-*` keep their own zones; the footer shows under them (their zones end where
-  it begins), and their heading is the slide's title for the `--ar-title-*` tokens. `align` only
-  places the body of `default` (and of layouts without zones of their own).
+- In the page, zones come after the header and the body, in the order written, whatever side the
+  layout draws them on: in `image-left` the text is read before the picture.
+- In `#image`, an `Img` (and an `img` or a `video`) covers the zone (`fit="contain"` still
+  wins); any other element fills it.
 - Content styles from `Slide.vue`'s CSS: `h1` is `--ar-title`; `h2` is 0.6x `--ar-title` in
   `--ar-accent`; `p` has a bottom margin of 0.6em; lists and tables: [Lists and tables](../guide/slides-and-layouts.md#lists-and-tables).
 
-How the zones, lists and tables of a slide work: [Slides and layouts](../guide/slides-and-layouts.md);
-backgrounds: [Images and backgrounds](../guide/images-and-backgrounds.md#backgrounds).
+How the zones, lists and tables of a slide work, and how to write a layout: [Slides and layouts](../guide/slides-and-layouts.md).
+
+## Background
+
+A slide's background: anywhere inside a `Slide`, it draws behind all of the slide's content,
+edge to edge, instead of the theme's default background, and never catches the pointer. Its
+content, without `src`, is the background instead (a video, an `svg`, a gradient `div`): each
+element of it covers the slide, stacked in order.
+
+| Prop | Type | Default | Notes |
+|---|---|---|---|
+| `src` | String | — | a URL (it starts with a scheme or `/`: `https://…`, `/from-public.jpg`, served under Vite's `base`), else a file of the images folder (`city.jpg`, `team/ana.png`); a missing file shows its name in a dashed box and warns |
+| `opacity` | Number or String | `1` | `0`..`1`, of all of it, over the slide's colour |
+| `blur` | Number or String | `0` | px (`4` or `"4px"`), of all of it |
+| `position` | String | `center` | CSS `object-position` of its pictures and videos, e.g. `"center 30%"` |
+| `fit` | String | `cover` | `cover` or `contain`, for its pictures and videos |
+
+- Slot: default, the background when there is no `src`.
+- `v-step` works on it (`Background(v-step="2")`), around it and inside it.
+- A class or a style on it goes on what it draws (scoped styles of the deck included). Several stack in the order they are drawn.
+  Headings in it are not the slide's title. Outside a `Slide` it warns and draws nothing.
+
+```pug
+Slide
+  Background(src="city.jpg" opacity="0.25" position="center 30%")
+  h2 Built for the city
+```
+
+How backgrounds work, and a colour or a gradient on one slide: [Images and backgrounds](../guide/images-and-backgrounds.md#backgrounds).
 
 ## Cols, Rows, Grid, Center
 
@@ -134,8 +176,8 @@ the title, a zone, a cell of another piece) and takes `v-step` like any element.
 - `gap` (String or Number): `sm` | `md` | `lg` (tokens `--ar-gap-sm|md|lg`: 24/48/80 px), a number
   of px (`12`), or a length in `px`, `em`, `rem` (`"1.5em"`). Invalid → warning, `md`.
 - `align` (`Cols` only): `start` | `center` | `end` | `stretch`, vertical placement in each column.
-  In a centred slide body the row is as tall as its content; `align="stretch"`, written out, keeps
-  the columns as tall as the body.
+  Placed directly in a slide's body, the row is as tall as its content; `align="stretch"`, written
+  out, keeps the columns as tall as the body.
 - `cols` (`Grid` only): a whole number ≥ 1.
 - `ratio` (`Grid` only): the grid's **shape**, columns : rows — `"2:1"`, `"3/2"`, `"1.5"` (not the
   track ratio of Cols/Rows). With n children: rows = round(√(n / ratio)), at least 1, and
@@ -160,11 +202,14 @@ An escape hatch for one-off tweaks inside a slide, not a styling system.
 | Class | Effect |
 |---|---|
 | `.muted` | colour `--ar-muted` |
-| `.center` | `text-align: center` |
+| `.center` | its text centred, and its content centred vertically when the block is taller than it (a column of `Cols`, a cell of `Grid`, a block with a height) |
+| `.top` / `.bottom` | its content at the top / the bottom of the block, when the block is taller than it |
 | `.upper` | uppercase |
 | `.small` | font size `--ar-text-small` (default `.75em`) |
 
-`.bar` inside a `cover` slide draws the accent bar. `.cols` inside a `two-cols` slide is its grid.
+On a `Slide` itself, `.top`, `.center` and `.bottom` place its body, and `.no-footer` and
+`.with-footer` decide its footer ([Slide](#slide)). `.bar` inside a `cover` slide draws the
+accent bar.
 
 ```pug
 p.small.muted.center A footnote
@@ -179,7 +224,7 @@ A picture from the images folder (`src/images` by default) or any URL.
 | `file` | String | — | path inside the images folder (`team.jpg`, `team/ana.jpg`); case-sensitive. Wins over `src`. |
 | `src` | String | — | any URL; root-relative (`/logo.svg`, from `public/`) is served under Vite's `base` |
 | `alt` | String | `''` | describe the picture when it says something; empty = decorative |
-| `fit` | String | `contain` (`cover` inside `#image` and backgrounds) | `contain` or `cover` |
+| `fit` | String | `contain` (`cover` in the `#image` zone of `image-left` and `image-right`, and in a `Background`) | `contain` or `cover` |
 | `position` | String | `center` | CSS `object-position`: what stays in view when cropped |
 | `opacity` | Number or String | `1` | `0`..`1` |
 | `blur` | Number or String | `0` | px |

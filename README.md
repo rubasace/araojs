@@ -124,7 +124,7 @@ says where you are.
 **Layouts and composition**
 
 A cover, a split, a grid, a picture beside the text, a section: one prop or one component each,
-no CSS.
+no CSS. A layout of your own is one CSS file in `src/layouts`.
 
 [Layouts](docs/guide/slides-and-layouts.md) · [Composition](docs/guide/composition.md)
 

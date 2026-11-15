@@ -1,0 +1,20 @@
+/* A project layout, as any slides project would write one: a CSS file of src/layouts named as the
+   layout (quote.css styles Slide(layout="quote")), which the plugin finds and loads (nothing to
+   import), after the library's layouts and before the themes. Its tokens follow the library's
+   convention: --ar-layout-<name>-<thing>, each resolved on the slide with its default.
+     --ar-layout-quote-size     the quote's size            .8 x --ar-title
+     --ar-layout-quote-mark     the opening mark's colour   --ar-accent
+     --ar-layout-quote-footer   the deck's footer           none */
+:where(.layout-quote) {
+  --_ar-quote-size: var(--ar-layout-quote-size, calc(var(--ar-title) * .8));
+  --_ar-quote-mark: var(--ar-layout-quote-mark, var(--ar-accent));
+  --_ar-quote-footer: var(--ar-layout-quote-footer, none);
+}
+.layout-quote { justify-content: safe center; }
+.layout-quote > .ar-body { flex: none; }
+.layout-quote blockquote {
+  margin: 0 0 .6em; font-family: var(--ar-font-heading, inherit);
+  font-size: var(--_ar-quote-size); line-height: 1.15;
+}
+.layout-quote blockquote::before { content: '“'; color: var(--_ar-quote-mark); }
+.layout-quote > .ar-footer { display: var(--_ar-quote-footer); }
