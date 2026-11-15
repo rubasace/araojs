@@ -41,6 +41,8 @@
 .layout-image-right > .ar-header { grid-row: 1; padding-bottom: 0; box-sizing: content-box; }
 .layout-image-right > .ar-body { grid-row: 2; }
 .layout-image-right > .ar-header + .ar-body { padding-top: 0; }
+/* where the footer shows (.ar-footed, Slide.vue), the text side ends above it, as any slide does */
+.layout-image-right.ar-footed > .ar-body { padding-bottom: max(var(--ar-footer-height), var(--_ar-pad-bottom, 0px)); }
 
 /* the picture: edge to edge (a theme may inset it), whatever is in it filling it */
 .layout-image-right > .ar-zone-image {

@@ -127,7 +127,10 @@ theme from outside `src/themes`, declared in its own `<style>`. Then it:
    wins over a default (`default`'s swatch shows it, and `--ar-controls-accent` reaches the
    docked controls) while a theme wins over that rule; the fifth deck wears its theme from outside
    `src/themes` with no warning;
-5. changes the talk's duration in the presenter view of the second deck (`duration="15m"`), under
+5. checks `Background` with steps on the playground's slide "A background", under the dev server:
+   one with `v-step` on it and one inside an element with `v-step` show in the slide's background
+   layer from their steps on, the slide counts those steps, and nothing warns;
+6. changes the talk's duration in the presenter view of the second deck (`duration="15m"`), under
    the dev server: `1h30` typed with real keys moves no slide and opens no jump menu, the
    countdown follows and an audience window gets it; after an apply or `Esc` from the keyboard,
    `Space` and `→` move the slides; an invalid value and one outside 1 minute – 24 hours show
@@ -136,12 +139,12 @@ theme from outside `src/themes`, declared in its own `<style>`. Then it:
    typed text) and says so; a reload keeps the duration, a new audience window takes it, and going
    back restores the deck's 15:00 everywhere. On the third deck (no duration), one set adds the
    countdown and going back removes it;
-6. presses `p` on the second deck under the dev server: the presenter window must open at
+7. presses `p` on the second deck under the dev server: the presenter window must open at
    `/<second>?presenter` and move with the audience's window, either way, while a window of the
    other deck stays put;
-7. opens the second deck at `/<second>#/2/1`, under the dev server, and `/` in another window of
+8. opens the second deck at `/<second>#/2/1`, under the dev server, and `/` in another window of
    the same browser, then reloads `/`: the deck's window must keep its hash and its timer;
-8. rewrites the project's `vite.config.js` and `src/main.js` for createDeckApp's other cases,
+9. rewrites the project's `vite.config.js` and `src/main.js` for createDeckApp's other cases,
    under the dev server. On a decks folder holding one deck: it opens at `/` and at its path,
    and windows at `/` and `/<second>` move together, either way, `/` staying `/` (`p` there
    opens `/<second>?presenter`); `createDeckApp({ deckList: 'always' })` lists it at `/`, with
@@ -152,19 +155,19 @@ theme from outside `src/themes`, declared in its own `<style>`. Then it:
    of 14 decks, at 390x844: the covers far
    below the screen are not drawn until scrolled to, a deck that throws as it is drawn shows "Sin
    vista previa" (one `[arao]` warning), and `/café` is shown as such;
-9. runs `<bin> export` with no `--deck` and checks one PDF per deck at its default name, each with
+10. runs `<bin> export` with no `--deck` and checks one PDF per deck at its default name, each with
    as many pages (counted in the PDF itself) as steps, as its summary line says and as the walk
    counted, plus the total line (the fifth deck's line says it is printed in its theme from outside
    `src/themes`); then `<bin> export --deck <name> --per-slide`, whose PDF must have as many
    pages as slides;
-10. runs `<bin> export --deck <other> --url` against `vite preview`: with a deck's own URL it must
+11. runs `<bin> export --deck <other> --url` against `vite preview`: with a deck's own URL it must
    warn, naming the base meant, and then fail on the deck printed; with a URL under which the
    second deck opens, it must fail on the deck printed, with no warning; both exit 1 and write
    nothing;
-11. builds the project under a sub-path (`base: '/sub/'`): `dist/404.html` again; under `vite
+12. builds the project under a sub-path (`base: '/sub/'`): `dist/404.html` again; under `vite
    preview` the list at `/sub/` (the same checks as in 3), a deck at `/sub/<name>`, and
    `<bin> export --deck <name>` printing it;
-12. runs the CLI's other cases on small decks folders of their own, into `--out <folder>`:
+13. runs the CLI's other cases on small decks folders of their own, into `--out <folder>`:
    `--url` at a site built under a base named like one of its decks (`/talks/`, a deck `Talks`),
    which warns and exports every deck; `--theme` over a deck that lists it and one that falls back
    (a symlinked deck, next to a dotfile that must not count), a theme no deck lists (exit 1,

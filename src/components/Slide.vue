@@ -33,8 +33,11 @@
      Footer: the Deck's #footer slot, drawn on every slide (a band --ar-footer-height tall over the
      bottom of the slide, in its padding); whether it shows is CSS: the default layout shows it, a
      layout's token can hide it (cover and section do), and a class on the slide overrides both:
-     no-footer hides it, with-footer shows it. Its slot props are { number, total }: this slide's
-     number (1-based) and the deck's slide count.
+     no-footer hides it, with-footer shows it. Where it shows, the slide carries .ar-footed and its
+     bottom padding is at least the band (max(--ar-footer-height, the bottom of --ar-pad)), so the
+     content never sits under it; the script reads both facts from the computed style, as it reads
+     the header band. Its slot props are { number, total }: this slide's number (1-based) and the
+     deck's slide count.
      Background: a layer under the content, as big as the slide, never in the pointer's way. It
      shows the theme's default background (--ar-slide-bg-* tokens, below), unless the slide holds
      a Background (Background.vue), which draws itself there instead. A plain colour or a gradient
@@ -52,7 +55,8 @@
       ref="el"
       v-show="active"
       :data-ar-slide="id"
-      :class="'layout-' + layout"
+      :class="['layout-' + layout, { 'ar-footed': footed }]"
+      :style="{ '--_ar-pad-bottom': padBottom }"
     >
       <!-- in a thumbnail only the cover draws its content -->
       <template v-if="drawn">
@@ -72,7 +76,7 @@
 </template>
 
 <script setup lang="ts">
-import { Comment, Text, cloneVNode, h, onMounted, ref, shallowRef, useSlots, watch, type FunctionalComponent, type VNode } from 'vue'
+import { Comment, Text, cloneVNode, h, onMounted, onUpdated, ref, shallowRef, useSlots, watch, type FunctionalComponent, type VNode } from 'vue'
 import { useDeck } from '../state/deck'
 import { createSlide } from '../state/slide'
 import Notes from './Notes.vue'
@@ -151,17 +155,29 @@ function zoned() {
 // the named slots that are zones: all but the default slot and #title (the header's)
 const zoneNames = () => Object.keys(slots).filter((n) => n !== 'default' && n !== 'title')
 
-// Whether the theme gives the header a band (--ar-header-height). Tokens are CSS, so it is read
-// from the slide's computed style once mounted, and again whenever the theme or the layout
-// changes (before the first paint either way); per-layout values (.layout-x { … }) work too.
+// What CSS alone cannot say, read from the computed style: whether the theme gives the header a
+// band (--ar-header-height); whether the footer shows (its display, set by the layout's token or
+// the slide's class: .ar-footed); and the bottom of --ar-pad, a shorthand CSS cannot take apart
+// (the slide copies it into scroll-padding, harmless where nothing scrolls, whose longhands the
+// style resolves; a value that is no px length is left out). Read once mounted, after every
+// render (a class, the footer slot), and whenever the theme or the layout changes, before the
+// first paint either way; per-layout values (.layout-x { … }) work too.
 const band = ref(false)
-function readBand() {
+const footed = ref(false)
+const padBottom = ref<string>()
+function readTokens() {
   if (!el.value) return
-  const hh = getComputedStyle(el.value).getPropertyValue('--ar-header-height').trim()
+  const style = getComputedStyle(el.value)
+  const hh = style.getPropertyValue('--ar-header-height').trim()
   band.value = !!hh && hh !== 'auto'
+  const pb = style.scrollPaddingBottom
+  padBottom.value = /^[\d.]+px$/.test(pb) ? pb : undefined
+  const foot = el.value.querySelector<HTMLElement>(':scope > .ar-footer')
+  footed.value = !!foot && getComputedStyle(foot).display !== 'none'
 }
-onMounted(readBand)
-watch([deck.theme, () => props.layout], readBand, { flush: 'post' })
+onMounted(readTokens)
+onUpdated(readTokens)
+watch([deck.theme, () => props.layout], readTokens, { flush: 'post' })
 </script>
 
 <style>
@@ -171,6 +187,7 @@ watch([deck.theme, () => props.layout], readBand, { flush: 'post' })
   position: absolute; inset: 0;
   box-sizing: border-box;
   padding: var(--ar-pad);
+  scroll-padding: var(--ar-pad); /* only for the script to read its bottom (readTokens) */
   display: flex; flex-direction: column;
   isolation: isolate; /* its own stacking context: the background layer stays inside it */
 }
@@ -226,12 +243,15 @@ watch([deck.theme, () => props.layout], readBand, { flush: 'post' })
    what is wider is clipped at its edge, never painted over its neighbour; heights do not clip. */
 .ar-zone { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow-x: clip; }
 
-/* The deck's footer (Deck #footer): a band --ar-footer-height tall at the bottom of the slide, over
-   its bottom padding (keep that padding at least as tall: the body ends where the padding begins,
-   footer or not), with the slide's side padding, its children in a row (--ar-footer-align:
+/* The deck's footer (Deck #footer): a band --ar-footer-height tall at the bottom of the slide, in
+   its bottom padding, with the slide's side padding, its children in a row (--ar-footer-align:
    space-between puts one at the start, two at both ends), above the content. A layout hides it
    with a token of its own (cover, section); a slide's class wins over both: no-footer hides it,
-   with-footer shows it. */
+   with-footer shows it. Where it shows (.ar-footed) the bottom padding is at least the band, so
+   the content never sits under it; a layout that pads its zones itself instead of the slide
+   (image-*) does the same for them, with the same max(). Same specificity as .ar-slide, after
+   it: a layout's own padding (in a later file) still wins. */
+.ar-footed { padding-bottom: max(var(--ar-footer-height), var(--_ar-pad-bottom, 0px)); }
 .ar-footer {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 1;
   box-sizing: border-box; height: var(--ar-footer-height);

@@ -381,6 +381,17 @@ function themesOfSources(sources, root) {
 // glob syntax in a folder's name is literal: "talk (draft)", "[2024]"
 /** @param {string} s */
 const escapeGlob = (s) => s.replace(/[()[\]{}*?!+@|\\]/g, '\\$&')
+// An eager import of CSS files of a folder, for their styles alone (a folder missing gives
+// nothing): every one ('*'), or the ones named (cssPick); a glob from the root ("/../x" leaves it).
+// The theme and layout styles modules are made of these.
+/** @param {string} root @param {string} folder @param {string} pick */
+function cssGlob(root, folder, pick) {
+  const rel = relative(root, folder).split(sep).join('/')
+  return `import.meta.glob(${JSON.stringify((rel ? `/${escapeGlob(rel)}/` : '/') + pick + '.css')}, { eager: true })`
+}
+// the files named (without .css), as a glob's pick: one name, or {a,b}; '' for none
+/** @param {string[]} names */
+const cssPick = (names) => (names.length > 1 ? `{${names.map(escapeGlob).join(',')}}` : names.map(escapeGlob)[0] ?? '')
 
 // The layouts: the library's files (by name, without .css), the project folder's, the library's
 // that a project file replaces (shadowed), and the library's to load (loaded). And what each
@@ -655,9 +666,8 @@ export const themeSources = ${JSON.stringify(themeSources.map((t) => t.label))}`
       if (id === resolved('theme-styles')) {
         const { loaded } = themesOfSources(themeSources, root)
         return themeSources.map((t, i) => {
-          const rel = relative(root, t.dir).split(sep).join('/')
-          const pick = i ? '*' : loaded.length > 1 ? `{${loaded.map(escapeGlob).join(',')}}` : loaded.map(escapeGlob)[0]
-          return pick ? `import.meta.glob(${JSON.stringify((rel ? `/${escapeGlob(rel)}/` : '/') + pick + '.css')}, { eager: true })` : ''
+          const pick = i ? '*' : cssPick(loaded)
+          return pick ? cssGlob(root, t.dir, pick) : ''
         }).filter(Boolean).join('\n')
       }
       // the layouts' CSS: the library's own (but those the project replaces), then every file of
@@ -668,13 +678,8 @@ export const themeSources = ${JSON.stringify(themeSources.map((t) => t.label))}`
         for (const n of unstyled) unstyledLayout(n)
         for (const n of shadowed) shadowLayout(n)
         layoutsLoaded = JSON.stringify(loaded)
-        /** @param {string} folder @param {string} pick */
-        const glob = (folder, pick) => {
-          const rel = relative(root, folder).split(sep).join('/')
-          return `import.meta.glob(${JSON.stringify((rel ? `/${escapeGlob(rel)}/` : '/') + pick + '.css')}, { eager: true })`
-        }
-        const pick = loaded.length > 1 ? `{${loaded.map(escapeGlob).join(',')}}` : loaded.map(escapeGlob)[0]
-        return [pick ? glob(real(BUILTIN_LAYOUTS), pick) : '', glob(layoutsDir(), '*')].filter(Boolean).join('\n')
+        const pick = cssPick(loaded)
+        return [pick ? cssGlob(root, real(BUILTIN_LAYOUTS), pick) : '', cssGlob(root, layoutsDir(), '*')].filter(Boolean).join('\n')
       }
       const name = names.find((n) => id === resolved(n))
       if (!name) return null

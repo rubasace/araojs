@@ -52,10 +52,12 @@ Slide
   cropped, as CSS `object-position`), `fit` (`cover`, the default, or `contain`).
 - Without `src`, what is inside it is the background: a video, an `svg`, a `div` with a gradient.
   Each element of it covers the whole slide, stacked in order (a picture, then a tint over it);
-  `fit` and `position` apply to its pictures and videos, `opacity` and `blur` to all of it, and
-  `v-step` works inside.
-- A class or a style on it goes on what it draws (`Background.dim(src="city.jpg")`). Several
-  stack in order. Headings inside it are not the slide's title.
+  `fit` and `position` apply to its pictures and videos, `opacity` and `blur` to all of it.
+- Steps: `v-step` on it (`Background(v-step="2")`), on an element around it or inside it works as
+  anywhere in the slide: the background fades in at that step.
+- A class or a style on it goes on what it draws (`Background.dim(src="city.jpg")`), and the
+  deck's scoped styles reach it. Several stack in order. Headings inside it are not the slide's
+  title.
 
 ```pug
 Slide

@@ -120,6 +120,8 @@ same name replaces it.
 | `image-left` / `image-right` | `#image` fills its side, full height and edge to edge (no padding); the other side is the text, padded like any slide: the header at the height of every other slide's title, then the body. The footer stays, over the picture. Widths: `--ar-layout-image-left-columns` / `--ar-layout-image-right-columns`, left to right (default `1fr 1fr`) | default (the text side), `#title`, `#image` |
 
 - A zone keeps its width: wider content is clipped at the zone's edge. Heights do not clip.
+- In the page, zones come after the header and the body, in the order written, whatever side the
+  layout draws them on: in `image-left` the text is read before the picture.
 - In `#image`, an `Img` (and an `img` or a `video`) covers the zone (`fit="contain"` still
   wins); any other element fills it.
 - Content styles from `Slide.vue`'s CSS: `h1` is `--ar-title`; `h2` is 0.6x `--ar-title` in
@@ -142,8 +144,9 @@ element of it covers the slide, stacked in order.
 | `position` | String | `center` | CSS `object-position` of its pictures and videos, e.g. `"center 30%"` |
 | `fit` | String | `cover` | `cover` or `contain`, for its pictures and videos |
 
-- Slot: default, the background when there is no `src`; `v-step` works inside.
-- A class or a style on it goes on what it draws. Several stack in the order they are drawn.
+- Slot: default, the background when there is no `src`.
+- `v-step` works on it (`Background(v-step="2")`), around it and inside it.
+- A class or a style on it goes on what it draws (scoped styles of the deck included). Several stack in the order they are drawn.
   Headings in it are not the slide's title. Outside a `Slide` it warns and draws nothing.
 
 ```pug

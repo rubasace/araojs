@@ -266,7 +266,7 @@ Rules of thumb for a 1920x1080 canvas (and what the defaults do):
 - **Safe margin** ≈ 5–7 % of each side, for projectors that crop the edges: `--ar-pad`
   (110 x 140 px).
 - **Header** ≈ 12–15 % of the height for the title zone (a band, if any: `--ar-header-height`).
-- **Footer** ≈ 5–8 % of the height: the default band is 88 px, over the bottom padding (keep that
-  padding at least as tall), with 24 px text.
+- **Footer** ≈ 5–8 % of the height: the default band is 88 px, in the bottom padding (which is
+  made at least as tall where the footer shows), with 24 px text.
 - **Body text** 36–44 px (`--ar-text-base`: 42 px); nothing under ≈ 28 px except the footer and
   dense code.

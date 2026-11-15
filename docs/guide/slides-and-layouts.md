@@ -110,12 +110,16 @@ Slide
   `Cols(align="stretch")`, written out, keeps full-height columns.
 - **Zones**: each named template (`template(#image)`, `template(#left)`…) is a zone of its own, a
   column with the class `ar-zone-<name>` (`#title` is the header's). The layout's CSS places it:
-  `#image` beside the text in `image-*`, `#left` and `#right` under the header in `split`.
+  `#image` beside the text in `image-*`, `#left` and `#right` under the header in `split`. In the
+  page the zones always come after the header and the body, in the order written, whatever side
+  the layout draws them on: in `image-left` a screen reader, the tab order and a copied text read
+  the text first, then the picture.
 - **Footer**: the `Deck`'s `#footer` slot, in a band `--ar-footer-height` tall (88 px) over the
   bottom of the slide, with the slide's side padding and its text in `--ar-footer-size` and
   `--ar-footer-color`. Its children sit in a row, spread by `--ar-footer-align` (`space-between`:
-  one at the start, two at both ends). It sits in the slide's bottom padding, above the content:
-  keep `--ar-pad`'s bottom at least as tall as the band. Shown on `default`, `split` and `image-*`
+  one at the start, two at both ends). It sits in the slide's bottom padding, above the content;
+  where it shows, that padding is at least as tall as the band (the larger of `--ar-pad`'s bottom
+  and `--ar-footer-height`), so the content never sits under it. Shown on `default`, `split` and `image-*`
   (over the picture), hidden on `cover` and `section`: each layout says so with a token
   (`--ar-layout-cover-footer: flex` shows it on every cover). On a section it takes the section's
   text colour.
@@ -178,7 +182,11 @@ the library's convention, `--ar-layout-<name>-<thing>`, each with its default, s
 can change them. A default that is another token (`--ar-accent`, `--ar-title`) must be resolved on
 the slide, not at `:root` (`var()` is resolved where it is declared: a theme's `--ar-accent` would
 never reach it), so the file resolves each public token into a private one in a
-`:where(.layout-<name>)` block, and its rules read the private ones:
+`:where(.layout-<name>)` block, and its rules read the private ones. A layout that moves the
+slide's padding onto its zones (as `image-*` do) keeps them clear of the footer the same way: a
+slide whose footer shows carries `.ar-footed`, and
+`padding-bottom: max(var(--ar-footer-height), var(--_ar-pad-bottom, 0px))` (the engine sets
+`--_ar-pad-bottom`, the bottom of `--ar-pad`) is the room it needs.
 
 ```css
 /* src/layouts/quote.css: one big quote, centred on the slide, its author under it

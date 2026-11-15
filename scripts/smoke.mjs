@@ -77,6 +77,9 @@
 //      Chinese (zh-CN) the controls, the presenter view (its window title too), the notes pages
 //      (the step labels, before and after the number) and the list of decks speak it and say so
 //      (lang); in one set to a language with no catalogue (pt-BR), English
+//   5e. Background and steps, under the dev server, on the playground's slide "A background": a
+//      Background with v-step on it and one inside an element with v-step show in the slide's
+//      background layer from their steps on, the slide counts those steps, and nothing warns
 //   6. the talk's length, under the dev server, on the second deck (duration="15m"), in the
 //      presenter's bar: 1h30 typed with real keys moves no slide and opens no jump menu, and the
 //      countdown follows in an audience window too (useDeck()); after an apply from the keyboard,
@@ -898,6 +901,49 @@ try {
     for (const c of complaints) fail(`dev useDeck() face: ${c}`)
   }
 
+  // Background and steps, on the playground's slide "A background": its picture shows from step 1,
+  // its tint (Background.tint(v-step="2")) from step 2, its wash (inside a div(v-step="3")) from
+  // step 3, in the slide's background layer; the slide counts the three steps; no warning (a
+  // directive on a component whose root is no element warns)
+  async function backgrounds(base) {
+    const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
+    const complaints = []
+    page.on('console', (m) => ['warning', 'error'].includes(m.type()) && complaints.push(`console ${m.type()}: ${m.text()}`))
+    page.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
+    try {
+      await page.goto(new URL('playground#/1/1', base).href)
+      await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
+      const n = await page.evaluate(() => [...document.querySelectorAll('.ar-slide')].findIndex((s) => s.querySelector('h2')?.textContent.trim() === 'A background') + 1)
+      if (!n) complaints.push('no slide "A background" in the playground')
+      else {
+        const layers = async (step) => {
+          await page.goto(new URL(`playground#/${n}/${step}`, base).href)
+          await page.waitForFunction((h) => location.hash === h, `#/${n}/${step}`, { timeout: 5_000 }).catch(() => {})
+          await pause(300)
+          return page.evaluate(() => {
+            const slide = [...document.querySelectorAll('.ar-slide')].find((s) => getComputedStyle(s).display !== 'none')
+            return {
+              hash: location.hash,
+              layers: [...(slide?.querySelectorAll('.ar-slide-bg > .ar-background') ?? [])].map((b) => `${b.querySelector('img') ? 'picture' : b.classList.contains('tint') ? 'tint' : b.classList.contains('wash') ? 'wash' : '?'}${b.classList.contains('ar-step-hidden') ? ':hidden' : ''}`).join(' '),
+            }
+          })
+        }
+        // each step: the layers in order, hidden ones marked; reaching #/n/3 also says the slide
+        // has three steps (a hash past its last step is clamped to it)
+        const want = { 1: 'picture tint:hidden wash:hidden', 2: 'picture tint wash:hidden', 3: 'picture tint wash' }
+        for (const [step, expected] of Object.entries(want)) {
+          const got = await layers(step)
+          if (got.hash !== `#/${n}/${step}`) complaints.push(`#/${n}/${step} opened ${got.hash}: the slide does not count step ${step}`)
+          else if (got.layers !== expected) complaints.push(`step ${step}: background layers "${got.layers}", not "${expected}"`)
+        }
+      }
+      console.log(`  dev Background steps: ${complaints.length ? 'problems below' : 'on it and around it, in the background layer, three steps counted'}`)
+    } finally {
+      await page.context().close()
+    }
+    for (const c of complaints) fail(`dev Background steps: ${c}`)
+  }
+
   // the controls (components/internal/Controls.vue), in the audience view of the playground's deck:
   // their keys open and close the jump list (g, Escape) and move the deck; a typed slide number
   // jumps with no list; the project's src/shortcuts.ts remaps, adds and turns off keys; auto-hide: hidden
@@ -1611,6 +1657,7 @@ try {
         await face(base)
         await themes(base)
         await controls(base)
+        await backgrounds(base)
         await notes(base)
         await languages(base)
         await duration(base)

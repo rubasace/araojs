@@ -24,9 +24,10 @@
   --ar-header-height: auto;
 }
 
-/* the header and the body as tall as their content, the two of them centred */
+/* the header and the body as tall and as wide as their content, the two of them centred both
+   ways (a picture or a block of a fixed width stays in the middle too) */
 .layout-section {
-  justify-content: safe center; text-align: center;
+  justify-content: safe center; align-items: center; text-align: center;
   background: var(--_ar-section-bg); color: var(--_ar-section-fg);
 }
 .layout-section > .ar-body { flex: none; }

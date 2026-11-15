@@ -41,6 +41,10 @@ Deck
     Background(src="shapes.svg" opacity="0.15")
     h2 A background
     p Behind everything, edge to edge, wherever it is written in the slide.
+    //- a tint from step 2 (v-step on it), a wash from step 3 (v-step around it)
+    Background.tint(v-step="2")
+    div(v-step="3")
+      Background.wash
 
   Slide
     h2 Composition
@@ -95,3 +99,9 @@ const zones = [
   { name: 'Footer', what: 'The deck’s #footer, on every slide but covers and sections' },
 ]
 </script>
+
+<style scoped>
+/* classes on a Background go on what it draws, scoped styles included */
+.tint { background: rgb(0 0 0 / .08); }
+.wash { background: linear-gradient(transparent 60%, color-mix(in srgb, var(--ar-accent) 25%, transparent)); }
+</style>

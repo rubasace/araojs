@@ -28,7 +28,7 @@ How themes are written, found and applied: [Themes](../guide/themes.md).
 
 | Token | Default | Meaning |
 |---|---|---|
-| `--ar-pad` | `110px 140px` | slide padding, the safe margin (and the text side of `image-*`); the footer band, when shown, sits over its bottom: keep that at least `--ar-footer-height` |
+| `--ar-pad` | `110px 140px` | slide padding, the safe margin (and the text side of `image-*`); on a slide whose footer shows, its bottom is at least `--ar-footer-height`, so the content never sits under the band |
 | `--ar-radius` | `4px` | corner radius (`Img rounded`, placeholders) |
 | `--ar-gap-sm` / `-md` / `-lg` | `24px` / `48px` / `80px` | `gap="sm\|md\|lg"`; `md` is the default gap of `Cols`/`Rows`/`Grid`; `lg` between `split`'s zones; `sm` between the footer's children |
 
@@ -64,7 +64,7 @@ section's title its text colour.
 | `--ar-header-height` | `auto` (as tall as the title) | a length: a header band, at least this tall, the title centred in it, `--ar-title-gap` under the band |
 | `--ar-body-align` | `start` | `start`, `center` or `end`: where the body sits (on one slide, the classes `.top`, `.center`, `.bottom` set it); anything else is `start` |
 | `--ar-list-gap` | `0` | space between list items |
-| `--ar-footer-height` | `88px` | the footer band, at the bottom of the slide, over its bottom padding |
+| `--ar-footer-height` | `88px` | the footer band, at the bottom of the slide, in its bottom padding (made at least this tall where the footer shows) |
 | `--ar-footer-size` | `24px` | footer text size |
 | `--ar-footer-color` | `--ar-muted` (on a section: its text colour) | footer text colour |
 | `--ar-footer-align` | `space-between` | how the footer's children spread: `flex-start`, `center`, `flex-end`, `space-between` |

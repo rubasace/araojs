@@ -18,7 +18,9 @@
      --ar-layout-image-left-footer-bg   a backdrop under the footer (a colour, a gradient), to
                                         keep it legible over a photo                      none
    In the image zone an Img, an img or a video covers it (fit="contain" still wins); any other
-   element fills it. */
+   element fills it. The zone comes after the text in the page (Slide.vue renders the named zones
+   after the header and the body, whatever side a layout puts them on): a screen reader, the tab
+   order and a copy of the text read the text first, then the picture. */
 :where(.layout-image-left) {
   --_ar-image-left-columns: var(--ar-layout-image-left-columns, 1fr 1fr);
   --_ar-image-left-inset: var(--ar-layout-image-left-inset, 0px);
@@ -41,6 +43,8 @@
 .layout-image-left > .ar-header { grid-row: 1; padding-bottom: 0; box-sizing: content-box; }
 .layout-image-left > .ar-body { grid-row: 2; }
 .layout-image-left > .ar-header + .ar-body { padding-top: 0; }
+/* where the footer shows (.ar-footed, Slide.vue), the text side ends above it, as any slide does */
+.layout-image-left.ar-footed > .ar-body { padding-bottom: max(var(--ar-footer-height), var(--_ar-pad-bottom, 0px)); }
 
 /* the picture: edge to edge (a theme may inset it), whatever is in it filling it */
 .layout-image-left > .ar-zone-image {
