@@ -903,8 +903,8 @@ try {
 
   // Background and steps, on the playground's slide "A background": its picture shows from step 1,
   // its tint (Background.tint(v-step="2")) from step 2, its wash (inside a div(v-step="3")) from
-  // step 3, in the slide's background layer; the slide counts the three steps; no warning (a
-  // directive on a component whose root is no element warns)
+  // step 3, in the slide's background layer, stacked in that order; the slide counts the three
+  // steps; no warning (a directive on a component whose root is no element warns)
   async function backgrounds(base) {
     const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
     const complaints = []
@@ -920,13 +920,17 @@ try {
           await page.goto(new URL(`playground#/${n}/${step}`, base).href)
           await page.waitForFunction((h) => location.hash === h, `#/${n}/${step}`, { timeout: 5_000 }).catch(() => {})
           await pause(300)
-          return page.evaluate(() => {
-            const slide = [...document.querySelectorAll('.ar-slide')].find((s) => getComputedStyle(s).display !== 'none')
+          // slide n itself (the one before it may still be fading out), its layers bottom to top:
+          // by their stacking order (z-index; they mount in no set order in the layer)
+          return page.evaluate((i) => {
+            const slide = document.querySelectorAll('.ar-slide')[i]
+            const layers = [...(slide?.querySelectorAll('.ar-slide-bg > .ar-background') ?? [])]
+              .sort((a, b) => Number(getComputedStyle(a).zIndex) - Number(getComputedStyle(b).zIndex))
             return {
               hash: location.hash,
-              layers: [...(slide?.querySelectorAll('.ar-slide-bg > .ar-background') ?? [])].map((b) => `${b.querySelector('img') ? 'picture' : b.classList.contains('tint') ? 'tint' : b.classList.contains('wash') ? 'wash' : '?'}${b.classList.contains('ar-step-hidden') ? ':hidden' : ''}`).join(' '),
+              layers: layers.map((b) => `${b.querySelector('img') ? 'picture' : b.classList.contains('tint') ? 'tint' : b.classList.contains('wash') ? 'wash' : '?'}${b.classList.contains('ar-step-hidden') ? ':hidden' : ''}`).join(' '),
             }
-          })
+          }, n - 1)
         }
         // each step: the layers in order, hidden ones marked; reaching #/n/3 also says the slide
         // has three steps (a hash past its last step is clamped to it)
