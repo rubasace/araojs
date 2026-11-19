@@ -6,10 +6,11 @@
 // once: npx playwright-core install chromium.
 // Prints: console warnings/errors and page errors, the slide count, the highest step reached on
 // each slide, slides whose content overflows, Slide API that is gone (a removed prop is no error
-// in Vue: it lands on the slide as a plain HTML attribute and does nothing), and saves a
-// screenshot of every step in outDir (default ./deck-check), named s<slide>-<step>.png. Exit code
-// 1 if any warning, error, overflow, removed Slide API, quirks mode (no <!doctype html>) or no
-// slide rendered.
+// in Vue: it lands on the slide as a plain HTML attribute and does nothing), components and classes
+// that are gone (Cols, Rows, Grid, Center: Vue renders an element of that name that lays nothing
+// out; the class small), each with its replacement, and saves a screenshot of every step in outDir
+// (default ./deck-check), named s<slide>-<step>.png. Exit code 1 if any warning, error, overflow,
+// removed Slide API or component, quirks mode (no <!doctype html>) or no slide rendered.
 // It also warns, without failing, about named templates that are no zone of their slide's layout
 // (the project's layouts and their zones from `arao layouts --json`, run in the project; not
 // checked when that fails, as with an older araojs): the layout's CSS does not place them, but a
@@ -107,6 +108,24 @@ const removed = await page.evaluate(() => {
   })
 })
 
+// components and classes that are gone (araojs 0.5): Cols, Rows, Grid and Center are no
+// components (Vue warns once and renders an element of that name, cols, rows, grid, center, that
+// lays nothing out), and the class small is text-sm. A slide's columns are its layout (split,
+// grid); inside a block, the utility classes (src/styles/utilities.css: npx arao layouts)
+const gone = await page.evaluate(() => {
+  const now = {
+    cols: 'Cols (now: Slide(layout="split") for two sides, layout="grid" for blocks; inside a block, .cols, uneven with style="--ar-cols: 2fr 1fr")',
+    rows: 'Rows (now: .stack, with .grow on what fills; or .rows, style="--ar-rows: auto 1fr")',
+    grid: 'Grid (now: Slide(layout="grid"), a div per block, columns="3", cards="…"; inside a block, .cols-2, .cols-3, .cols-4)',
+    center: 'Center (now: .center; .stack.center around a picture with a size; nothing around a Snippet)',
+  }
+  return [...document.querySelectorAll('.ar-slide')].flatMap((slide, i) => {
+    const found = Object.keys(now).filter((tag) => slide.querySelector(tag)).map((tag) => now[tag])
+    if (slide.querySelector('.small')) found.push('the class small (now text-sm)')
+    return found.length ? [`slide ${i + 1}: ${found.join('; ')}`] : []
+  })
+})
+
 // named templates that are no zone of their slide's layout: its CSS does not place them (a theme
 // or the deck's CSS may), and the type check turns them down unless they are declared. A warning:
 // it does not fail the check. A layout the project has no file for is not judged, nor
@@ -160,10 +179,11 @@ console.log(`slides: ${slides}`)
 console.log(`steps per slide: ${Object.entries(steps).map(([k, v]) => `${k}:${v}`).join(' ')}`)
 if (overflow.size) console.log(`overflow on slides: ${[...overflow].join(', ')}`)
 if (removed.length) console.log(`removed Slide API (${removed.length} slides):\n  ${removed.join('\n  ')}`)
+if (gone.length) console.log(`removed components and classes (${gone.length} slides; troubleshooting.md, decks written for an older Arao):\n  ${gone.join('\n  ')}`)
 if (zonesOf == null) console.log('zones: not checked (npx arao layouts --json failed)')
 else if (strayZones.length) console.log(`warning: templates that are no zone of their layout, placed only if a theme or the deck's CSS styles .ar-zone-<name> (${strayZones.length} slides; npx arao layouts):\n  ${strayZones.join('\n  ')}`)
 if (subtitleHeadings.length) console.log(`warning: an h3 right after the title is its subtitle, and these slides have more h3 in the body: did you mean a body heading? Put something before it (a p), or use template(#title) for the header (${subtitleHeadings.length} slides):\n  ${subtitleHeadings.join('\n  ')}`)
 if (problems.length) console.log(`console problems (${problems.length}):\n  ${problems.join('\n  ')}`)
 else console.log('console: clean')
 console.log(`screenshots: ${outDir}/`)
-process.exit(problems.length || overflow.size || removed.length ? 1 : 0)
+process.exit(problems.length || overflow.size || removed.length || gone.length ? 1 : 0)

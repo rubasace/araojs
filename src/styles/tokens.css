@@ -48,7 +48,9 @@
   --ar-font-mono: ui-monospace, Menlo, monospace;
   /* --ar-font-heading: not declared: headings keep the font around them (Slide.vue) */
   --ar-text-base: 42px;              /* base font size of a slide */
-  --ar-text-small: .75em;            /* .small */
+  --ar-text-small: .75em;            /* .text-sm (utilities.css) */
+  --ar-text-large: 1.25em;           /* .text-lg */
+  --ar-text-xlarge: 1.6em;           /* .text-xl */
   --ar-title: 96px;                  /* the type scale: h1; h2 .6x; the slide title .6x, its subtitle
                                         .45x (the cover's and the section's title: layouts/) */
   --ar-radius: 4px;                  /* Img rounded, the missing-picture box */
@@ -57,9 +59,11 @@
   /* ---- the slide: spacing ---- */
   --ar-pad-y: 110px;                 /* slide padding, the safe margin: top and bottom */
   --ar-pad-x: 140px;                 /* … and both sides */
-  --ar-gap-sm: 24px;                 /* gap="sm", the footer's children */
-  --ar-gap-md: 48px;                 /* gap="md", the default gap of Cols, Rows, Grid */
-  --ar-gap-lg: 80px;                 /* gap="lg", between split's zones (layouts/split.css) */
+  --ar-gap-sm: 24px;                 /* .gap-sm (utilities.css), the footer's children, grid's blocks */
+  --ar-gap-md: 48px;                 /* .gap: the gap of .cols, .rows, .stack and .row */
+  --ar-gap-lg: 80px;                 /* .gap-lg, between split's sides (layouts/split.css) */
+  /* --ar-cols, --ar-rows: not declared: set in the style of one .cols or .rows, for it alone
+     (utilities.css) */
 
   /* ---- motion ---- */
   --ar-step-duration: .35s;          /* fade of v-step (also read by core/flip.ts) */
@@ -226,7 +230,8 @@
    token the components read, the public one it follows, and the default.
      --ar-title-size, --ar-title-color, --ar-title-gap: the slide's title (Slide.vue), whatever its
        tag; the gap, under the header, counts in the title's size
-     --ar-subtitle-size, --ar-subtitle-color: its subtitle */
+     --ar-subtitle-size, --ar-subtitle-color: its subtitle
+     --ar-highlight: the marker behind .highlight text (utilities.css), a CSS background */
 :where(*) {
   --_ar-footer-color: var(--ar-footer-color, var(--ar-muted));
   --_ar-table-border: var(--ar-table-border, 2px solid color-mix(in srgb, var(--ar-fg) 15%, transparent));
@@ -240,6 +245,7 @@
   --_ar-title-gap: var(--ar-title-gap, calc(var(--_ar-title-size) * .6));
   --_ar-subtitle-size: var(--ar-subtitle-size, calc(var(--ar-title) * .45));
   --_ar-subtitle-color: var(--ar-subtitle-color, var(--ar-muted));
+  --_ar-highlight: var(--ar-highlight, color-mix(in srgb, var(--ar-accent) 25%, transparent));
 }
 /* docked in the presenter view, the controls sit in no theme, so they have no accent to take:
    their accent defaults to their text colour. On them and inside them (each element resolves

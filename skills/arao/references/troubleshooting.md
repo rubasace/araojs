@@ -16,8 +16,8 @@
   and objects need the colon: `:size="36"`, `:line-numbers="false"`, `:themes="['default']"`,
   `:highlights='{ "2-3": 2 }'` (JSON in single quotes). Without it, `size="36"` is the string
   `"36"` and `line-numbers="false"` the string `"false"`: Vue warns and the line numbers stay.
-- Props that take text, or a number written as text, are plain: `gap="sm"`, `Cols(ratio="2 1")`,
-  `cols="3"`, `file="App.java"`, `Background(opacity="0.25")`, `Icon(size="64")`.
+- Props that take text, or a number written as text, are plain: `columns="2fr 1fr"`,
+  `file="App.java"`, `Background(opacity="0.25")`, `Icon(size="64")`.
 
 ## Decks written for an older Arao
 
@@ -38,7 +38,31 @@
   under the body) instead of behind the slide: put its content in a `Background`.
 - **Slides start at the top now.** The body sits right under the title on every slide (it used to
   be centred): `Slide.center` centres one, or a theme sets `--ar-body-align: center`.
-- `layout="two-cols"` is gone: use `Cols` or `layout="split"`.
+- `layout="two-cols"` is gone: use `layout="split"`.
+- **`Cols`, `Rows`, `Grid` and `Center` are gone** (BREAKING): written in a deck, Vue warns
+  "Failed to resolve component" and renders an element of that name that lays nothing out (its
+  content one block under another); `check-deck.mjs` reports each as "removed component", with
+  its replacement. A slide's
+  columns are its layout; inside one block, utility classes:
+  - `Cols` of two sides, the whole slide → `Slide(layout="split")`, a `div` per side;
+    `ratio="2 1"` → `columns="2fr 1fr"`; `gap="lg"` is split's default (`gap="96px"` for another).
+  - `Cols` of three or more blocks, or `Grid` of cards or logos, the whole slide →
+    `Slide(layout="grid")`, a `div` per block (an icon, an `h3`, a `p`). It balances the rows by
+    count, the last one centred, as `Grid(ratio="2:1")` did; `Grid(cols="4")` → `columns="4"`; a
+    card's background → `cards="…"`; text columns → `align="start"`; an `Icon(size)` in a block →
+    `icon-size="140px"` (the layout sizes a block's leading icon).
+  - `Cols` inside a block → `.cols`; `ratio="2 1"` → `.cols(style="--ar-cols: 2fr 1fr")`.
+    `Grid(cols="3")` inside a block → `.cols-3` (`.cols-2`, `.cols-4`).
+  - `Rows(ratio="auto 1")` → `.stack` with `.grow` on what fills (or `.rows` with
+    `style="--ar-rows: auto 1fr"` and a height, `.grow`).
+  - `Center` → `.center`; around a picture with a size, `.stack.center`; around a `Snippet`, drop
+    it (a snippet centres its window).
+  - `align="start"` / `"center"` / `"end"` → `.top` / `.middle` / `.bottom` on the columns (or on a
+    side of `split`); `gap="sm"` / `"md"` / `"lg"` → `.gap-sm` / `.gap` / `.gap-lg`.
+  - The classes are as tall as their content, as the pieces were not: a `Snippet` (or an `Img`
+    that should fill) inside `.cols` needs `.grow` on them.
+- **`.small` is `.text-sm` now** (BREAKING): `.small` does nothing. With it come `.text-lg` and
+  `.text-xl`, and `.middle` on a slide or a block (centred top to bottom, the text as it is).
 - **`split` has no `#left`/`#right` now** (they render below the body, and fail `vue-tsc`): its
   sides are the body's two children, a `div` each, each starting with its `h3` if it has one. A
   lead line under the title is its subtitle: an `h3` right after the `h2`.
@@ -67,7 +91,7 @@
 ## Pictures and icons
 
 - **`Img` has no size of its own.** It fills the box its container gives it (the space under the
-  title, a column, a cell, a zone, `Center`) and fits the picture inside; in a plain block it is
+  title, a side of `split`, a column of `.cols.grow`, a zone) and fits the picture inside; in a plain block it is
   as wide as the block. Fixed size: a class with both sizes,
   `.avatar { flex: none; width: 320px; height: 320px; }`.
 - Pictures are named, never imported: `Img(file="team.jpg")` and `Background(src="team.jpg")` read
@@ -85,9 +109,14 @@
 ## Layout surprises
 
 - **What fills stays full height, whatever the body's placement.** `Img`, `Snippet`, an element
-  with `flex: 1`, `Grid` (its rows are `1fr`) and pieces holding any of those fill the body;
-  `Cols` of plain content is as tall as its content (`Cols(align="stretch")` keeps full-height
-  columns), so `.center` on the slide centres it.
+  with `flex: 1` or `.grow` fill the body; the rest, the utility classes too (`.cols`, `.stack`),
+  is as tall as its content, so `.center` on the slide centres it.
+- **A `Snippet` in `.cols` shows as a sliver, or not at all**: the columns are as tall as their
+  content, and a snippet has none of its own (it fits the box it gets). Put `.grow` on the
+  columns: `.cols.grow`.
+- **A placement class on a layout's block does nothing**: `split`'s sides and `grid`'s blocks are
+  laid out by the layout (a `div.row` written as a side stays a column). Put the class on an
+  element inside the side. Alignment, gaps, sizes and colours do work on them.
 - `.collapse` steps in a `.center` slide re-centre the body as they come and go: use plain
   `v-step` (keeps its space) when the rest must not move.
 - **The footer sits in the bottom margin.** Where it shows, that margin is at least the band's
@@ -136,7 +165,8 @@
 | Message | Cause | Fix |
 |---|---|---|
 | `[Vue warn]: Invalid prop: type check failed …` | a number/boolean/array written without `:` | `:size="36"`, `:line-numbers="false"` |
-| `[Vue warn]: Invalid prop: custom validator check failed …` | a value the prop doesn't take (`gap="huge"`, `fit="fill"`) | see the prop in `docs/reference/components.md` |
+| `[Vue warn]: Invalid prop: custom validator check failed …` | a value the prop doesn't take (`fit="fill"`) | see the prop in `docs/reference/components.md` |
+| `[Vue warn]: Failed to resolve component: Cols` (`Rows`, `Grid`, `Center`) | a component Arao no longer has | a layout (`split`, `grid`) or a utility class (`.cols`, `.cols-3`, `.stack`, `.center`): [Decks written for an older Arao](#decks-written-for-an-older-arao) |
 | `[arao] … not found` (image, snippet) | wrong file name or folder, or case | names are relative to `src/images/` / `src/snippets/`, case-sensitive |
 | `[arao]` icon warning, dashed box | icon name not written out, or set not installed | write the full name in the source; install `@iconify-json/<prefix>` |
 | `[arao] v-step outside a Slide` / `Notes outside a Slide` | directive or notes outside any `Slide` | move it inside the slide |

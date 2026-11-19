@@ -5,5 +5,5 @@
 <template lang="pug">
 Slide.wrapped(layout="default")
   slot
-  p.muted.small A slide of the project's own: src/slides/WrappedSlide.vue wraps Slide.
+  p.muted.text-sm A slide of the project's own: src/slides/WrappedSlide.vue wraps Slide.
 </template>

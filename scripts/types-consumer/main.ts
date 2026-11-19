@@ -3,7 +3,7 @@
 // and the check would fail.
 import Arao, {
   createDeckApp, useDeck, useSlide, step, stepFrom,
-  Deck, Slide, Background, Img, Icon, Snippet, Notes, Agenda, Cols, Rows, Grid, Center, ProgressBar, SlideNumber,
+  Deck, Slide, Background, Img, Icon, Snippet, Notes, Agenda, ProgressBar, SlideNumber,
   type DeckFace, type DeckAppOptions, type DeckSlide, type SlideControls, type SlideLayouts, type ProjectLayouts, type Role, type Timer,
   type SlideLayoutZones, type ProjectLayoutZones,
 } from 'araojs'
@@ -125,5 +125,13 @@ void slideComponent
 
 // the components are components (not any)
 // @ts-expect-error a component is not a number
-const components: number[] = [Deck, Slide, Background, Img, Icon, Snippet, Notes, Agenda, Cols, Rows, Grid, Center, ProgressBar, SlideNumber]
+const components: number[] = [Deck, Slide, Background, Img, Icon, Snippet, Notes, Agenda, ProgressBar, SlideNumber]
 void components
+
+// Cols, Rows, Grid and Center are gone: no export, no global component (layouts and utility
+// classes instead)
+// @ts-expect-error no export Cols
+import type { Cols } from 'araojs'
+// @ts-expect-error no global component Center
+type GlobalCenter = import('vue').GlobalComponents['Center']
+export type { Cols, GlobalCenter }

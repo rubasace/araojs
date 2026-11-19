@@ -37,6 +37,7 @@
     "bin",
     "themes",
     "layouts",
+    "src/styles/utilities.css",
     "docs",
     "!docs/.vitepress",
     "!docs/assets",

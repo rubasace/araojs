@@ -11,7 +11,7 @@ mental model in SKILL.md). Every prop and slot: `docs/reference/components.md`; 
 - Bullet reveal, step variants, reusable steps
 - Code walkthrough, inline code
 - Image + text, background image, plain colour
-- Two columns, three columns, grids, centring
+- Two columns, three columns, grids; inside a block: utility classes
 - Icons
 - Speaker notes
 - Body placement
@@ -150,35 +150,60 @@ Slide(layout="agenda")          //- the section slides' titles, done / current /
   Agenda
 ```
 
-## Three columns
+## Three columns: the grid layout
+When columns are the whole slide, that is a layout: `split` for two sides, `grid` for blocks.
 ```pug
-Slide
+Slide(layout="grid" align="start")
   h2 Three pillars
-  Cols(gap="lg")
-    div
-      h3 Logging
-      p.muted MDC, JSON, levels
-    div(v-step="2")
-      h3 Metrics
-      p.muted Micrometer, tags
-    div(v-step="3")
-      h3 Clients
-      p.muted RestTemplate, WebClient
+  div
+    h3 Logging
+    p MDC, JSON, levels
+  div(v-step="2")
+    h3 Metrics
+    p Micrometer, tags
+  div(v-step="3")
+    h3 Clients
+    p RestTemplate, WebClient
 ```
-Uneven: `Cols(ratio="2 1")`. Grid of cards: `Grid(cols="3" gap="sm")`, or let the count decide:
-`Grid(ratio="2:1")` (columns : rows; 5 cards → 3 + 2, last row centred). Centre something: `Center`.
+`grid` balances its rows by the number of blocks (5 → 3 + 2, the last row centred); `columns="4"`
+fixes the count, `cards="color-mix(in srgb, var(--ar-fg) 6%, var(--ar-bg))"` gives each block a
+background, `icon-size="96px"` sizes a block's leading icon. Two uneven sides:
+`Slide(layout="split" columns="2fr 1fr")`.
+
+## Inside a block: utility classes
+```pug
+Slide(layout="split")
+  h2 Before and after
+  div
+    h3 Before
+    .row
+      Icon.accent(name="lucide:git-fork" size="96")
+      p.grow Every team rolled its own
+  div
+    h3 After
+    .cols.grow.middle(style="--ar-cols: 3fr 2fr")
+      Snippet(file="App.java")
+      ul.text-sm
+        li One starter
+        li.muted One version to bump
+```
+`.row` (side by side, centred on the line), `.stack` (one under another), `.cols` (a column per
+child; uneven with `--ar-cols`), `.cols-2` / `-3` / `-4` (filled row by row), `.rows`; `.top`,
+`.middle`, `.bottom`, `.center`; `.gap-sm`, `.gap`, `.gap-lg`; `.grow`; `.text-sm`, `.text-lg`,
+`.text-xl`; `.accent`, `.muted`, `.highlight`, `.upper`. Each is as tall as its content: a
+`Snippet` inside needs `.grow` on the columns. `npx arao layouts` describes every one.
 
 ## Icons (in text: as tall as the text; alone: `size` px)
 ```pug
-Slide
+Slide(layout="grid" icon-size="120px")
   h2 #[Icon(name="lucide:rocket")] Getting started
-  Grid(cols="3" gap="md")
-    Center(v-for="(t, i) in tech" :key="t.icon" v-step="i + 1")
-      Icon(:name="t.icon" size="120" :label="t.label")
-      p {{ t.label }}
+  div(v-for="(t, i) in tech" :key="t.icon" v-step="i + 1")
+    Icon(:name="t.icon" :label="t.label")
+    h3 {{ t.label }}
 ```
 with `const tech = [{ icon: 'simple-icons:vuedotjs', label: 'Vue' }, { icon: 'simple-icons:kubernetes', label: 'Kubernetes' }, { icon: 'simple-icons:openjdk', label: 'Java' }]`
-in `<script setup>`. Accent colour: a class, `Icon.hot(name="lucide:flame")` and `.hot { color: var(--ar-accent); }`.
+in `<script setup>`. `grid` draws a block's leading icon at its `icon-size`, in the accent. Accent
+colour elsewhere: `Icon.accent(name="lucide:flame")`.
 
 ## Background image with opacity
 ```pug
@@ -232,9 +257,10 @@ Slide.center
   h2 One idea
   p.lead Centred both ways under the title, no CSS.
 ```
-`.bottom` puts the body at the bottom, `.top` back at the top (when a theme centres it with
-`--ar-body-align`). On a block inside the slide (a column, a cell) the same classes place its
-content within it; `.center` also centres its text.
+`.bottom` puts the body at the bottom, `.middle` centres it top to bottom (its text as it is),
+`.top` back at the top (when a theme centres it with `--ar-body-align`). On a block inside the
+slide (a side of `split`, a column of `.cols`) the same classes place its content within it;
+`.center` also centres its text.
 
 ## Footer on every slide, with the slide number
 ```pug

@@ -4,7 +4,7 @@
     <Slide layout="image-right" class="center no-footer">
       <Background src="city.jpg" :opacity="0.4" fit="cover" />
       <p v-step="2">two</p>
-      <Cols ratio="2 1"><div /><div /></Cols>
+      <div class="cols grow" style="--ar-cols: 2fr 1fr"><div /><div /></div>
       <Snippet file="App.java" :size="30" />
       <Img file="team.jpg" fit="cover" />
       <Icon name="lucide:rocket" />

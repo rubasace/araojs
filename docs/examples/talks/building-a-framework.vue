@@ -28,12 +28,11 @@ Deck(duration="20m")
     Notes
       p Read the class name aloud, then let the highlights lead.
 
-  Slide
+  Slide(layout="grid" cards="color-mix(in srgb, var(--ar-fg) 6%, var(--ar-bg))" icon-size="88px")
     h2 Five pillars
-    Grid(ratio="2:1" gap="sm")
-      Center.card(v-for="p in pillars" :key="p.icon")
-        Icon(:name="p.icon" size="88")
-        p {{ p.name }}
+    div(v-for="p in pillars" :key="p.icon")
+      Icon(:name="p.icon")
+      h3 {{ p.name }}
     Notes
       p One sentence per pillar; details in the Q&A.
 
@@ -52,6 +51,5 @@ const pillars = [
 </script>
 
 <style scoped>
-.done, .card .ar-icon { color: var(--ar-accent); }
-.card { background: color-mix(in srgb, var(--ar-fg) 6%, var(--ar-bg)); border-radius: var(--ar-radius); }
+.done { color: var(--ar-accent); }
 </style>

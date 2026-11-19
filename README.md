@@ -125,7 +125,8 @@ says where you are.
 
 A cover, a split, a grid of features, a quote, a statement, text over a picture, a picture and
 its caption, an agenda that follows the talk, a section: one prop each, plain HTML inside, no
-CSS. A layout of your own is one CSS file in `src/layouts`.
+CSS. Inside a block, a few utility classes (columns, a row, a stack, sizes, the accent) read the
+theme's tokens. A layout of your own is one CSS file in `src/layouts`.
 
 [Layouts](docs/guide/slides-and-layouts.md) · [Composition](docs/guide/composition.md)
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 // The command line of Arao, run in a slides project (its folder is the current directory):
 //   arao export [options]   PDFs of the decks
-//   arao layouts [--json]   the layouts a slide can name, each with its doc
+//   arao layouts [--json]   the layouts a slide can name, each with its doc, and the utility classes
 // Each command is a module next to this one, given the arguments after its name.
 const COMMANDS = {
   export: 'PDFs of the decks (arao export --help)',
-  layouts: 'the layouts a slide can name, each with its doc (arao layouts --help)',
+  layouts: 'the layouts a slide can name, each with its doc, then the utility classes (arao layouts --help)',
 }
 const HELP = `Usage: arao <command> [options]
 

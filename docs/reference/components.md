@@ -5,7 +5,7 @@ Every component a deck writes: their props, slots and rules. Sizes are canvas px
 slots and directives work in an HTML template ([Pug or HTML](../guide/concepts.md#pug-or-html)).
 
 Globally registered: `Deck`, `Slide`, `Background`, `Img`, `Icon`, `Snippet`, `Notes`, `Agenda`,
-`Cols`, `Rows`, `Grid`, `Center`, and the directives `v-step` and `v-step-from` ([Directives](directives.md)). Imported
+and the directives `v-step` and `v-step-from` ([Directives](directives.md)). Imported
 by hand from `'araojs'`: the [addons](#addons) (`ProgressBar`, `SlideNumber`) and the
 [composables](composables.md) (`useDeck`, `useSlide`).
 
@@ -19,7 +19,7 @@ is type-checked only with Volar's Pug plugin: `npm install -D @vue/language-plug
 `"vueCompilerOptions": { "plugins": ["@vue/language-plugin-pug"] }` in the `tsconfig`; without
 it, `vue-tsc` and the editor skip Pug templates.
 
-Contents: [Deck](#deck) · [Slide](#slide) · [Background](#background) · [Cols, Rows, Grid, Center](#cols-rows-grid-center) ·
+Contents: [Deck](#deck) · [Slide](#slide) · [Background](#background) ·
 [Utility classes](#utility-classes) · [Img](#img) · [Icon](../guide/icons.md) · [Snippet](#snippet) ·
 [Notes](#notes) · [Agenda](#agenda) · [Addons](#addons)
 
@@ -184,63 +184,84 @@ Slide
 
 How backgrounds work, and a colour or a gradient on one slide: [Images and backgrounds](../guide/images-and-backgrounds.md#backgrounds).
 
-## Cols, Rows, Grid, Center
-
-Boxes laid out by props. Each fills the free space of its container (the rest of the slide under
-the title, a zone, a cell of another piece) and takes `v-step` like any element.
-
-| Component | Props | Default |
-|---|---|---|
-| `Cols` | `ratio`, `gap`, `align` | one equal column per child, `gap="md"`, `align="stretch"` |
-| `Rows` | `ratio`, `gap` | equal rows, one per child, `gap="md"` |
-| `Grid` | `cols`, `ratio`, `gap` | `cols="3"`, equal cells filled row by row, `gap="md"`; with `ratio` the columns come from the number of children |
-| `Center` | none | content centred both ways, text centred too |
-
-- `ratio` (String): one entry per track, separated by spaces or commas. Each entry is a positive
-  number (a share of the free space; shares are proportions, `"1 2"` = `"33 67"`), `auto` (fits its
-  content) or `<n>px`. No other units, no `fr`, no CSS functions. Invalid → warning, equal tracks.
-  Children beyond the entries start a new row (`Cols`) or get equal rows (`Rows`).
-- `gap` (String or Number): `sm` | `md` | `lg` (tokens `--ar-gap-sm|md|lg`: 24/48/80 px), a number
-  of px (`12`), or a length in `px`, `em`, `rem` (`"1.5em"`). Invalid → warning, `md`.
-- `align` (`Cols` only): `start` | `center` | `end` | `stretch`, vertical placement in each column.
-  Placed directly in a slide's body, the row is as tall as its content; `align="stretch"`, written
-  out, keeps the columns as tall as the body.
-- `cols` (`Grid` only): a whole number ≥ 1.
-- `ratio` (`Grid` only): the grid's **shape**, columns : rows — `"2:1"`, `"3/2"`, `"1.5"` (not the
-  track ratio of Cols/Rows). With n children: rows = round(√(n / ratio)), at least 1, and
-  columns = ⌈n / rows⌉. For 2:1: 3 → one row of 3, 5 → 3 + 2, 6 → 3 + 3, 7 → 4 + 3, 8 → 4 + 4. An
-  incomplete last row is **centred** under the full ones. It overrides `cols`; invalid values warn.
-  ```pug
-  Grid(ratio="2:1" gap="sm")
-    .card(v-for="(item, i) in items" v-step="i + 1") {{ item }}
-  ```
-- Overflow: widths hold, heights grow. A child is never wider than its track; what is wider
-  inside it is clipped at the track edge. Rows grow to fit their content, so a piece that does not
-  fit overflows its container at the bottom.
-- Their classes (`ar-cols`, `ar-rows`, `ar-grid`, `ar-center`) are hooks for a theme to
-  override, not utility classes to write in a deck: the props do the layout.
-
-Examples: [Composition](../guide/composition.md).
-
 ## Utility classes
 
-An escape hatch for one-off tweaks inside a slide, not a styling system.
+A small set of classes a deck writes on an element of a slide, every value a theme token, so a
+theme restyles them. They arrange and mark what is inside a block (the body, a side of `split`,
+a block of `grid`, a zone); a slide's structure is its layout's: when columns or rows are the
+whole slide, write `split` or `grid` ([Composition](../guide/composition.md)). `npx arao layouts`
+lists them, after the layouts, from their stylesheet's own docs (`src/styles/utilities.css` in the
+package).
+
+**Placement**: arrange a block's children. Each is as tall as its content (`grow` fills), its
+children `--ar-gap-md` apart.
 
 | Class | Effect |
 |---|---|
-| `.muted` | colour `--ar-muted` |
-| `.center` | its text centred, and its content centred vertically when the block is taller than it (a column of `Cols`, a cell of `Grid`, a block with a height) |
-| `.top` / `.bottom` | its content at the top / the bottom of the block, when the block is taller than it |
-| `.upper` | uppercase |
-| `.small` | font size `--ar-text-small` (default `.75em`) |
+| `.cols` | columns side by side, one per child, of equal width; set them with `--ar-cols` in its style, as CSS grid columns: `.cols(style="--ar-cols: 2fr 1fr")`, `auto 1fr` |
+| `.cols-2`, `.cols-3`, `.cols-4` | that many equal columns, filled row by row, every row as tall as the tallest |
+| `.rows` | rows one under another, of equal height, sharing its height (give it one: `.grow`, or a zone's); `--ar-rows` sets them (`auto 1fr`) |
+| `.stack` | its children one under another, the gap between them instead of their own margins |
+| `.row` | its children side by side, as wide as their content, centred on one line, the gap between them: an icon or a picture and its text, with `.grow` on the text |
 
-On a `Slide` itself, `.top`, `.center` and `.bottom` place its body, and `.no-footer` and
-`.with-footer` decide its footer ([Slide](#slide)). `.bar` inside a `cover` slide draws the
-accent bar.
+**Alignment**: where a block's content sits, when the block is taller than its content. In
+`.cols`, `.cols-*`, `.rows` and `.row`, each child in its track (columns stretch each child by
+default); in a `.stack`, its children.
+
+| Class | Effect |
+|---|---|
+| `.top` | at the top |
+| `.middle` | centred top to bottom, the text as it is |
+| `.bottom` | at the bottom |
+| `.center` | centred both ways: top to bottom, and across (its text centred) |
+
+**Spacing**, **size** and **colour**:
+
+| Class | Effect |
+|---|---|
+| `.gap-sm`, `.gap`, `.gap-lg` | the gap between the children of a block that lays them out: `--ar-gap-sm`, `--ar-gap-md` (the placement classes' own), `--ar-gap-lg` |
+| `.grow` | fills the space left in its container, which lays out in a column or a row (the body, a side of `split`, a zone, a `.stack`, a `.row`) |
+| `.text-sm`, `.text-lg`, `.text-xl` | smaller, larger, much larger text: `--ar-text-small` (`.75em`), `--ar-text-large` (`1.25em`), `--ar-text-xlarge` (`1.6em`) |
+| `.accent`, `.muted` | text (an `Icon` too) in `--ar-accent`, in `--ar-muted` |
+| `.highlight` | a marker behind inline text: `--ar-highlight` (default the accent, light) |
+| `.upper` | text in capitals |
+
+**On a `Slide`** itself:
+
+| Class | Effect |
+|---|---|
+| `.top`, `.middle`, `.bottom` | its body from the top (the default), centred top to bottom, at the bottom ([Placing the body](../guide/slides-and-layouts.md#placing-the-body)) |
+| `.center` | its body centred both ways, its text too (the title's) |
+| `.no-footer`, `.with-footer` | the deck's footer hidden, shown on it, whatever its layout says |
+
+`.bar` inside a `cover` slide draws the accent bar (the cover's own class).
 
 ```pug
-p.small.muted.center A footnote
+Slide(layout="split")
+  h2 Before and after
+  div.middle
+    p Three commands, and the deck is #[span.highlight live].
+    p.text-sm.muted It reloads as you type.
+  div
+    .row
+      Icon.accent(name="lucide:rocket" size="96")
+      p.grow An icon beside its text
 ```
+
+- Placement classes go on an element of yours: a layout lays out its own blocks (a `.row` written
+  on a side of `split` stays a column), so put it on an element inside. Alignment, gaps and the
+  look work on a layout's blocks too.
+- A `Snippet`, or an `Img` that should fill, needs a box with a height: `.grow` on the columns
+  around it.
+- In columns and rows, a child is never wider than its track: what is wider inside it is clipped
+  at the track's edge, never painted over its neighbour; rows grow to fit their content. A child
+  collapsed by `v-step.collapse` frees its track.
+- `--ar-cols` and `--ar-rows` apply to the element whose style sets them, never inherited: columns
+  inside columns start equal again.
+- Sizes, colours, the marker and `.upper` win over what a layout or a theme sets on the same
+  element (`!important`): `p.accent` in a block of `grid`, whose text is muted, is the accent.
+  Placement, alignment and spacing do not, so a layout keeps its own blocks and
+  `v-step.collapse` still hides.
 
 ## Img
 

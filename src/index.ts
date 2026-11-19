@@ -22,10 +22,6 @@ export { default as Icon } from './components/Icon.vue'
 export { default as Snippet } from './components/Snippet.vue'
 export { default as Notes } from './components/Notes.vue'
 export { default as Agenda } from './components/Agenda.vue'
-export { default as Cols } from './components/layout/Cols.vue'
-export { default as Rows } from './components/layout/Rows.vue'
-export { default as Grid } from './components/layout/Grid.vue'
-export { default as Center } from './components/layout/Center.vue'
 export { default as step, stepFrom } from './directives/step'
 export { useDeck } from './state/deck'
 export { useSlide } from './state/slide'
@@ -50,10 +46,6 @@ import type IconComponent from './components/Icon.vue'
 import type SnippetComponent from './components/Snippet.vue'
 import type NotesComponent from './components/Notes.vue'
 import type AgendaComponent from './components/Agenda.vue'
-import type ColsComponent from './components/layout/Cols.vue'
-import type RowsComponent from './components/layout/Rows.vue'
-import type GridComponent from './components/layout/Grid.vue'
-import type CenterComponent from './components/layout/Center.vue'
 import type { default as StepDirective, stepFrom as StepFromDirective } from './directives/step'
 declare module 'vue' {
   export interface GlobalComponents {
@@ -65,10 +57,6 @@ declare module 'vue' {
     Snippet: typeof SnippetComponent
     Notes: typeof NotesComponent
     Agenda: typeof AgendaComponent
-    Cols: typeof ColsComponent
-    Rows: typeof RowsComponent
-    Grid: typeof GridComponent
-    Center: typeof CenterComponent
   }
   export interface GlobalDirectives {
     vStep: typeof StepDirective

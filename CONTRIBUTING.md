@@ -37,17 +37,20 @@ src/
   composables/      the effects (internal): useDeckSync, usePresenterWindow, useShortcuts, useSlideNumber, useKeyboard, useTouchGestures, useAutoHide, useFullscreen
   core/             plain modules: sync, exporter, image, icons, flip, shortcuts
   views/            full screens: AudienceView, PresenterView, ExportView; DeckSelectorView (createDeckApp's list of decks)
-  components/       what authors write: Deck, Slide, Background, Img, Icon, Snippet, Notes; layout/: Cols, Rows, Grid, Center, layout.ts (their props' parsers), layout.css
+  components/       what authors write: Deck, Slide, Background, Img, Icon, Snippet, Notes, Agenda
     internal/       the engine's components, which no author names: Stage (the scaled canvas), Controls, PresenterBar, Thumbnail, DeckCover (a deck's cover in the list)
   directives/       v-step and v-step-from (step.ts)
   addons/           ProgressBar, SlideNumber: things drawn over every slide
   i18n/             the engine's UI text: one catalogue per language (en.ts the reference), i18n.ts the lookup
   styles/           only what is global: tokens.css (every token and its default: the default theme),
-                    base.css (page, viewport, steps); every component brings its own CSS in its .vue file
+                    utilities.css (the utility classes a deck writes, each documented: arao layouts
+                    lists them), base.css (page, viewport, steps); every component brings its own
+                    CSS in its .vue file
 themes/             the built-in themes, one CSS file each, named as the theme (default.css names the defaults): the library's theme source (arao({ builtinThemes }) says which load)
 layouts/            the slide layouts, one CSS file each, named as the layout (cover, section, split, grid, quote, statement, overlay, caption, agenda, image-left, image-right): Slide has no code for any of them; a project's src/layouts adds or replaces some
-vite/               the Vite plugin (araojs/vite; icons.js resolves the icons)
-bin/                the arao command (arao export, arao layouts)
+vite/               the Vite plugin (araojs/vite; icons.js resolves the icons; layout-docs.js and
+                    class-docs.js read the layouts' and the utility classes' doc comments)
+bin/                the arao command (arao export, arao layouts: the layouts, then the utility classes)
 playground/         a tiny slides project on the library's source, for developing it
 scripts/            smoke.mjs (the smoke test), shots.mjs, hero-gif.mjs and theme-sheets.mjs (the docs' pictures)
 docs/               the user docs (shipped in the package, and the source of the docs site):
