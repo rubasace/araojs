@@ -1,30 +1,35 @@
 /**
  * A divider between the parts of a talk.
- * Its content centred both ways, on the accent; its `h1` larger; the deck's footer hidden. Its
- * title and its footer take its text colour.
+ * Its content centred both ways, on the accent; its title larger; the deck's footer hidden. Its
+ * title, its subtitle and its footer take its text colour. Its title is an `h1` (an `h2` looks the
+ * same), a subtitle after it an `h2` or a plain `p`.
  * @example
  * Slide(layout="section")
  *   h1 Why a framework?
  * @param bg          the slide's background (default `--ar-accent`); the theme's default
  *                    background (`--ar-slide-bg-image`) is drawn over it
  * @param fg          its text, its title and its footer (default `--ar-accent-fg`)
- * @param title-size  the `h1`'s size (default 1.4 x `--ar-title`)
+ * @param title-size  the title's size (default 1.4 x `--ar-title`)
  * @param footer      the deck's footer: `none` hides it, `flex` shows it (default `none`)
  */
 
 /* Its tokens, --ar-layout-section-<thing>, each a @param above (a theme, the project's :root or
    one slide sets them, a slide also as attributes: Slide(layout="section" bg="#0b3d2e"); why each
    is resolved on the slide: cover.css).
-   Its title and its footer take its text colour (--ar-title-color and --ar-footer-color, set for
-   .layout-section in a theme, still win). The theme's default background
-   (--ar-slide-bg-image) is drawn over --ar-layout-section-bg, as on any slide: a theme can
-   give sections a picture or a gradient of their own there, or none. */
+   Its title, its subtitle and its footer take its text colour (--ar-title-color,
+   --ar-subtitle-color and --ar-footer-color, set for .layout-section in a theme, still win). Its
+   title (.ar-title, Slide.vue: an h1 or an h2, alike) is its own size, with its own leading, and
+   the gap under it is in its size too (--ar-title-gap still wins). The theme's default
+   background (--ar-slide-bg-image) is drawn over --ar-layout-section-bg, as on any slide: a
+   theme can give sections a picture or a gradient of their own there, or none. */
 :where(.layout-section) {
   --_ar-section-bg: var(--ar-layout-section-bg, var(--ar-accent));
   --_ar-section-fg: var(--ar-layout-section-fg, var(--ar-accent-fg));
   --_ar-section-title: var(--ar-layout-section-title-size, calc(var(--ar-title) * 1.4));
+  --_ar-section-gap: var(--ar-title-gap, calc(var(--_ar-section-title) * .4));
   --_ar-section-footer: var(--ar-layout-section-footer, none);
   --ar-title-color: currentColor;
+  --ar-subtitle-color: currentColor;
   --ar-footer-color: currentColor;
   /* no header band on a section: its title is part of the centred group */
   --ar-header-height: auto;
@@ -37,5 +42,6 @@
   background: var(--_ar-section-bg); color: var(--_ar-section-fg);
 }
 .layout-section > .ar-body { flex: none; }
-.layout-section h1 { font-size: var(--_ar-section-title); }
+.layout-section > .ar-header { margin-bottom: var(--_ar-section-gap); }
+.layout-section > .ar-header > .ar-title { font-size: var(--_ar-section-title); line-height: 1.05; }
 .layout-section > .ar-footer { display: var(--_ar-section-footer); }

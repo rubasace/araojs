@@ -1,38 +1,57 @@
 /**
- * Two zones side by side, under the slide's title.
- * The slide's header (and the body, when there is one: a lead line) across the top, then the two
- * zones, `#left` and `#right`, filling the rest of the slide. A zone keeps its width: what is
- * wider is clipped at its edge.
+ * Two sides side by side, under the slide's title.
+ * The body's two first children are the two sides, left and right, filling the rest of the slide
+ * under the header; each may start with an `h3`, its own heading. A side keeps its width: what is
+ * wider is clipped at its edge. Write each side as an element (a `div`, a `section`) holding its
+ * content; a third child and more are laid out in the same two columns, row after row.
  * @example
  * Slide(layout="split")
  *   h2 Before and after
- *   template(#left)
+ *   div
+ *     h3 Before
  *     p Every team rolled its own.
- *   template(#right)
- *     p(v-step="2") One starter, one version.
- * @zone left     the left side, under the header
- * @zone right    the right side, under the header
- * @param columns  the two zones' widths, left to right, as CSS grid columns (default `1fr 1fr`)
+ *   div(v-step="2")
+ *     h3 After
+ *     p One starter, one version.
+ * @param columns  the two sides' widths, left to right, as CSS grid columns (default `1fr 1fr`)
  * @param gap      the space between them (default `--ar-gap-lg`)
+ * @param divider  a line between them, as a CSS border (`2px solid currentColor`; default `none`)
  */
 
 /* Its tokens, --ar-layout-split-<thing>, each a @param above (a theme, the project's :root or one
    slide sets them, a slide also as attributes: Slide(layout="split" columns="2fr 1fr"); why each
    is resolved on the slide: cover.css).
-   A zone keeps its width: what is wider is clipped at its edge (Slide.vue's .ar-zone). */
+   The sides are the body's children (no named templates: what is written is what is read, in
+   order, left side first), so the slide stays a column (its header, its body) and the body is
+   the grid. A side is a column of its own, clipped at its edge (as a zone is, Slide.vue). A
+   hidden child is no side (:not([hidden]): a Background's anchor, Background.vue). */
 :where(.layout-split) {
   --_ar-split-columns: var(--ar-layout-split-columns, 1fr 1fr);
   --_ar-split-gap: var(--ar-layout-split-gap, var(--ar-gap-lg));
+  --_ar-split-divider: var(--ar-layout-split-divider, none);
 }
 
-/* rows: the header, the body (each as tall as its content, none when absent), the zones */
-.layout-split {
+/* the body: two columns, its rows sharing its height (one side each: the full height) */
+.layout-split > .ar-body {
   display: grid;
   grid-template-columns: var(--_ar-split-columns);
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-auto-rows: minmax(0, 1fr);
   column-gap: var(--_ar-split-gap);
+  row-gap: var(--ar-gap-md);
 }
-.layout-split > .ar-header { grid-column: 1 / -1; grid-row: 1; }
-.layout-split > .ar-body { grid-column: 1 / -1; grid-row: 2; }
-.layout-split > .ar-zone-left { grid-column: 1; grid-row: 3; }
-.layout-split > .ar-zone-right { grid-column: 2; grid-row: 3; }
+.layout-split > .ar-body > :not([hidden]) {
+  display: flex; flex-direction: column;
+  min-width: 0; min-height: 0; overflow-x: clip;
+}
+/* the divider: on the left edge of every right-hand side, in the middle of the gap */
+.layout-split > .ar-body > :nth-child(2n of :not([hidden])) {
+  border-left: var(--_ar-split-divider);
+  margin-left: calc(var(--_ar-split-gap) / -2);
+  padding-left: calc(var(--_ar-split-gap) / 2);
+}
+/* a side's heading: an h3 its content starts with */
+.layout-split > .ar-body > :not([hidden]) > h3:first-child {
+  margin: 0 0 .5em;
+  font-size: calc(var(--ar-title) * .45);
+  line-height: 1.2;
+}

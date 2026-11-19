@@ -22,7 +22,6 @@
 <script setup lang="ts">
 import { onMounted, ref, type PropType } from 'vue'
 import { buildBook, reportReady } from '../core/exporter'
-import { titleOf } from '../state/stage'
 import { useDeck, type Deck } from '../state/deck'
 import { useNotesOutlet } from '../state/notes'
 import Stage from '../components/internal/Stage.vue'
@@ -67,7 +66,7 @@ async function run() {
       canvas: viewport.value!.querySelector<HTMLElement>(':scope > .ar-stage > .ar-canvas')!,
       book: book.value!,
       notes: options.notes ? notesOutlet.value : null,
-      title: (i: number) => titleOf(stage.list[i]),
+      title: (i: number) => stage.view.slides.value[i]?.title ?? '',
       perStep: options.perStep,
       width: props.width,
       height: props.height,

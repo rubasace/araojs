@@ -45,7 +45,7 @@ src/
   styles/           only what is global: tokens.css (every token and its default: the default theme),
                     base.css (page, viewport, steps); every component brings its own CSS in its .vue file
 themes/             the built-in themes, one CSS file each, named as the theme (default.css names the defaults): the library's theme source (arao({ builtinThemes }) says which load)
-layouts/            the slide layouts, one CSS file each, named as the layout (cover, section, split, image-left, image-right): Slide has no code for any of them; a project's src/layouts adds or replaces some
+layouts/            the slide layouts, one CSS file each, named as the layout (cover, section, split, grid, quote, statement, overlay, caption, agenda, image-left, image-right): Slide has no code for any of them; a project's src/layouts adds or replaces some
 vite/               the Vite plugin (araojs/vite; icons.js resolves the icons)
 bin/                the arao command (arao export, arao layouts)
 playground/         a tiny slides project on the library's source, for developing it

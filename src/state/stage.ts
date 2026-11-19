@@ -1,11 +1,20 @@
 import { computed, inject, nextTick, provide, readonly, ref, shallowReactive, type ComputedRef, type InjectionKey, type Ref, type WritableComputedRef } from 'vue'
 
 export type Role = 'audience' | 'presenter' | 'preview' | 'export' | 'thumbnail'
-// what a slide registers with its stage (state/slide.ts); el, a ref to its <section>
+// what a slide registers with its stage (state/slide.ts); el, a ref to its <section>; layout, its
+// layout's name; title, its title as its section last showed it (titleIn, below)
 export interface StageSlide {
   id: string
   steps: ComputedRef<number>
   el: Readonly<Ref<HTMLElement | null | undefined>>
+  layout: ComputedRef<string>
+  title: Readonly<Ref<string>>
+}
+// a slide of the deck, as useDeck().slides lists it: its place (0-based), its title, its layout
+export interface DeckSlide {
+  readonly index: number
+  readonly title: string
+  readonly layout: string
 }
 export interface Position { index: number; step: number }
 export interface StageOptions {
@@ -76,6 +85,8 @@ export function createStage({ follow, onMove, role = 'audience' }: StageOptions 
     step: readonly(step),
     total: computed(() => list.length),
     steps: computed(() => current.value?.steps.value ?? 1),
+    // every slide, in order: its place, its title, its layout (frozen, as the rest of the face)
+    slides: computed((): readonly DeckSlide[] => Object.freeze(list.map((s, index) => Object.freeze({ index, title: s.title.value, layout: s.layout.value })))),
     // progress over every step of the deck, 0..1
     progress: computed(() => {
       const all = list.reduce((n, s) => n + s.steps.value, 0)
@@ -90,7 +101,7 @@ export function createStage({ follow, onMove, role = 'audience' }: StageOptions 
     last: follow ? noop : move(last),
   }
 
-  // slide = { id, steps, el }; el is a ref to its <section>
+  // slide = { id, steps, el, layout, title }; el is a ref to its <section>
   function register(slide: StageSlide) {
     change()
     list.push(slide)
@@ -183,10 +194,12 @@ export function createStage({ follow, onMove, role = 'audience' }: StageOptions 
   }
 }
 
-// A slide's title, for the jump menu, the presenter view and the notes pages: the text of its
-// first heading outside the background and the footer.
+// A slide's title, for the jump menu, the presenter view, the notes pages, a thumbnail's cover
+// and Agenda: the text of the first heading of its section (el) outside the background and the
+// footer. Each slide reads it after each of its renders and keeps it (its title, state/slide.ts);
+// every reader takes it from there, through view.slides (useDeck().slides, titles()).
 const HEADING = ':is(h1, h2, h3):not(.ar-slide-bg *, .ar-footer *)'
-export const titleOf = (slide: StageSlide) => slide.el.value?.querySelector(HEADING)?.textContent?.replace(/\s+/g, ' ').trim() || ''
+export const titleIn = (el: HTMLElement | null | undefined) => el?.querySelector(HEADING)?.textContent?.replace(/\s+/g, ' ').trim() || ''
 
 // Where the audience will be after one more press: the next step of the same slide, else the
 // next slide at its first step; at the very end, { end: true }.

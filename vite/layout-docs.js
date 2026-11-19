@@ -67,9 +67,9 @@ export const DEFAULT_LAYOUT = {
   documented: true,
   summary: 'A content slide: the layout of a Slide without one.',
   description: [
-    'Its title (the h1 or h2 its content starts with) in the header, then the body under it,',
-    "filling the rest of the slide, from the top; the deck's footer shown. A layout's name with no",
-    'CSS behind it is this layout too.',
+    'Its title (the h2 its content starts with; an h1 looks the same) and its subtitle (an h3',
+    'right after it) in the header, then the body under it, filling the rest of the slide, from',
+    "the top; the deck's footer shown. A layout's name with no CSS behind it is this layout too.",
   ].join('\n'),
   example: ['Slide', '  h2 Three pillars', '  ul', '    li Fast', '    li Simple'].join('\n'),
   zones: [],

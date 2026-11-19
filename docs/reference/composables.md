@@ -29,6 +29,7 @@ const deck = useDeck()
 | `first()`, `last()` | functions | the first slide at step 1; the last slide at its last step (as `Home` / `End`) |
 | `go(i, step = 1)` | function | go to slide `i` (0-based) at `step` (clamped; `Infinity` = last step); out-of-range `i` is ignored |
 | `titles()` | function | every slide's title, in order (`''` for a slide without one): what the jump list (`g`) shows |
+| `slides` | computed, Array of `{ index, title, layout }` | every slide, in order: its place (0-based), its title (as `titles()`), its layout's name; frozen. It follows the deck: a slide added, moved or renamed is in it. [`Agenda`](components.md#agenda) lists the `section` slides from it |
 | `setTheme(name)` | function | wear another of the deck's `themes` (written in the URL, followed by the other windows); any other name warns and is ignored |
 | `toggleFullscreen()` | function | enter or leave fullscreen (as `f`) |
 | `openPresenter()` | function | open the presenter window, or bring it forward (as `p`) |

@@ -19,20 +19,20 @@ import { launchChromium, REPO, settle, startDecksServer } from './docs-server.mj
 const OUT = join(REPO, 'docs/assets/hero.gif')
 const FPS = 12
 const CHARS_PER_FRAME = 4
-const HEAD = '<template lang="pug">\nDeck\n  Slide\n'
+// the grid layout: each div a block, its icon drawn at one size, the three in a row
+const HEAD = '<template lang="pug">\nDeck\n  Slide(layout="grid")\n'
 const TAIL = '</template>\n'
 const LINES = [
   '    h2 Ship a talk',
-  '    Cols',
-  '      Center',
-  '        Icon(name="lucide:file-code" size="160")',
-  '        h3 One Vue file',
-  '      Center',
-  '        Icon(name="lucide:monitor" size="160")',
-  '        h3 Any screen',
-  '      Center',
-  '        Icon(name="lucide:printer" size="160")',
-  '        h3 And a PDF',
+  '    div',
+  '      Icon(name="lucide:file-code")',
+  '      h3 One Vue file',
+  '    div',
+  '      Icon(name="lucide:monitor")',
+  '      h3 Any screen',
+  '    div',
+  '      Icon(name="lucide:printer")',
+  '      h3 And a PDF',
 ]
 const W = 878
 const H = 352

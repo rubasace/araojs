@@ -1,5 +1,5 @@
 // The Vue plugin: app.use(Arao) registers what a deck uses without importing it.
-//   components   Deck, Slide, Background, Img, Icon, Notes, Snippet, Cols, Rows, Grid, Center
+//   components   Deck, Slide, Background, Img, Icon, Notes, Snippet, Agenda, Cols, Rows, Grid, Center
 //   directives   v-step, v-step-from
 // The addons (ProgressBar, SlideNumber) are not global: a deck imports the ones it uses.
 // CSS: every component brings its own (its .vue file's <style>; the layout pieces share
@@ -26,6 +26,7 @@ import Rows from './components/layout/Rows.vue'
 import Grid from './components/layout/Grid.vue'
 import Center from './components/layout/Center.vue'
 import Notes from './components/Notes.vue'
+import Agenda from './components/Agenda.vue'
 import step, { stepFrom } from './directives/step'
 import type { App, Plugin } from 'vue'
 import './styles/base.css'
@@ -39,6 +40,7 @@ const Arao: Plugin = {
     app.component('Icon', Icon)
     app.component('Notes', Notes)
     app.component('Snippet', Snippet)
+    app.component('Agenda', Agenda)
     app.component('Cols', Cols)
     app.component('Rows', Rows)
     app.component('Grid', Grid)

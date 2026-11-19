@@ -63,10 +63,10 @@ Deck
 
   Slide(layout="split")
     h2 Before and after
-    template(#left)
+    div
       h3 Before
       p.muted Every team rolled its own.
-    template(#right)
+    div
       h3 After
       p One starter, one version.
 

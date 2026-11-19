@@ -108,18 +108,47 @@ Slide(layout="image-right" columns="3fr 2fr")
 text then picture; `--ar-layout-image-left-columns`, picture then text; default `1fr 1fr`). The footer
 shows over the picture: `.no-footer` hides it on one slide.
 
-## Two columns with a header
+## Two sides with a header
 ```pug
 Slide(layout="split")
   h2 Before and after
-  template(#left)
+  div
     h3 Before
     p Every team rolled its own.
-  template(#right)
-    h3(v-step="2") After
-    p(v-step="2") One starter, one version.
+  div(v-step="2")
+    h3 After
+    p One starter, one version.
 ```
-Uneven zones: `Slide(layout="split" columns="2fr 1fr")` (and `gap="96px"`).
+The body's two children are the sides. Uneven: `columns="2fr 1fr"`; `gap="96px"`; a line
+between them: `divider="2px solid currentColor"`.
+
+## Features, a quote, a figure, an agenda
+The other library layouts read plain HTML; `npx arao layouts` shows each one's form and
+parameters. The shapes, in short:
+```pug
+Slide(layout="grid")            //- each div a block; rows balanced by count
+  h2 Ship a talk
+  div
+    Icon(name="lucide:monitor")
+    h3 Any screen
+    p One canvas, scaled
+Slide(layout="quote")
+  blockquote Simplicity is prerequisite for reliability.
+  cite Edsger W. Dijkstra
+Slide(layout="statement")
+  h2 90 %
+  p of our releases ship on a Friday
+Slide(layout="overlay")
+  Background(src="city.jpg")
+  h2 Built for the city
+Slide(layout="caption")
+  figure
+    Img(file="city.jpg" alt="The city")
+    figcaption The city at night
+Slide(layout="agenda")          //- the section slides' titles, done / current / upcoming
+  h2 Agenda
+  Agenda
+```
 
 ## Three columns
 ```pug
@@ -240,7 +269,7 @@ Slide
 ```
 
 ## A layout of your own (one CSS file, nothing to import)
-`src/layouts/quote.css` styles `Slide(layout="quote")`: the plugin loads every file there, after
+`src/layouts/epigraph.css` styles `Slide(layout="epigraph")`: the plugin loads every file there, after
 the library's layouts and before the themes; one named like a library layout (`cover.css`)
 replaces it. Follow the library's convention (`node_modules/araojs/layouts/cover.css`): tokens
 named `--ar-layout-<name>-<thing>`, each resolved with its default on the slide. Each token is
@@ -255,27 +284,31 @@ prints it back, with any problem (a `@param` naming no token…); full rules:
 `docs/guide/slides-and-layouts.md#its-doc-block`.
 ```css
 /**
- * One big quote, centred on the slide, its author under it.
+ * A slide that opens on an epigraph: a short quotation on the right, its source under it.
  * @example
- * Slide(layout="quote" size="64px")
- *   blockquote Make it work, make it right, make it fast.
- *   p.muted Kent Beck
- * @param size    the quote's size (default .8 x `--ar-title`)
+ * Slide(layout="epigraph" size="48px")
+ *   h2 Why we test
+ *   blockquote Testing shows the presence of bugs, never their absence.
+ *   p Edsger W. Dijkstra
+ * @param size    the epigraph's size (default .45 x `--ar-title`)
  * @param footer  the deck's footer: `none` hides it, `flex` shows it (default `none`)
  */
-:where(.layout-quote) {
-  --_ar-quote-size: var(--ar-layout-quote-size, calc(var(--ar-title) * .8));
-  --_ar-quote-footer: var(--ar-layout-quote-footer, none);
+:where(.layout-epigraph) {
+  --_ar-epigraph-size: var(--ar-layout-epigraph-size, calc(var(--ar-title) * .45));
+  --_ar-epigraph-footer: var(--ar-layout-epigraph-footer, none);
 }
-.layout-quote { justify-content: safe center; }   /* the slide is a column: header, body */
-.layout-quote > .ar-body { flex: none; }
-.layout-quote blockquote { margin: 0; font-size: var(--_ar-quote-size); }
-.layout-quote > .ar-footer { display: var(--_ar-quote-footer); }
+.layout-epigraph > .ar-body > blockquote {
+  align-self: flex-end; max-width: 60%; margin: 0;
+  font-size: var(--_ar-epigraph-size); font-style: italic;
+}
+.layout-epigraph > .ar-body > blockquote + p { align-self: flex-end; margin: .4em 0 1.2em; }
+.layout-epigraph > .ar-footer { display: var(--_ar-epigraph-footer); }
 ```
 ```pug
-Slide(layout="quote" size="64px")
-  blockquote Make it work, make it right, make it fast.
-  p.muted Kent Beck
+Slide(layout="epigraph" size="48px")
+  h2 Why we test
+  blockquote Testing shows the presence of bugs, never their absence.
+  p Edsger W. Dijkstra
 ```
 The plugin also writes the project's layout names, parameters, zones and doc blocks into
 `src/arao-layouts.d.ts`, so that in a TypeScript project the editor completes `layout` and that

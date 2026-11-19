@@ -4,7 +4,7 @@ import { exportOptions } from '../core/exporter'
 import { useDeckSync } from '../composables/useDeckSync'
 import { useFullscreen } from '../composables/useFullscreen'
 import { usePresenterWindow } from '../composables/usePresenterWindow'
-import { ahead, createStage, titleOf, useStage, type Role, type Stage } from './stage'
+import { ahead, createStage, useStage, type DeckSlide, type Role, type Stage } from './stage'
 import { createTheme } from './theme'
 import { createTimer, type Timer } from './timer'
 
@@ -21,6 +21,7 @@ export interface DeckFace {
   readonly step: Readonly<Ref<number>>
   readonly total: ComputedRef<number>
   readonly steps: ComputedRef<number>
+  readonly slides: ComputedRef<readonly DeckSlide[]>
   readonly progress: ComputedRef<number>
   readonly theme: Readonly<Ref<string>>
   readonly themes: Readonly<Ref<readonly string[]>>
@@ -104,12 +105,12 @@ export function createDeck(props: DeckProps) {
     : createStage({ onMove: moved, role: mode })
   const next = computed(() => ahead(stage))
   const preview = mode === 'presenter' ? createStage({ follow: () => next.value, role: 'preview' }) : null
-  const titles = () => stage.list.map(titleOf)
+  // every slide's title, as useDeck().slides has it (each slide keeps its own: state/slide.ts)
+  const titles = () => stage.view.slides.value.map((s) => s.title)
   const coverTitle = thumbnail?.title
   if (coverTitle) {
     watchPostEffect(() => {
-      const cover = stage.list[0]
-      coverTitle.value = cover ? titleOf(cover) : ''
+      coverTitle.value = stage.view.slides.value[0]?.title ?? ''
     })
   }
 
@@ -185,6 +186,10 @@ export function createDeck(props: DeckProps) {
 //   next(), prev(), go(i, step)           move it
 //   first(), last()                       the first slide at step 1; the last slide at its last step
 //   titles()                              every slide's title, in order ('' for one without)
+//   slides                                computed: every slide, in order, { index, title,
+//                                         layout } (frozen): its place (0-based), its title
+//                                         as titles() gives it, its layout's name (Agenda lists
+//                                         the sections from it)
 //   theme, themes                         the theme worn, the deck's list (read-only refs; the
 //                                         list is its themes prop, or every theme there is);
 //                                         setTheme(name) wears another of the list (any other

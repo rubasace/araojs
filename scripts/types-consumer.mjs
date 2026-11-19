@@ -35,7 +35,7 @@ try {
   // Volar's Pug plugin is released with vue-tsc, under the same version
   dev.push(`@vue/language-plugin-pug@${pkg.devDependencies['vue-tsc']}`)
   run('npm', ['install', '--no-audit', '--no-fund', '--silent', resolve(tarball), ...dev])
-  // its output read: quote.css's --ar-layout-quote-title is no parameter (title is an HTML
+  // its output read: callout.css's --ar-layout-callout-title is no parameter (title is an HTML
   // attribute), which the plugin says
   const built = spawnSync('npx', ['vite', 'build'], { cwd: dir, encoding: 'utf8' })
   process.stdout.write(built.stdout)
@@ -45,8 +45,8 @@ try {
     console.error('types-consumer: vite build wrote no src/arao-layouts.d.ts')
     failed = true
   }
-  if (!/\[arao\] src\/layouts\/quote\.css: --ar-layout-quote-title is no attribute of Slide/.test(built.stdout + built.stderr)) {
-    console.error('types-consumer: vite build did not warn that --ar-layout-quote-title (src/layouts/quote.css) is no attribute')
+  if (!/\[arao\] src\/layouts\/callout\.css: --ar-layout-callout-title is no attribute of Slide/.test(built.stdout + built.stderr)) {
+    console.error('types-consumer: vite build did not warn that --ar-layout-callout-title (src/layouts/callout.css) is no attribute')
     failed = true
   }
   for (const mode of ['bundler', 'nodenext']) {

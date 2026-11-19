@@ -1,0 +1,78 @@
+/**
+ * One quotation, big, its author under it.
+ * The quote is a `blockquote`, opened by a large decorative mark; its author a `cite` after it
+ * (small, muted). The two of them sit in the middle of the slide; the deck's footer stays. The
+ * plain form works too: two `p`, the quote and then its author.
+ * @example
+ * Slide(layout="quote")
+ *   blockquote Simplicity is prerequisite for reliability.
+ *   cite Edsger W. Dijkstra
+ *
+ * Slide(layout="quote" align="start")
+ *   p Make it work, make it right, make it fast.
+ *   p Kent Beck
+ * @param size        the quote's size (default 0.8 x `--ar-title`)
+ * @param mark        the decorative mark: a character, as a CSS string, its quotes written
+ *                    (`mark="'«'"`; default `'“'`)
+ * @param mark-color  its colour (default `--ar-accent`)
+ * @param align       `center` or `start`: the quote and its author, across the slide (default
+ *                    `center`)
+ */
+
+/* Its tokens, --ar-layout-quote-<thing>, each a @param above (a theme, the project's :root or one
+   slide sets them, a slide also as attributes: Slide(layout="quote" size="80px"); why each is
+   resolved on the slide: cover.css). The mark is what its ::before's content says, so it is a
+   CSS string, quotes and all (a value is set as it is written: mark="«" would be no string, and
+   no mark).
+   The semantic form, blockquote then cite; the plain one, a first p (the quote) and a p after it
+   (its author): the quote is the body's first child that is not hidden (a Background's anchor
+   is), its author what follows it. A title, if the slide has one, stays where every slide's is,
+   above. */
+:where(.layout-quote) {
+  --_ar-quote-size: var(--ar-layout-quote-size, calc(var(--ar-title) * .8));
+  --_ar-quote-mark: var(--ar-layout-quote-mark, "\201C");
+  --_ar-quote-mark-color: var(--ar-layout-quote-mark-color, var(--ar-accent));
+  --_ar-quote-align: var(--ar-layout-quote-align, center);
+  --ar-body-align: center;
+}
+
+/* the body: its content in the middle of the space left, a column as wide as the slide allows */
+.layout-quote > .ar-body {
+  align-items: var(--_ar-quote-align);
+  text-align: var(--_ar-quote-align);
+}
+/* the quote: blockquote, or the plain form's first p */
+.layout-quote > .ar-body > :is(blockquote, p):nth-child(1 of :not([hidden])) {
+  position: relative;
+  max-width: 24em;
+  margin: 0 0 .6em;
+  font-family: var(--ar-font-heading, inherit);
+  font-size: var(--_ar-quote-size);
+  line-height: 1.2;
+}
+.layout-quote > .ar-body > blockquote > :last-child { margin-bottom: 0; }
+/* its mark: large, in the accent, above the quote's first line. Its box is trimmed (text-box) to
+   the font's cap height on top and its text edge below (the bottom of descenders, not the
+   baseline), so a mark that sits high (“), one on the x-height («, ») and one under the baseline
+   („) all end above the quote; a browser without text-box gives it its whole line, a little
+   further from the quote, never over it. */
+.layout-quote > .ar-body > :is(blockquote, p):nth-child(1 of :not([hidden]))::before {
+  content: var(--_ar-quote-mark);
+  display: block;
+  height: auto;
+  margin-bottom: 0;
+  font-size: 3em;
+  line-height: 1;
+  text-box: trim-both cap text;
+  color: var(--_ar-quote-mark-color);
+}
+/* its author: cite, or the plain form's p after the quote */
+.layout-quote > .ar-body > cite,
+.layout-quote > .ar-body > :is(blockquote, p):nth-child(1 of :not([hidden])) ~ p {
+  margin: 0;
+  font-size: var(--ar-text-small);
+  font-style: normal;
+  color: var(--ar-muted);
+}
+.layout-quote > .ar-body > cite::before,
+.layout-quote > .ar-body > p:nth-child(1 of :not([hidden])) ~ p:nth-child(2 of :not([hidden]))::before { content: "\2014\00A0"; }

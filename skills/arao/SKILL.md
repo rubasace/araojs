@@ -42,7 +42,7 @@ at https://github.com/rubasace/araojs/tree/main/docs. Paths below like
   uses it). Plain HTML works the same, with the same components, props, slots and directives.
   Translate tag by tag: `Slide(layout="cover")` → `<Slide layout="cover">…</Slide>`,
   `p.muted Text` → `<p class="muted">Text</p>`, `Slide.center` → `<Slide class="center">`,
-  `template(#left)` → `<template #left>`.
+  `template(#image)` → `<template #image>`.
 - Structure: `Deck` → `Slide` → content. Addons (`ProgressBar`, `SlideNumber`) sit inside `Deck`,
   outside slides. Slide order = template order.
 - **Fixed canvas**, 1920x1080 px by default (`Deck(:width :height)`), scaled as a whole. Every
@@ -50,31 +50,38 @@ at https://github.com/rubasace/araojs/tree/main/docs. Paths below like
 - **Steps are absolute numbers per slide.** `v-step="3"` means "from step 3 of this slide", not
   "after the previous element". Step 1 is what shows when the slide arrives. A slide counts its
   own steps (the largest `v-step` or Snippet highlight step): never declare a count.
-- **A content slide has three zones**: the header (the `h1`/`h2` it starts with), the body
-  (everything else, from the top, right under the header) and the deck's footer (`Deck`'s
-  `#footer`).
+- **A content slide has three zones**: the header (the `h1`/`h2` it starts with, its title, and
+  an `h3` right after it, its subtitle), the body (everything else, from the top, right under the
+  header) and the deck's footer (`Deck`'s `#footer`). The title looks the same whatever its tag.
+  Convention: `h1` on a cover or a section, `h2` a slide's title, `h3` a subtitle or a heading
+  inside (a side of `split`, a block of `grid`).
 - **A layout is a CSS file.** `Slide(layout="x")` gives the slide the class `layout-x`; the
-  library's `cover`, `section`, `split`, `image-left`, `image-right` and the project's
-  `src/layouts/<name>.css` style it. `layout` is `Slide`'s only prop; the layout's tokens
+  library's layouts (`npx arao layouts` lists them) and the project's `src/layouts/<name>.css`
+  style it. `layout` is `Slide`'s only prop; the layout's tokens
   (`--ar-layout-<name>-<thing>`) are attributes of its slides, `<thing>`; its zones are the named
   templates it places; the rest is classes, tokens and `Background`. Each file starts with a doc
-  block saying all that, which `npx arao layouts` prints.
+  block saying all that, the HTML it reads (its semantic form, and the plain one it tolerates),
+  which `npx arao layouts` prints: read it before using a layout.
 - Look comes from the theme (`--ar-*` tokens). Every token has a default; a theme changes some.
-- Global in templates: `Deck Slide Background Img Icon Snippet Notes Cols Rows Grid Center`,
+- Global in templates: `Deck Slide Background Img Icon Snippet Notes Agenda Cols Rows Grid Center`,
   `v-step`, `v-step-from`. Addons (`ProgressBar`, `SlideNumber`) and composables (`useDeck`, `useSlide`)
   are imported from `'araojs'` in `<script setup>`.
 
 ## Rules
 
 Do:
-- Arrange with a `layout` (`cover`, `section`, `split`, `image-left`, `image-right`) or a
-  composition component (`Cols`, `Rows`, `Grid`, `Center`) and their props (`ratio`, `gap`,
+- Arrange with a `layout` (the library's: `cover`, `section`, `split`, `grid`, `quote`,
+  `statement`, `overlay`, `caption`, `agenda`, `image-left`, `image-right`; each's HTML and
+  parameters: `npx arao layouts`) or a composition component (`Cols`, `Rows`, `Grid`, `Center`) and their props (`ratio`, `gap`,
   `align`, `cols`). Tune a layout on one slide with its parameters, attributes named after its
   tokens: `Slide(layout="image-right" columns="3fr 2fr")`, `Slide(layout="split" columns="2fr 1fr")`,
   `Slide(layout="cover" bar="gold")` (each layout's: `npx arao layouts`).
   Another layout's attribute does nothing (and fails `vue-tsc` with `strictTemplates`).
-- Give a slide only its layout's zones as named templates (`template(#image)` on `image-*`,
-  `#left`/`#right` on `split`; `#title` on any): another name is not placed, and fails `vue-tsc`.
+- Give a slide only its layout's zones as named templates (`template(#image)` on `image-*`;
+  `#title` on any): another name is not placed, and fails `vue-tsc`. The other layouts read the
+  body's children: `split`'s two sides, `grid`'s blocks, each a `div`.
+- The talk's agenda: `Slide(layout="agenda")` with `h2` and `Agenda`, which lists the `section`
+  slides' titles, marked done / current / upcoming from where it is.
 - Start every slide with its heading (`h2`): the first heading names the slide in the jump
   menu, presenter view and notes pages, and there is no other way to name it. Something before it
   (a kicker line) makes it body: use `template(#title)` for a richer header.
@@ -86,7 +93,7 @@ Do:
 - A picture behind a slide: `Background(src="city.jpg" opacity="0.3")` inside it (`position`,
   `blur`, `fit` too; or content instead of `src`: a video, a tint). A plain colour or gradient is
   CSS on the slide: `Slide(style="background: #1d2b4a")`.
-- A look one talk repeats (a quote slide, a big number) is a layout: `src/layouts/<name>.css`,
+- A look one talk repeats that no library layout gives is a layout: `src/layouts/<name>.css`,
   tokens named `--ar-layout-<name>-<thing>`, each one an attribute of its slides; never a
   `<thing>` a slide has as an attribute already (`title`, `id`, `hidden`…: use `title-size`).
   It must start with its doc block: a line saying what it is for, `@example` (a slide of it, in

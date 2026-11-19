@@ -11,9 +11,9 @@ export interface LibraryLayouts {
   /**
    * A content slide: the layout of a Slide without one.
    *
-   * Its title (the h1 or h2 its content starts with) in the header, then the body under it,
-   * filling the rest of the slide, from the top; the deck's footer shown. A layout's name with no
-   * CSS behind it is this layout too.
+   * Its title (the h2 its content starts with; an h1 looks the same) and its subtitle (an h3
+   * right after it) in the header, then the body under it, filling the rest of the slide, from
+   * the top; the deck's footer shown. A layout's name with no CSS behind it is this layout too.
    *
    * @example
    * ```pug
@@ -28,9 +28,9 @@ export interface LibraryLayouts {
     /**
      * A content slide: the layout of a Slide without one.
      *
-     * Its title (the h1 or h2 its content starts with) in the header, then the body under it,
-     * filling the rest of the slide, from the top; the deck's footer shown. A layout's name with no
-     * CSS behind it is this layout too.
+     * Its title (the h2 its content starts with; an h1 looks the same) and its subtitle (an h3
+     * right after it) in the header, then the body under it, filling the rest of the slide, from
+     * the top; the deck's footer shown. A layout's name with no CSS behind it is this layout too.
      *
      * @example
      * ```pug
@@ -44,16 +44,261 @@ export interface LibraryLayouts {
     layout?: 'default'
   }
   /**
+   * The talk's agenda: its parts, one big numbered row each.
+   *
+   * An `ol` under the title, its items in large rows numbered in the accent. With `Agenda` in it,
+   * the list is the deck's own (the titles of its `section` slides, kept up to date) and each row
+   * shows where the talk stands, seen from this slide: the parts already given dimmed, number and
+   * all (`done`), the next one in the accent, bold (`current`), the ones after it as they are
+   * (`upcoming`). Each state has its own tokens; give the three the same values to show no state.
+   * A hand-written `ol` is styled the same, with no state.
+   *
+   * Parameters (attributes):
+   * - `current-color`: the next part, the one this slide leads to: its colour (default
+   *   `--ar-accent`)
+   * - `current-number-color`: its number's colour (default `number-color`)
+   * - `current-opacity`: its opacity (default `1`)
+   * - `current-weight`: its font weight (default `700`)
+   * - `done-color`: a part already given: its colour (default `--ar-muted` at 80 %, at least 3:1
+   *   on every built-in theme)
+   * - `done-number-color`: its number's colour (default: its colour)
+   * - `done-opacity`: its opacity (default `1`)
+   * - `done-weight`: its font weight (default `400`)
+   * - `gap`: the space between rows (default `.35em`)
+   * - `number-color`: the numbers' colour (default `--ar-accent`)
+   * - `size`: the rows' size (default 0.65 x `--ar-title`)
+   * - `upcoming-color`: the parts after it: their colour (default `currentColor`)
+   * - `upcoming-number-color`: their numbers' colour (default `number-color`)
+   * - `upcoming-opacity`: their opacity (default `1`)
+   * - `upcoming-weight`: their font weight (default `400`)
+   *
+   * @example
+   * ```pug
+   * Slide(layout="agenda")
+   *   h2 Agenda
+   *   Agenda
+   *
+   * Slide(layout="agenda")
+   *   h2 Today
+   *   ol
+   *     li Why a framework
+   *     li How it works
+   *     li What comes next
+   * ```
+   */
+  'agenda': {
+    /**
+     * The talk's agenda: its parts, one big numbered row each.
+     *
+     * An `ol` under the title, its items in large rows numbered in the accent. With `Agenda` in it,
+     * the list is the deck's own (the titles of its `section` slides, kept up to date) and each row
+     * shows where the talk stands, seen from this slide: the parts already given dimmed, number and
+     * all (`done`), the next one in the accent, bold (`current`), the ones after it as they are
+     * (`upcoming`). Each state has its own tokens; give the three the same values to show no state.
+     * A hand-written `ol` is styled the same, with no state.
+     *
+     * Parameters (attributes):
+     * - `current-color`: the next part, the one this slide leads to: its colour (default
+     *   `--ar-accent`)
+     * - `current-number-color`: its number's colour (default `number-color`)
+     * - `current-opacity`: its opacity (default `1`)
+     * - `current-weight`: its font weight (default `700`)
+     * - `done-color`: a part already given: its colour (default `--ar-muted` at 80 %, at least 3:1
+     *   on every built-in theme)
+     * - `done-number-color`: its number's colour (default: its colour)
+     * - `done-opacity`: its opacity (default `1`)
+     * - `done-weight`: its font weight (default `400`)
+     * - `gap`: the space between rows (default `.35em`)
+     * - `number-color`: the numbers' colour (default `--ar-accent`)
+     * - `size`: the rows' size (default 0.65 x `--ar-title`)
+     * - `upcoming-color`: the parts after it: their colour (default `currentColor`)
+     * - `upcoming-number-color`: their numbers' colour (default `number-color`)
+     * - `upcoming-opacity`: their opacity (default `1`)
+     * - `upcoming-weight`: their font weight (default `400`)
+     *
+     * @example
+     * ```pug
+     * Slide(layout="agenda")
+     *   h2 Agenda
+     *   Agenda
+     *
+     * Slide(layout="agenda")
+     *   h2 Today
+     *   ol
+     *     li Why a framework
+     *     li How it works
+     *     li What comes next
+     * ```
+     */
+    layout?: 'agenda'
+    /**
+     * the next part, the one this slide leads to: its colour (default `--ar-accent`)
+     *
+     * `--ar-layout-agenda-current-color`
+     */
+    currentColor?: string
+    /**
+     * its number's colour (default `number-color`)
+     *
+     * `--ar-layout-agenda-current-number-color`
+     */
+    currentNumberColor?: string
+    /**
+     * its opacity (default `1`)
+     *
+     * `--ar-layout-agenda-current-opacity`
+     */
+    currentOpacity?: string
+    /**
+     * its font weight (default `700`)
+     *
+     * `--ar-layout-agenda-current-weight`
+     */
+    currentWeight?: string
+    /**
+     * a part already given: its colour (default `--ar-muted` at 80 %, at least 3:1 on every
+     * built-in theme)
+     *
+     * `--ar-layout-agenda-done-color`
+     */
+    doneColor?: string
+    /**
+     * its number's colour (default: its colour)
+     *
+     * `--ar-layout-agenda-done-number-color`
+     */
+    doneNumberColor?: string
+    /**
+     * its opacity (default `1`)
+     *
+     * `--ar-layout-agenda-done-opacity`
+     */
+    doneOpacity?: string
+    /**
+     * its font weight (default `400`)
+     *
+     * `--ar-layout-agenda-done-weight`
+     */
+    doneWeight?: string
+    /**
+     * the space between rows (default `.35em`)
+     *
+     * `--ar-layout-agenda-gap`
+     */
+    gap?: string
+    /**
+     * the numbers' colour (default `--ar-accent`)
+     *
+     * `--ar-layout-agenda-number-color`
+     */
+    numberColor?: string
+    /**
+     * the rows' size (default 0.65 x `--ar-title`)
+     *
+     * `--ar-layout-agenda-size`
+     */
+    size?: string
+    /**
+     * the parts after it: their colour (default `currentColor`)
+     *
+     * `--ar-layout-agenda-upcoming-color`
+     */
+    upcomingColor?: string
+    /**
+     * their numbers' colour (default `number-color`)
+     *
+     * `--ar-layout-agenda-upcoming-number-color`
+     */
+    upcomingNumberColor?: string
+    /**
+     * their opacity (default `1`)
+     *
+     * `--ar-layout-agenda-upcoming-opacity`
+     */
+    upcomingOpacity?: string
+    /**
+     * their font weight (default `400`)
+     *
+     * `--ar-layout-agenda-upcoming-weight`
+     */
+    upcomingWeight?: string
+  }
+  /**
+   * One picture, as big as the slide allows, with a caption under it.
+   *
+   * The picture fills the space under the title (or the whole slide, with none), whole and
+   * undistorted; its caption is small and centred under it. Write a `figure` holding an `Img` and
+   * its `figcaption`; the plain form works too: an `Img` followed by a `p`.
+   *
+   * Parameters (attributes):
+   * - `caption-align`: the caption's alignment: `center`, `start` or `end` (default `center`)
+   * - `caption-size`: the caption's size (default `--ar-text-small`)
+   *
+   * @example
+   * ```pug
+   * Slide(layout="caption")
+   *   h2 The city at night
+   *   figure
+   *     Img(file="city.jpg" alt="The city at night, from the hill")
+   *     figcaption Taken from the hill, 2026
+   *
+   * Slide(layout="caption")
+   *   Img(file="city.jpg" alt="The city at night, from the hill")
+   *   p Taken from the hill, 2026
+   * ```
+   */
+  'caption': {
+    /**
+     * One picture, as big as the slide allows, with a caption under it.
+     *
+     * The picture fills the space under the title (or the whole slide, with none), whole and
+     * undistorted; its caption is small and centred under it. Write a `figure` holding an `Img` and
+     * its `figcaption`; the plain form works too: an `Img` followed by a `p`.
+     *
+     * Parameters (attributes):
+     * - `caption-align`: the caption's alignment: `center`, `start` or `end` (default `center`)
+     * - `caption-size`: the caption's size (default `--ar-text-small`)
+     *
+     * @example
+     * ```pug
+     * Slide(layout="caption")
+     *   h2 The city at night
+     *   figure
+     *     Img(file="city.jpg" alt="The city at night, from the hill")
+     *     figcaption Taken from the hill, 2026
+     *
+     * Slide(layout="caption")
+     *   Img(file="city.jpg" alt="The city at night, from the hill")
+     *   p Taken from the hill, 2026
+     * ```
+     */
+    layout?: 'caption'
+    /**
+     * the caption's alignment: `center`, `start` or `end` (default `center`)
+     *
+     * `--ar-layout-caption-caption-align`
+     */
+    captionAlign?: string
+    /**
+     * the caption's size (default `--ar-text-small`)
+     *
+     * `--ar-layout-caption-caption-size`
+     */
+    captionSize?: string
+  }
+  /**
    * The deck's opening slide (and its closing one).
    *
    * Its content, title and all, is one group centred vertically, left-aligned like any slide; its
-   * `h1` is larger; a `.bar` element draws a short bar in the accent; the deck's footer is hidden.
+   * title is larger, in the text colour; a `.bar` element draws a short bar in the accent; the
+   * deck's footer is hidden. Its title is an `h1` (an `h2` looks the same), a subtitle after it an
+   * `h2` or a plain `p`.
    *
    * Parameters (attributes):
    * - `bar`: the `.bar`'s colour (default `--ar-accent`)
    * - `footer`: the deck's footer: `none` hides it, `flex` shows it (default `none`); a slide's
    *   `with-footer` or `no-footer` class wins over it
-   * - `title-size`: the `h1`'s size (default 1.25 x `--ar-title`)
+   * - `title-size`: the title's size (default 1.25 x `--ar-title`)
    *
    * @example
    * ```pug
@@ -68,13 +313,15 @@ export interface LibraryLayouts {
      * The deck's opening slide (and its closing one).
      *
      * Its content, title and all, is one group centred vertically, left-aligned like any slide; its
-     * `h1` is larger; a `.bar` element draws a short bar in the accent; the deck's footer is hidden.
+     * title is larger, in the text colour; a `.bar` element draws a short bar in the accent; the
+     * deck's footer is hidden. Its title is an `h1` (an `h2` looks the same), a subtitle after it an
+     * `h2` or a plain `p`.
      *
      * Parameters (attributes):
      * - `bar`: the `.bar`'s colour (default `--ar-accent`)
      * - `footer`: the deck's footer: `none` hides it, `flex` shows it (default `none`); a slide's
      *   `with-footer` or `no-footer` class wins over it
-     * - `title-size`: the `h1`'s size (default 1.25 x `--ar-title`)
+     * - `title-size`: the title's size (default 1.25 x `--ar-title`)
      *
      * @example
      * ```pug
@@ -99,11 +346,152 @@ export interface LibraryLayouts {
      */
     footer?: string
     /**
-     * the `h1`'s size (default 1.25 x `--ar-title`)
+     * the title's size (default 1.25 x `--ar-title`)
      *
      * `--ar-layout-cover-title-size`
      */
     titleSize?: string
+  }
+  /**
+   * A grid of blocks: features, pillars, a team, logos.
+   *
+   * Each child of the body is a block, centred in its cell: an optional picture or icon first
+   * (`Icon`, `Img`, an `img` or an `svg`, drawn at one size), then its `h3` and a `p` (muted),
+   * styled at any depth in the block (a link around them, a component of the project's). The
+   * blocks wrap in rows, the last one centred when it is not full; how many go in a row follows how
+   * many there are, so the rows are balanced: 1 to 3 in one row, 4 as 2 + 2, 5 as 3 + 2, 6 as 3 + 3,
+   * 7 as 4 + 3, 8 as 4 + 4, 9 as 3 + 3 + 3, 10 as 5 + 5, 11 as 4 + 4 + 3, 12 as 4 x 3; 13 and more
+   * wrap at `max-columns`. `columns` fixes the count instead (4 with 9 blocks: 4 + 4 + 1), and
+   * `rows` the rows (2 with 9 blocks: 5 + 4). With or without a title; the rows sit in the middle
+   * of the space left (a slide's `top` or `bottom` class moves them). Write each block as an
+   * element (a `div`) holding its content.
+   *
+   * Parameters (attributes):
+   * - `align`: a block's content: `center` or `start` (default `center`)
+   * - `cards`: each block's background, which makes it a card: a colour, a gradient
+   *   (`color-mix(in srgb, currentColor 8%, transparent)`; default `none`)
+   * - `columns`: blocks per row, whatever their count (default: balanced by their count, as
+   *   above)
+   * - `gap`: the space between the blocks, the cards with `cards` (default `--ar-gap-sm`)
+   * - `icon-size`: the size of a block's leading picture or icon (default `3em`, three times the
+   *   text's size; `2em` with 9 blocks or more)
+   * - `max-columns`: the most blocks in a row: 13 blocks and more wrap there, and no balanced
+   *   row is wider (default `5`)
+   * - `rows`: how many rows, whatever their count: a row holds the count divided by it, rounded
+   *   up (counted up to 24 blocks; `columns` wins over it)
+   *
+   * @example
+   * ```pug
+   * Slide(layout="grid")
+   *   h2 Ship a talk
+   *   div
+   *     Icon(name="lucide:file-code")
+   *     h3 One Vue file
+   *     p Slides as components
+   *   div
+   *     Icon(name="lucide:monitor")
+   *     h3 Any screen
+   *     p One canvas, scaled
+   *   div
+   *     Icon(name="lucide:printer")
+   *     h3 And a PDF
+   *     p Every step a page
+   * ```
+   */
+  'grid': {
+    /**
+     * A grid of blocks: features, pillars, a team, logos.
+     *
+     * Each child of the body is a block, centred in its cell: an optional picture or icon first
+     * (`Icon`, `Img`, an `img` or an `svg`, drawn at one size), then its `h3` and a `p` (muted),
+     * styled at any depth in the block (a link around them, a component of the project's). The
+     * blocks wrap in rows, the last one centred when it is not full; how many go in a row follows how
+     * many there are, so the rows are balanced: 1 to 3 in one row, 4 as 2 + 2, 5 as 3 + 2, 6 as 3 + 3,
+     * 7 as 4 + 3, 8 as 4 + 4, 9 as 3 + 3 + 3, 10 as 5 + 5, 11 as 4 + 4 + 3, 12 as 4 x 3; 13 and more
+     * wrap at `max-columns`. `columns` fixes the count instead (4 with 9 blocks: 4 + 4 + 1), and
+     * `rows` the rows (2 with 9 blocks: 5 + 4). With or without a title; the rows sit in the middle
+     * of the space left (a slide's `top` or `bottom` class moves them). Write each block as an
+     * element (a `div`) holding its content.
+     *
+     * Parameters (attributes):
+     * - `align`: a block's content: `center` or `start` (default `center`)
+     * - `cards`: each block's background, which makes it a card: a colour, a gradient
+     *   (`color-mix(in srgb, currentColor 8%, transparent)`; default `none`)
+     * - `columns`: blocks per row, whatever their count (default: balanced by their count, as
+     *   above)
+     * - `gap`: the space between the blocks, the cards with `cards` (default `--ar-gap-sm`)
+     * - `icon-size`: the size of a block's leading picture or icon (default `3em`, three times the
+     *   text's size; `2em` with 9 blocks or more)
+     * - `max-columns`: the most blocks in a row: 13 blocks and more wrap there, and no balanced
+     *   row is wider (default `5`)
+     * - `rows`: how many rows, whatever their count: a row holds the count divided by it, rounded
+     *   up (counted up to 24 blocks; `columns` wins over it)
+     *
+     * @example
+     * ```pug
+     * Slide(layout="grid")
+     *   h2 Ship a talk
+     *   div
+     *     Icon(name="lucide:file-code")
+     *     h3 One Vue file
+     *     p Slides as components
+     *   div
+     *     Icon(name="lucide:monitor")
+     *     h3 Any screen
+     *     p One canvas, scaled
+     *   div
+     *     Icon(name="lucide:printer")
+     *     h3 And a PDF
+     *     p Every step a page
+     * ```
+     */
+    layout?: 'grid'
+    /**
+     * a block's content: `center` or `start` (default `center`)
+     *
+     * `--ar-layout-grid-align`
+     */
+    align?: string
+    /**
+     * each block's background, which makes it a card: a colour, a gradient (`color-mix(in srgb,
+     * currentColor 8%, transparent)`; default `none`)
+     *
+     * `--ar-layout-grid-cards`
+     */
+    cards?: string
+    /**
+     * blocks per row, whatever their count (default: balanced by their count, as above)
+     *
+     * `--ar-layout-grid-columns`
+     */
+    columns?: string
+    /**
+     * the space between the blocks, the cards with `cards` (default `--ar-gap-sm`)
+     *
+     * `--ar-layout-grid-gap`
+     */
+    gap?: string
+    /**
+     * the size of a block's leading picture or icon (default `3em`, three times the text's size;
+     * `2em` with 9 blocks or more)
+     *
+     * `--ar-layout-grid-icon-size`
+     */
+    iconSize?: string
+    /**
+     * the most blocks in a row: 13 blocks and more wrap there, and no balanced row is wider
+     * (default `5`)
+     *
+     * `--ar-layout-grid-max-columns`
+     */
+    maxColumns?: string
+    /**
+     * how many rows, whatever their count: a row holds the count divided by it, rounded up
+     * (counted up to 24 blocks; `columns` wins over it)
+     *
+     * `--ar-layout-grid-rows`
+     */
+    rows?: string
   }
   /**
    * A picture beside the text, the picture on the left.
@@ -274,17 +662,165 @@ export interface LibraryLayouts {
     inset?: string
   }
   /**
+   * Text over a full-slide picture: a `Background`, the title and a line over it.
+   *
+   * Meant for a slide with a `Background`: its title and its text sit in a corner (the bottom left
+   * by default), white, over a dark gradient that keeps them legible on any picture. The title is
+   * an `h2`, the text a `p` (or an `h3` subtitle) after it.
+   *
+   * Parameters (attributes):
+   * - `color`: the text's colour, its title's and its footer's (default `#fff`)
+   * - `position`: where the text sits, as CSS `place-content`: block then inline (`end start`,
+   *   the bottom left, by default; `start end` the top right, `center` the middle)
+   * - `scrim`: what is drawn between the picture and the text, as a CSS background (default a
+   *   dark gradient rising from the bottom; give one that follows `position`, or `none`)
+   *
+   * @example
+   * ```pug
+   * Slide(layout="overlay")
+   *   Background(src="city.jpg")
+   *   h2 Built for the city
+   *   p Twelve teams, one platform.
+   * ```
+   */
+  'overlay': {
+    /**
+     * Text over a full-slide picture: a `Background`, the title and a line over it.
+     *
+     * Meant for a slide with a `Background`: its title and its text sit in a corner (the bottom left
+     * by default), white, over a dark gradient that keeps them legible on any picture. The title is
+     * an `h2`, the text a `p` (or an `h3` subtitle) after it.
+     *
+     * Parameters (attributes):
+     * - `color`: the text's colour, its title's and its footer's (default `#fff`)
+     * - `position`: where the text sits, as CSS `place-content`: block then inline (`end start`,
+     *   the bottom left, by default; `start end` the top right, `center` the middle)
+     * - `scrim`: what is drawn between the picture and the text, as a CSS background (default a
+     *   dark gradient rising from the bottom; give one that follows `position`, or `none`)
+     *
+     * @example
+     * ```pug
+     * Slide(layout="overlay")
+     *   Background(src="city.jpg")
+     *   h2 Built for the city
+     *   p Twelve teams, one platform.
+     * ```
+     */
+    layout?: 'overlay'
+    /**
+     * the text's colour, its title's and its footer's (default `#fff`)
+     *
+     * `--ar-layout-overlay-color`
+     */
+    color?: string
+    /**
+     * where the text sits, as CSS `place-content`: block then inline (`end start`, the bottom
+     * left, by default; `start end` the top right, `center` the middle)
+     *
+     * `--ar-layout-overlay-position`
+     */
+    position?: string
+    /**
+     * what is drawn between the picture and the text, as a CSS background (default a dark gradient
+     * rising from the bottom; give one that follows `position`, or `none`)
+     *
+     * `--ar-layout-overlay-scrim`
+     */
+    scrim?: string
+  }
+  /**
+   * One quotation, big, its author under it.
+   *
+   * The quote is a `blockquote`, opened by a large decorative mark; its author a `cite` after it
+   * (small, muted). The two of them sit in the middle of the slide; the deck's footer stays. The
+   * plain form works too: two `p`, the quote and then its author.
+   *
+   * Parameters (attributes):
+   * - `align`: `center` or `start`: the quote and its author, across the slide (default
+   *   `center`)
+   * - `mark`: the decorative mark: a character, as a CSS string, its quotes written
+   *   (`mark="'«'"`; default `'“'`)
+   * - `mark-color`: its colour (default `--ar-accent`)
+   * - `size`: the quote's size (default 0.8 x `--ar-title`)
+   *
+   * @example
+   * ```pug
+   * Slide(layout="quote")
+   *   blockquote Simplicity is prerequisite for reliability.
+   *   cite Edsger W. Dijkstra
+   *
+   * Slide(layout="quote" align="start")
+   *   p Make it work, make it right, make it fast.
+   *   p Kent Beck
+   * ```
+   */
+  'quote': {
+    /**
+     * One quotation, big, its author under it.
+     *
+     * The quote is a `blockquote`, opened by a large decorative mark; its author a `cite` after it
+     * (small, muted). The two of them sit in the middle of the slide; the deck's footer stays. The
+     * plain form works too: two `p`, the quote and then its author.
+     *
+     * Parameters (attributes):
+     * - `align`: `center` or `start`: the quote and its author, across the slide (default
+     *   `center`)
+     * - `mark`: the decorative mark: a character, as a CSS string, its quotes written
+     *   (`mark="'«'"`; default `'“'`)
+     * - `mark-color`: its colour (default `--ar-accent`)
+     * - `size`: the quote's size (default 0.8 x `--ar-title`)
+     *
+     * @example
+     * ```pug
+     * Slide(layout="quote")
+     *   blockquote Simplicity is prerequisite for reliability.
+     *   cite Edsger W. Dijkstra
+     *
+     * Slide(layout="quote" align="start")
+     *   p Make it work, make it right, make it fast.
+     *   p Kent Beck
+     * ```
+     */
+    layout?: 'quote'
+    /**
+     * `center` or `start`: the quote and its author, across the slide (default `center`)
+     *
+     * `--ar-layout-quote-align`
+     */
+    align?: string
+    /**
+     * the decorative mark: a character, as a CSS string, its quotes written (`mark="'«'"`; default
+     * `'“'`)
+     *
+     * `--ar-layout-quote-mark`
+     */
+    mark?: string
+    /**
+     * its colour (default `--ar-accent`)
+     *
+     * `--ar-layout-quote-mark-color`
+     */
+    markColor?: string
+    /**
+     * the quote's size (default 0.8 x `--ar-title`)
+     *
+     * `--ar-layout-quote-size`
+     */
+    size?: string
+  }
+  /**
    * A divider between the parts of a talk.
    *
-   * Its content centred both ways, on the accent; its `h1` larger; the deck's footer hidden. Its
-   * title and its footer take its text colour.
+   * Its content centred both ways, on the accent; its title larger; the deck's footer hidden. Its
+   * title, its subtitle and its footer take its text colour. Its title is an `h1` (an `h2` looks the
+   * same), a subtitle after it an `h2` or a plain `p`.
    *
    * Parameters (attributes):
    * - `bg`: the slide's background (default `--ar-accent`); the theme's default background
    *   (`--ar-slide-bg-image`) is drawn over it
    * - `fg`: its text, its title and its footer (default `--ar-accent-fg`)
    * - `footer`: the deck's footer: `none` hides it, `flex` shows it (default `none`)
-   * - `title-size`: the `h1`'s size (default 1.4 x `--ar-title`)
+   * - `title-size`: the title's size (default 1.4 x `--ar-title`)
    *
    * @example
    * ```pug
@@ -296,15 +832,16 @@ export interface LibraryLayouts {
     /**
      * A divider between the parts of a talk.
      *
-     * Its content centred both ways, on the accent; its `h1` larger; the deck's footer hidden. Its
-     * title and its footer take its text colour.
+     * Its content centred both ways, on the accent; its title larger; the deck's footer hidden. Its
+     * title, its subtitle and its footer take its text colour. Its title is an `h1` (an `h2` looks the
+     * same), a subtitle after it an `h2` or a plain `p`.
      *
      * Parameters (attributes):
      * - `bg`: the slide's background (default `--ar-accent`); the theme's default background
      *   (`--ar-slide-bg-image`) is drawn over it
      * - `fg`: its text, its title and its footer (default `--ar-accent-fg`)
      * - `footer`: the deck's footer: `none` hides it, `flex` shows it (default `none`)
-     * - `title-size`: the `h1`'s size (default 1.4 x `--ar-title`)
+     * - `title-size`: the title's size (default 1.4 x `--ar-title`)
      *
      * @example
      * ```pug
@@ -333,70 +870,76 @@ export interface LibraryLayouts {
      */
     footer?: string
     /**
-     * the `h1`'s size (default 1.4 x `--ar-title`)
+     * the title's size (default 1.4 x `--ar-title`)
      *
      * `--ar-layout-section-title-size`
      */
     titleSize?: string
   }
   /**
-   * Two zones side by side, under the slide's title.
+   * Two sides side by side, under the slide's title.
    *
-   * The slide's header (and the body, when there is one: a lead line) across the top, then the two
-   * zones, `#left` and `#right`, filling the rest of the slide. A zone keeps its width: what is
-   * wider is clipped at its edge.
-   *
-   * Zones (named templates):
-   * - `#left`: the left side, under the header
-   * - `#right`: the right side, under the header
+   * The body's two first children are the two sides, left and right, filling the rest of the slide
+   * under the header; each may start with an `h3`, its own heading. A side keeps its width: what is
+   * wider is clipped at its edge. Write each side as an element (a `div`, a `section`) holding its
+   * content; a third child and more are laid out in the same two columns, row after row.
    *
    * Parameters (attributes):
-   * - `columns`: the two zones' widths, left to right, as CSS grid columns (default `1fr 1fr`)
+   * - `columns`: the two sides' widths, left to right, as CSS grid columns (default `1fr 1fr`)
+   * - `divider`: a line between them, as a CSS border (`2px solid currentColor`; default `none`)
    * - `gap`: the space between them (default `--ar-gap-lg`)
    *
    * @example
    * ```pug
    * Slide(layout="split")
    *   h2 Before and after
-   *   template(#left)
+   *   div
+   *     h3 Before
    *     p Every team rolled its own.
-   *   template(#right)
-   *     p(v-step="2") One starter, one version.
+   *   div(v-step="2")
+   *     h3 After
+   *     p One starter, one version.
    * ```
    */
   'split': {
     /**
-     * Two zones side by side, under the slide's title.
+     * Two sides side by side, under the slide's title.
      *
-     * The slide's header (and the body, when there is one: a lead line) across the top, then the two
-     * zones, `#left` and `#right`, filling the rest of the slide. A zone keeps its width: what is
-     * wider is clipped at its edge.
-     *
-     * Zones (named templates):
-     * - `#left`: the left side, under the header
-     * - `#right`: the right side, under the header
+     * The body's two first children are the two sides, left and right, filling the rest of the slide
+     * under the header; each may start with an `h3`, its own heading. A side keeps its width: what is
+     * wider is clipped at its edge. Write each side as an element (a `div`, a `section`) holding its
+     * content; a third child and more are laid out in the same two columns, row after row.
      *
      * Parameters (attributes):
-     * - `columns`: the two zones' widths, left to right, as CSS grid columns (default `1fr 1fr`)
+     * - `columns`: the two sides' widths, left to right, as CSS grid columns (default `1fr 1fr`)
+     * - `divider`: a line between them, as a CSS border (`2px solid currentColor`; default `none`)
      * - `gap`: the space between them (default `--ar-gap-lg`)
      *
      * @example
      * ```pug
      * Slide(layout="split")
      *   h2 Before and after
-     *   template(#left)
+     *   div
+     *     h3 Before
      *     p Every team rolled its own.
-     *   template(#right)
-     *     p(v-step="2") One starter, one version.
+     *   div(v-step="2")
+     *     h3 After
+     *     p One starter, one version.
      * ```
      */
     layout?: 'split'
     /**
-     * the two zones' widths, left to right, as CSS grid columns (default `1fr 1fr`)
+     * the two sides' widths, left to right, as CSS grid columns (default `1fr 1fr`)
      *
      * `--ar-layout-split-columns`
      */
     columns?: string
+    /**
+     * a line between them, as a CSS border (`2px solid currentColor`; default `none`)
+     *
+     * `--ar-layout-split-divider`
+     */
+    divider?: string
     /**
      * the space between them (default `--ar-gap-lg`)
      *
@@ -404,11 +947,85 @@ export interface LibraryLayouts {
      */
     gap?: string
   }
+  /**
+   * One statement, huge: a phrase to remember, or a figure ("90 %").
+   *
+   * The first thing the slide says is huge, in the accent; the rest is small under it, muted; the
+   * whole of it in the middle of the slide. Write the statement as the slide's title, an `h2` (the
+   * jump menu shows it), and the rest as a `p` or an `h3` after it; the plain form works too: a `p`
+   * first, the statement, then the rest.
+   *
+   * Parameters (attributes):
+   * - `align`: `center` or `start`: the statement and the rest, across the slide (default
+   *   `center`)
+   * - `color`: its colour (default `--ar-accent`)
+   * - `size`: the statement's size (default 1.5 x `--ar-title`)
+   *
+   * @example
+   * ```pug
+   * Slide(layout="statement")
+   *   h2 90 %
+   *   p of our releases ship on a Friday
+   *
+   * Slide(layout="statement" align="start" color="currentColor")
+   *   p Nothing ships without a test.
+   *   p.muted The one rule of this team
+   * ```
+   */
+  'statement': {
+    /**
+     * One statement, huge: a phrase to remember, or a figure ("90 %").
+     *
+     * The first thing the slide says is huge, in the accent; the rest is small under it, muted; the
+     * whole of it in the middle of the slide. Write the statement as the slide's title, an `h2` (the
+     * jump menu shows it), and the rest as a `p` or an `h3` after it; the plain form works too: a `p`
+     * first, the statement, then the rest.
+     *
+     * Parameters (attributes):
+     * - `align`: `center` or `start`: the statement and the rest, across the slide (default
+     *   `center`)
+     * - `color`: its colour (default `--ar-accent`)
+     * - `size`: the statement's size (default 1.5 x `--ar-title`)
+     *
+     * @example
+     * ```pug
+     * Slide(layout="statement")
+     *   h2 90 %
+     *   p of our releases ship on a Friday
+     *
+     * Slide(layout="statement" align="start" color="currentColor")
+     *   p Nothing ships without a test.
+     *   p.muted The one rule of this team
+     * ```
+     */
+    layout?: 'statement'
+    /**
+     * `center` or `start`: the statement and the rest, across the slide (default `center`)
+     *
+     * `--ar-layout-statement-align`
+     */
+    align?: string
+    /**
+     * its colour (default `--ar-accent`)
+     *
+     * `--ar-layout-statement-color`
+     */
+    color?: string
+    /**
+     * the statement's size (default 1.5 x `--ar-title`)
+     *
+     * `--ar-layout-statement-size`
+     */
+    size?: string
+  }
 }
 
 export interface LibraryLayoutZones {
   'default': {}
+  'agenda': {}
+  'caption': {}
   'cover': {}
+  'grid': {}
   'image-left': {
     /** the picture's side: the left of the slide, full height, edge to edge */
     image: true
@@ -417,11 +1034,9 @@ export interface LibraryLayoutZones {
     /** the picture's side: the right of the slide, full height, edge to edge */
     image: true
   }
+  'overlay': {}
+  'quote': {}
   'section': {}
-  'split': {
-    /** the left side, under the header */
-    left: true
-    /** the right side, under the header */
-    right: true
-  }
+  'split': {}
+  'statement': {}
 }
