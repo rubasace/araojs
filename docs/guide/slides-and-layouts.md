@@ -82,7 +82,7 @@ Slide(layout="split" style="--ar-layout-split-columns: 2fr 1fr")
 ## Zones: header, body, footer
 
 Every slide is laid out from the same parts; the `default` layout stacks them in a column inside
-the slide's padding (`--ar-pad`). Nothing to declare: the slide finds them.
+the slide's padding (`--ar-pad-y`, `--ar-pad-x`). Nothing to declare: the slide finds them.
 
 ```pug
 Slide
@@ -118,8 +118,9 @@ Slide
   bottom of the slide, with the slide's side padding and its text in `--ar-footer-size` and
   `--ar-footer-color`. Its children sit in a row, spread by `--ar-footer-align` (`space-between`:
   one at the start, two at both ends). It sits in the slide's bottom padding, above the content;
-  where it shows, that padding is at least as tall as the band (the larger of `--ar-pad`'s bottom
-  and `--ar-footer-height`), so the content never sits under it. Shown on `default`, `split` and `image-*`
+  that padding is always at least as tall as the band (the larger of `--ar-pad-y` and
+  `--ar-footer-height`), footer or not, so the content never sits under it and every slide's body
+  ends at the same place. Shown on `default`, `split` and `image-*`
   (over the picture), hidden on `cover` and `section`: each layout says so with a token
   (`--ar-layout-cover-footer: flex` shows it on every cover). On a section it takes the section's
   text colour.
@@ -183,10 +184,8 @@ can change them. A default that is another token (`--ar-accent`, `--ar-title`) m
 the slide, not at `:root` (`var()` is resolved where it is declared: a theme's `--ar-accent` would
 never reach it), so the file resolves each public token into a private one in a
 `:where(.layout-<name>)` block, and its rules read the private ones. A layout that moves the
-slide's padding onto its zones (as `image-*` do) keeps them clear of the footer the same way: a
-slide whose footer shows carries `.ar-footed`, and
-`padding-bottom: max(var(--ar-footer-height), var(--_ar-pad-bottom, 0px))` (the engine sets
-`--_ar-pad-bottom`, the bottom of `--ar-pad`) is the room it needs.
+slide's padding onto its zones (as `image-*` do) keeps them clear of the footer the same way:
+`padding-bottom: max(var(--ar-pad-y), var(--ar-footer-height))`.
 
 ```css
 /* src/layouts/quote.css: one big quote, centred on the slide, its author under it

@@ -13,7 +13,8 @@
   --ar-font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   --ar-text-base: 40px;
   --ar-title: 88px;
-  --ar-pad: 96px 120px;
+  --ar-pad-y: 96px;
+  --ar-pad-x: 120px;
   --ar-radius: 16px;
   /* code windows */
   --ar-code-theme: material-theme-darker;

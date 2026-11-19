@@ -41,6 +41,8 @@
 - `layout="two-cols"` is gone: use `Cols` or `layout="split"`.
 - A theme's `--ar-image-inset` does nothing now: it is `--ar-layout-image-left-inset` and
   `--ar-layout-image-right-inset`, one per layout.
+- A theme's `--ar-pad` does nothing now: it is two tokens, `--ar-pad-y` (top and bottom) and
+  `--ar-pad-x` (both sides). The bottom padding is always at least `--ar-footer-height`.
 - `.center` on a block used to set `text-align: center` only; it now also centres the block's
   content vertically when the block is taller than it (`align-content`), and on a `Slide` it
   centres the body both ways. For the old effect alone, `style="text-align: center"`.

@@ -54,7 +54,8 @@
   --ar-placeholder: currentColor;    /* the missing picture or icon box (the text colour where drawn) */
 
   /* ---- the slide: spacing ---- */
-  --ar-pad: 110px 140px;             /* slide padding, the safe margin */
+  --ar-pad-y: 110px;                 /* slide padding, the safe margin: top and bottom */
+  --ar-pad-x: 140px;                 /* … and both sides */
   --ar-gap-sm: 24px;                 /* gap="sm", the footer's children */
   --ar-gap-md: 48px;                 /* gap="md", the default gap of Cols, Rows, Grid */
   --ar-gap-lg: 80px;                 /* gap="lg", between split's zones (layouts/split.css) */
