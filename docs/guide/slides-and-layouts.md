@@ -242,6 +242,10 @@ declare module 'araojs' {
 - A `tsconfig` that does not include `src/**` needs the file in its `include`, or the file moved
   where it looks: `arao({ dts: 'types/arao-layouts.d.ts' })`. `arao({ dts: false })` writes none
   ([Vite plugin](../reference/vite-plugin.md)).
+- A layout chosen from data (`:layout="s.layout"`, with `s.layout` a `string`) fails the type check:
+  type the data with the names, `keyof SlideLayouts` (`import type { SlideLayouts } from 'araojs'`), or
+  cast it: `:layout="s.layout as keyof SlideLayouts"`.
+- Turning `dts` off or moving it leaves the old file behind, still accepting its names: delete it.
 - A name with no file of its own (a class a theme styles, `layout="wide"`) still works at
   runtime; for the type check to take it, declare it the same way in a `.d.ts` of the project:
   `declare module 'araojs' { interface SlideLayouts { wide: true } }`.
