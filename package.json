@@ -45,7 +45,7 @@
   "scripts": {
     "dev": "vite",
     "typecheck": "vue-tsc --noEmit",
-    "build": "vue-tsc --noEmit && vite build && vue-tsc -p tsconfig.build.json && node scripts/bundle-types.mjs",
+    "build": "node scripts/layout-types.mjs && vue-tsc --noEmit && vite build && vue-tsc -p tsconfig.build.json && node scripts/bundle-types.mjs",
     "prepack": "npm run build",
     "smoke": "node scripts/smoke.mjs",
     "docs:dev": "vitepress dev docs",

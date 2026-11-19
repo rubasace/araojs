@@ -25,7 +25,9 @@
 //      src/layouts; a project cover.css replaces the library's (a message says so, and its CSS is
 //      not in the build), and a layout file whose name is no layout's, or that names no
 //      .layout-<name>, warns and is loaded; each build writes src/arao-layouts.d.ts, the project's
-//      layouts' valid names (for the editor and vue-tsc);
+//      layouts' valid names (for the editor and vue-tsc), each with its parameters (the tokens it
+//      reads: the playground's quote's), the project's cover's replacing the library's, and its
+//      token named as an HTML attribute (--ar-layout-cover-title) none, with one warning;
 //      with a theme source that is a package not installed, one that gives no theme, one whose
 //      themes folder is outside it, or a bare name that is a root folder, it must stop with an
 //      [arao] error (the last one with the "./" hint); a name two sources give warns once (a
@@ -54,6 +56,12 @@
 //      covers stay covers on /?presenter; ?deck=<name> is moved to /<name>, keeping the rest of
 //      the query and the hash; an unknown path, and an unknown ?deck=, show the list with a
 //      notice and one warning
+//   4b. a layout's parameters as Slide's attributes, under both servers: the second deck's cover
+//      binds bar to a ref (BAR), which is --ar-layout-cover-bar in its section's style (its .bar
+//      painted with it), not an attribute, in the audience view, the presenter view, export mode
+//      and its thumbnail in the list, and follows the ref; an attribute that is no parameter
+//      (data-smoke) still reaches the section; the playground's image-right (the library's
+//      layout) takes columns="3fr 2fr", its quote (the project's) size="72px"
 //   5. useDeck()'s face, under the dev server, on the second deck: frozen, its refs read-only all
 //      the way down, setTheme refuses a name the deck has not (one [arao] warning), and in the
 //      presenter view's preview no function acts
@@ -82,7 +90,9 @@
 //      Background with v-step on it and one inside an element with v-step show in the slide's
 //      background layer from their steps on, the slide counts those steps, and nothing warns
 //   5f. the layouts' names, under the dev server: a layout file added to src/layouts while it runs
-//      is in src/arao-layouts.d.ts, and out again once removed; an edit leaves the file untouched
+//      is in src/arao-layouts.d.ts, and out again once removed; an edit that changes no token
+//      leaves the file untouched, one that reads a token more adds that parameter to it and to
+//      the tokens module the dev server serves
 //   6. the talk's length, under the dev server, on the second deck (duration="15m"), in the
 //      presenter's bar: 1h30 typed with real keys moves no slide and opens no jump menu, and the
 //      countdown follows in an audience window too (useDeck()); after an apply from the keyboard,
@@ -209,10 +219,14 @@ const LINKED_PKG = '@smoke/linked-themes'
 // the plugin's theme sources, in order
 const THEME_SOURCES = `themes: ['src/themes', 'src/venues', '${HALL_PKG}', '${LINKED_PKG}']`
 const DURATION = 15 * 60000
+// Its cover has a parameter of its layout, bound to a ref the page can change (window.__bar), the
+// colour of its .bar (--ar-layout-cover-bar: BAR), and an attribute that is none (data-smoke)
+const BAR = ['rgb(1, 2, 3)', 'rgb(4, 5, 6)']
 const SECOND = ['Second.vue', `<template lang="pug">
 Deck(:themes="['default', '${THEME}']" duration="15m")
   Faces
-  Slide(layout="cover")
+  Slide(layout="cover" :bar="bar" data-smoke="kept")
+    .bar
     h1 ${MARK}
   Slide
     h2 Picked from the list
@@ -220,8 +234,10 @@ Deck(:themes="['default', '${THEME}']" duration="15m")
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useDeck } from '${PKG}'
 const Faces = { setup: () => ((window.__faces ??= []).push(useDeck()), () => null) }
+const bar = (window.__bar = ref('${BAR[0]}'))
 </script>
 `]
 
@@ -542,7 +558,13 @@ try {
   // as the plugin sorts them; null when there is no such file
   const typedLayouts = async () => {
     const text = await readFile(join(project, 'src', 'arao-layouts.d.ts'), 'utf8').catch(() => null)
-    return text == null ? null : [...text.matchAll(/^\s*'([^']+)': true$/gm)].map((m) => m[1]).join(', ')
+    return text == null ? null : [...text.matchAll(/^ {4}'([^']+)': /gm)].map((m) => m[1]).join(', ')
+  }
+  // and the parameters it typed for one of them (camelCase, as written there); null when none
+  const typedParams = async (name) => {
+    const text = await readFile(join(project, 'src', 'arao-layouts.d.ts'), 'utf8').catch(() => '')
+    const body = text.match(new RegExp(`^ {4}'${name}': \\{([^}]*)\\}`, 'm'))?.[1]
+    return body == null ? null : [...body.matchAll(/^\s*(\w+)\?: string$/gm)].map((m) => m[1]).join(', ')
   }
   const ownLayouts = async () => (await readdir(join(project, 'src', 'layouts')).catch(() => [])).filter((f) => f.endsWith('.css')).map((f) => basename(f, '.css')).sort()
 
@@ -565,7 +587,17 @@ try {
     else if (missing.length) fail(`vite build: no CSS for the layouts ${missing.join(', ')} in the build`)
     else if (typed !== own.join(', ')) fail(`vite build: src/arao-layouts.d.ts ${typed == null ? 'not written' : `lists ${typed || 'no layout'}`}, not ${own.join(', ')}`)
     else console.log(`  layouts: ${library.join(', ')} (the library's) and ${own.join(', ')} (the project's) in the build, and the project's in src/arao-layouts.d.ts`)
-    const added = { 'cover.css': '.layout-cover { --smoke-own-cover: 1; }\n', 'bad name.css': '.x { --smoke-bad: 1; }\n', 'plain.css': ':root { --smoke-plain: 1; }\n' }
+    // the playground's quote.css reads --ar-layout-quote-footer, -mark and -size: its parameters
+    const quote = await typedParams('quote')
+    if (quote !== 'footer, mark, size') fail(`vite build: src/arao-layouts.d.ts types quote's parameters as ${quote ?? 'nothing'}, not footer, mark, size`)
+    else console.log(`  layout parameters: quote's (${quote}) in src/arao-layouts.d.ts`)
+    // the project's cover replaces the library's, its parameters too: pad, not bar, footer and
+    // title-size; its --ar-layout-cover-title is none (title is an HTML attribute), with a warning
+    const added = {
+      'cover.css': '.layout-cover { --smoke-own-cover: 1; padding: var(--ar-layout-cover-pad, 0); color: var(--ar-layout-cover-title, inherit); }\n',
+      'bad name.css': '.x { --smoke-bad: 1; }\n',
+      'plain.css': ':root { --smoke-plain: 1; }\n',
+    }
     try {
       for (const [f, text] of Object.entries(added)) await writeFile(join(project, 'src', 'layouts', f), text)
       const { code, out, err } = await exec(process.execPath, [viteBin, 'build'], project)
@@ -579,9 +611,12 @@ try {
       else if (!/\[arao\] layout "cover" of src\/layouts\/cover\.css replaces the library's one/.test(said)) fail(`${what}: nothing says the project's cover replaces the library's`)
       else if (!/\[arao\] src\/layouts\/bad name\.css: "bad name" is no layout's name/.test(said)) fail(`${what}: no warning about "bad name"`)
       else if (!/\[arao\] src\/layouts\/plain\.css names no \.layout-plain/.test(said)) fail(`${what}: no warning about plain.css`)
+      else if (!/\[arao\] src\/layouts\/cover\.css: --ar-layout-cover-title is no attribute of Slide\(layout="cover"\): "title" is an HTML attribute/.test(said)) fail(`${what}: no warning that --ar-layout-cover-title is no attribute`)
+      else if (said.match(/--ar-layout-cover-title is no attribute/g).length !== 1) fail(`${what}: the warning about --ar-layout-cover-title is given ${said.match(/--ar-layout-cover-title is no attribute/g).length} times, not once`)
+      else if ((typed = await typedParams('cover')) !== 'pad') fail(`${what}: src/arao-layouts.d.ts types cover's parameters as ${typed ?? 'nothing'}, not pad (the project's, which replace the library's)`)
       else if (!['--smoke-own-cover', '--smoke-bad', '--smoke-plain'].every((t) => css.includes(t))) fail(`${what}: the project's files are not all in the build`)
       else if (css.includes('--_ar-cover-bar')) fail(`${what}: the library's cover.css is in the build`)
-      else console.log('  layouts: a project cover replaces the library\'s, saying so; a file with a bad name, and one naming no layout, warn and load; the valid names are typed')
+      else console.log('  layouts: a project cover replaces the library\'s, saying so, its parameters too; a token named as an HTML attribute warns once; a file with a bad name, and one naming no layout, warn and load; the valid names are typed')
     } finally {
       for (const f of Object.keys(added)) await rm(join(project, 'src', 'layouts', f), { force: true })
     }
@@ -966,33 +1001,123 @@ try {
     for (const c of complaints) fail(`dev Background steps: ${c}`)
   }
 
+  // a layout's parameters, set as attributes: on the second deck's cover, bar (a ref, BAR[0]) is
+  // --ar-layout-cover-bar in the section's style, which the .bar is painted with, in the audience
+  // view, the presenter view (its slide and its preview's copy), export mode and the list's thumbnail;
+  // not an attribute of the section, where data-smoke (no parameter) is. The ref changed
+  // (BAR[1]): the bar follows. On the playground's deck: the library's image-right takes
+  // columns="3fr 2fr" (its columns, 3 to 2), the project's quote size="72px" (its quote's size).
+  async function layoutParams(base, mode) {
+    const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
+    const complaints = []
+    page.on('console', (m) => ['warning', 'error'].includes(m.type()) && complaints.push(`console ${m.type()}: ${m.text()}`))
+    page.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
+    const token = '--ar-layout-cover-bar'
+    // every cover of the second deck in the page (in the list, its card's), as found
+    const covers = (where) => page.evaluate(({ where, token }) => {
+      const scope = where === 'list' ? [...document.querySelectorAll('.ar-decks-card')].find((c) => /\/second$/i.test(c.querySelector('a')?.getAttribute('href') ?? '')) : document
+      return [...(scope?.querySelectorAll('.ar-slide.layout-cover') ?? [])].map((s) => ({
+        token: s.style.getPropertyValue(token).trim(),
+        attr: s.hasAttribute('bar'),
+        smoke: s.getAttribute('data-smoke'),
+        bar: s.querySelector('.bar') && getComputedStyle(s.querySelector('.bar')).backgroundColor,
+      }))
+    }, { where, token })
+    const check = async (what, where, color) => {
+      const found = await covers(where)
+      if (!found.length) return complaints.push(`${what}: no cover of the second deck`)
+      for (const c of found) {
+        if (c.token !== color) complaints.push(`${what}: the cover's ${token} is "${c.token}", not ${color}`)
+        else if (c.bar && c.bar !== color) complaints.push(`${what}: the cover's .bar is ${c.bar}, not ${color}`)
+        if (c.attr) complaints.push(`${what}: bar is an attribute of the cover's section too`)
+        if (c.smoke !== 'kept') complaints.push(`${what}: data-smoke="kept" did not reach the cover's section (${c.smoke})`)
+      }
+    }
+    const open = async (path) => {
+      await page.goto(new URL(path, base).href)
+      await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
+      await pause(500)
+    }
+    try {
+      await open(`${second}#/1/1`)
+      await check('audience', 'page', BAR[0])
+      await page.evaluate((c) => { window.__bar.value = c }, BAR[1])
+      await pause(300)
+      await check('audience, the ref changed', 'page', BAR[1])
+      await open(`${second}?presenter#/1/1`)
+      await check('presenter view', 'page', BAR[0])
+      await open(`${second}?export`)
+      await check('export mode', 'page', BAR[0])
+      await page.goto(base)
+      await page.waitForFunction(() => document.querySelector('.ar-decks-card .ar-thumb .ar-slide'), null, { timeout: 30_000 }).catch(() => {})
+      await page.waitForFunction(() => [...document.querySelectorAll('.ar-decks-card')].every((c) => c.querySelector('.ar-thumb .ar-slide')), null, { timeout: 30_000 }).catch(() => {})
+      await check('the list\'s thumbnail', 'list', BAR[0])
+      // the playground's: the library's image-right (its columns, once on screen) and the
+      // project's quote (its blockquote's size)
+      await open('playground#/1/1')
+      const n = await page.evaluate(() => [...document.querySelectorAll('.ar-slide')].findIndex((s) => s.classList.contains('layout-image-right')) + 1)
+      if (!n) complaints.push('no image-right slide in the playground')
+      else {
+        await open(`playground#/${n}/1`)
+        const got = await page.evaluate((i) => {
+          const s = document.querySelectorAll('.ar-slide')[i]
+          const q = document.querySelector('.ar-slide.layout-quote')
+          return {
+            token: s.style.getPropertyValue('--ar-layout-image-right-columns').trim(),
+            columns: getComputedStyle(s).gridTemplateColumns.split(' ').map(parseFloat),
+            attr: s.hasAttribute('columns'),
+            quote: q?.style.getPropertyValue('--ar-layout-quote-size').trim(),
+            size: q && getComputedStyle(q.querySelector('blockquote')).fontSize,
+          }
+        }, n - 1)
+        const ratio = got.columns.length === 2 ? got.columns[0] / got.columns[1] : NaN
+        if (got.token !== '3fr 2fr' || got.attr) complaints.push(`playground image-right: --ar-layout-image-right-columns "${got.token}"${got.attr ? ', and columns an attribute too' : ''}`)
+        else if (Math.abs(ratio - 1.5) > 0.01) complaints.push(`playground image-right: its columns ${got.columns.join(' / ')}, not 3 to 2`)
+        if (got.quote !== '72px' || got.size !== '72px') complaints.push(`playground quote: --ar-layout-quote-size "${got.quote}", its quote ${got.size}, not 72px`)
+      }
+      console.log(`  ${mode} layout parameters: ${complaints.length ? 'problems below' : 'set as tokens in audience, presenter, export and thumbnail, following a ref; the library\'s and the project\'s'}`)
+    } finally {
+      await page.context().close()
+    }
+    for (const c of complaints) fail(`${mode} layout parameters: ${c}`)
+  }
+
   // the layouts' names while the dev server runs (src/arao-layouts.d.ts): a layout file added is
-  // in it, one removed is out again; an edit (a name unchanged) leaves the file untouched
-  async function layoutNames() {
+  // in it, one removed is out again; an edit that leaves its tokens as they were leaves the file
+  // untouched, one that reads a token more adds that parameter, to the file and to the tokens
+  // module the dev server serves (virtual:arao/layout-tokens: what the page reloads with)
+  async function layoutNames(base) {
     const complaints = []
     const file = join(project, 'src', 'layouts', 'smoke-live.css')
     const dts = join(project, 'src', 'arao-layouts.d.ts')
     const own = await ownLayouts()
-    const until = async (want) => {
-      for (let i = 0; i < 100 && (await typedLayouts()) !== want; i++) await pause(100)
-      return typedLayouts()
+    const until = async (read, want) => {
+      for (let i = 0; i < 100 && (await read()) !== want; i++) await pause(100)
+      return read()
     }
     try {
       let got = await typedLayouts()
       if (got !== own.join(', ')) complaints.push(`at start it lists ${got ?? 'nothing (no file)'}, not ${own.join(', ')}`)
       const added = [...own, 'smoke-live'].sort().join(', ')
       await writeFile(file, '.layout-smoke-live { --smoke-live: 1; }\n')
-      if ((got = await until(added)) !== added) complaints.push(`with src/layouts/smoke-live.css added it lists ${got}, not ${added}`)
+      if ((got = await until(typedLayouts, added)) !== added) complaints.push(`with src/layouts/smoke-live.css added it lists ${got}, not ${added}`)
       const before = (await stat(dts)).mtimeMs
       await writeFile(file, '.layout-smoke-live { --smoke-live: 2; }\n')
       await pause(1000)
-      if ((await stat(dts)).mtimeMs !== before) complaints.push('an edit of a layout file rewrote it')
+      if ((await stat(dts)).mtimeMs !== before) complaints.push('an edit of a layout file that changes no token rewrote it')
+      await writeFile(file, '.layout-smoke-live { --smoke-live: 2; gap: var(--ar-layout-smoke-live-row-gap, 0); }\n')
+      if ((got = await until(() => typedParams('smoke-live'), 'rowGap')) !== 'rowGap') complaints.push(`with a token added to src/layouts/smoke-live.css it types its parameters as ${got}, not rowGap`)
+      const served = async () => {
+        const code = await fetch(new URL('@id/__x00__virtual:arao/layout-tokens', base)).then((r) => r.text(), () => '')
+        return /\\"smoke-live\\":\[\\"row-gap\\"\]/.test(code)
+      }
+      if (!(await until(served, true))) complaints.push('with a token added to src/layouts/smoke-live.css, virtual:arao/layout-tokens does not have it')
     } finally {
       await rm(file, { force: true })
     }
-    const got = await until(own.join(', '))
+    const got = await until(typedLayouts, own.join(', '))
     if (got !== own.join(', ')) complaints.push(`with src/layouts/smoke-live.css removed it lists ${got}, not ${own.join(', ')}`)
-    console.log(`  dev layouts' names: ${complaints.length ? 'problems below' : 'a layout file added and removed, src/arao-layouts.d.ts follows; an edit leaves it'}`)
+    console.log(`  dev layouts' names: ${complaints.length ? 'problems below' : 'a layout file added and removed, src/arao-layouts.d.ts follows, its parameters too, and the tokens module; an edit of no token leaves it'}`)
     for (const c of complaints) fail(`dev src/arao-layouts.d.ts: ${c}`)
   }
 
@@ -1705,12 +1830,13 @@ try {
       if (builtin[0] !== 'default' || builtin.length < 2) fail(`the package's built-in themes are ${builtin.join(', ')}: not default and more`)
       for (const name of builtin.slice(1)) await walk(base, 'playground', mode, `?theme=${encodeURIComponent(name)}`)
       await selector(base, mode)
+      await layoutParams(base, mode)
       if (mode === 'dev') {
         await face(base)
         await themes(base)
         await controls(base)
         await backgrounds(base)
-        await layoutNames()
+        await layoutNames(base)
         await notes(base)
         await languages(base)
         await duration(base)

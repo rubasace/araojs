@@ -31,7 +31,7 @@ Deck
     h2 A snippet
     Snippet(file="Hello.java" :highlights='{ "4": 2, "5:println": 3 }')
 
-  Slide(layout="image-right" style="--ar-layout-image-right-columns: 3fr 2fr")
+  Slide(layout="image-right" columns="3fr 2fr")
     template(#image)
       Img(file="shapes.svg" alt="Shapes")
     h2 A picture
@@ -75,7 +75,7 @@ Deck
         Icon(:name="t.icon" size="120" :label="t.label")
         p {{ t.label }}
 
-  Slide(layout="quote")
+  Slide(layout="quote" size="72px")
     blockquote A layout is a CSS file: this one is the project's, src/layouts/quote.css.
     p.muted The playground
 

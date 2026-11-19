@@ -6,7 +6,7 @@ Deck
     h1 The Cíes islands
     p.muted A guillemot's guide
 
-  Slide(layout="image-right" style="--ar-layout-image-right-columns: 3fr 2fr")
+  Slide(layout="image-right" columns="3fr 2fr")
     template(#image)
       Img(file="cies.svg" alt="The Cíes islands at dusk")
     h2 One picture, one idea

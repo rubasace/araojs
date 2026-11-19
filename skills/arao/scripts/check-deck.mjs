@@ -70,7 +70,7 @@ const removed = await page.evaluate(() => {
   const now = {
     bg: 'Background(src="…") inside the slide, or style="background: …" for a colour',
     bgopacity: 'Background(opacity)', bgposition: 'Background(position)', bgblur: 'Background(blur)', bgfit: 'Background(fit)',
-    ratio: 'style="--ar-layout-<layout>-columns: 2fr 1fr"',
+    ratio: 'columns="2fr 1fr", a parameter of image-left, image-right and split',
     align: 'the classes top, center, bottom (the body starts at the top by default)',
     footer: 'the classes no-footer, with-footer',
     title: "the slide's first heading, which names it",

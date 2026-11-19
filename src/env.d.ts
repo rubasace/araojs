@@ -21,6 +21,10 @@ declare module 'virtual:arao/themes' {
 declare module 'virtual:arao/shortcuts' {
   export const shortcuts: Readonly<Record<string, import('./core/shortcuts').Command>>
 }
+declare module 'virtual:arao/layout-tokens' {
+  // by layout, the <thing> of each of its parameters, --ar-layout-<layout>-<thing> (vite/layout-params.js)
+  export const layoutTokens: Readonly<Record<string, readonly string[]>>
+}
 declare module 'virtual:arao/layout-styles'
 declare module 'virtual:arao/theme-styles'
 declare module '*.vue' {

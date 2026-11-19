@@ -97,15 +97,15 @@ Keys: `"4"`, `"4-7"`, `"1,10-14"`, optionally `:word+++word`. Inline code:
 
 ## Image + text
 ```pug
-Slide(layout="image-right" style="--ar-layout-image-right-columns: 3fr 2fr")
+Slide(layout="image-right" columns="3fr 2fr")
   template(#image)
     Img(file="demo/landscape.svg" alt="A landscape")
   h2 One picture, one idea
   p The picture fills its side, full height, edge to edge.
   p(v-step="2") The text side is padded like any slide.
 ```
-`image-left` mirrors it. The widths are a token (`--ar-layout-image-right-columns`, text then
-picture; `--ar-layout-image-left-columns`, picture then text; default `1fr 1fr`). The footer
+`image-left` mirrors it. The widths are a parameter, `columns` (`--ar-layout-image-right-columns`,
+text then picture; `--ar-layout-image-left-columns`, picture then text; default `1fr 1fr`). The footer
 shows over the picture: `.no-footer` hides it on one slide.
 
 ## Two columns with a header
@@ -119,7 +119,7 @@ Slide(layout="split")
     h3(v-step="2") After
     p(v-step="2") One starter, one version.
 ```
-Uneven zones: `Slide(layout="split" style="--ar-layout-split-columns: 2fr 1fr")`.
+Uneven zones: `Slide(layout="split" columns="2fr 1fr")` (and `gap="96px"`).
 
 ## Three columns
 ```pug
@@ -243,7 +243,11 @@ Slide
 `src/layouts/quote.css` styles `Slide(layout="quote")`: the plugin loads every file there, after
 the library's layouts and before the themes; one named like a library layout (`cover.css`)
 replaces it. Follow the library's convention (`node_modules/araojs/layouts/cover.css`): tokens
-named `--ar-layout-<name>-<thing>`, each resolved with its default on the slide.
+named `--ar-layout-<name>-<thing>`, each resolved with its default on the slide. Each token is
+an attribute of the layout's slides, `<thing>` (below: `size`, `footer`); a `<thing>` a slide already
+has as an attribute (`title`, `id`, `hidden`, `lang`, `class`, `style`, `key`, `layout`, `on-…`,
+`data-…`, `aria-…`) is none and Vite warns: name it `title-size`, say. A file replacing a library
+layout replaces its parameters too.
 ```css
 :where(.layout-quote) {
   --_ar-quote-size: var(--ar-layout-quote-size, calc(var(--ar-title) * .8));
@@ -255,13 +259,14 @@ named `--ar-layout-<name>-<thing>`, each resolved with its default on the slide.
 .layout-quote > .ar-footer { display: var(--_ar-quote-footer); }
 ```
 ```pug
-Slide(layout="quote")
+Slide(layout="quote" size="64px")
   blockquote Make it work, make it right, make it fast.
   p.muted Kent Beck
 ```
-The plugin also writes the project's layout names into `src/arao-layouts.d.ts`, so that in a
-TypeScript project the editor completes `layout` and `vue-tsc` rejects a name that is none: it is
-generated (don't edit it), and committed like any source file.
+The plugin also writes the project's layout names and parameters into `src/arao-layouts.d.ts`, so
+that in a TypeScript project the editor completes `layout` and that layout's attributes, and
+`vue-tsc` rejects a name that is none (and, with `strictTemplates`, another layout's attribute): it
+is generated (don't edit it), and committed like any source file.
 What a slide renders, to style: `.ar-header` (its opening heading), `.ar-body` (the rest),
 `.ar-zone-<name>` for each `template(#<name>)`, `.ar-footer`. Defaults that are other tokens go
 in the `:where(.layout-<name>)` block, never at `:root` (there `var()` resolves once, and a

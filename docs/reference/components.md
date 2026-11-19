@@ -80,10 +80,19 @@ One slide. Its one prop names its layout; the rest is CSS: its section carries t
 `layout-<name>`, and the layout's CSS arranges the slide's parts, which every slide finds the
 same way: the header (its title), the body (the rest of the default slot), a zone per named
 template and the deck's footer ([Zones](../guide/slides-and-layouts.md#zones-header-body-footer)).
+The layout's tokens are attributes of the slide (below).
 
 | Prop | Type | Default | Accepted values |
 |---|---|---|---|
-| `layout` | String (typed: `keyof SlideLayouts`) | `default` | a layout's name: the library's (below) or the project's (`src/layouts/<name>.css`: [A layout of your own](../guide/slides-and-layouts.md#a-layout-of-your-own)). Any other name works as `default`, with the class `layout-<name>` for a theme or a deck to style. In a type-checked template only the layouts there are pass: the library's, and the project's, which the Vite plugin declares ([Layout names in the editor](../guide/slides-and-layouts.md#layout-names-in-the-editor)) |
+| `layout` | String (typed: `keyof SlideLayouts`) | `default` | a layout's name: the library's (below) or the project's (`src/layouts/<name>.css`: [A layout of your own](../guide/slides-and-layouts.md#a-layout-of-your-own)). Any other name works as `default`, with the class `layout-<name>` for a theme or a deck to style. In a type-checked template only the layouts there are pass: the library's, and the project's, which the Vite plugin declares ([Layouts in the editor](../guide/slides-and-layouts.md#layouts-in-the-editor)) |
+
+The layout's parameters: each token of its own the layout's CSS reads, `--ar-layout-<layout>-<thing>`,
+is an attribute `<thing>` of its slides (kebab-case or camelCase), a string set as that token on
+the slide, verbatim, instead of an attribute of its section: `Slide(layout="image-right"
+columns="3fr 2fr")` is `--ar-layout-image-right-columns: 3fr 2fr`. The library's are in
+[Theme tokens](theme-tokens.md#layouts) (`columns`, `inset`, `footer`, `footer-bg`, `bar`,
+`title-size`, `bg`, `fg`, `gap`); a project layout's are its own file's. In a type-checked template a
+slide takes its layout's, no other's ([Layout parameters](../guide/slides-and-layouts.md#layout-parameters)).
 
 Slots, all with `{ step }` (the slide's current step) as slot props:
 - default: the header (the `h1`/`h2` it starts with, and the headings right after it) and the
@@ -98,7 +107,8 @@ The slide's name in the jump menu, the presenter bar and the notes pages is the 
 
 A class or a style on a `Slide` goes on its section, so CSS sets anything for one slide: a colour
 or a gradient (`style="background: …"`: [Backgrounds](../guide/images-and-backgrounds.md#a-colour-or-a-gradient-css)),
-any token (`style="--ar-layout-image-right-columns: 3fr 2fr"`), and the classes the engine knows:
+any token (`style="--ar-title-size: 80px"`; a layout's parameter, given as an attribute too,
+wins over the same token there), and the classes the engine knows:
 
 | Class | Effect |
 |---|---|
@@ -119,8 +129,8 @@ same name replaces it.
 | `default` | the header, then the body filling the rest, inside the slide's padding; the body from the top (`--ar-body-align`); the footer shown | default, `#title` |
 | `cover` | the header and the body as one group, centred vertically, left-aligned; `h1` at 1.25x `--ar-title`; a `.bar` element draws a short bar in the accent; no footer | default, `#title` |
 | `section` | everything centred both ways, on `--ar-accent` in `--ar-accent-fg` (the title and the footer too); `h1` at 1.4x `--ar-title`; no footer | default, `#title` |
-| `split` | the header (and the body, as a lead line) across the top, then `#left` and `#right` side by side, filling the rest (`--ar-layout-split-columns`, default `1fr 1fr`) | default, `#title`, `#left`, `#right` |
-| `image-left` / `image-right` | `#image` fills its side, full height and edge to edge (no padding); the other side is the text, padded like any slide: the header at the height of every other slide's title, then the body. The footer stays, over the picture. Widths: `--ar-layout-image-left-columns` / `--ar-layout-image-right-columns`, left to right (default `1fr 1fr`) | default (the text side), `#title`, `#image` |
+| `split` | the header (and the body, as a lead line) across the top, then `#left` and `#right` side by side, filling the rest (`columns="2fr 1fr"`, `--ar-layout-split-columns`; default `1fr 1fr`) | default, `#title`, `#left`, `#right` |
+| `image-left` / `image-right` | `#image` fills its side, full height and edge to edge (no padding); the other side is the text, padded like any slide: the header at the height of every other slide's title, then the body. The footer stays, over the picture. Widths: `columns="3fr 2fr"` (`--ar-layout-image-left-columns` / `--ar-layout-image-right-columns`), left to right (default `1fr 1fr`) | default (the text side), `#title`, `#image` |
 
 - A zone keeps its width: wider content is clipped at the zone's edge. Heights do not clip.
 - In the page, zones come after the header and the body, in the order written, whatever side the

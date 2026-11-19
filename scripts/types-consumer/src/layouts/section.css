@@ -1,0 +1,3 @@
+/* a project layout named like a library one: it replaces the library's section, and its
+   parameters too (tone, and none of the library's bg, fg…) */
+.layout-section { background: var(--ar-layout-section-tone, black); }

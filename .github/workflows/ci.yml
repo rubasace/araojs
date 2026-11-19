@@ -29,6 +29,17 @@ jobs:
 
       - run: npm run build
 
+      # The generated layout types are committed, and must be what their CSS makes: the library's
+      # (src/components/library-layouts.ts, from layouts/, which the build has just rewritten with
+      # scripts/layout-types.mjs) and the playground's (playground/src/arao-layouts.d.ts, from
+      # playground/src/layouts, which the Vite plugin rewrites when the playground's dev server
+      # starts: one is started here, without a port, and closed). A diff means a layout's CSS
+      # changed and its types were not regenerated: run npm run build and npm run dev, and commit.
+      - name: Generated layout types are up to date
+        run: |
+          node --input-type=module -e "const { createServer } = await import('vite'); await (await createServer({ server: { middlewareMode: true, ws: false }, logLevel: 'warn' })).close()"
+          git diff --exit-code src/components/library-layouts.ts playground/src/arao-layouts.d.ts
+
       - name: Pack
         id: pack
         run: |

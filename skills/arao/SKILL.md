@@ -10,7 +10,8 @@ Arao turns a Vue single-file component into a slide deck: `Deck` → `Slide` →
 Arao way and how to check them.
 
 **Version:** this skill describes araojs 0.5.0 or later (theme sources, fetched web fonts,
-`src/shortcuts.ts`, `Background`, layouts as CSS files, `Slide` with `layout` as its only prop).
+`src/shortcuts.ts`, `Background`, layouts as CSS files, `Slide` with `layout` as its only prop and
+its layout's tokens as attributes).
 With an older araojs in the project, upgrade it (`npm install araojs@latest`, then fix the deck:
 [troubleshooting.md](references/troubleshooting.md#decks-written-for-an-older-arao)) or check its
 own `node_modules/araojs/docs/`.
@@ -51,7 +52,8 @@ at https://github.com/rubasace/araojs/tree/main/docs. Paths below like
   `#footer`).
 - **A layout is a CSS file.** `Slide(layout="x")` gives the slide the class `layout-x`; the
   library's `cover`, `section`, `split`, `image-left`, `image-right` and the project's
-  `src/layouts/<name>.css` style it. `layout` is `Slide`'s only prop: the rest is classes,
+  `src/layouts/<name>.css` style it. `layout` is `Slide`'s only prop; the layout's tokens
+  (`--ar-layout-<name>-<thing>`) are attributes of its slides, `<thing>`; the rest is classes,
   tokens and `Background`.
 - Look comes from the theme (`--ar-*` tokens). Every token has a default; a theme changes some.
 - Global in templates: `Deck Slide Background Img Icon Snippet Notes Cols Rows Grid Center`,
@@ -63,8 +65,10 @@ at https://github.com/rubasace/araojs/tree/main/docs. Paths below like
 Do:
 - Arrange with a `layout` (`cover`, `section`, `split`, `image-left`, `image-right`) or a
   composition component (`Cols`, `Rows`, `Grid`, `Center`) and their props (`ratio`, `gap`,
-  `align`, `cols`). A zone's width is a token on the slide:
-  `Slide(layout="image-right" style="--ar-layout-image-right-columns: 3fr 2fr")`.
+  `align`, `cols`). Tune a layout on one slide with its parameters, attributes named after its
+  tokens: `Slide(layout="image-right" columns="3fr 2fr")`, `Slide(layout="split" columns="2fr 1fr")`,
+  `Slide(layout="cover" bar="gold")` (each layout's: `docs/reference/theme-tokens.md#layouts`).
+  Another layout's attribute does nothing (and fails `vue-tsc` with `strictTemplates`).
 - Start every slide with its heading (`h2`): the first heading names the slide in the jump
   menu, presenter view and notes pages, and there is no other way to name it. Something before it
   (a kicker line) makes it body: use `template(#title)` for a richer header.
@@ -77,7 +81,9 @@ Do:
   `blur`, `fit` too; or content instead of `src`: a video, a tint). A plain colour or gradient is
   CSS on the slide: `Slide(style="background: #1d2b4a")`.
 - A look one talk repeats (a quote slide, a big number) is a layout: `src/layouts/<name>.css`,
-  tokens named `--ar-layout-<name>-<thing>` ([recipes.md](references/recipes.md)).
+  tokens named `--ar-layout-<name>-<thing>`, each one an attribute of its slides; never a
+  `<thing>` a slide has as an attribute already (`title`, `id`, `hidden`…: use `title-size`)
+  ([recipes.md](references/recipes.md)).
 - Write tables as plain `table` / `thead` / `tbody`: the theme styles them.
 - One idea per slide. Reveal with steps instead of cramming.
 - Name files, never import them: `Snippet(file="App.java")` from `src/snippets/`,
@@ -97,7 +103,9 @@ Don't:
   body (`Slide.center` does it), no footer drawn in a background image (`#footer` does it). A
   look that needs real CSS and repeats is a layout file, not deck CSS.
 - Don't use the props older Arao had on `Slide` (`title`, `align`, `footer`, `ratio`, `bg`,
-  `bg-*`) or `template(#background)`: they do nothing now, silently
+  `bg-*`) or `template(#background)`: they do nothing now, silently (where the layout has a
+  token of that name, `footer` on `cover`, `bg` on `section`, the attribute is that token now: a
+  CSS value, `footer="flex"`, `bg="#0b3d2e"`)
   ([troubleshooting.md](references/troubleshooting.md#decks-written-for-an-older-arao)).
 - Don't hard-code colours or fonts in a deck: use tokens (`color: var(--ar-accent)`,
   `color-mix(in srgb, var(--ar-fg) 8%, var(--ar-bg))`). A venue's look is a new theme.

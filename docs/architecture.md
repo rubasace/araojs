@@ -226,11 +226,19 @@ package's root (`cover`, `section`, `split`, `image-left`, `image-right`); the p
 the plugin's `layouts` folder (default `src/layouts`). The Vite plugin loads both through
 `virtual:arao/layout-styles` (an eager glob of the library's files, all but those a project file
 of the same name replaces, then one of the project's folder); when a project file starts or stops
-replacing a library one in the dev server, the module is reloaded with the page. The names are
-types too: `layout` is `keyof SlideLayouts`, an interface listing the library's (the build checks
-it against `layouts/`), which the plugin augments with the project's in a declaration file it
-writes into the project (`src/arao-layouts.d.ts`, rewritten as layout files come and go). A file states
-what it does and its tokens, `--ar-layout-<name>-<thing>`: their defaults are other tokens
+replacing a library one in the dev server, the module is reloaded with the page. A layout's
+tokens are its parameters: each `--ar-layout-<name>-<thing>` its file declares or reads is an
+attribute `<thing>` of its slides, which `Slide` sets as that token in the section's style instead
+of an attribute, from `virtual:arao/layout-tokens` (by layout, its parameters); one rule,
+`vite/layout-params.js`, says what a parameter is (none whose name a slide already has an
+attribute for: HTML's global ones, Vue's, `layout`), for the plugin and the library's build alike.
+The names and parameters are types too: `Slide` is exported typed generic in its layout
+(`SlideComponent`, `Slide.vue`), its `layout` a key of `SlideLayouts` and its other attributes that
+layout's parameters; `SlideLayouts` is the library's (`LibraryLayouts`, generated from `layouts/` by
+`scripts/layout-types.mjs` when the library is built; CI fails if the committed file is not
+what it writes) with the project's over them (`ProjectLayouts`), which the plugin
+augments in a declaration file it writes into the project (`src/arao-layouts.d.ts`, rewritten
+as layout files and their tokens change). A file states what it does and its tokens: their defaults are other tokens
 (`--ar-accent`, `--ar-title`), so, as in `tokens.css`, they cannot sit at the root; each file
 resolves them on its own slides (`:where(.layout-<name>)`) into private `--_ar-…` properties its
 rules read, and a theme, the project's `:root` or one slide sets the public ones. What every

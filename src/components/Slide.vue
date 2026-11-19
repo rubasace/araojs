@@ -5,6 +5,14 @@
      image-right: each file says what it does and the tokens it reads) or the project's
      src/layouts (the Vite plugin loads both, the project's after; one of the same name replaces
      the library's). A name with no CSS is the default layout, below.
+     A layout's parameters are attributes: each token of its own its CSS reads,
+     --ar-layout-<layout>-<thing>, is an attribute <thing> of a slide of that layout (or <thing>
+     in camelCase), whose value is set as that token in the section's style, verbatim, instead of
+     an attribute: Slide(layout="image-right" columns="2fr 1fr") sets
+     --ar-layout-image-right-columns: 2fr 1fr on that slide (params(), below). Which tokens a
+     layout has comes from the Vite plugin (virtual:arao/layout-tokens; what is one:
+     vite/layout-params.js): there is no code here for any layout. Any other attribute goes on the
+     section as it is.
      What a slide renders, in this order:
        the background layer     .ar-slide-bg, behind everything, edge to edge (below)
        the header               .ar-header: the title the default slot starts with (below)
@@ -42,7 +50,8 @@
      a Background (Background.vue), which draws itself there instead. A plain colour or a gradient
      is CSS on the slide, which the theme's default background (if any) covers like any other:
        Slide(style="background: #1d2b4a; --ar-slide-bg-image: none")
-     Classes and styles on a Slide go on its section, as a layout's own do.
+     Classes and styles on a Slide go on its section, as a layout's own do (a parameter's token
+     is set after the slide's style, so it wins over the same token there).
      The slide's name in the jump menu, the presenter view and the notes pages is the text of its
      first heading outside the background and the footer (state/stage.ts).
      Speaker notes: Notes anywhere inside the slide (notes.ts); only the presenter view shows them. -->
@@ -55,6 +64,7 @@
       v-show="active"
       :data-ar-slide="id"
       :class="'layout-' + layout"
+      v-bind="params()"
     >
       <!-- in a thumbnail only the cover draws its content -->
       <template v-if="drawn">
@@ -74,36 +84,85 @@
 </template>
 
 <script lang="ts">
+import type { ComponentPublicInstance, PublicProps } from 'vue'
+import type { LibraryLayouts } from './library-layouts'
+
 /**
- * The layouts a Slide can name, as keys: what its layout prop accepts in a template checked by
- * Volar / vue-tsc. The library's own (layouts/, plus default), which the build checks against
- * that folder (scripts/bundle-types.mjs); a project's are added by augmenting it, which the Vite
- * plugin writes for src/layouts (src/arao-layouts.d.ts):
- *   declare module 'araojs' { interface SlideLayouts { quote: true } }
- * Types only: at runtime the prop is any string (one with no CSS is the default layout).
+ * The project's layouts, and the parameters each takes: added by module augmentation, which the
+ * Vite plugin writes for src/layouts (src/arao-layouts.d.ts), one optional string per token the
+ * layout's CSS reads, under its <thing> in camelCase:
+ *   declare module 'araojs' { interface ProjectLayouts { quote: { size?: string } } }
+ * A layout named like a library one replaces it here too, its parameters with it.
  */
-export interface SlideLayouts {
-  default: true
-  cover: true
-  section: true
-  split: true
-  'image-left': true
-  'image-right': true
+export interface ProjectLayouts {}
+
+/**
+ * Every layout a Slide can name, and its parameters: the library's (layouts/, plus default:
+ * library-layouts.ts, generated from that folder by scripts/layout-types.mjs), with the project's
+ * over them (ProjectLayouts). keyof SlideLayouts is the names, what the layout prop accepts in a
+ * template checked by Volar / vue-tsc; SlideLayouts[name] the attributes a slide of that layout
+ * takes. Types only: at runtime the prop is any string (one with no CSS is the default layout).
+ */
+export type SlideLayouts = {
+  [K in keyof LibraryLayouts | keyof ProjectLayouts]: K extends keyof ProjectLayouts ? ProjectLayouts[K]
+    : K extends keyof LibraryLayouts ? LibraryLayouts[K] : never
 }
+
+/** A Slide's props for a layout: the layout's name, and its parameters. */
+type SlideProps<L extends keyof SlideLayouts> = { layout?: L } & SlideLayouts[L]
+/** A slot of a Slide, given the slide's current step. */
+type SlideSlot = (props: { step: number }) => unknown
+/** Its slots: the default (header and body), #title (the header instead), any other a zone. */
+interface SlideSlots {
+  default?: SlideSlot
+  title?: SlideSlot
+  [zone: string]: SlideSlot | undefined
+}
+/**
+ * Slide as templates see it (exported as such, src/index.ts): generic in its layout, so that the
+ * attributes it accepts are that layout's parameters, and no other layout's, besides what every
+ * component takes (class, style, key, ref). Volar infers L from layout="…"; without one it is
+ * default, which takes none.
+ */
+export type SlideComponent = new <L extends keyof SlideLayouts = 'default'>(props: SlideProps<L> & PublicProps) =>
+  Omit<ComponentPublicInstance<SlideProps<L>, {}, {}, {}, {}, {}, PublicProps>, '$slots'> & { $slots: SlideSlots }
 </script>
 
 <script setup lang="ts">
-import { Comment, Text, cloneVNode, h, onMounted, onUpdated, ref, shallowRef, useSlots, watch, type FunctionalComponent, type PropType, type VNode } from 'vue'
+import { Comment, Text, camelize, cloneVNode, h, onMounted, onUpdated, ref, shallowRef, useAttrs, useSlots, watch, type FunctionalComponent, type PropType, type StyleValue, type VNode } from 'vue'
+import { layoutTokens } from 'virtual:arao/layout-tokens'
 import { useDeck } from '../state/deck'
 import { createSlide } from '../state/slide'
 import Notes from './Notes.vue'
 import Background from './Background.vue'
 
+// the attributes go on the section, a layout's parameters as tokens (params(), below)
+defineOptions({ inheritAttrs: false })
 const props = defineProps({
   // the layout: the section's class is layout-<name>, and the layout's CSS (layouts/) does the rest
   layout: { type: String as PropType<keyof SlideLayouts>, default: 'default' },
 })
 const slots = useSlots()
+const attrs = useAttrs()
+
+// ---- the layout's parameters ------------------------------------------------------------------
+// The slide's attributes, for its section: each one named as a parameter of its layout (a token
+// its CSS reads, --ar-layout-<layout>-<thing>: <thing>, or <thing> in camelCase, the form a
+// template may also write) becomes that token in the style, its value as it is, after the slide's
+// own style (the same token there loses); one empty sets nothing (the layout's default stays).
+// The rest go on as they are. Called by the render, so a change in the attributes or the layout
+// applies at once.
+function params() {
+  const things = layoutTokens[props.layout] ?? []
+  const tokens: Record<string, string> = {}
+  const rest: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(attrs)) {
+    const thing = things.find((t) => t === key || camelize(t) === key)
+    if (thing === undefined) rest[key] = value
+    else if (value != null && value !== false && value !== '') tokens[`--ar-layout-${props.layout}-${thing}`] = String(value)
+  }
+  return { ...rest, style: [rest.style as StyleValue, tokens] }
+}
 
 const deck = useDeck()
 const el = ref<HTMLElement | null>(null)
