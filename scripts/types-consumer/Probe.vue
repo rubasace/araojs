@@ -11,8 +11,14 @@
     </Slide>
     <!-- @vue-expect-error width is a number -->
     <Deck :width="'wide'" />
-    <!-- @vue-expect-error layout is a string -->
+    <!-- @vue-expect-error layout is a name, not a number -->
     <Slide :layout="2" />
+    <!-- a layout of the library's, and one of the project's (src/layouts/quote.css, written into
+         src/arao-layouts.d.ts by the plugin) -->
+    <Slide layout="cover" />
+    <Slide layout="quote" />
+    <!-- @vue-expect-error layout is a layout's name, the library's or the project's -->
+    <Slide layout="nope" />
     <!-- @vue-expect-error fit is 'cover' or 'contain' -->
     <Background fit="fill" />
     <!-- @vue-expect-error size is a number -->

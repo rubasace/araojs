@@ -19,8 +19,8 @@ value still warns in the browser, not only in the editor.
 |---|---|
 | `npm run dev` | the playground, on the library's source, on 127.0.0.1:5173 (`ARAO_PUBLIC_HOST` allows a tunnel host) |
 | `npm run typecheck` | `vue-tsc --noEmit`: the whole repository's types (`src/`, `vite/`, `bin/`) |
-| `npm run build` | the type check, then the library into `dist/`: `index.js` (ESM, imports its CSS) and `arao.css`, and the public types, one self-contained file per entry: `dist/types/index.d.ts` and `dist/types/vite.d.ts` (`tsconfig.build.json` emits every module's declarations, `scripts/bundle-types.mjs` bundles them, dropping the engine's CSS and theme imports, and fails if they still import a relative path, a `.vue` or `.css` file or a virtual module; they also declare the global components and directives for templates); also run by `npm pack` / `npm publish`. Fails if a UI catalogue (`src/i18n/`) does not have exactly the keys of `en.ts` |
-| `node scripts/types-consumer.mjs <tgz>` | type-checks a small TypeScript project (`scripts/types-consumer/`) against a packed `araojs`, with `moduleResolution` bundler and nodenext and `skipLibCheck` off: read-only refs, typed template props. CI runs it, and builds on Node 22.18 and smoke-tests the package on Node 20.19 |
+| `npm run build` | the type check, then the library into `dist/`: `index.js` (ESM, imports its CSS) and `arao.css`, and the public types, one self-contained file per entry: `dist/types/index.d.ts` and `dist/types/vite.d.ts` (`tsconfig.build.json` emits every module's declarations, `scripts/bundle-types.mjs` bundles them, dropping the engine's CSS and theme imports, and fails if they still import a relative path, a `.vue` or `.css` file or a virtual module; they also declare the global components and directives for templates); also run by `npm pack` / `npm publish`. Fails if a UI catalogue (`src/i18n/`) does not have exactly the keys of `en.ts`, or if `SlideLayouts` (`Slide.vue`, the layout names its `layout` prop accepts in a typed template) does not list exactly `default` and the files of `layouts/` |
+| `node scripts/types-consumer.mjs <tgz>` | type-checks a small TypeScript project (`scripts/types-consumer/`) against a packed `araojs`, with `moduleResolution` bundler and nodenext and `skipLibCheck` off: read-only refs, typed template props, the layout names `Slide` accepts (after a `vite build` with the plugin, which must write `src/arao-layouts.d.ts` from its `src/layouts`: a project layout is accepted, an unknown name is an error). CI runs it, and builds on Node 22.18 and smoke-tests the package on Node 20.19 |
 | `npm run smoke [-- <file.tgz>]` | the packaged-consumer smoke test (below) |
 | `npm run docs:dev` / `npm run docs:build` | the docs site (VitePress on `docs/`), live or built into `docs/.vitepress/dist` with an `llms.txt` |
 | `npm run shots` | the screenshots of `docs/examples/` into `docs/assets/shots/`, and their source into the `<!-- example:… -->` blocks of the README and the guides |
@@ -101,7 +101,8 @@ theme from outside `src/themes`, declared in its own `<style>`. Then it:
 1. runs `vite build`, which must also write `dist/404.html`, a copy of `dist/index.html`, and hold
    the CSS of every layout, the library's and the project's (the playground's `quote`); with a
    project `src/layouts/cover.css` the library's cover is not in the build and a message says so,
-   and a layout file whose name is no layout's, or that names no `.layout-<name>`, warns;
+   and a layout file whose name is no layout's, or that names no `.layout-<name>`, warns; each
+   build writes `src/arao-layouts.d.ts` with the project's layouts' valid names;
 2. opens every deck at its path under the dev server (Vue's own warnings only show up in dev) and
    under `vite preview`, and walks each one with ArrowRight to its last step, and the playground's
    deck again in each built-in theme (the installed package's `themes/`). Any console warning or
@@ -129,7 +130,9 @@ theme from outside `src/themes`, declared in its own `<style>`. Then it:
    `src/themes` with no warning;
 5. checks `Background` with steps on the playground's slide "A background", under the dev server:
    one with `v-step` on it and one inside an element with `v-step` show in the slide's background
-   layer from their steps on, the slide counts those steps, and nothing warns;
+   layer from their steps on, the slide counts those steps, and nothing warns; and, still under
+   the dev server, a layout file added to `src/layouts` and removed again: `src/arao-layouts.d.ts`
+   lists it, then no longer does, and an edit of a layout file leaves it untouched;
 6. changes the talk's duration in the presenter view of the second deck (`duration="15m"`), under
    the dev server: `1h30` typed with real keys moves no slide and opens no jump menu, the
    countdown follows and an audience window gets it; after an apply or `Esc` from the keyboard,

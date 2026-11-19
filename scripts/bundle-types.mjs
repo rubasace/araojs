@@ -6,7 +6,7 @@
 // for its side effects (its CSS, the layouts and themes through virtual:arao/layout-styles and
 // virtual:arao/theme-styles) is
 // dropped: those modules exist only in the library's build and in a project with the Vite plugin.
-import { readFile, rm, writeFile } from 'node:fs/promises'
+import { readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -71,4 +71,14 @@ for (const name of Object.keys(ENTRIES)) {
     console.error(`[arao] dist/types/${name}.d.ts imports what a consumer cannot resolve:\n${bad.map(([n, l]) => `  ${n}: ${l.trim()}`).join('\n')}`)
     process.exit(1)
   }
+}
+
+// SlideLayouts (Slide.vue), the layouts Slide's layout accepts in a typed template, lists the
+// library's: default and one per file of layouts/, no more, no less
+const layouts = ['default', ...(await readdir(resolve(root, 'layouts'))).filter((f) => f.endsWith('.css')).map((f) => f.slice(0, -4))].sort()
+const body = (await readFile(resolve(out, 'index.d.ts'), 'utf8')).match(/^interface SlideLayouts \{([^}]*)\}/m)?.[1]
+const typed = [...(body ?? '').matchAll(/^\s*['"]?([\w-]+)['"]?\s*:/gm)].map((m) => m[1]).sort()
+if (typed.join() !== layouts.join()) {
+  console.error(`[arao] SlideLayouts (src/components/Slide.vue) lists ${body == null ? 'nothing: no interface SlideLayouts in dist/types/index.d.ts' : typed.join(', ')}; layouts/ has ${layouts.join(', ')} (with default): make them the same`)
+  process.exit(1)
 }

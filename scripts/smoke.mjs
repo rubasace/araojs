@@ -24,7 +24,8 @@
 //      and hold the CSS of every layout: the installed package's layouts/ and the project's
 //      src/layouts; a project cover.css replaces the library's (a message says so, and its CSS is
 //      not in the build), and a layout file whose name is no layout's, or that names no
-//      .layout-<name>, warns and is loaded;
+//      .layout-<name>, warns and is loaded; each build writes src/arao-layouts.d.ts, the project's
+//      layouts' valid names (for the editor and vue-tsc);
 //      with a theme source that is a package not installed, one that gives no theme, one whose
 //      themes folder is outside it, or a bare name that is a root folder, it must stop with an
 //      [arao] error (the last one with the "./" hint); a name two sources give warns once (a
@@ -80,6 +81,8 @@
 //   5e. Background and steps, under the dev server, on the playground's slide "A background": a
 //      Background with v-step on it and one inside an element with v-step show in the slide's
 //      background layer from their steps on, the slide counts those steps, and nothing warns
+//   5f. the layouts' names, under the dev server: a layout file added to src/layouts while it runs
+//      is in src/arao-layouts.d.ts, and out again once removed; an edit leaves the file untouched
 //   6. the talk's length, under the dev server, on the second deck (duration="15m"), in the
 //      presenter's bar: 1h30 typed with real keys moves no slide and opens no jump menu, and the
 //      countdown follows in an audience window too (useDeck()); after an apply from the keyboard,
@@ -535,40 +538,55 @@ try {
     await run(process.execPath, [viteBin, 'build'], project) // the project's own build back in dist/
   }
 
+  // the layouts' names the plugin wrote for the editor and vue-tsc (src/arao-layouts.d.ts), sorted
+  // as the plugin sorts them; null when there is no such file
+  const typedLayouts = async () => {
+    const text = await readFile(join(project, 'src', 'arao-layouts.d.ts'), 'utf8').catch(() => null)
+    return text == null ? null : [...text.matchAll(/^\s*'([^']+)': true$/gm)].map((m) => m[1]).join(', ')
+  }
+  const ownLayouts = async () => (await readdir(join(project, 'src', 'layouts')).catch(() => [])).filter((f) => f.endsWith('.css')).map((f) => basename(f, '.css')).sort()
+
   // layouts: the library's (the installed package's layouts/) and the project's (src/layouts, the
   // playground's quote.css) are in the build; a project file named like a library one replaces it
   // (a message says so, and the library file's CSS is not in the build); a file whose name is no
-  // layout's, and one that names no .layout-<name>, are loaded, each with a warning
+  // layout's, and one that names no .layout-<name>, are loaded, each with a warning. Each build
+  // writes the project's layouts' names (valid ones only) into src/arao-layouts.d.ts
   {
     const builtCss = async () => {
       const assets = join(project, 'dist', 'assets')
       return (await Promise.all((await readdir(assets)).filter((f) => f.endsWith('.css')).map((f) => readFile(join(assets, f), 'utf8')))).join('\n')
     }
     const library = (await readdir(join(project, 'node_modules', PKG, 'layouts'))).filter((f) => f.endsWith('.css')).map((f) => basename(f, '.css'))
-    const own = (await readdir(join(project, 'src', 'layouts')).catch(() => [])).filter((f) => f.endsWith('.css')).map((f) => basename(f, '.css'))
+    const own = await ownLayouts()
     let css = await builtCss()
     const missing = [...library, ...own].filter((n) => !css.includes(`.layout-${n}`))
+    let typed = await typedLayouts()
     if (!library.length || !own.length) fail(`layouts: ${library.length} in the package's layouts/, ${own.length} in src/layouts (the playground's): both are wanted`)
     else if (missing.length) fail(`vite build: no CSS for the layouts ${missing.join(', ')} in the build`)
-    else console.log(`  layouts: ${library.join(', ')} (the library's) and ${own.join(', ')} (the project's) in the build`)
+    else if (typed !== own.join(', ')) fail(`vite build: src/arao-layouts.d.ts ${typed == null ? 'not written' : `lists ${typed || 'no layout'}`}, not ${own.join(', ')}`)
+    else console.log(`  layouts: ${library.join(', ')} (the library's) and ${own.join(', ')} (the project's) in the build, and the project's in src/arao-layouts.d.ts`)
     const added = { 'cover.css': '.layout-cover { --smoke-own-cover: 1; }\n', 'bad name.css': '.x { --smoke-bad: 1; }\n', 'plain.css': ':root { --smoke-plain: 1; }\n' }
     try {
       for (const [f, text] of Object.entries(added)) await writeFile(join(project, 'src', 'layouts', f), text)
       const { code, out, err } = await exec(process.execPath, [viteBin, 'build'], project)
       const said = out + err
       css = await builtCss()
+      typed = await typedLayouts()
+      const named = [...own, 'cover', 'plain'].sort().join(', ') // not "bad name": no slide can name it
       const what = 'vite build with src/layouts/cover.css, "bad name.css" and plain.css'
       if (code !== 0) fail(`${what}: exited with ${code}`)
+      else if (typed !== named) fail(`${what}: src/arao-layouts.d.ts lists ${typed ?? 'nothing'}, not ${named}`)
       else if (!/\[arao\] layout "cover" of src\/layouts\/cover\.css replaces the library's one/.test(said)) fail(`${what}: nothing says the project's cover replaces the library's`)
       else if (!/\[arao\] src\/layouts\/bad name\.css: "bad name" is no layout's name/.test(said)) fail(`${what}: no warning about "bad name"`)
       else if (!/\[arao\] src\/layouts\/plain\.css names no \.layout-plain/.test(said)) fail(`${what}: no warning about plain.css`)
       else if (!['--smoke-own-cover', '--smoke-bad', '--smoke-plain'].every((t) => css.includes(t))) fail(`${what}: the project's files are not all in the build`)
       else if (css.includes('--_ar-cover-bar')) fail(`${what}: the library's cover.css is in the build`)
-      else console.log('  layouts: a project cover replaces the library\'s, saying so; a file with a bad name, and one naming no layout, warn and load')
+      else console.log('  layouts: a project cover replaces the library\'s, saying so; a file with a bad name, and one naming no layout, warn and load; the valid names are typed')
     } finally {
       for (const f of Object.keys(added)) await rm(join(project, 'src', 'layouts', f), { force: true })
     }
     await run(process.execPath, [viteBin, 'build'], project) // the project's own build back in dist/
+    if ((typed = await typedLayouts()) !== own.join(', ')) fail(`vite build with the added layouts gone: src/arao-layouts.d.ts lists ${typed ?? 'nothing'}, not ${own.join(', ')}`)
   }
 
   // a shortcuts file the build turns down (vite/shortcuts.js, checked when Vite starts): a reserved
@@ -946,6 +964,36 @@ try {
       await page.context().close()
     }
     for (const c of complaints) fail(`dev Background steps: ${c}`)
+  }
+
+  // the layouts' names while the dev server runs (src/arao-layouts.d.ts): a layout file added is
+  // in it, one removed is out again; an edit (a name unchanged) leaves the file untouched
+  async function layoutNames() {
+    const complaints = []
+    const file = join(project, 'src', 'layouts', 'smoke-live.css')
+    const dts = join(project, 'src', 'arao-layouts.d.ts')
+    const own = await ownLayouts()
+    const until = async (want) => {
+      for (let i = 0; i < 100 && (await typedLayouts()) !== want; i++) await pause(100)
+      return typedLayouts()
+    }
+    try {
+      let got = await typedLayouts()
+      if (got !== own.join(', ')) complaints.push(`at start it lists ${got ?? 'nothing (no file)'}, not ${own.join(', ')}`)
+      const added = [...own, 'smoke-live'].sort().join(', ')
+      await writeFile(file, '.layout-smoke-live { --smoke-live: 1; }\n')
+      if ((got = await until(added)) !== added) complaints.push(`with src/layouts/smoke-live.css added it lists ${got}, not ${added}`)
+      const before = (await stat(dts)).mtimeMs
+      await writeFile(file, '.layout-smoke-live { --smoke-live: 2; }\n')
+      await pause(1000)
+      if ((await stat(dts)).mtimeMs !== before) complaints.push('an edit of a layout file rewrote it')
+    } finally {
+      await rm(file, { force: true })
+    }
+    const got = await until(own.join(', '))
+    if (got !== own.join(', ')) complaints.push(`with src/layouts/smoke-live.css removed it lists ${got}, not ${own.join(', ')}`)
+    console.log(`  dev layouts' names: ${complaints.length ? 'problems below' : 'a layout file added and removed, src/arao-layouts.d.ts follows; an edit leaves it'}`)
+    for (const c of complaints) fail(`dev src/arao-layouts.d.ts: ${c}`)
   }
 
   // the controls (components/internal/Controls.vue), in the audience view of the playground's deck:
@@ -1662,6 +1710,7 @@ try {
         await themes(base)
         await controls(base)
         await backgrounds(base)
+        await layoutNames()
         await notes(base)
         await languages(base)
         await duration(base)

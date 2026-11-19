@@ -81,7 +81,10 @@
   fonts with `%`, `vw` or media queries.
 - **A `layout` with no CSS is the default layout**, silently: a typo (`layout="covr"`, `"Cover"`: names are case-sensitive)
   or a project layout whose file is not `src/layouts/<name>.css`. Vite warns about a layout file
-  that names no `.layout-<name>`.
+  that names no `.layout-<name>`. In a TypeScript project, `vue-tsc` turns such a name down (in
+  Pug templates only with `@vue/language-plugin-pug` in the `tsconfig`'s
+  `vueCompilerOptions.plugins`); a project layout it does not know means a stale or missing
+  `src/arao-layouts.d.ts`: run `npm run dev` or `npm run build` once to write it.
 - Snippet highlights don't accumulate: each step shows only its own rules; step 1 is always plain.
 
 ## Titles, covers and the deck list

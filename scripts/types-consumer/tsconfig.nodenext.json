@@ -4,5 +4,5 @@
     "strict": true, "skipLibCheck": false, "noEmit": true,
     "lib": ["ES2023", "DOM"], "types": ["node"]
   },
-  "include": ["main.ts", "Probe.vue"]
+  "include": ["main.ts", "Probe.vue", "src/**/*.ts"]
 }

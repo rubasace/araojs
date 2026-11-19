@@ -34,6 +34,7 @@ export type { Command, ShortcutMap } from './core/shortcuts'
 export type { DeckAppOptions } from './app'
 export type { DeckFace } from './state/deck'
 export type { SlideControls } from './state/slide'
+export type { SlideLayouts } from './components/Slide.vue'
 export type { Role } from './state/stage'
 export type { Timer } from './state/timer'
 
