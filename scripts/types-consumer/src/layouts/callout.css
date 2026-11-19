@@ -1,0 +1,24 @@
+/**
+ * A callout: a quote, its author beside it.
+ * @example
+ * Slide(layout="callout" size="80px")
+ *   blockquote Make it work.
+ *   template(#author)
+ *     p Kent Beck
+ * @zone author     who said it
+ * @param size        the callout's size
+ * @param mark-color  the opening mark's colour
+ */
+
+/* a project layout: the plugin adds "callout" to the layouts Slide's layout accepts, with its
+   parameters, the tokens it reads (src/arao-layouts.d.ts): size and mark-color (markColor); its
+   --ar-layout-callout-title is none (title is an HTML attribute), and the plugin warns. Its zones:
+   author (its doc block's @zone) and source (a .ar-zone-source it styles) */
+:where(.layout-callout) {
+  --_ar-callout-size: var(--ar-layout-callout-size, 64px);
+  --_ar-callout-title: var(--ar-layout-callout-title, 1em);
+}
+.layout-callout { justify-content: safe center; font-size: var(--_ar-callout-size); }
+.layout-callout h2 { font-size: var(--_ar-callout-title); }
+.layout-callout blockquote::before { content: '“'; color: var(--ar-layout-callout-mark-color, currentColor); }
+.layout-callout > .ar-zone-source { font-size: .5em; }

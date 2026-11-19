@@ -1,0 +1,52 @@
+/**
+ * One picture, as big as the slide allows, with a caption under it.
+ * The picture fills the space under the title (or the whole slide, with none), whole and
+ * undistorted; its caption is small and centred under it. Write a `figure` holding an `Img` and
+ * its `figcaption`; the plain form works too: an `Img` followed by a `p`.
+ * @example
+ * Slide(layout="caption")
+ *   h2 The city at night
+ *   figure
+ *     Img(file="city.jpg" alt="The city at night, from the hill")
+ *     figcaption Taken from the hill, 2026
+ *
+ * Slide(layout="caption")
+ *   Img(file="city.jpg" alt="The city at night, from the hill")
+ *   p Taken from the hill, 2026
+ * @param caption-size   the caption's size (default `--ar-text-small`)
+ * @param caption-align  the caption's alignment: `center`, `start` or `end` (default `center`)
+ */
+
+/* Its tokens, --ar-layout-caption-<thing>, each a @param above (a theme, the project's :root or
+   one slide sets them, a slide also as attributes: Slide(layout="caption" caption-align="start");
+   why each is resolved on the slide: cover.css).
+   The body is a column (Slide.vue) that the picture fills: a figure, or the plain form's picture
+   (an Img, an img, a video, an svg), takes the space its caption leaves; an Img is whole in it
+   (contain, its default: fit="cover" still fills it, cropped), and so are an img and a video. The
+   caption: the figure's figcaption, or the plain form's p after the picture. */
+:where(.layout-caption) {
+  --_ar-caption-size: var(--ar-layout-caption-caption-size, var(--ar-text-small));
+  --_ar-caption-align: var(--ar-layout-caption-caption-align, center);
+}
+
+/* the picture: the figure, or the plain form's, fills what the caption leaves */
+.layout-caption > .ar-body > figure {
+  flex: 1 1 0; min-height: 0;
+  display: flex; flex-direction: column;
+  margin: 0;
+}
+.layout-caption > .ar-body > :is(.ar-img, img, video, svg, picture),
+.layout-caption > .ar-body > figure > :is(.ar-img, img, video, svg, picture) {
+  flex: 1 1 0; min-height: 0; width: 100%;
+}
+.layout-caption > .ar-body :is(img, video):not(.ar-img > img) { object-fit: contain; }
+/* the caption */
+.layout-caption > .ar-body > figure > figcaption,
+.layout-caption > .ar-body > :is(.ar-img, img, video, svg, picture) ~ p {
+  flex: none;
+  margin: .6em 0 0;
+  font-size: var(--_ar-caption-size);
+  line-height: 1.3;
+  text-align: var(--_ar-caption-align);
+  color: var(--ar-muted);
+}

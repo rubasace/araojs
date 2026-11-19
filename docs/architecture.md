@@ -222,7 +222,8 @@ fails if those two imports are not the entry's last two, in that order, after `.
 `layout-<name>`, and it renders every slide the same way (the background layer, the header and the
 body it finds in its default slot, a zone `.ar-zone-<name>` per named slot, the footer). The rest
 is CSS: one file per layout, named as it. The library's are its `layouts/` folder, at the
-package's root (`cover`, `section`, `split`, `image-left`, `image-right`); the project's are
+package's root (`cover`, `section`, `split`, `grid`, `quote`, `statement`, `overlay`, `caption`,
+`agenda`, `image-left`, `image-right`); the project's are
 the plugin's `layouts` folder (default `src/layouts`). The Vite plugin loads both through
 `virtual:arao/layout-styles` (an eager glob of the library's files, all but those a project file
 of the same name replaces, then one of the project's folder); when a project file starts or stops

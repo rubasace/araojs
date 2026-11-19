@@ -1,0 +1,40 @@
+/**
+ * A slide that opens on an epigraph: a short quotation set apart, its source under it.
+ * The epigraph is a `blockquote`, on the right, in italics, a rule in the accent beside it; a `p`
+ * right after it is its source. The rest is the slide's content, as on any slide. The deck's
+ * footer is hidden.
+ * @example
+ * Slide(layout="epigraph" size="48px")
+ *   h2 Why we test
+ *   blockquote Testing shows the presence of bugs, never their absence.
+ *   p Edsger W. Dijkstra
+ *   p So we test what matters most first.
+ * @param size    the epigraph's size (default .45 x `--ar-title`)
+ * @param mark    the rule's colour (default `--ar-accent`)
+ * @param footer  the deck's footer: `none` hides it, `flex` shows it (default `none`)
+ */
+
+/* A project layout, as any slides project would write one: a CSS file of src/layouts named as the
+   layout (epigraph.css styles Slide(layout="epigraph")), which the plugin finds and loads
+   (nothing to import), after the library's layouts and before the themes. It starts with its doc
+   block, above: what the layout is for, an example, its parameters described (arao layouts
+   prints it, and the editor shows it on hovering layout="epigraph"). Its tokens follow the
+   library's convention: --ar-layout-<name>-<thing>, each resolved on the slide with its default,
+   and each an attribute of its slides (Slide(layout="epigraph" size="48px")), typed in
+   src/arao-layouts.d.ts. */
+:where(.layout-epigraph) {
+  --_ar-epigraph-size: var(--ar-layout-epigraph-size, calc(var(--ar-title) * .45));
+  --_ar-epigraph-mark: var(--ar-layout-epigraph-mark, var(--ar-accent));
+  --_ar-epigraph-footer: var(--ar-layout-epigraph-footer, none);
+}
+.layout-epigraph > .ar-body > blockquote {
+  align-self: flex-end; max-width: 60%; box-sizing: border-box;
+  margin: 0; padding-left: .8em;
+  border-left: 6px solid var(--_ar-epigraph-mark);
+  font-size: var(--_ar-epigraph-size); font-style: italic; line-height: 1.3;
+}
+.layout-epigraph > .ar-body > blockquote + p {
+  align-self: flex-end; max-width: 60%; margin: .4em 0 1.2em;
+  font-size: var(--ar-text-small); color: var(--ar-muted);
+}
+.layout-epigraph > .ar-footer { display: var(--_ar-epigraph-footer); }

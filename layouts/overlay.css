@@ -1,0 +1,57 @@
+/**
+ * Text over a full-slide picture: a `Background`, the title and a line over it.
+ * Meant for a slide with a `Background`: its title and its text sit in a corner (the bottom left
+ * by default), white, over a dark gradient that keeps them legible on any picture. The title is
+ * an `h2`, the text a `p` (or an `h3` subtitle) after it.
+ * @example
+ * Slide(layout="overlay")
+ *   Background(src="city.jpg")
+ *   h2 Built for the city
+ *   p Twelve teams, one platform.
+ * @param position  where the text sits, as CSS `place-content`: block then inline (`end start`, the
+ *                  bottom left, by default; `start end` the top right, `center` the middle)
+ * @param scrim     what is drawn between the picture and the text, as a CSS background (default a
+ *                  dark gradient rising from the bottom; give one that follows `position`, or
+ *                  `none`)
+ * @param color     the text's colour, its title's and its footer's (default `#fff`)
+ */
+
+/* Its tokens, --ar-layout-overlay-<thing>, each a @param above (a theme, the project's :root or
+   one slide sets them, a slide also as attributes: Slide(layout="overlay" position="start end");
+   why each is resolved on the slide: cover.css).
+   The slide is a grid of one column: its header and its body are rows as tall as their content,
+   the whole of them placed by --ar-layout-overlay-position (place-content), inside the slide's
+   padding (the body ends above the footer's band, as on any slide). The scrim is drawn last in
+   the background layer (Slide.vue's .ar-slide-bg, behind the content), over the Background and
+   the theme's own background. The colour is the text's, its title's, its subtitle's and its
+   footer's (--ar-title-color, --ar-subtitle-color and --ar-footer-color, set for .layout-overlay
+   in a theme, still win), and the muted text's a lighter shade of it (--ar-muted). No header
+   band: the title is part of the group. */
+:where(.layout-overlay) {
+  --_ar-overlay-position: var(--ar-layout-overlay-position, end start);
+  --_ar-overlay-scrim: var(--ar-layout-overlay-scrim, linear-gradient(to top, rgb(0 0 0 / .78), rgb(0 0 0 / .45) 40%, rgb(0 0 0 / 0) 75%));
+  --_ar-overlay-color: var(--ar-layout-overlay-color, #fff);
+  --ar-title-color: currentColor;
+  --ar-subtitle-color: color-mix(in srgb, currentColor 80%, transparent);
+  --ar-footer-color: color-mix(in srgb, currentColor 80%, transparent);
+  --ar-muted: color-mix(in srgb, var(--_ar-overlay-color) 80%, transparent);
+  --ar-header-height: auto;
+}
+
+.layout-overlay {
+  display: grid;
+  grid-template-columns: minmax(0, max-content);
+  grid-auto-rows: auto;
+  place-content: var(--_ar-overlay-position);
+  color: var(--_ar-overlay-color);
+}
+.layout-overlay > .ar-body { max-width: 100%; }
+.layout-overlay > .ar-header > .ar-title { max-width: 18em; }
+.layout-overlay > .ar-body > p { max-width: 36em; }
+/* the scrim, over the picture and under the text: above every Background (each stacked by a
+   z-index of its order among them, Background.vue) */
+.layout-overlay > .ar-slide-bg::after {
+  content: "";
+  position: absolute; inset: 0; z-index: 999;
+  background: var(--_ar-overlay-scrim);
+}

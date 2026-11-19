@@ -1,11 +1,11 @@
 <!-- A slide. Its one prop, layout, is a name: the slide's section carries the class layout-<name>
      (layout-default without it), and CSS does the rest. The engine renders every slide the same
      way, whatever its layout, and has no code for any of them: a layout is one CSS file, named as
-     the layout, in the library's layouts/ folder (cover, section, split, image-left,
-     image-right: each file starts with a doc block saying what it is for, how to use it, its
-     zones and its parameters: vite/layout-docs.js reads it) or the project's
-     src/layouts (the Vite plugin loads both, the project's after; one of the same name replaces
-     the library's). A name with no CSS is the default layout, below.
+     the layout, in the library's layouts/ folder (cover, section, split, grid, quote, statement,
+     overlay, caption, agenda, image-left, image-right: each file starts with a doc block saying
+     what it is for, how to use it, its zones and its parameters: vite/layout-docs.js reads it) or
+     the project's src/layouts (the Vite plugin loads both, the project's after; one of the same
+     name replaces the library's). A name with no CSS is the default layout, below.
      A layout's parameters are attributes: each token of its own its CSS reads,
      --ar-layout-<layout>-<thing>, is an attribute <thing> of a slide of that layout (or <thing>
      in camelCase), whose value is set as that token in the section's style, verbatim, instead of
@@ -29,11 +29,15 @@
          h2 Three pillars          ← header
          Cols …                    ← body
      Header: when the default slot starts with a heading (h1 or h2), that is the slide's title and
-     goes into the header, with the headings right after it (a subtitle, or one title per step
-     with v-step.only); Notes and Background before it do not count. A #title slot, when given, is
-     the header instead (complex headers) and the whole default slot is the body. With neither, the
-     body takes the whole slide. The title carries .ar-title and follows the --ar-title-* tokens
-     (below); --ar-header-height makes the header a band (read from the slide's computed style).
+     goes into the header, with the headings right after it: those of its tag are titles too (one
+     title per step with v-step.only), any other is its subtitle (h2 then h3, the convention: h1 on
+     a cover or a section, h2 a slide's title, h3 a subtitle or a heading inside). Notes and
+     Background before it do not count. A #title slot, when given, is the header instead (complex
+     headers) and the whole default slot is the body. With neither, the body takes the whole
+     slide. The title carries .ar-title and looks the same whatever its tag (h1 or h2): the
+     --ar-title-* tokens (below), which a layout may set for its slides; a subtitle .ar-subtitle,
+     its own --ar-subtitle-* tokens. --ar-header-height makes the header a band (read from the
+     slide's computed style).
      Body: a column, its content from the top, right under the header, on every slide alike. The
      token --ar-body-align places it (start, the default; center; end), so a theme or a layout can
      change it, and so can a class on the slide: top, center (the text centred too) or bottom
@@ -81,6 +85,9 @@
           <VNodes :nodes="footerSlot()({ number: index + 1, total })" />
         </footer>
       </template>
+      <!-- the others draw their title alone, hidden, so the deck knows every slide's title there
+           too (an Agenda on the cover lists the sections') -->
+      <VNodes v-else :nodes="titleOnly()" />
     </section>
   </Transition>
 </template>
@@ -148,7 +155,7 @@ type SlideZoneSlots<L extends keyof SlideLayouts> =
   (L extends keyof SlideLayouts ? (zones: { [Z in keyof SlideLayoutZones[L]]?: SlideSlot }) => void : never) extends (zones: infer Z) => void ? Z : never
 /** Its slots for a layout: the default and #title, every slide's, and the layout's zones. */
 type SlideSlots<L extends keyof SlideLayouts> = {
-  /** The slide's content: its title (the h1 or h2 it starts with, and the headings right after it) in the header, then the body. */
+  /** The slide's content: its title (the h1 or h2 it starts with) and its subtitle (the headings right after it) in the header, then the body. */
   default?: SlideSlot
   /** The slide's header instead of the heading its content starts with (a kicker line, a logo): the whole content is then the body. */
   title?: SlideSlot
@@ -165,7 +172,7 @@ export type SlideComponent = new <L extends keyof SlideLayouts = 'default'>(prop
 </script>
 
 <script setup lang="ts">
-import { Comment, Text, camelize, cloneVNode, h, onMounted, onUpdated, ref, shallowRef, useAttrs, useSlots, watch, type FunctionalComponent, type PropType, type StyleValue, type VNode } from 'vue'
+import { Comment, Fragment, Text, camelize, cloneVNode, h, onMounted, onUpdated, ref, shallowRef, useAttrs, useSlots, watch, type FunctionalComponent, type PropType, type StyleValue, type VNode } from 'vue'
 import { layoutTokens } from 'virtual:arao/layout-tokens'
 import { useDeck } from '../state/deck'
 import { createSlide } from '../state/slide'
@@ -204,9 +211,9 @@ const deck = useDeck()
 const el = ref<HTMLElement | null>(null)
 // the background layer, where a Background inside the slide draws itself (Background.vue)
 const layer = shallowRef<HTMLElement | null>(null)
-// its place in the stage, its step; still: export mode or a thumbnail, no transition; drawn:
-// whether its content is (state/slide.ts)
-const { id, index, active, drawn, step, still, total, footer: footerSlot } = createSlide({ el, layer })
+// its place in the stage (with its layout, for useDeck().slides), its step; still: export mode or
+// a thumbnail, no transition; drawn: whether its content is (state/slide.ts)
+const { id, index, active, drawn, step, still, total, footer: footerSlot } = createSlide({ el, layer, layout: () => props.layout })
 
 // ---- zones: header, body, a zone per named slot -----------------------------------------------
 // Slot content rendered by this component's own render (VNodes only places it), so a change in
@@ -214,23 +221,34 @@ const { id, index, active, drawn, step, still, total, footer: footerSlot } = cre
 const VNodes: FunctionalComponent<{ nodes: VNode[] }> = (p) => p.nodes
 VNodes.props = ['nodes']
 
-// The title: the heading(s) a slot's content starts with, h1 or h2: one title, a title and its
-// subtitle, or one title per step (h2(v-step.only.collapse="1"), h2(…="2")…). Comments (v-if),
-// blank text, Notes and Background (they draw nothing where they are) do not count. In a #title
-// slot, which is all header, the headings may come after something else (a kicker line).
+// The title: the heading(s) a slot's content starts with: an h1 or an h2, then any heading right
+// after it. Those of its tag are titles (one title, or one per step: h2(v-step.only.collapse="1"),
+// h2(…="2")…), any other its subtitle (h2 then h3). Comments (v-if), blank text, Notes and
+// Background (they draw nothing where they are) do not count. In a #title slot, which is all
+// header, the headings may come after something else (a kicker line).
 // → [first, end): the title is nodes[first] up to nodes[end - 1]; first = -1 when there is none.
 const blank = (n: VNode) => n.type === Comment || n.type === Notes || n.type === Background || (n.type === Text && !String(n.children).trim())
-const heading = (n: VNode) => n.type === 'h1' || n.type === 'h2'
+const opens = (n: VNode) => n.type === 'h1' || n.type === 'h2'
+const heading = (n: VNode) => typeof n.type === 'string' && /^h[1-6]$/.test(n.type)
+// A slot's nodes, its fragments opened: a component wrapping Slide passes its own slot on as one
+// fragment (Slide: slot), a v-for at the top is one, and what they hold is the slide's content
+// all the same (its title first). The DOM is the same either way.
+const flat = (nodes: VNode[]): VNode[] => nodes.flatMap((n) => (n.type === Fragment && Array.isArray(n.children) ? flat(n.children as VNode[]) : [n]))
 function titleRun(nodes: VNode[], anywhere = false): [number, number] {
   let i = 0
-  while (i < nodes.length && (blank(nodes[i]) || (anywhere && !heading(nodes[i])))) i++
-  if (i === nodes.length || !heading(nodes[i])) return [-1, -1]
+  while (i < nodes.length && (blank(nodes[i]) || (anywhere && !opens(nodes[i])))) i++
+  if (i === nodes.length || !opens(nodes[i])) return [-1, -1]
   let end = i + 1
   for (let j = end; j < nodes.length && (blank(nodes[j]) || heading(nodes[j])); j++) if (heading(nodes[j])) end = j + 1
   return [i, end]
 }
-const marked = (nodes: VNode[]) => nodes.map((n) => (heading(n) ? cloneVNode(n, { class: 'ar-title' }) : n))
-// the nodes with their title marked .ar-title, in place; { nodes, tag } (its first heading's tag)
+// a title's run (it starts with its first heading), its headings marked: .ar-title, or
+// .ar-subtitle for a tag other than the first one's
+function marked(nodes: VNode[]) {
+  const tag = nodes[0].type
+  return nodes.map((n) => (heading(n) ? cloneVNode(n, { class: n.type === tag ? 'ar-title' : 'ar-subtitle' }) : n))
+}
+// the nodes with their title marked, in place; { nodes, tag } (its first heading's tag)
 type Marked = { nodes: VNode[]; tag: VNode['type'] | null }
 function mark(nodes: VNode[], anywhere?: boolean): Marked {
   const [first, end] = titleRun(nodes, anywhere)
@@ -240,11 +258,11 @@ function mark(nodes: VNode[], anywhere?: boolean): Marked {
 // the header (#title, else the title the default slot starts with) and the body (the rest)
 function zoned() {
   const scope = { step: step.value }
-  const content = slots.default?.(scope) ?? []
+  const content = flat(slots.default?.(scope) ?? [])
   let head: Marked | null = null
   let body = content
   if (slots.title) {
-    head = mark(slots.title(scope), true)
+    head = mark(flat(slots.title(scope)), true)
   } else {
     const [first, end] = titleRun(content)
     if (first >= 0) {
@@ -264,8 +282,17 @@ function zoned() {
   else zones.push(...body)
   return zones
 }
-// the named slots that are zones: all but the default slot and #title (the header's)
-const zoneNames = () => Object.keys(slots).filter((n) => n !== 'default' && n !== 'title')
+// A slide whose content is not drawn (a thumbnail's, but its cover): its title alone, hidden, for
+// the deck's list of slides (state/slide.ts reads it); nothing else of it mounts.
+function titleOnly() {
+  const scope = { step: step.value }
+  const nodes = flat((slots.title ?? slots.default)?.(scope) ?? [])
+  const [first, end] = titleRun(nodes, !!slots.title)
+  return first < 0 ? [] : [h('div', { class: 'ar-header', style: { display: 'none' } }, marked(nodes.slice(first, end)))]
+}
+// the named slots that are zones: all but the default slot and #title (the header's), and only
+// slots: after a hot reload Vue's own flag (_) is among the keys of the slots object
+const zoneNames = () => Object.keys(slots).filter((n) => n !== 'default' && n !== 'title' && typeof slots[n] === 'function')
 
 // What CSS alone cannot say, read from the computed style: whether the theme gives the header a
 // band (--ar-header-height). Read once mounted, after every render, and whenever the theme or the
@@ -318,10 +345,10 @@ watch([deck.theme, () => props.layout], readTokens, { flush: 'post' })
 .ar-slide-bg:has(> .ar-background) > .ar-slide-bg-theme { display: none; }
 
 /* Zones (default layout): the header (its title), the body.
-   The header is as tall as its title, whose margin (--ar-title-gap, below) separates it from the
-   body. When the theme sets --ar-header-height, the header is a band at least that tall with the
-   title centred in it, and the gap goes under the band (.ar-header-band, below). */
-.ar-header { flex: none; display: flex; flex-direction: column; }
+   The header is as tall as its title (and its subtitle), and its margin (--ar-title-gap, below)
+   separates it from the body. When the theme sets --ar-header-height, the header is a band at
+   least that tall with the title centred in it, the gap under the band. */
+.ar-header { flex: none; display: flex; flex-direction: column; margin-bottom: var(--_ar-title-gap); }
 .ar-header-band { min-height: var(--ar-header-height); justify-content: center; box-sizing: border-box; }
 /* The body fills the rest: a column like the slide itself, so pieces and flex: 1 fill it. What
    does not fill it sits where --ar-body-align says (start, center, end; default start); what does
@@ -390,33 +417,36 @@ watch([deck.theme, () => props.layout], readTokens, { flush: 'post' })
 .ar-slide h2 { font-size: calc(var(--ar-title) * .6); margin: 0 0 .6em; color: var(--ar-accent); }
 .ar-slide p { margin: 0 0 .6em; }
 
-/* The slide's title (.ar-title): the heading(s) of its header, in every layout. Without the
-   tokens it looks as any h1/h2 does:
-     --ar-title-size    its font size (default: an h2 is 0.6x --ar-title, an h1 --ar-title)
-     --ar-title-color   its colour (default: an h2 in the accent, an h1 in the text colour)
-     --ar-title-align   start | center | end (default: as the slide's text)
-     --ar-title-gap     the space under it, before the body (default .6em of an h2, .4em of an h1;
-                        em is the title's size, as for any margin of it)
-   Same specificity as the rules above, after them: a deck's own h2 rule still wins. Each reads
-   the token, or its default for that heading, through a private --_ar-h1-…/--_ar-h2-… (tokens.css). */
-.ar-slide h1:where(.ar-title) {
-  font-size: var(--_ar-h1-size);
-  color: var(--_ar-h1-color);
+/* The slide's title (.ar-title) and its subtitle (.ar-subtitle): the headings of its header, in
+   every layout. The title looks the same whatever its tag, h1 or h2: its look is the tokens' (and
+   a layout's, which may set them or style its own title: a cover's and a section's are larger),
+   never the tag's. Its defaults are an h2's (the convention: h2 a slide's title, h1 on a cover or
+   a section, h3 a subtitle or a heading inside); the headings of the body keep the rules above.
+     --ar-title-size       its font size (default 0.6x --ar-title)
+     --ar-title-color      its colour (default --ar-accent)
+     --ar-title-align      start | center | end, the subtitle's too (default: as the slide's text)
+     --ar-title-gap        the space under the header, before the body (default 0.6x the title's
+                           size; em there is the slide's text size)
+     --ar-subtitle-size    the subtitle's font size (default 0.45x --ar-title)
+     --ar-subtitle-color   its colour (default --ar-muted)
+     --ar-subtitle-gap     the space above it, under the title (default .2em: its own size)
+   Same specificity as the rules above, after them: a deck's own h2 rule still wins. The tokens
+   whose default is another token are read through a private --_ar-… (tokens.css). */
+.ar-slide :is(h1, h2, h3, h4, h5, h6):where(.ar-title) {
+  font-size: var(--_ar-title-size);
+  line-height: inherit;
+  color: var(--_ar-title-color);
   text-align: var(--ar-title-align);
-  margin-bottom: var(--_ar-h1-gap);
+  margin: 0;
 }
-.ar-slide h2:where(.ar-title) {
-  font-size: var(--_ar-h2-size);
-  color: var(--_ar-h2-color);
+.ar-slide :is(h1, h2, h3, h4, h5, h6):where(.ar-subtitle) {
+  font-size: var(--_ar-subtitle-size);
+  font-weight: 400;
+  line-height: inherit;
+  color: var(--_ar-subtitle-color);
   text-align: var(--ar-title-align);
-  margin-bottom: var(--_ar-h2-gap);
+  margin: var(--ar-subtitle-gap) 0 0;
 }
-/* in a header band (--ar-header-height) the gap goes under the band, so the title sits centred in
-   it; its default is the same length as above (em of the title, computed from the size tokens) */
-.ar-header-band > .ar-title { margin-bottom: 0; }
-.ar-header-band { margin-bottom: var(--_ar-band-gap); }
-.ar-header-band.ar-header-h1 { margin-bottom: var(--_ar-h1-band-gap); }
-.ar-header-band.ar-header-h2 { margin-bottom: var(--_ar-h2-band-gap); }
 
 /* lists: --ar-list-gap between items (default 0). Zero specificity: a deck's li rule wins. */
 :where(.ar-slide li + li) { margin-top: var(--ar-list-gap); }

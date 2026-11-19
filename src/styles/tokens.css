@@ -49,7 +49,8 @@
   /* --ar-font-heading: not declared: headings keep the font around them (Slide.vue) */
   --ar-text-base: 42px;              /* base font size of a slide */
   --ar-text-small: .75em;            /* .small */
-  --ar-title: 96px;                  /* the type scale: h1; h2 .6x (the cover's and the section's h1: layouts/) */
+  --ar-title: 96px;                  /* the type scale: h1; h2 .6x; the slide title .6x, its subtitle
+                                        .45x (the cover's and the section's title: layouts/) */
   --ar-radius: 4px;                  /* Img rounded, the missing-picture box */
   --ar-placeholder: currentColor;    /* the missing picture or icon box (the text colour where drawn) */
 
@@ -73,8 +74,10 @@
   --ar-body-align: start;            /* the body's place: start | center | end (classes top, center,
                                         bottom set it on one slide) */
   --ar-header-height: auto;          /* a length: the header is a band that tall (read by script too) */
-  --ar-title-align: match-parent;    /* the slide title: start | center | end */
+  --ar-title-align: match-parent;    /* the slide title and subtitle: start | center | end */
   /* --ar-title-size, --ar-title-color, --ar-title-gap: below (their defaults are other tokens) */
+  --ar-subtitle-gap: .2em;           /* above the subtitle, under the title (em: its own size) */
+  /* --ar-subtitle-size, --ar-subtitle-color: below */
   --ar-footer-height: 88px;
   --ar-footer-size: 24px;
   --ar-footer-align: space-between;
@@ -221,9 +224,9 @@
 
 /* Defaults that are other tokens, resolved on every element (see above). Each line: the private
    token the components read, the public one it follows, and the default.
-     --ar-title-size, --ar-title-color, --ar-title-gap: the slide's title (Slide.vue), each with a
-       default of its own for an h1 title and an h2 title; and the gap under a header band, which
-       counts in the title's size (.ar-header-band) */
+     --ar-title-size, --ar-title-color, --ar-title-gap: the slide's title (Slide.vue), whatever its
+       tag; the gap, under the header, counts in the title's size
+     --ar-subtitle-size, --ar-subtitle-color: its subtitle */
 :where(*) {
   --_ar-footer-color: var(--ar-footer-color, var(--ar-muted));
   --_ar-table-border: var(--ar-table-border, 2px solid color-mix(in srgb, var(--ar-fg) 15%, transparent));
@@ -232,15 +235,11 @@
   --_ar-code-hl-line: var(--ar-code-hl-bg, color-mix(in srgb, var(--_ar-code-hl) 14%, transparent));
   --_ar-code-hl-word: var(--ar-code-hl-bg, color-mix(in srgb, var(--_ar-code-hl) 22%, transparent));
   --_ar-controls-accent: var(--ar-controls-accent, var(--ar-accent));
-  --_ar-h1-size: var(--ar-title-size, var(--ar-title));
-  --_ar-h2-size: var(--ar-title-size, calc(var(--ar-title) * .6));
-  --_ar-h1-color: var(--ar-title-color, currentColor);
-  --_ar-h2-color: var(--ar-title-color, var(--ar-accent));
-  --_ar-h1-gap: var(--ar-title-gap, .4em);
-  --_ar-h2-gap: var(--ar-title-gap, .6em);
-  --_ar-band-gap: var(--ar-title-gap, 0px);
-  --_ar-h1-band-gap: var(--ar-title-gap, calc(var(--_ar-h1-size) * .4));
-  --_ar-h2-band-gap: var(--ar-title-gap, calc(var(--_ar-h2-size) * .6));
+  --_ar-title-size: var(--ar-title-size, calc(var(--ar-title) * .6));
+  --_ar-title-color: var(--ar-title-color, var(--ar-accent));
+  --_ar-title-gap: var(--ar-title-gap, calc(var(--_ar-title-size) * .6));
+  --_ar-subtitle-size: var(--ar-subtitle-size, calc(var(--ar-title) * .45));
+  --_ar-subtitle-color: var(--ar-subtitle-color, var(--ar-muted));
 }
 /* docked in the presenter view, the controls sit in no theme, so they have no accent to take:
    their accent defaults to their text colour. On them and inside them (each element resolves

@@ -34,7 +34,8 @@ changes.
 
 ## Three zones
 
-A content slide is a header (the `h1`/`h2` it starts with), a body (everything else, from the
+A content slide is a header (the `h1`/`h2` it starts with: its title, which looks the same
+whatever the tag, and an `h3` right after it, its subtitle), a body (everything else, from the
 top, right under the header, on every slide alike) and the deck's footer. Nothing to declare: the
 slide finds them ([Zones](slides-and-layouts.md#zones-header-body-footer)). A layout
 (`Slide(layout="cover")`) is CSS that arranges those same zones another way.
@@ -59,7 +60,7 @@ A deck's template is a plain Vue template, in either syntax; each file picks its
 (`<template lang="pug">`) is the recommended one, for brevity, and the plugin brings it along.
 HTML (`<template>`) is Vue's own and needs nothing. Components, props, slots, directives and the
 attribute rules below are the same in both: `Slide(layout="split")` is `<Slide layout="split">`,
-`p.muted Text` is `<p class="muted">Text</p>`, `template(#left)` is `<template #left>`, and a
+`p.muted Text` is `<p class="muted">Text</p>`, `template(#image)` is `<template #image>`, and a
 component with no content may close itself. A split slide, in HTML:
 
 ```vue
@@ -67,14 +68,14 @@ component with no content may close itself. A split slide, in HTML:
   <Deck :themes="['default']">
     <Slide layout="split">
       <h2>Before and after</h2>
-      <template #left>
+      <div>
         <h3>Before</h3>
         <p class="muted">Every team rolled its own.</p>
-      </template>
-      <template #right>
-        <h3 v-step="2">After</h3>
+      </div>
+      <div v-step="2">
+        <h3>After</h3>
         <Snippet file="Starter.java" :highlights='{ "2-3": 2 }' :line-numbers="false" />
-      </template>
+      </div>
     </Slide>
   </Deck>
 </template>

@@ -14,10 +14,10 @@
 // its own in src/themes (THEME, in a file of another name: the plugin names it by its selector;
 // and THEME-extra, in a partial that file @import-s), ROOM in src/venues, IMPORTED in a theme
 // package it depends on (vendor/, its CSS in the folder its package.json names), the playground's decks, images,
-// snippets and layouts (src/layouts) as content, and four tiny decks of its own (so that the project has several and /
+// snippets, layouts (src/layouts) and slides (src/slides: a component wrapping Slide) as content, and five tiny decks of its own (so that the project has several and /
 // lists them; the second has a duration and lists its themes, the third neither: it gets every
 // theme there is; the fourth a file name and a cover heading far too long for its card, and THEME
-// first; the fifth lists first IMPORTED, the theme package's).
+// first; the fifth lists first IMPORTED, the theme package's; the sixth opens on its Agenda).
 // Then, in order:
 //   1. npm install
 //   2. vite build                      must pass, and write dist/404.html, a copy of index.html,
@@ -26,7 +26,7 @@
 //      not in the build), and a layout file whose name is no layout's, or that names no
 //      .layout-<name>, warns and is loaded; each build writes src/arao-layouts.d.ts, the project's
 //      layouts' valid names (for the editor and vue-tsc), each with its parameters (the tokens it
-//      reads: the playground's quote's), the project's cover's replacing the library's, and its
+//      reads: the playground's epigraph's), the project's cover's replacing the library's, and its
 //      token named as an HTML attribute (--ar-layout-cover-title) none, with one warning; with the
 //      zones each places (the cover's doc block's @zone, then the .ar-zone-<name> its CSS styles
 //      under .layout-cover, not a rule of split's) and its doc (read after a licence header, a Pug
@@ -34,7 +34,7 @@
 //      with those files, <bin> layouts --json (the config printing as it loads: on stderr) gives
 //      the araojs version and lists default, the library's but cover (each documented in full),
 //      then every project file (cover replacing the library's, as its doc block says, its /**
-//      comment after its code a problem; quote, the playground's, documented; plain, with no doc
+//      comment after its code a problem; epigraph, the playground's, documented; plain, with no doc
 //      block and its problem; "bad name", which no slide can name), and <bin> layouts prints a
 //      block per layout saying where it comes from;
 //      with a theme source that is a package not installed, one that gives no theme, one whose
@@ -70,7 +70,14 @@
 //      painted with it), not an attribute, in the audience view, the presenter view, export mode
 //      and its thumbnail in the list, and follows the ref; an attribute that is no parameter
 //      (data-smoke) still reaches the section; the playground's image-right (the library's
-//      layout) takes columns="3fr 2fr", its quote (the project's) size="72px"
+//      layout) takes columns="3fr 2fr", its epigraph (the project's) size="48px"
+//   4c. the slides of the deck, under both servers, on the playground's deck: a slide of the
+//      project's own (src/slides/WrappedSlide.vue, a component wrapping Slide) is a slide like the
+//      others: in its place, its heading its header's title and its name in the jump list, its
+//      two steps walked, a page per step in the export; and Agenda lists the deck's sections,
+//      each done, current (aria-current) or upcoming as seen from its slide, in the audience
+//      view, the presenter view (its slide and the preview's copy) and the export's book; on
+//      the sixth deck, an Agenda on its first slide, in its window and in its thumbnail in the list
 //   5. useDeck()'s face, under the dev server, on the second deck: frozen, its refs read-only all
 //      the way down, setTheme refuses a name the deck has not (one [arao] warning), and in the
 //      presenter view's preview no function acts
@@ -174,7 +181,7 @@ const lib = JSON.parse(await readFile(join(repo, 'package.json'), 'utf8'))
 const PKG = lib.name
 const BIN = typeof lib.bin === 'string' ? PKG.replace(/^@[^/]+\//, '') : Object.keys(lib.bin ?? {})[0]
 if (!BIN) throw new Error('package.json has no "bin"')
-const CONTENT = ['decks', 'images', 'snippets', 'layouts'] // from the playground's src/
+const CONTENT = ['decks', 'images', 'snippets', 'layouts', 'slides'] // from the playground's src/
 // a deck of the smoke project only: with the playground's, the project has several. MARK, its
 // heading, tells it from the others once open. Faces keeps every useDeck() it is handed (one per
 // drawing of the deck) in window.__faces, for the face check and the duration check (15 min:
@@ -292,6 +299,22 @@ Deck(:themes="['${IMPORTED}', 'default']")
 </template>
 `]
 
+// a sixth deck of the smoke project only: its first slide is an agenda slide, whose Agenda (on the
+// slide at place 0) lists its sections, the first one current, in its window and in the list's
+// thumbnail, where the sections draw nothing but their titles (OUTLINE_ITEMS)
+const OUTLINE = ['Outline.vue', `<template lang="pug">
+Deck
+  Slide(layout="agenda")
+    h2 An outline first
+    Agenda
+  Slide(layout="section")
+    h1 Part one
+  Slide(layout="section")
+    h1 #[Icon(name="lucide:rocket")] Part two
+</template>
+`]
+const OUTLINE_ITEMS = 'Part one:current, Part two:upcoming'
+
 // the first theme each deck's cover wears in the list, by deck name, and its canvas's background
 // (SAMPLE's, HALL's; null: default's, whatever it is)
 const COVER_THEMES = { [basename(LONG[0], '.vue')]: [THEME, SAMPLE.bg], Venue: [IMPORTED, HALL.bg] }
@@ -304,6 +327,7 @@ const TITLES = {
   Second: 'Second',
   Untimed: 'Untimed',
   Venue: 'Venue',
+  Outline: 'Outline',
   [basename(LONG[0], '.vue')]: 'The Deck Whose File Name is so long that no card of the list could ever hold it on one line',
 }
 
@@ -405,6 +429,7 @@ try {
   await writeFile(join(project, 'src', 'decks', UNTIMED[0]), UNTIMED[1])
   await writeFile(join(project, 'src', 'decks', LONG[0]), LONG[1])
   await writeFile(join(project, 'src', 'decks', VENUE[0]), VENUE[1])
+  await writeFile(join(project, 'src', 'decks', OUTLINE[0]), OUTLINE[1])
   const decks = (await readdir(join(project, 'src', 'decks'))).filter((f) => f.endsWith('.vue')).map((f) => basename(f, '.vue'))
   if (decks.length < 2) throw new Error('the project needs two decks or more to test the selector')
   log(`decks: ${decks.join(', ')}`)
@@ -593,7 +618,7 @@ try {
   const ownLayouts = async () => (await readdir(join(project, 'src', 'layouts')).catch(() => [])).filter((f) => f.endsWith('.css')).map((f) => basename(f, '.css')).sort()
 
   // layouts: the library's (the installed package's layouts/) and the project's (src/layouts, the
-  // playground's quote.css) are in the build; a project file named like a library one replaces it
+  // playground's epigraph.css) are in the build; a project file named like a library one replaces it
   // (a message says so, and the library file's CSS is not in the build); a file whose name is no
   // layout's, and one that names no .layout-<name>, are loaded, each with a warning. Each build
   // writes the project's layouts' names (valid ones only) into src/arao-layouts.d.ts
@@ -611,13 +636,13 @@ try {
     else if (missing.length) fail(`vite build: no CSS for the layouts ${missing.join(', ')} in the build`)
     else if (typed !== own.join(', ')) fail(`vite build: src/arao-layouts.d.ts ${typed == null ? 'not written' : `lists ${typed || 'no layout'}`}, not ${own.join(', ')}`)
     else console.log(`  layouts: ${library.join(', ')} (the library's) and ${own.join(', ')} (the project's) in the build, and the project's in src/arao-layouts.d.ts`)
-    // the playground's quote.css reads --ar-layout-quote-footer, -mark and -size: its parameters;
-    // it places no zone
-    const quote = await typedParams('quote')
-    const quoteZones = await typedZones('quote')
-    if (quote !== 'footer, mark, size') fail(`vite build: src/arao-layouts.d.ts types quote's parameters as ${quote ?? 'nothing'}, not footer, mark, size`)
-    else if (quoteZones !== '') fail(`vite build: src/arao-layouts.d.ts types quote's zones as ${quoteZones ?? 'nothing'}, not none`)
-    else console.log(`  layout parameters: quote's (${quote}) in src/arao-layouts.d.ts, and its zones (none)`)
+    // the playground's epigraph.css reads --ar-layout-epigraph-footer, -mark and -size: its
+    // parameters; it places no zone
+    const epigraph = await typedParams('epigraph')
+    const epigraphZones = await typedZones('epigraph')
+    if (epigraph !== 'footer, mark, size') fail(`vite build: src/arao-layouts.d.ts types epigraph's parameters as ${epigraph ?? 'nothing'}, not footer, mark, size`)
+    else if (epigraphZones !== '') fail(`vite build: src/arao-layouts.d.ts types epigraph's zones as ${epigraphZones ?? 'nothing'}, not none`)
+    else console.log(`  layout parameters: epigraph's (${epigraph}) in src/arao-layouts.d.ts, and its zones (none)`)
     // the project's cover replaces the library's, its parameters too: pad, not bar, footer and
     // title-size; its --ar-layout-cover-title is none (title is an HTML attribute), with a warning.
     // Its doc block, after a licence header, names a zone (aside), and its CSS styles another
@@ -670,7 +695,7 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
       // (the config printing a line as it loads: on stderr, the JSON alone on stdout), with the
       // araojs version: default, the library's (but cover, which the project's replaces), every
       // file of the project's folder ("bad name" too, which no slide can name); the library's
-      // documented in full, the playground's quote with its doc block, the project's cover as its
+      // documented in full, the playground's epigraph with its doc block, the project's cover as its
       // doc block says, plain with none and its problem
       log(`${BIN} layouts --json`)
       const viteConfig = join(project, 'vite.config.js')
@@ -708,10 +733,10 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
           if (!l.params.length || l.params.some((p) => !p.description || p.token !== `--ar-layout-${l.name}-${p.name}`)) complaints.push(`the library's ${l.name}: its parameters are not each described, with their token`)
         }
         if (names(by['image-right']?.zones ?? []) !== 'image' || !by['image-right'].zones[0].description) complaints.push(`image-right's zones are ${names(by['image-right']?.zones ?? [])}, not image, described`)
-        if (names(by.split?.zones ?? []) !== 'left, right') complaints.push(`split's zones are ${names(by.split?.zones ?? [])}, not left, right`)
-        const q = by.quote
-        if (!q?.documented || q.source !== 'project' || q.file !== 'src/layouts/quote.css' || q.replaces || !q.summary || !q.example.includes('Slide(layout="quote"')) complaints.push('the playground\'s quote is not the project\'s src/layouts/quote.css, with its summary and example')
-        else if (names(q.params) !== 'footer, mark, size' || q.params.some((p) => !p.description)) complaints.push(`quote's parameters are ${names(q.params)}, not footer, mark, size, each described`)
+        if ((by.split?.zones ?? []).length) complaints.push(`split's zones are ${names(by.split.zones)}, not none (its sides are its body's children)`)
+        const q = by.epigraph
+        if (!q?.documented || q.source !== 'project' || q.file !== 'src/layouts/epigraph.css' || q.replaces || !q.summary || !q.example.includes('Slide(layout="epigraph"')) complaints.push('the playground\'s epigraph is not the project\'s src/layouts/epigraph.css, with its summary and example')
+        else if (names(q.params) !== 'footer, mark, size' || q.params.some((p) => !p.description)) complaints.push(`epigraph's parameters are ${names(q.params)}, not footer, mark, size, each described`)
         const c = by.cover
         if (c?.source !== 'project' || !c.replaces || c.file !== 'src/layouts/cover.css') complaints.push('cover is not the project\'s src/layouts/cover.css, replacing the library\'s')
         else {
@@ -722,14 +747,14 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
         }
         if (by.plain?.documented !== false || !by.plain.problems.some((p) => /names no \.layout-plain/.test(p))) complaints.push('plain is not listed with no doc block and its problem (it names no .layout-plain)')
         for (const x of complaints) fail(`${BIN} layouts --json: ${x}`)
-        if (!complaints.length) console.log(`  ${BIN} layouts --json: version ${printed.version}; ${names(got)}; each library layout described, the project's quote and cover as their doc blocks say (cover replacing the library's; after a licence header; its zones its own; its example with an @ line), plain and "bad name" with their problems; the config's own output on stderr`)
+        if (!complaints.length) console.log(`  ${BIN} layouts --json: version ${printed.version}; ${names(got)}; each library layout described, the project's epigraph and cover as their doc blocks say (cover replacing the library's; after a licence header; its zones its own; its example with an @ line), plain and "bad name" with their problems; the config's own output on stderr`)
       }
       // and for a person: a block per layout, saying where it comes from
       log(`${BIN} layouts`)
       const text = await exec('npx', ['--no-install', BIN, 'layouts'], project)
       const lines = [
         'cover (project, src/layouts/cover.css, replaces the library\'s)', `  ${COVER_DOC[0]}`, '    #aside  a note beside the title',
-        'quote (project, src/layouts/quote.css)', 'split (library)', '    #left ', 'default (the engine\'s: a Slide without a layout)',
+        'epigraph (project, src/layouts/epigraph.css)', 'image-right (library)', '    #image ', 'default (the engine\'s: a Slide without a layout)',
         'plain (project, src/layouts/plain.css)', '  No doc block', '  Problems:', '  Example:',
         'bad name (project, src/layouts/bad name.css, no slide can name it)',
       ]
@@ -1125,7 +1150,7 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
   // view, the presenter view (its slide and its preview's copy), export mode and the list's thumbnail;
   // not an attribute of the section, where data-smoke (no parameter) is. The ref changed
   // (BAR[1]): the bar follows. On the playground's deck: the library's image-right takes
-  // columns="3fr 2fr" (its columns, 3 to 2), the project's quote size="72px" (its quote's size).
+  // columns="3fr 2fr" (its columns, 3 to 2), the project's epigraph size="48px" (its blockquote's size).
   async function layoutParams(base, mode) {
     const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
     const complaints = []
@@ -1172,7 +1197,7 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
       await page.waitForFunction(() => [...document.querySelectorAll('.ar-decks-card')].every((c) => c.querySelector('.ar-thumb .ar-slide')), null, { timeout: 30_000 }).catch(() => {})
       await check('the list\'s thumbnail', 'list', BAR[0])
       // the playground's: the library's image-right (its columns, once on screen) and the
-      // project's quote (its blockquote's size)
+      // project's epigraph (its blockquote's size)
       await open('playground#/1/1')
       const n = await page.evaluate(() => [...document.querySelectorAll('.ar-slide')].findIndex((s) => s.classList.contains('layout-image-right')) + 1)
       if (!n) complaints.push('no image-right slide in the playground')
@@ -1180,25 +1205,130 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
         await open(`playground#/${n}/1`)
         const got = await page.evaluate((i) => {
           const s = document.querySelectorAll('.ar-slide')[i]
-          const q = document.querySelector('.ar-slide.layout-quote')
+          const q = document.querySelector('.ar-slide.layout-epigraph')
           return {
             token: s.style.getPropertyValue('--ar-layout-image-right-columns').trim(),
             columns: getComputedStyle(s).gridTemplateColumns.split(' ').map(parseFloat),
             attr: s.hasAttribute('columns'),
-            quote: q?.style.getPropertyValue('--ar-layout-quote-size').trim(),
+            epigraph: q?.style.getPropertyValue('--ar-layout-epigraph-size').trim(),
             size: q && getComputedStyle(q.querySelector('blockquote')).fontSize,
           }
         }, n - 1)
         const ratio = got.columns.length === 2 ? got.columns[0] / got.columns[1] : NaN
         if (got.token !== '3fr 2fr' || got.attr) complaints.push(`playground image-right: --ar-layout-image-right-columns "${got.token}"${got.attr ? ', and columns an attribute too' : ''}`)
         else if (Math.abs(ratio - 1.5) > 0.01) complaints.push(`playground image-right: its columns ${got.columns.join(' / ')}, not 3 to 2`)
-        if (got.quote !== '72px' || got.size !== '72px') complaints.push(`playground quote: --ar-layout-quote-size "${got.quote}", its quote ${got.size}, not 72px`)
+        if (got.epigraph !== '48px' || got.size !== '48px') complaints.push(`playground epigraph: --ar-layout-epigraph-size "${got.epigraph}", its blockquote ${got.size}, not 48px`)
       }
       console.log(`  ${mode} layout parameters: ${complaints.length ? 'problems below' : 'set as tokens in audience, presenter, export and thumbnail, following a ref; the library\'s and the project\'s'}`)
     } finally {
       await page.context().close()
     }
     for (const c of complaints) fail(`${mode} layout parameters: ${c}`)
+  }
+
+  // The slides of the deck, on the playground's. A slide of the project's own (WrappedSlide,
+  // src/slides/WrappedSlide.vue: a component that renders a Slide, the deck's content passed on
+  // through its slot) is a slide like the others: in its place (right after "A table", right
+  // before "Icons"), its heading the title of its header and its name in the jump list, at its
+  // number; its two steps walked (#/n/1, #/n/2, then the next slide); a page per step in the
+  // export's book. And Agenda (the playground's two agenda slides) lists the titles of the deck's
+  // section slides, in order, each item marked as seen from its slide (done, current with
+  // aria-current, upcoming), in the audience view, the presenter view (its slide and the
+  // preview's copy) and the export's book.
+  async function deckSlides(base, mode) {
+    const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
+    const complaints = []
+    page.on('console', (m) => ['warning', 'error'].includes(m.type()) && complaints.push(`console ${m.type()}: ${m.text()}`))
+    page.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
+    const TITLE = 'A slide in a component'
+    const SECTIONS = ['Layouts', 'Building blocks', 'The end']
+    const STATES = ['current upcoming upcoming', 'done current upcoming']
+    const open = async (path, ms = 500) => {
+      await page.goto(new URL(path, base).href)
+      await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
+      await pause(ms)
+    }
+    // every Agenda in a part of the page (the stages, one by one, or the export's book): each
+    // item's text, its state (the state classes it has), and its aria-current
+    const agendas = (scope) => page.evaluate((scope) => [...document.querySelectorAll(scope)].map((root) =>
+      [...root.querySelectorAll('.ar-agenda')].map((ol) => [...ol.children].map((li) => ({
+        text: li.textContent.trim(),
+        state: ['done', 'current', 'upcoming'].filter((s) => li.classList.contains(`ar-agenda-${s}`)).join(' '),
+        item: li.classList.contains('ar-agenda-item'),
+        aria: li.getAttribute('aria-current'),
+      })))), scope)
+    const checkAgendas = (what, found) => {
+      if (found.length !== STATES.length) return complaints.push(`${what}: ${found.length} Agendas, not ${STATES.length}`)
+      found.forEach((items, k) => {
+        const texts = items.map((i) => i.text).join(', ')
+        const states = items.map((i) => i.state).join(' ')
+        if (texts !== SECTIONS.join(', ')) complaints.push(`${what}: Agenda ${k + 1} lists ${texts}, not ${SECTIONS.join(', ')}`)
+        else if (states !== STATES[k]) complaints.push(`${what}: Agenda ${k + 1}'s states are ${states}, not ${STATES[k]}`)
+        else if (items.some((i) => !i.item || (i.aria === 'step') !== (i.state === 'current'))) complaints.push(`${what}: Agenda ${k + 1}'s items are not each .ar-agenda-item, aria-current="step" on the current one alone`)
+      })
+    }
+    try {
+      await open('playground#/1/1')
+      const got = await page.evaluate((title) => {
+        const slides = [...document.querySelector('.ar-stage').querySelectorAll('.ar-slide')]
+        const at = slides.findIndex((s) => s.querySelector(':scope > .ar-header > .ar-title')?.textContent.trim() === title)
+        const heading = (s) => s?.querySelector('h1, h2')?.textContent.trim() ?? null
+        return { at, total: slides.length, before: heading(slides[at - 1]), after: heading(slides[at + 1]) }
+      }, TITLE)
+      const n = got.at + 1
+      if (got.at < 0) complaints.push(`no slide whose header's title is "${TITLE}" (WrappedSlide's content)`)
+      else if (got.before !== 'A table' || got.after !== 'Icons') complaints.push(`"${TITLE}" is slide ${n}, between "${got.before}" and "${got.after}", not between "A table" and "Icons"`)
+      else {
+        // its name in the jump list, at its number
+        await page.keyboard.press('g')
+        await page.waitForSelector('.ar-slides .ar-item', { timeout: 5_000 }).catch(() => {})
+        const listed = await page.evaluate(() => [...document.querySelectorAll('.ar-slides .ar-item')].map((b) => [b.querySelector('.n')?.textContent.trim(), b.querySelector('.t')?.textContent.trim()]))
+        await page.keyboard.press('Escape')
+        const entry = listed.find(([, t]) => t === TITLE)
+        if (!entry || entry[0] !== String(n)) complaints.push(`the jump list has "${TITLE}" at ${entry ? entry[0] : 'no number'}, not ${n}`)
+        // its steps, walked
+        await open(`playground#/${n}/1`, 300)
+        const hashes = [await page.evaluate(() => location.hash)]
+        for (let k = 0; k < 2; k++) {
+          const was = hashes[hashes.length - 1]
+          await page.keyboard.press('ArrowRight')
+          await page.waitForFunction((w) => location.hash !== w, was, { timeout: 3_000 }).catch(() => {})
+          hashes.push(await page.evaluate(() => location.hash))
+        }
+        const walkedTo = [`#/${n}/1`, `#/${n}/2`, `#/${n + 1}/1`]
+        if (hashes.join(' ') !== walkedTo.join(' ')) complaints.push(`"${TITLE}" walked ${hashes.join(' → ')}, not ${walkedTo.join(' → ')}`)
+      }
+      checkAgendas('audience', (await agendas('.ar-viewport > .ar-stage'))[0] ?? [])
+      await open('playground?presenter#/1/1')
+      const drawings = await agendas('.ar-stage')
+      if (drawings.length !== 2) complaints.push(`the presenter view draws ${drawings.length} stages, not 2`)
+      drawings.forEach((found, k) => checkAgendas(`presenter view, ${k ? 'its preview' : 'its slide'}`, found))
+      // the export's book, once done: two pages for its two steps, and the Agendas as on screen
+      await open('playground?export', 300)
+      await page.waitForSelector('.ar-export-done', { timeout: 90_000 }).catch(() => complaints.push('export mode: the book was not done within 90 s'))
+      const pages = await page.evaluate((title) => [...document.querySelectorAll('.ar-book .ar-page')].filter((p) => p.querySelector('.ar-header > .ar-title')?.textContent.trim() === title).length, TITLE)
+      if (pages !== 2) complaints.push(`export mode: ${pages} pages of "${TITLE}", not 2 (one per step)`)
+      const book = await agendas('.ar-book')
+      // each agenda slide is on one page (one step): the book's Agendas are its two, in order
+      checkAgendas('export mode', book[0] ?? [])
+      // the sixth deck's Agenda, on its first slide: in its window, and in its thumbnail in the
+      // list (where its sections draw their titles alone)
+      const items = (scope) => page.evaluate((scope) => [...(document.querySelector(scope)?.querySelectorAll('.ar-agenda li') ?? [])]
+        .map((li) => `${li.textContent.trim()}:${['done', 'current', 'upcoming'].filter((s) => li.classList.contains(`ar-agenda-${s}`)).join(' ')}`).join(', '), scope)
+      const outline = basename(OUTLINE[0], '.vue').toLowerCase()
+      await open(`${outline}#/1/1`)
+      let listed = await items('.ar-viewport > .ar-stage')
+      if (listed !== OUTLINE_ITEMS) complaints.push(`/${outline}: its Agenda on its first slide lists ${listed || 'nothing'}, not ${OUTLINE_ITEMS}`)
+      await page.goto(base)
+      const card = `.ar-decks-card:has(a[href$="/${outline}"]) .ar-thumb`
+      await page.waitForFunction((card) => document.querySelector(`${card} .ar-agenda li`), card, { timeout: 30_000 }).catch(() => {})
+      listed = await items(card)
+      if (listed !== OUTLINE_ITEMS) complaints.push(`the list: /${outline}'s thumbnail shows an Agenda of ${listed || 'nothing'}, not ${OUTLINE_ITEMS}`)
+      console.log(`  ${mode} slides of the deck: ${complaints.length ? 'problems below' : `"${TITLE}" (a component wrapping Slide) is slide ${n}, titled, in the jump list, two steps, two pages; Agenda's sections and states in audience, presenter (both copies) and export, and on a first slide, in its window and its thumbnail`}`)
+    } finally {
+      await page.context().close()
+    }
+    for (const c of complaints) fail(`${mode} slides of the deck: ${c}`)
   }
 
   // the layouts' names while the dev server runs (src/arao-layouts.d.ts): a layout file added is
@@ -1955,6 +2085,7 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
       for (const name of builtin.slice(1)) await walk(base, 'playground', mode, `?theme=${encodeURIComponent(name)}`)
       await selector(base, mode)
       await layoutParams(base, mode)
+      await deckSlides(base, mode)
       if (mode === 'dev') {
         await face(base)
         await themes(base)

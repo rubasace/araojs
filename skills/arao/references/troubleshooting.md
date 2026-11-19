@@ -39,6 +39,13 @@
 - **Slides start at the top now.** The body sits right under the title on every slide (it used to
   be centred): `Slide.center` centres one, or a theme sets `--ar-body-align: center`.
 - `layout="two-cols"` is gone: use `Cols` or `layout="split"`.
+- **`split` has no `#left`/`#right` now** (they render below the body, and fail `vue-tsc`): its
+  sides are the body's two children, a `div` each, each starting with its `h3` if it has one. A
+  lead line under the title is its subtitle: an `h3` right after the `h2`.
+- **An `h1` title looks like an `h2` one now**: the title's look is the tokens' and the layout's,
+  never the tag's (`h1` on a cover or a section, `h2` elsewhere). A bigger title on one slide:
+  `style="--ar-title-size: 80px"`. An `h3` right after the title is its subtitle (muted, smaller):
+  to have it as a heading of the body, put something before it.
 - A theme's `--ar-layout-cover-title` / `--ar-layout-section-title` does nothing now: they are
   `--ar-layout-cover-title-size` / `--ar-layout-section-title-size` (`title-size` on the slide).
 - A hand-written `declare module 'araojs' { interface SlideLayouts { wide: true } }` fails the type

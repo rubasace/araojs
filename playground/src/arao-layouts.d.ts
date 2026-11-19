@@ -8,64 +8,70 @@ export {}
 declare module 'araojs' {
   interface ProjectLayouts {
     /**
-     * One big quote, centred on the slide, its author under it.
+     * A slide that opens on an epigraph: a short quotation set apart, its source under it.
      *
-     * The quote is a `blockquote`, opened by a mark in the accent; whatever follows it (its author, a
-     * source) sits under it. The deck's footer is hidden.
+     * The epigraph is a `blockquote`, on the right, in italics, a rule in the accent beside it; a `p`
+     * right after it is its source. The rest is the slide's content, as on any slide. The deck's
+     * footer is hidden.
      *
      * Parameters (attributes):
      * - `footer`: the deck's footer: `none` hides it, `flex` shows it (default `none`)
-     * - `mark`: the opening mark's colour (default `--ar-accent`)
-     * - `size`: the quote's size (default .8 x `--ar-title`)
+     * - `mark`: the rule's colour (default `--ar-accent`)
+     * - `size`: the epigraph's size (default .45 x `--ar-title`)
      *
      * @example
      * ```pug
-     * Slide(layout="quote" size="72px")
-     *   blockquote Simplicity is prerequisite for reliability.
-     *   p.muted Edsger W. Dijkstra
+     * Slide(layout="epigraph" size="48px")
+     *   h2 Why we test
+     *   blockquote Testing shows the presence of bugs, never their absence.
+     *   p Edsger W. Dijkstra
+     *   p So we test what matters most first.
      * ```
      */
-    'quote': {
+    'epigraph': {
       /**
-       * One big quote, centred on the slide, its author under it.
+       * A slide that opens on an epigraph: a short quotation set apart, its source under it.
        *
-       * The quote is a `blockquote`, opened by a mark in the accent; whatever follows it (its author, a
-       * source) sits under it. The deck's footer is hidden.
+       * The epigraph is a `blockquote`, on the right, in italics, a rule in the accent beside it; a `p`
+       * right after it is its source. The rest is the slide's content, as on any slide. The deck's
+       * footer is hidden.
        *
        * Parameters (attributes):
        * - `footer`: the deck's footer: `none` hides it, `flex` shows it (default `none`)
-       * - `mark`: the opening mark's colour (default `--ar-accent`)
-       * - `size`: the quote's size (default .8 x `--ar-title`)
+       * - `mark`: the rule's colour (default `--ar-accent`)
+       * - `size`: the epigraph's size (default .45 x `--ar-title`)
        *
        * @example
        * ```pug
-       * Slide(layout="quote" size="72px")
-       *   blockquote Simplicity is prerequisite for reliability.
-       *   p.muted Edsger W. Dijkstra
+       * Slide(layout="epigraph" size="48px")
+       *   h2 Why we test
+       *   blockquote Testing shows the presence of bugs, never their absence.
+       *   p Edsger W. Dijkstra
+       *   p So we test what matters most first.
        * ```
        */
-      layout?: 'quote'
+      layout?: 'epigraph'
       /**
        * the deck's footer: `none` hides it, `flex` shows it (default `none`)
        *
-       * `--ar-layout-quote-footer`
+       * `--ar-layout-epigraph-footer`
        */
       footer?: string
       /**
-       * the opening mark's colour (default `--ar-accent`)
+       * the rule's colour (default `--ar-accent`)
        *
-       * `--ar-layout-quote-mark`
+       * `--ar-layout-epigraph-mark`
        */
       mark?: string
       /**
-       * the quote's size (default .8 x `--ar-title`)
+       * the epigraph's size (default .45 x `--ar-title`)
        *
-       * `--ar-layout-quote-size`
+       * `--ar-layout-epigraph-size`
        */
       size?: string
     }
   }
   interface ProjectLayoutZones {
-    'quote': {}
+    'epigraph': {}
   }
 }

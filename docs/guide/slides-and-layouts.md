@@ -8,9 +8,12 @@ slide's attributes too ([Layout parameters](#layout-parameters)). Every prop and
 
 ## Layouts
 
-`default` (a content slide), `cover`, `section`, `split` (a header over two named zones) and
-`image-left` / `image-right` (a full-height, edge-to-edge picture beside the text). Each is one CSS
-file of the library; the full table, and the tokens each one reads:
+`default` (a content slide), `cover`, `section`, `split` (two sides under the title), `grid`
+(blocks in balanced rows: features, pillars, logos), `quote`, `statement` (one phrase or figure,
+huge), `overlay` (text over a full-slide `Background`), `caption` (one picture and its caption),
+`agenda` (the talk's parts, with [`Agenda`](../reference/components.md#agenda)) and `image-left` /
+`image-right` (a full-height, edge-to-edge picture beside the text). Each is one CSS file of the
+library; the full table, and the tokens each one reads:
 [Layouts](../reference/components.md#layouts). A name with no CSS behind it is the `default`
 layout, its slides carrying the class `layout-<name>` for a theme or a deck to style. In a
 TypeScript project the editor completes the names there are, each layout's parameters and zones,
@@ -19,7 +22,10 @@ shows each one's doc on hover, and `vue-tsc` turns down any other
 
 Every layout documents itself, the library's and the project's alike: what it is for, an example,
 its zones and its parameters. `npx arao layouts` prints them all, for the layouts the project has
-(`--json` for a program: [CLI](../reference/cli.md#arao-layouts)).
+(`--json` for a program: [CLI](../reference/cli.md#arao-layouts)). A layout reads plain HTML, and
+its doc block says which: the semantic form (a `blockquote` and its `cite`, a `figure` and its
+`figcaption`), and, where it takes one, the plain form it tolerates too (two `p`, an `Img` then a
+`p`), so that writing simply never breaks it. No layout needs a named template but `image-*`.
 
 A cover:
 
@@ -39,7 +45,8 @@ Deck
 
 ![The cover example, drawn](../assets/shots/cover.png)
 
-A split slide, its right side revealed at step 2:
+A split slide: the body's two children are its two sides, each with its own `h3`; the right side
+revealed at step 2 (`columns`, `gap` and `divider`, a border between them, tune it):
 
 <!-- example:split -->
 
@@ -48,14 +55,14 @@ A split slide, its right side revealed at step 2:
 Deck
   Slide(layout="split")
     h2 Before and after
-    template(#left)
+    div
       h3 #[Icon(name="lucide:git-fork")] Before
       ul
         li Every team rolled its own
         li Twelve ways to log
-    template(#right)
-      h3(v-step="2") #[Icon(name="lucide:package-check")] After
-      ul(v-step="2")
+    div(v-step="2")
+      h3 #[Icon(name="lucide:package-check")] After
+      ul
         li One starter for all
         li One version to bump
 </template>
@@ -77,6 +84,153 @@ Slide(layout="image-right")
 Slide(layout="section")
   h1 Why a framework?
 ```
+
+A grid of blocks: each child of the body is a block (a picture or an `Icon` first, drawn at one
+size, then its `h3` and a muted `p`), in rows balanced by how many there are (4 as 2 + 2, 5 as
+3 + 2, 7 as 4 + 3, 9 as 3 + 3 + 3…), the last one centred; `columns="4"` fixes the count,
+`cards` gives each block a background, `align="start"` lines their content up on the left. Past
+eight blocks, keep each short (an icon and a title): the pictures get smaller from nine on, but
+three rows of three lines each fill a slide.
+
+<!-- example:features -->
+
+```vue
+<template lang="pug">
+Deck
+  Slide(layout="grid")
+    h2 Ship a talk
+    div
+      Icon(name="lucide:file-code")
+      h3 One Vue file
+      p Slides as components
+    div
+      Icon(name="lucide:monitor")
+      h3 Any screen
+      p One canvas, scaled
+    div
+      Icon(name="lucide:printer")
+      h3 And a PDF
+      p Every step a page
+</template>
+```
+
+<!-- /example -->
+
+![The grid example](../assets/shots/features.png)
+
+A quotation (two `p`, the quote then its author, work too) and a statement, a phrase or a figure
+that is the slide (a `p` first works too, without a name in the jump menu):
+
+<!-- example:quote -->
+
+```vue
+<template lang="pug">
+Deck
+  Slide(layout="quote")
+    blockquote Simplicity is prerequisite for reliability.
+    cite Edsger W. Dijkstra
+</template>
+```
+
+<!-- /example -->
+
+![The quote example](../assets/shots/quote.png)
+
+<!-- example:statement -->
+
+```vue
+<template lang="pug">
+Deck
+  Slide(layout="statement")
+    h2 90 %
+    p of our releases ship on a Friday
+</template>
+```
+
+<!-- /example -->
+
+![The statement example](../assets/shots/statement.png)
+
+Text over a picture (`position="start end"` puts it top right; `scrim` is the gradient behind it),
+and one picture with its caption (an `Img` followed by a `p` works too):
+
+<!-- example:overlay -->
+
+```vue
+<template lang="pug">
+Deck
+  Slide(layout="overlay")
+    Background(src="cies.svg")
+    h2 The Cíes islands
+    p Where the talk was written, one summer.
+</template>
+```
+
+<!-- /example -->
+
+![The overlay example](../assets/shots/overlay.png)
+
+<!-- example:caption -->
+
+```vue
+<template lang="pug">
+Deck
+  Slide(layout="caption")
+    h2 The islands at dusk
+    figure
+      Img(file="cies.svg" alt="The Cíes islands at dusk")
+      figcaption Drawn in flat bands, for the examples
+</template>
+```
+
+<!-- /example -->
+
+![The caption example](../assets/shots/caption.png)
+
+### The agenda
+
+`Agenda`, inside a slide, is an ordered list of the titles of the deck's `section` slides, kept
+up to date by the deck. On an `agenda` slide its rows are big and numbered, and each shows where
+the talk stands from that slide: the parts already given dimmed (`done`), the next one in the
+accent, bold (`current`), the ones after it as they are (`upcoming`). Write it once after each
+section, or on every section slide (the section itself is then the current one), and each copy
+shows the talk's progress; in the presenter view and the export too.
+
+<!-- example:agenda -->
+
+```vue
+<template lang="pug">
+Deck
+  Slide(layout="agenda")
+    h2 Agenda
+    Agenda
+  Slide(layout="section")
+    h1 Why a framework
+  Slide(layout="section")
+    h1 How it works
+  Slide(layout="section")
+    h1 What comes next
+</template>
+```
+
+<!-- /example -->
+
+![The agenda example](../assets/shots/agenda.png)
+
+Each item carries `ar-agenda-item` and one of `ar-agenda-done`, `ar-agenda-current` (with
+`aria-current="step"`) and `ar-agenda-upcoming`; `Agenda` draws no look of its own. The look is
+the layout's: a colour, an opacity and a weight per state
+(`--ar-layout-agenda-done-opacity`, `--ar-layout-agenda-current-color`… [Layout
+tokens](../reference/theme-tokens.md#layouts)), which a theme or one slide changes. Give the three
+states the same values and the effect is gone:
+
+```pug
+Slide(layout="agenda" done-opacity="1" current-color="currentColor" current-weight="400")
+  h2 Agenda
+  Agenda
+```
+
+An `agenda` slide styles a hand-written `ol` the same way, with no state.
 
 ### Layout parameters
 
@@ -126,15 +280,18 @@ Slide
 ```
 
 - **Header**: when the default slot starts with an `h1` or `h2`, that heading is the slide's title
-  and goes into the header; headings right after it go there too (a subtitle, or one title per
-  step: `h2(v-step.only.collapse="1") …`, `h2(v-step.only.collapse="2") …`). Comments, `v-if`s
-  that render nothing, `Notes` and `Background` before it do not count. A `#title` slot, when
-  given, is the header instead, for headers with more than a heading (a kicker line, a logo); its
-  first `h1`/`h2` is the title. A slide that starts with anything else has no header: the body
-  takes the slide. The title carries the class `ar-title` and follows the `--ar-title-*` tokens;
-  with `--ar-header-height` the header is a band of that height with the title centred in it
+  and goes into the header; headings right after it go there too: one of the same tag is a title
+  too (one title per step: `h2(v-step.only.collapse="1") …`, `h2(v-step.only.collapse="2") …`),
+  any other is its subtitle. Comments, `v-if`s that render nothing, `Notes` and `Background`
+  before it do not count. A `#title` slot, when given, is the header instead, for headers with
+  more than a heading (a kicker line, a logo); its first `h1`/`h2` is the title. A slide that
+  starts with anything else has no header: the body takes the slide. The title carries the class
+  `ar-title`, a subtitle `ar-subtitle` ([Titles](#titles)); with `--ar-header-height` the header
+  is a band of that height with the title centred in it
   ([Theme tokens](../reference/theme-tokens.md#slide-zones-and-content)). The slide's first
-  heading is also its name in the jump menu, the presenter view and the notes pages.
+  heading is also its name in the jump menu, the presenter view and the notes pages. A slide
+  written in a component of the project's (a `MySlide.vue` that renders a `Slide` and passes its
+  slot on) is found the same way: its place, its title, its steps and its pages are a slide's.
 - **Body**: everything else, in a column that fills the space under the header. It starts at the
   top, right under the header, so content begins at the same height on every slide. What does not
   fit overflows at the bottom, never at the top. What fills the body fills it: `Img`, `Snippet`,
@@ -142,10 +299,11 @@ Slide
   directly in it shrink their auto rows to their content and move with the body, unless they hold
   something that needs the full height (a `Snippet`, an `Img`, another piece);
   `Cols(align="stretch")`, written out, keeps full-height columns.
-- **Zones**: each named template (`template(#image)`, `template(#left)`…) is a zone of its own, a
-  column with the class `ar-zone-<name>` (`#title` is the header's). The layout's CSS places it:
-  `#image` beside the text in `image-*`, `#left` and `#right` under the header in `split`; a
-  layout's zones are the ones it says it places (`npx arao layouts`), and in a type-checked
+- **Zones**: each named template (`template(#image)`…) is a zone of its own, a column with the
+  class `ar-zone-<name>` (`#title` is the header's). The layout's CSS places it: `#image` beside
+  the text in `image-*` (the other library layouts read the body's own children instead: `split`'s
+  two sides, `grid`'s blocks); a layout's zones are the ones it says it places
+  (`npx arao layouts`), and in a type-checked
   template a slide takes its layout's only ([Layouts in the editor](#layouts-in-the-editor)). In
   the page the zones always come after the header and the body, in the order written, whatever
   side the layout draws them on: in `image-left` a screen reader, the tab order and a copied text
@@ -156,13 +314,37 @@ Slide
   one at the start, two at both ends). It sits in the slide's bottom padding, above the content;
   that padding is always at least as tall as the band (the larger of `--ar-pad-y` and
   `--ar-footer-height`), footer or not, so the content never sits under it and every slide's body
-  ends at the same place. Shown on `default`, `split` and `image-*`
-  (over the picture), hidden on `cover` and `section`: each layout says so with a token
+  ends at the same place. Shown on every layout but `cover` and `section` (over the picture on
+  `image-*` and `overlay`), hidden on those two: each layout says so with a token
   (`--ar-layout-cover-footer: flex` shows it on every cover). On a section it takes the section's
-  text colour.
+  text colour, on an overlay the overlay's.
 - `SlideNumber` keeps its corner (bottom right, on the footer band's line with the default
   height), outside the footer's content box. To have the number inside the footer, use the slot
   props (`{{ number }} / {{ total }}`) instead of `SlideNumber`.
+
+### Titles
+
+The title looks the same whatever its tag: an `h2` title and an `h1` title on a content slide are
+alike. Its size, colour and the space under it come from the `--ar-title-*` tokens, which a theme
+sets, and from the layout (a cover's and a section's title is larger: their `title-size`), never
+from the tag. A subtitle, a heading right after the title, has its own look (`--ar-subtitle-size`,
+`--ar-subtitle-color`, `--ar-subtitle-gap`: [Theme
+tokens](../reference/theme-tokens.md#slide-zones-and-content)). Headings further down, in the body,
+keep the plain heading styles. The convention, which the examples and the layouts' docs follow:
+
+| Heading | Where |
+|---|---|
+| `h1` | the title of a `cover` or a `section` |
+| `h2` | a slide's title (the statement of a `statement`, the title of an `agenda`, an `overlay`…) |
+| `h3` | a subtitle (right after the title), or a heading inside: a side of `split`, a block of `grid` |
+
+```pug
+Slide
+  h2 Three pillars          //- the title
+  h3 And why they matter    //- its subtitle
+  p …
+  h3 Pillar one             //- a heading of the body
+```
 
 ### Placing the body
 
@@ -208,7 +390,7 @@ Deck
 ## A layout of your own
 
 A layout is one CSS file in the project's `src/layouts` folder, named as the layout:
-`src/layouts/quote.css` styles every `Slide(layout="quote")`. The Vite plugin loads every file of
+`src/layouts/epigraph.css` styles every `Slide(layout="epigraph")`. The Vite plugin loads every file of
 the folder, after the library's layouts and before the themes, with nothing to import
 ([Vite plugin](../reference/vite-plugin.md)). A file named like a library layout
 (`src/layouts/cover.css`) replaces it: the library's is not loaded.
@@ -228,50 +410,59 @@ The file starts with its doc block, which says what the layout is for and how to
 
 ```css
 /**
- * One big quote, centred on the slide, its author under it.
- * The quote is a `blockquote`, opened by a mark in the accent; whatever follows it (its author, a
- * source) sits under it. The deck's footer is hidden.
+ * A slide that opens on an epigraph: a short quotation set apart, its source under it.
+ * The epigraph is a `blockquote`, on the right, in italics, a rule in the accent beside it; a `p`
+ * right after it is its source. The rest is the slide's content. The deck's footer is hidden.
  * @example
- * Slide(layout="quote" size="72px")
- *   blockquote Simplicity is prerequisite for reliability.
- *   p.muted Edsger W. Dijkstra
- * @param size    the quote's size (default .8 x `--ar-title`)
- * @param mark    the opening mark's colour (default `--ar-accent`)
+ * Slide(layout="epigraph" size="48px")
+ *   h2 Why we test
+ *   blockquote Testing shows the presence of bugs, never their absence.
+ *   p Edsger W. Dijkstra
+ * @param size    the epigraph's size (default .45 x `--ar-title`)
+ * @param mark    the rule's colour (default `--ar-accent`)
  * @param footer  the deck's footer: `none` hides it, `flex` shows it (default `none`)
  */
-:where(.layout-quote) {
-  --_ar-quote-size: var(--ar-layout-quote-size, calc(var(--ar-title) * .8));
-  --_ar-quote-mark: var(--ar-layout-quote-mark, var(--ar-accent));
-  --_ar-quote-footer: var(--ar-layout-quote-footer, none);
+:where(.layout-epigraph) {
+  --_ar-epigraph-size: var(--ar-layout-epigraph-size, calc(var(--ar-title) * .45));
+  --_ar-epigraph-mark: var(--ar-layout-epigraph-mark, var(--ar-accent));
+  --_ar-epigraph-footer: var(--ar-layout-epigraph-footer, none);
 }
-.layout-quote { justify-content: safe center; }       /* the slide is a column: centre it */
-.layout-quote > .ar-body { flex: none; }              /* the body as tall as its content */
-.layout-quote blockquote { margin: 0 0 .6em; font-size: var(--_ar-quote-size); line-height: 1.15; }
-.layout-quote blockquote::before { content: '“'; color: var(--_ar-quote-mark); }
-.layout-quote > .ar-footer { display: var(--_ar-quote-footer); }
+.layout-epigraph > .ar-body > blockquote {             /* on the right, a rule beside it */
+  align-self: flex-end; max-width: 60%; margin: 0; padding-left: .8em;
+  border-left: 6px solid var(--_ar-epigraph-mark);
+  font-size: var(--_ar-epigraph-size); font-style: italic; line-height: 1.3;
+}
+.layout-epigraph > .ar-body > blockquote + p {          /* its source, under it */
+  align-self: flex-end; max-width: 60%; margin: .4em 0 1.2em;
+  font-size: var(--ar-text-small); color: var(--ar-muted);
+}
+.layout-epigraph > .ar-footer { display: var(--_ar-epigraph-footer); }
 ```
 
 ```pug
-Slide(layout="quote")
-  blockquote Simplicity is prerequisite for reliability.
-  p.muted Edsger W. Dijkstra
+Slide(layout="epigraph")
+  h2 Why we test
+  blockquote Testing shows the presence of bugs, never their absence.
+  p Edsger W. Dijkstra
+  p So we test what matters most first.
 ```
 
 Its tokens are its slides' attributes ([Layout parameters](#layout-parameters)): the Vite plugin
-finds them in the file, every `--ar-layout-quote-<thing>` it declares or reads (not in a comment
-or a string; the private `--_ar-…` aside), so `quote.css` gives `Slide(layout="quote" size="64px" mark="gold")`,
+finds them in the file, every `--ar-layout-epigraph-<thing>` it declares or reads (not in a comment
+or a string; the private `--_ar-…` aside), so `epigraph.css` gives `Slide(layout="epigraph" size="64px" mark="gold")`,
 typed for the editor ([Layouts in the editor](#layouts-in-the-editor)). Name a token's last part
-as an attribute: lower-case kebab-case, and none a slide already has. `--ar-layout-quote-title`
+as an attribute: lower-case kebab-case, and none a slide already has. `--ar-layout-epigraph-title`
 is no attribute (`title` is HTML's): the plugin warns, once, naming the file, and the token works
-in `style` and in themes only; `--ar-layout-quote-title-size` is one. A file that replaces a
+in `style` and in themes only; `--ar-layout-epigraph-title-size` is one. A file that replaces a
 library layout replaces its parameters too: the slide's attributes are the new file's tokens. A
 token is the layout's by its name alone: a layout `image` whose file reads
 `--ar-layout-image-right-columns` gets a parameter `right-columns`.
 Adding, removing or renaming a token while the dev server runs reloads the page.
 
 The library's own files, in the package's `layouts/` folder, are worked examples: `cover.css`
-and `section.css` centre their content, `split.css` and `image-right.css` lay the slide out as a
-grid and place its zones.
+and `section.css` centre their content, `image-right.css` lays the slide out as a grid and places
+its zone, `split.css` and `grid.css` lay out the body's own children (`grid.css` counts them in
+CSS alone, to balance its rows), `quote.css` and `caption.css` read a semantic form and a plain one.
 
 ### Its doc block
 
@@ -342,7 +533,7 @@ Slide(layout="cover" columns="2fr 1fr") error TS2353: Object literal may only sp
                                         '{ layout?: "cover" | undefined; bar?: string | undefined; … }'
 Slide(layout="cover" :bar="1")          error TS2322: Type 'number' is not assignable to type 'string'.
 Slide(layout="split")                   error TS2339: Property 'image' does not exist on type
-  template(#image) …                    '{ default?: SlideSlot | undefined; title?: … } & { left?: …; right?: … }'
+  template(#image) …                    '{ default?: SlideSlot | undefined; title?: … } & {}'
 ```
 
 (Once the project has layouts of its own, the first one reads `'keyof LibraryLayouts | keyof
@@ -355,24 +546,24 @@ each with what its doc block says (shortened here):
 export {}
 declare module 'araojs' {
   interface ProjectLayouts {
-    /** One big quote, centred on the slide, its author under it. … @example … */
-    'quote': {
-      /** One big quote, centred on the slide, its author under it. … @example … */
-      layout?: 'quote'
+    /** A slide that opens on an epigraph: a short quotation set apart, its source under it. … @example … */
+    'epigraph': {
+      /** A slide that opens on an epigraph: a short quotation set apart, its source under it. … @example … */
+      layout?: 'epigraph'
       /**
        * the deck's footer: `none` hides it, `flex` shows it (default `none`)
        *
-       * `--ar-layout-quote-footer`
+       * `--ar-layout-epigraph-footer`
        */
       footer?: string
-      /** … `--ar-layout-quote-mark` */
+      /** … `--ar-layout-epigraph-mark` */
       mark?: string
-      /** … `--ar-layout-quote-size` */
+      /** … `--ar-layout-epigraph-size` */
       size?: string
     }
   }
   interface ProjectLayoutZones {
-    'quote': {}
+    'epigraph': {}
   }
 }
 ```
@@ -386,10 +577,10 @@ declare module 'araojs' {
   typed. Any named template still renders (a layout that does not place it leaves it where the
   grid or the column puts it, below the body on `default`); for the type check to take one, the
   layout says it places it (`@zone`, or a rule for its `.ar-zone-<name>`). A zone that a theme
-  or the deck's own CSS places on a library layout (`template(#caption)` on `split`, with a
-  rule for `.layout-split > .ar-zone-caption` in the theme) is declared the same way as a layout
-  with no file of its own (below), the layout's own zones restated, since the declaration replaces
-  them: `interface ProjectLayoutZones { split: { left: true; right: true; caption: true } }`.
+  or the deck's own CSS places on a library layout (`template(#caption)` on `image-right`, with a
+  rule for `.layout-image-right > .ar-zone-caption` in the theme) is declared the same way as a
+  layout with no file of its own (below), the layout's own zones restated, since the declaration
+  replaces them: `interface ProjectLayoutZones { 'image-right': { image: true; caption: true } }`.
 - Parameters are typed in camelCase (`footerBg`): Volar checks an attribute written `footer-bg`
   as `footerBg`, as it does any prop, and completes it in the case your editor's settings say
   (kebab-case in templates, by default).
@@ -398,7 +589,7 @@ declare module 'araojs' {
   carries the layout's doc): the library's, with the project's over them. `ProjectLayouts`, also
   exported, is the project's, which the file adds to; a project layout named like a library one
   replaces it there, its parameters with it. `SlideLayoutZones` and `ProjectLayoutZones` are the
-  same for the zones (`SlideLayoutZones['split']`: `left` and `right`).
+  same for the zones (`SlideLayoutZones['image-right']`: `image`).
 - It is written when Vite starts (`npm run dev`, `npm run build`) and again when a layout file
   changes during development, only if its text changes, once the project has a layout of its own.
   Commit it, so that a type check (`vue-tsc --noEmit`, in CI) knows the project's layouts without
@@ -410,8 +601,8 @@ declare module 'araojs' {
 - A layout chosen from data (`:layout="s.layout"`, with `s.layout` a `string`) fails the type check:
   type the data with the names, `keyof SlideLayouts` (`import type { SlideLayouts } from 'araojs'`), or
   cast it: `:layout="s.layout as keyof SlideLayouts"`. A slide whose layout may be any of
-  several takes the parameters of any of them, and the zones of any of them (`#left` and
-  `#image` where it is `'split' | 'image-right'`).
+  several takes the parameters of any of them, and the zones of any of them (`#image` and a
+  project layout's `#author` where it is `'image-right' | 'callout'`).
 - Turning `dts` off or moving it leaves the old file behind, still accepting its names: delete it.
 - A name with no file of its own (a class a theme styles, `layout="wide"`) still works at
   runtime; for the type check to take it, declare it the same way in a `.d.ts` of the project,
@@ -424,14 +615,13 @@ declare module 'araojs' {
   restating the layout's own zones, which an entry there replaces:
 
   ```ts
-  // src/arao-zones.d.ts: template(#caption) on split, placed by the theme's .layout-split > .ar-zone-caption
+  // src/arao-zones.d.ts: template(#caption) on image-right, placed by the theme's .layout-image-right > .ar-zone-caption
   export {}
   declare module 'araojs' {
     interface ProjectLayoutZones {
-      split: {
-        left: true
-        right: true
-        /** the caption under both sides (the theme places it) */
+      'image-right': {
+        image: true
+        /** the caption under the picture (the theme places it) */
         caption: true
       }
     }

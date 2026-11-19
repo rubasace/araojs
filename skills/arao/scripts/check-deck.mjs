@@ -84,7 +84,8 @@ if ((await page.evaluate(() => document.compatMode)) === 'BackCompat') {
 const slides = await page.locator('.ar-slide').count()
 
 // Slide API that is gone (araojs 0.5): its props fall through to the slide's section as plain
-// attributes, and template(#background) is a zone like any other (.ar-zone-background)
+// attributes, and template(#background) is a zone like any other (.ar-zone-background), as are
+// split's old #left and #right
 const removed = await page.evaluate(() => {
   const now = {
     bg: 'Background(src="…") inside the slide, or style="background: …" for a colour',
@@ -98,6 +99,8 @@ const removed = await page.evaluate(() => {
     const found = [...slide.attributes].map((a) => a.name).filter((n) => now[n.replace(/-/g, '')])
       .map((n) => `${n} (now ${now[n.replace(/-/g, '')]})`)
     if (slide.querySelector(':scope > .ar-zone-background')) found.push('template(#background) (now Background inside the slide)')
+    if (slide.matches('.layout-split') && slide.querySelector(':scope > :is(.ar-zone-left, .ar-zone-right)'))
+      found.push('template(#left) / template(#right) on split (now its two sides are the body\'s two children, a div each)')
     return found.length ? [`slide ${i + 1}: ${found.join('; ')}`] : []
   })
 })

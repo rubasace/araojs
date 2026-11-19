@@ -1,13 +1,15 @@
 /**
  * The deck's opening slide (and its closing one).
  * Its content, title and all, is one group centred vertically, left-aligned like any slide; its
- * `h1` is larger; a `.bar` element draws a short bar in the accent; the deck's footer is hidden.
+ * title is larger, in the text colour; a `.bar` element draws a short bar in the accent; the
+ * deck's footer is hidden. Its title is an `h1` (an `h2` looks the same), a subtitle after it an
+ * `h2` or a plain `p`.
  * @example
  * Slide(layout="cover")
  *   .bar
  *   h1 Building a framework
  *   p.muted Jane Doe · DevConf 2026
- * @param title-size  the `h1`'s size (default 1.25 x `--ar-title`)
+ * @param title-size  the title's size (default 1.25 x `--ar-title`)
  * @param bar         the `.bar`'s colour (default `--ar-accent`)
  * @param footer      the deck's footer: `none` hides it, `flex` shows it (default `none`); a
  *                    slide's `with-footer` or `no-footer` class wins over it
@@ -27,9 +29,14 @@
    Each default is another token, so it is resolved on the slide itself, into a private --_ar-…
    the rules read: declared at :root, var() would be resolved there, and a theme's --ar-accent
    would never reach it (tokens.css says why). A slide's with-footer or no-footer class wins over
-   the footer's token (Slide.vue). */
+   the footer's token (Slide.vue).
+   Its title (.ar-title, Slide.vue: an h1 or an h2, alike) is its own size, in the text colour
+   unless --ar-title-color says otherwise, with its own leading, and the gap under it is in its
+   size too (--ar-title-gap still wins). */
 :where(.layout-cover) {
   --_ar-cover-title: var(--ar-layout-cover-title-size, calc(var(--ar-title) * 1.25));
+  --_ar-cover-title-color: var(--ar-title-color, currentColor);
+  --_ar-cover-gap: var(--ar-title-gap, calc(var(--_ar-cover-title) * .4));
   --_ar-cover-bar: var(--ar-layout-cover-bar, var(--ar-accent));
   --_ar-cover-footer: var(--ar-layout-cover-footer, none);
   /* no header band on a cover: its title is part of the centred group */
@@ -40,7 +47,20 @@
    overflows at the bottom, never at the top) */
 .layout-cover { justify-content: safe center; }
 .layout-cover > .ar-body { flex: none; }
-.layout-cover h1 { font-size: var(--_ar-cover-title); }
+/* its title: the header's, or, when its content starts with a .bar (no header then: Slide.vue
+   takes a title only from the heading the content starts with), the first h1 or h2 of its body,
+   and the heading right after that one its subtitle */
+.layout-cover > .ar-header { margin-bottom: var(--_ar-cover-gap); }
+.layout-cover > .ar-header > .ar-title,
+.layout-cover:not(:has(> .ar-header)) > .ar-body > :nth-child(1 of h1, h2) {
+  font-size: var(--_ar-cover-title); line-height: 1.05; color: var(--_ar-cover-title-color);
+}
+.layout-cover:not(:has(> .ar-header)) > .ar-body > :nth-child(1 of h1, h2) { margin: 0 0 var(--_ar-cover-gap); }
+.layout-cover:not(:has(> .ar-header)) > .ar-body > :nth-child(1 of h1, h2):has(+ :is(h2, h3, h4, h5, h6)) { margin-bottom: 0; }
+.layout-cover:not(:has(> .ar-header)) > .ar-body > :nth-child(1 of h1, h2) + :is(h2, h3, h4, h5, h6) {
+  font-size: var(--_ar-subtitle-size); font-weight: 400; line-height: inherit; color: var(--_ar-subtitle-color);
+  margin: var(--ar-subtitle-gap) 0 var(--_ar-cover-gap);
+}
 .layout-cover .bar {
   width: 160px; height: 10px; border-radius: 5px; margin: 0 0 48px;
   background: var(--_ar-cover-bar);

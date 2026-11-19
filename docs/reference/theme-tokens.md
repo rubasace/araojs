@@ -20,7 +20,7 @@ How themes are written, found and applied: [Themes](../guide/themes.md).
 | `--ar-font-mono` | `ui-monospace, Menlo, monospace` | code font; a web font named here is fetched at build time |
 | `--ar-font-heading` | none: the font around the heading (the text font) | the headings' font (`h1`–`h6` in a slide, the cover's and the section's titles included); a web font named here is fetched at build time |
 | `--ar-text-base` | `42px` | base font size of a slide |
-| `--ar-title` | `96px` | the type scale: `h1` size; `h2` is 0.6x; the cover's `h1` 1.25x and the section's 1.4x by default ([Layouts](#layouts)) (the slide title's own size is `--ar-title-size`) |
+| `--ar-title` | `96px` | the type scale: `h1` size; `h2` is 0.6x; the slide title 0.6x and its subtitle 0.45x by default (`--ar-title-size`, `--ar-subtitle-size`); the cover's title 1.25x and the section's 1.4x by default ([Layouts](#layouts)) |
 | `--ar-text-small` | `.75em` | `.small` |
 | `--ar-placeholder` | `currentColor` (the text colour where drawn) | colour of the missing-picture and missing-icon boxes |
 
@@ -31,7 +31,7 @@ How themes are written, found and applied: [Themes](../guide/themes.md).
 | `--ar-pad-y` | `110px` | slide padding, the safe margin: top and bottom (and the text side of `image-*`); the bottom is always at least `--ar-footer-height`, so the content never sits under the footer |
 | `--ar-pad-x` | `140px` | slide padding, the safe margin: both sides (and the footer's sides) |
 | `--ar-radius` | `4px` | corner radius (`Img rounded`, placeholders) |
-| `--ar-gap-sm` / `-md` / `-lg` | `24px` / `48px` / `80px` | `gap="sm\|md\|lg"`; `md` is the default gap of `Cols`/`Rows`/`Grid`; `lg` between `split`'s zones; `sm` between the footer's children |
+| `--ar-gap-sm` / `-md` / `-lg` | `24px` / `48px` / `80px` | `gap="sm\|md\|lg"`; `md` is the default gap of `Cols`/`Rows`/`Grid`; `lg` between `split`'s sides; `sm` between the footer's children |
 
 ## Background, motion, addons
 
@@ -52,16 +52,22 @@ A theme can leave a layout without its default background, and a slide can too:
 ## Slide zones and content
 
 The title tokens style the slide's title (`.ar-title`: the heading its header starts with, in
-every layout), not every `h1`/`h2`. Without them the title looks as any `h2` (or `h1`) does. The
-cover's and the section's `h1` take their size from their layout ([Layouts](#layouts)), and a
-section's title its text colour.
+every layout), not every `h1`/`h2`; the subtitle tokens its subtitle (`.ar-subtitle`: the
+headings right after it, of another tag). The title looks the same whatever its tag, `h1` or
+`h2` ([Titles](../guide/slides-and-layouts.md#titles)). A layout may set them for its slides or
+style its own title: the cover's and the section's take their size from their layout
+([Layouts](#layouts)), the cover's is in the text colour, a section's title and subtitle in its
+text colour, a statement's is the statement.
 
 | Token | Default | Meaning |
 |---|---|---|
-| `--ar-title-size` | an `h2`: 0.6x `--ar-title`; an `h1`: `--ar-title` | the title's font size |
-| `--ar-title-color` | an `h2`: `--ar-accent`; an `h1`: the text colour | the title's colour |
-| `--ar-title-align` | `match-parent` (as the slide's text) | `start`, `center`, `end` |
-| `--ar-title-gap` | `.6em` under an `h2`, `.4em` under an `h1` | space between the title and the body (em: the title's size; under a header band, give px) |
+| `--ar-title-size` | 0.6x `--ar-title` | the title's font size, whatever its tag |
+| `--ar-title-color` | `--ar-accent` | the title's colour |
+| `--ar-title-align` | `match-parent` (as the slide's text) | `start`, `center`, `end`: the title's and its subtitle's |
+| `--ar-title-gap` | 0.6x the title's size | space under the header (the title and its subtitle), before the body; a length (em there is the slide's text size) |
+| `--ar-subtitle-size` | 0.45x `--ar-title` | the subtitle's font size |
+| `--ar-subtitle-color` | `--ar-muted` (on a section: its text colour) | the subtitle's colour |
+| `--ar-subtitle-gap` | `.2em` (of the subtitle) | space above the subtitle, under the title |
 | `--ar-header-height` | `auto` (as tall as the title) | a length: a header band, at least this tall, the title centred in it, `--ar-title-gap` under the band |
 | `--ar-body-align` | `start` | `start`, `center` or `end`: where the body sits (on one slide, the classes `.top`, `.center`, `.bottom` set it); anything else is `start` |
 | `--ar-list-gap` | `0` | space between list items |
@@ -100,15 +106,40 @@ A `*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows 
 
 | Token | Attribute | Default | Meaning |
 |---|---|---|---|
-| `--ar-layout-cover-title-size` | `title-size` | 1.25x `--ar-title` | the cover's `h1` size |
+| `--ar-layout-cover-title-size` | `title-size` | 1.25x `--ar-title` | the cover's title size (its `h1`) |
 | `--ar-layout-cover-bar` | `bar` | `--ar-accent` | the colour of its `.bar` |
 | `--ar-layout-cover-footer` | `footer` | `none` | the deck's footer on covers |
 | `--ar-layout-section-bg` | `bg` | `--ar-accent` | a section's background (the theme's `--ar-slide-bg-image` is drawn over it) |
 | `--ar-layout-section-fg` | `fg` | `--ar-accent-fg` | its text, its title and its footer |
-| `--ar-layout-section-title-size` | `title-size` | 1.4x `--ar-title` | its `h1` size |
+| `--ar-layout-section-title-size` | `title-size` | 1.4x `--ar-title` | its title size (its `h1`) |
 | `--ar-layout-section-footer` | `footer` | `none` | the deck's footer on sections |
-| `--ar-layout-split-columns` | `columns` | `1fr 1fr` | the widths of `#left` and `#right`, as CSS grid columns |
+| `--ar-layout-split-columns` | `columns` | `1fr 1fr` | the two sides' widths (the body's two children), left to right, as CSS grid columns |
 | `--ar-layout-split-gap` | `gap` | `--ar-gap-lg` | the space between them |
+| `--ar-layout-split-divider` | `divider` | `none` | a line between them, as a CSS border (`2px solid currentColor`) |
+| `--ar-layout-grid-columns` | `columns` | balanced by the count | blocks per row, whatever their count |
+| `--ar-layout-grid-max-columns` | `max-columns` | `5` | the most blocks in a row: 13 and more wrap there, no balanced row is wider |
+| `--ar-layout-grid-gap` | `gap` | `--ar-gap-sm` | the space between the blocks (the cards) |
+| `--ar-layout-grid-align` | `align` | `center` | a block's content: `center` or `start` |
+| `--ar-layout-grid-cards` | `cards` | `none` | each block's background, making it a card (a colour, a gradient) |
+| `--ar-layout-grid-icon-size` | `icon-size` | `3em` (`2em` from 9 blocks) | the size of a block's leading picture or icon |
+| `--ar-layout-quote-size` | `size` | 0.8x `--ar-title` | the quote's size |
+| `--ar-layout-quote-mark` | `mark` | `'“'` | the decorative mark, a CSS string (quotes written: `mark="'«'"`) |
+| `--ar-layout-quote-mark-color` | `mark-color` | `--ar-accent` | its colour |
+| `--ar-layout-quote-align` | `align` | `center` | `center` or `start` |
+| `--ar-layout-statement-size` | `size` | 1.5x `--ar-title` | the statement's size |
+| `--ar-layout-statement-color` | `color` | `--ar-accent` | its colour |
+| `--ar-layout-statement-align` | `align` | `center` | `center` or `start` |
+| `--ar-layout-overlay-position` | `position` | `end start` | where the text sits, as CSS `place-content` (`end start`: the bottom left) |
+| `--ar-layout-overlay-scrim` | `scrim` | a dark gradient from the bottom | what is drawn between the picture and the text, a CSS background (`none` for nothing) |
+| `--ar-layout-overlay-color` | `color` | `#fff` | the text's colour, its title's and its footer's |
+| `--ar-layout-caption-caption-size` | `caption-size` | `--ar-text-small` | the caption's size |
+| `--ar-layout-caption-caption-align` | `caption-align` | `center` | the caption's alignment |
+| `--ar-layout-agenda-size` | `size` | 0.65x `--ar-title` | the rows' size |
+| `--ar-layout-agenda-gap` | `gap` | `.35em` | the space between rows |
+| `--ar-layout-agenda-number-color` | `number-color` | `--ar-accent` | the numbers' colour |
+| `--ar-layout-agenda-done-color` / `-opacity` / `-weight` | `done-color`… | `currentColor` / `.4` / `400` | a part already given (`Agenda`'s `ar-agenda-done`) |
+| `--ar-layout-agenda-current-color` / `-opacity` / `-weight` | `current-color`… | `--ar-accent` / `1` / `700` | the next part (`ar-agenda-current`) |
+| `--ar-layout-agenda-upcoming-color` / `-opacity` / `-weight` | `upcoming-color`… | `currentColor` / `1` / `400` | the parts after it (`ar-agenda-upcoming`) |
 | `--ar-layout-image-left-columns` / `--ar-layout-image-right-columns` | `columns` | `1fr 1fr` | the two sides' widths, left to right, as CSS grid columns (`3fr 2fr`, `1fr 720px`) |
 | `--ar-layout-image-left-inset` / `--ar-layout-image-right-inset` | `inset` | `0px` | padding around the picture in its zone |
 | `--ar-layout-image-left-footer` / `--ar-layout-image-right-footer` | `footer` | `flex` | the deck's footer on those slides, over the picture |
@@ -118,6 +149,10 @@ A `*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows 
 [data-theme="venue"] {
   --ar-layout-section-bg: #0b3d2e;
   --ar-layout-image-right-footer-bg: linear-gradient(transparent, rgb(0 0 0 / .45));
+  /* an agenda that shows no state: the three states alike */
+  --ar-layout-agenda-done-opacity: 1;
+  --ar-layout-agenda-current-color: currentColor;
+  --ar-layout-agenda-current-weight: 400;
 }
 ```
 

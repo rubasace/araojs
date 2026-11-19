@@ -21,6 +21,7 @@ export { default as Img } from './components/Img.vue'
 export { default as Icon } from './components/Icon.vue'
 export { default as Snippet } from './components/Snippet.vue'
 export { default as Notes } from './components/Notes.vue'
+export { default as Agenda } from './components/Agenda.vue'
 export { default as Cols } from './components/layout/Cols.vue'
 export { default as Rows } from './components/layout/Rows.vue'
 export { default as Grid } from './components/layout/Grid.vue'
@@ -37,7 +38,7 @@ export type { DeckAppOptions } from './app'
 export type { DeckFace } from './state/deck'
 export type { SlideControls } from './state/slide'
 export type { SlideLayouts, SlideLayoutZones, ProjectLayouts, ProjectLayoutZones } from './components/Slide.vue'
-export type { Role } from './state/stage'
+export type { DeckSlide, Role } from './state/stage'
 export type { Timer } from './state/timer'
 
 // Global components and directives (app.use(Arao) registers them, plugin.ts): typed for the
@@ -48,6 +49,7 @@ import type ImgComponent from './components/Img.vue'
 import type IconComponent from './components/Icon.vue'
 import type SnippetComponent from './components/Snippet.vue'
 import type NotesComponent from './components/Notes.vue'
+import type AgendaComponent from './components/Agenda.vue'
 import type ColsComponent from './components/layout/Cols.vue'
 import type RowsComponent from './components/layout/Rows.vue'
 import type GridComponent from './components/layout/Grid.vue'
@@ -62,6 +64,7 @@ declare module 'vue' {
     Icon: typeof IconComponent
     Snippet: typeof SnippetComponent
     Notes: typeof NotesComponent
+    Agenda: typeof AgendaComponent
     Cols: typeof ColsComponent
     Rows: typeof RowsComponent
     Grid: typeof GridComponent

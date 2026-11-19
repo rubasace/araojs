@@ -4,8 +4,8 @@ Every component a deck writes: their props, slots and rules. Sizes are canvas px
 1920x1080 unless `Deck` says otherwise). Examples are Pug, the recommended form; the same props,
 slots and directives work in an HTML template ([Pug or HTML](../guide/concepts.md#pug-or-html)).
 
-Globally registered: `Deck`, `Slide`, `Background`, `Img`, `Icon`, `Snippet`, `Notes`, `Cols`,
-`Rows`, `Grid`, `Center`, and the directives `v-step` and `v-step-from` ([Directives](directives.md)). Imported
+Globally registered: `Deck`, `Slide`, `Background`, `Img`, `Icon`, `Snippet`, `Notes`, `Agenda`,
+`Cols`, `Rows`, `Grid`, `Center`, and the directives `v-step` and `v-step-from` ([Directives](directives.md)). Imported
 by hand from `'araojs'`: the [addons](#addons) (`ProgressBar`, `SlideNumber`) and the
 [composables](composables.md) (`useDeck`, `useSlide`).
 
@@ -21,7 +21,7 @@ it, `vue-tsc` and the editor skip Pug templates.
 
 Contents: [Deck](#deck) · [Slide](#slide) · [Background](#background) · [Cols, Rows, Grid, Center](#cols-rows-grid-center) ·
 [Utility classes](#utility-classes) · [Img](#img) · [Icon](../guide/icons.md) · [Snippet](#snippet) ·
-[Notes](#notes) · [Addons](#addons)
+[Notes](#notes) · [Agenda](#agenda) · [Addons](#addons)
 
 ## Deck
 
@@ -90,16 +90,17 @@ The layout's parameters: each token of its own the layout's CSS reads, `--ar-lay
 is an attribute `<thing>` of its slides (kebab-case or camelCase), a string set as that token on
 the slide, verbatim, instead of an attribute of its section: `Slide(layout="image-right"
 columns="3fr 2fr")` is `--ar-layout-image-right-columns: 3fr 2fr`. The library's are in
-[Theme tokens](theme-tokens.md#layouts) (`columns`, `inset`, `footer`, `footer-bg`, `bar`,
-`title-size`, `bg`, `fg`, `gap`); a project layout's are its own file's. In a type-checked template a
+[Theme tokens](theme-tokens.md#layouts) (`columns`, `gap`, `divider`, `cards`, `size`, `align`,
+`title-size`…: `npx arao layouts` lists them by layout); a project layout's are its own file's. In a type-checked template a
 slide takes its layout's, no other's ([Layout parameters](../guide/slides-and-layouts.md#layout-parameters)).
 
 Slots, all with `{ step }` (the slide's current step) as slot props:
-- default: the header (the `h1`/`h2` it starts with, and the headings right after it) and the
-  body (the rest).
+- default: the header (the `h1`/`h2` it starts with, the title, and the headings right after it:
+  its subtitle, or more titles of the same tag, one per step) and the body (the rest). The title
+  looks the same whatever its tag ([Titles](../guide/slides-and-layouts.md#titles)).
 - `#title`: the header instead, for a header with more than a heading (a kicker line, a logo);
   the whole default slot is then the body.
-- the layout's zones (`#image`, `#left`, `#right`, a project layout's own): each a column with the
+- the layout's zones (`#image` on `image-*`, a project layout's own): each a column with the
   class `ar-zone-<name>`, which the layout's CSS places. Which zones a layout has, it says (its
   `@zone` tags and the `.ar-zone-<name>` its CSS styles: `npx arao layouts`); in a type-checked
   template a slide takes its layout's zones only, an error otherwise, `strictTemplates` or not
@@ -132,9 +133,15 @@ file of the same name replaces it.
 | Layout | What it does | Slots |
 |---|---|---|
 | `default` | the header, then the body filling the rest, inside the slide's padding; the body from the top (`--ar-body-align`); the footer shown | default, `#title` |
-| `cover` | the header and the body as one group, centred vertically, left-aligned; `h1` at 1.25x `--ar-title`; a `.bar` element draws a short bar in the accent; no footer | default, `#title` |
-| `section` | everything centred both ways, on `--ar-accent` in `--ar-accent-fg` (the title and the footer too); `h1` at 1.4x `--ar-title`; no footer | default, `#title` |
-| `split` | the header (and the body, as a lead line) across the top, then `#left` and `#right` side by side, filling the rest (`columns="2fr 1fr"`, `--ar-layout-split-columns`; default `1fr 1fr`) | default, `#title`, `#left`, `#right` |
+| `cover` | the header and the body as one group, centred vertically, left-aligned; its title (an `h1`) at 1.25x `--ar-title`, in the text colour; a `.bar` element draws a short bar in the accent; no footer | default, `#title` |
+| `section` | everything centred both ways, on `--ar-accent` in `--ar-accent-fg` (the title, its subtitle and the footer too); its title (an `h1`) at 1.4x `--ar-title`; no footer | default, `#title` |
+| `split` | the header across the top, then the body's two children side by side, its two sides, filling the rest; a side may start with an `h3`, its heading (`columns="2fr 1fr"`, `gap`, `divider="2px solid …"`; default `1fr 1fr`, no divider) | default, `#title` |
+| `grid` | each child of the body a block (a leading `Icon`/`Img`/`img`/`svg` at one size, an `h3`, a muted `p`), in rows balanced by their count (1-3 in a row, 4: 2+2, 5: 3+2, 6: 3+3, 7: 4+3, 8: 4+4, 9: 3+3+3, 10: 5+5, 11: 4+4+3, 12: 4x3, 13 and more at `max-columns`), the last one centred (`columns`, `max-columns`, `gap`, `align`, `cards`, `icon-size`) | default, `#title` |
+| `quote` | a `blockquote` opened by a big mark, and its `cite` (small, muted), in the middle; also two `p` (`size`, `mark`, `mark-color`, `align`); the footer shown | default, `#title` |
+| `statement` | its title (an `h2`) huge in the accent, the rest small under it, in the middle; also a `p` first (`size`, `color`, `align`) | default, `#title` |
+| `overlay` | for a slide with a `Background`: the title and the text in a corner (bottom left), white, over a dark gradient (`position`, `scrim`, `color`) | default, `#title` |
+| `caption` | a `figure`: its `Img` as big as the space allows, whole, its `figcaption` small and centred under it; also an `Img` followed by a `p` (`caption-size`, `caption-align`) | default, `#title` |
+| `agenda` | an `ol` in big numbered rows, numbers in the accent: an [`Agenda`](#agenda) (its states, each with its tokens) or a hand-written one | default, `#title` |
 | `image-left` / `image-right` | `#image` fills its side, full height and edge to edge (no padding); the other side is the text, padded like any slide: the header at the height of every other slide's title, then the body. The footer stays, over the picture. Widths: `columns="3fr 2fr"` (`--ar-layout-image-left-columns` / `--ar-layout-image-right-columns`), left to right (default `1fr 1fr`) | default (the text side), `#title`, `#image` |
 
 - A zone keeps its width: wider content is clipped at the zone's edge. Heights do not clip.
@@ -142,8 +149,10 @@ file of the same name replaces it.
   layout draws them on: in `image-left` the text is read before the picture.
 - In `#image`, an `Img` (and an `img` or a `video`) covers the zone (`fit="contain"` still
   wins); any other element fills it.
-- Content styles from `Slide.vue`'s CSS: `h1` is `--ar-title`; `h2` is 0.6x `--ar-title` in
-  `--ar-accent`; `p` has a bottom margin of 0.6em; lists and tables: [Lists and tables](../guide/slides-and-layouts.md#lists-and-tables).
+- Content styles from `Slide.vue`'s CSS: the title (`.ar-title`), whatever its tag, is 0.6x
+  `--ar-title` in `--ar-accent` and its subtitle (`.ar-subtitle`) 0.45x in `--ar-muted`, unless
+  the `--ar-title-*` / `--ar-subtitle-*` tokens or the layout say otherwise; in the body, `h1` is
+  `--ar-title`, `h2` 0.6x `--ar-title` in `--ar-accent`; `p` has a bottom margin of 0.6em; lists and tables: [Lists and tables](../guide/slides-and-layouts.md#lists-and-tables).
 
 How the zones, lists and tables of a slide work, and how to write a layout: [Slides and layouts](../guide/slides-and-layouts.md).
 
@@ -309,6 +318,37 @@ Slide
   Notes
     p Start with the story of the first customer.
     p(v-step="2") Tiers: say why there are exactly three.
+```
+
+## Agenda
+
+The talk's agenda, inside a `Slide`: an `ol` (`.ar-agenda`) of the titles of the deck's `section`
+slides, in their order, kept up to date by the deck (a section added, moved or renamed is in it).
+No props, no slot.
+
+Each item (`li.ar-agenda-item`) carries one state, as seen from the slide the `Agenda` is on:
+
+| Class | Which sections |
+|---|---|
+| `ar-agenda-done` | those before the slide |
+| `ar-agenda-current` | the first one from the slide on (the slide itself, when it is a section); it also has `aria-current="step"` |
+| `ar-agenda-upcoming` | those after the current one |
+
+- It has no look of its own: on an `agenda` slide the layout draws it (big numbered rows; done
+  dimmed, current in the accent and bold, upcoming as it is), one colour, opacity and weight per
+  state, each a token (`--ar-layout-agenda-done-opacity`…: [Layout tokens](theme-tokens.md#layouts)).
+  The same values for the three states show no state. On another layout it is a plain `ol`.
+- The titles are the sections' first headings (their name in the jump menu), the same in the
+  audience view, the presenter view (its slide and its preview, each seen from its own copy of
+  the slide), the export and a deck's thumbnail.
+- Written on several slides (after each section, or on each section slide), each copy shows where
+  the talk stands there. `useDeck().slides` is the list it reads ([Composables](composables.md#usedeck)).
+- Outside a `Slide` it warns and draws nothing.
+
+```pug
+Slide(layout="agenda")
+  h2 Agenda
+  Agenda
 ```
 
 ## Addons

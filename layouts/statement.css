@@ -1,0 +1,63 @@
+/**
+ * One statement, huge: a phrase to remember, or a figure ("90 %").
+ * The first thing the slide says is huge, in the accent; the rest is small under it, muted; the
+ * whole of it in the middle of the slide. Write the statement as the slide's title, an `h2` (the
+ * jump menu shows it), and the rest as a `p` or an `h3` after it; the plain form works too: a `p`
+ * first, the statement, then the rest.
+ * @example
+ * Slide(layout="statement")
+ *   h2 90 %
+ *   p of our releases ship on a Friday
+ *
+ * Slide(layout="statement" align="start" color="currentColor")
+ *   p Nothing ships without a test.
+ *   p.muted The one rule of this team
+ * @param size   the statement's size (default 1.5 x `--ar-title`)
+ * @param color  its colour (default `--ar-accent`)
+ * @param align  `center` or `start`: the statement and the rest, across the slide (default
+ *               `center`)
+ */
+
+/* Its tokens, --ar-layout-statement-<thing>, each a @param above (a theme, the project's :root or
+   one slide sets them, a slide also as attributes: Slide(layout="statement" size="200px"); why
+   each is resolved on the slide: cover.css).
+   The statement is the slide's title (.ar-title, Slide.vue: an h1 or an h2 the content starts
+   with), or, on a slide with none, the body's first child that is not hidden (a Background's
+   anchor is); a subtitle and the body's other children are the rest. The header and the body are
+   one group, as tall as their content, in the middle of the slide (cover.css does the same);
+   no header band. */
+:where(.layout-statement) {
+  --_ar-statement-size: var(--ar-layout-statement-size, calc(var(--ar-title) * 1.5));
+  --_ar-statement-color: var(--ar-layout-statement-color, var(--ar-accent));
+  --_ar-statement-align: var(--ar-layout-statement-align, center);
+  --_ar-statement-gap: calc(var(--_ar-statement-size) * .2);
+  --ar-header-height: auto;
+}
+
+.layout-statement {
+  justify-content: safe center;
+  align-items: var(--_ar-statement-align);
+  text-align: var(--_ar-statement-align);
+}
+.layout-statement > :is(.ar-header, .ar-body) { flex: none; max-width: 100%; align-items: var(--_ar-statement-align); }
+.layout-statement > .ar-header { margin-bottom: var(--_ar-statement-gap); }
+/* the statement */
+.layout-statement > .ar-header > .ar-title,
+.layout-statement:not(:has(> .ar-header)) > .ar-body > :nth-child(1 of :not([hidden])) {
+  margin: 0;
+  font-family: var(--ar-font-heading, inherit);
+  font-size: var(--_ar-statement-size);
+  font-weight: 700;
+  line-height: 1.05;
+  text-align: inherit;
+  color: var(--_ar-statement-color);
+}
+.layout-statement:not(:has(> .ar-header)) > .ar-body > :nth-child(1 of :not([hidden])) { margin-bottom: var(--_ar-statement-gap); }
+/* the rest: small, muted */
+.layout-statement > .ar-header > .ar-subtitle { text-align: inherit; }
+.layout-statement > .ar-body > :not(:nth-child(1 of :not([hidden]))),
+.layout-statement > .ar-header ~ .ar-body > * {
+  color: var(--ar-muted);
+  font-size: 1em;
+  text-align: inherit;
+}

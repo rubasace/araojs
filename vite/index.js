@@ -64,9 +64,10 @@
 // Layouts are CSS, one file per layout, named as the layout: <name>.css styles the slides of
 // Slide(layout="<name>"), whose section carries the class layout-<name>; the engine has no code of
 // its own for any of them. First the library's own (its layouts/ folder: cover, section, split,
-// image-left, image-right), then the project's, arao({ layouts }), one folder (default
-// 'src/layouts'): every .css file directly in it. All of them are loaded, with nothing to import
-// (virtual:arao/layout-styles), after the engine's CSS and before the themes' (so a theme's rule
+// grid, quote, statement, overlay, caption, agenda, image-left, image-right), then the project's,
+// arao({ layouts }), one folder (default 'src/layouts'): every .css file directly in it. All of
+// them are loaded, with nothing to import (virtual:arao/layout-styles), after the engine's CSS and
+// before the themes' (so a theme's rule
 // wins over a layout's of the same specificity), the library's first. A project file named like a
 // library one replaces it: the library's file is not loaded at all, and Vite says so. A file whose
 // name is no layout's (letters, digits, - and _), or that never names .layout-<name>, is loaded
