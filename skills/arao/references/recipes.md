@@ -153,7 +153,7 @@ Slide(layout="agenda")          //- the section slides' titles, done / current /
 ## Three columns: the grid layout
 When columns are the whole slide, that is a layout: `split` for two sides, `grid` for blocks.
 ```pug
-Slide(layout="grid" align="start")
+Slide.top(layout="grid" align="start" text-size="1em")
   h2 Three pillars
   div
     h3 Logging
@@ -165,9 +165,11 @@ Slide(layout="grid" align="start")
     h3 Clients
     p RestTemplate, WebClient
 ```
-`grid` balances its rows by the number of blocks (5 → 3 + 2, the last row centred); `columns="4"`
-fixes the count, `cards="color-mix(in srgb, var(--ar-fg) 6%, var(--ar-bg))"` gives each block a
-background, `icon-size="96px"` sizes a block's leading icon. Two uneven sides:
+Columns of text: `align="start"` (left-aligned), `text-size="1em"` (the slide's text size; a
+block's `p` is a small muted caption by default) and `.top` (under the title; the rows are centred
+otherwise). `grid` balances its rows by the number of blocks (5 → 3 + 2, the last row centred);
+`columns="4"` fixes the count, `cards="color-mix(in srgb, var(--ar-fg) 6%, var(--ar-bg))"` gives
+each block a background, `icon-size="96px"` sizes a block's leading icon. Two uneven sides:
 `Slide(layout="split" columns="2fr 1fr")`.
 
 ## Inside a block: utility classes

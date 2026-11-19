@@ -48,7 +48,7 @@ Deck
     p The picture fills its side, edge to edge.
     p.muted The text side is padded like any slide.
 
-  Slide(layout="grid" align="start")
+  Slide.top(layout="grid" align="start" text-size="1em")
     h2 Three pillars
     div(v-for="p in pillars" :key="p.title")
       h3 #[Icon.accent(:name="p.icon")] {{ p.title }}

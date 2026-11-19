@@ -44,7 +44,8 @@ const pillars = [
 | The slide is | Its layout |
 |---|---|
 | two sides, side by side (before and after, text and code) | `split`; uneven: `columns="2fr 1fr"` |
-| blocks in rows: features, pillars, a team, logos, cards | `grid`; `columns`, `rows`, `cards`, `icon-size`, `align` |
+| blocks in rows: features, pillars, a team, logos, cards | `grid`; `columns`, `rows`, `cards`, `icon-size`, `align`, `text-size` |
+| columns of text | `Slide.top(layout="grid" align="start" text-size="1em")` |
 | a picture beside the text | `image-left`, `image-right` |
 | a picture and its caption | `caption` |
 | text over a picture | `overlay` |
@@ -97,12 +98,26 @@ Each one, and the classes of a `Slide` itself (`top`, `middle`, `center`, `botto
 - A placement class is as tall as its content; `grow` makes it fill the rest of its container. A
   `Snippet`, or an `Img` that should fill, needs that box: `.cols.grow` around them.
 - Put the placement classes on an element of yours inside the block: a layout lays out its own
-  blocks (a `.row` written on a side of `split` stays a column). Alignment, gaps, sizes and
-  colours work on a layout's blocks too (`div.middle` as a side of `split`).
+  blocks (a `.row` written on a side of `split` stays a column). Gaps, sizes and colours work on a
+  layout's blocks too, and so does alignment on a side of `split` or a zone (`div.middle` as a
+  side). A block of `grid` takes `.top`, `.middle` and `.bottom` (top to bottom), but across it
+  follows grid's `align` parameter: `.center` there centres top to bottom only.
 - In columns and rows a child is never wider than its track: what is wider is clipped at its edge,
   never painted over its neighbour. A child collapsed by `v-step.collapse` frees its track.
-- The sizes, colours and the marker win over what a layout or a theme sets on the same element:
-  `p.accent` in a block of `grid` is the accent, though the block's text is muted.
+- `--ar-cols` and `--ar-rows` are CSS grid tracks, taken as written: write whole `fr`
+  (`3fr 2fr`); `fr` that add up to less than 1 fill only that part (`.3fr .2fr` fills half).
+- The sizes, colours, the marker and `.upper` are `!important`: they win over what a layout or a
+  theme sets on the same element (`p.accent` in a block of `grid` is the accent, though the
+  block's text is muted), and over an inline `style="color: …"` on the same element. They reach
+  the children only by inheritance, so a child's own colour still shows (`Agenda.muted`: each
+  item keeps its state's colour, set on the item). A theme changes them through their tokens
+  (`--ar-accent`, `--ar-muted`,
+  `--ar-text-small`/`-large`/`-xlarge`, `--ar-highlight`), not by overriding the classes.
+- The names are short and common, and apply to any element inside a slide: a class of the same
+  name from somewhere else (`.row` or `.stack` of Bootstrap or daisyUI, Tailwind's `text-*`,
+  Pygments' `.highlight` around code pasted as HTML) gets their style there too. An accepted
+  trade-off, for names an author can type and an agent can guess; outside the slides (the
+  presenter view, the list of decks) nothing is touched.
 
 ## From Cols, Rows, Grid and Center
 
@@ -112,12 +127,13 @@ class.
 | Before | Now |
 |---|---|
 | `Cols` of two sides, the whole slide | `Slide(layout="split")`, a `div` per side; `ratio="2 1"` → `columns="2fr 1fr"`; `gap` → `gap="…"` |
-| `Cols` of three or more blocks, the whole slide | `Slide(layout="grid")`, a `div` per block; `align="start"` for text columns |
-| `Grid(cols="3")` / `Grid(ratio="2:1")` of cards or icons, the whole slide | `Slide(layout="grid")` (rows balanced by count, last one centred); `columns="3"`; `cards="…"` for a background |
-| `Cols` inside a block | `.cols`; `ratio="2 1"` → `style="--ar-cols: 2fr 1fr"` |
+| `Cols` of three or more columns of text, the whole slide | `Slide.top(layout="grid" align="start" text-size="1em")`, a `div` per column: `.top` keeps them under the title (grid centres its rows otherwise), `text-size="1em"` keeps the slide's text size (a block's `p` is a small caption otherwise) |
+| `Cols` of three or more blocks with an icon or a picture, the whole slide | `Slide(layout="grid")`, a `div` per block (an icon, an `h3`, a `p`) |
+| `Grid(cols="3")` / `Grid(ratio="2:1")` of cards or icons, the whole slide | `Slide(layout="grid")` (rows balanced by count, last one centred); `columns="3"`; `cards="…"` for a background; an icon's `size` → `icon-size="140px"` |
+| `Cols` inside a block | `.cols`; `ratio="2 1"` → `style="--ar-cols: 2fr 1fr"` (whole `fr`: shares were proportions, `fr` that add up to less than 1 fill only that part: `.3fr .2fr` fills half) |
 | `Grid(cols="3")` inside a block | `.cols-3` (`cols-2`, `cols-4`) |
 | `Rows(ratio="auto 1")` | `.stack` with `.grow` on what fills, or `.rows(style="--ar-rows: auto 1fr")` with a height (`.grow`) |
-| `Center` | `.center`; around a picture with a size, `.stack.center`; around a `Snippet`, nothing (it centres its window) |
+| `Center` | `.center.grow`: `Center` filled the space left, `.grow` does that (in a cell of `.cols` it fills anyway); around a picture with a size, `.stack.center.grow`; around a `Snippet`, nothing (it fills and centres its window) |
 | `align="start"` / `"center"` / `"end"` | `.top` / `.middle` / `.bottom` on the columns (or on a side of `split`) |
 | `gap="sm"` / `"md"` / `"lg"` | `.gap-sm` / `.gap` / `.gap-lg` (the classes' gap is `md`) |
 | `.small` | `.text-sm` |

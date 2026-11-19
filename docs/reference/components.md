@@ -198,7 +198,7 @@ children `--ar-gap-md` apart.
 
 | Class | Effect |
 |---|---|
-| `.cols` | columns side by side, one per child, of equal width; set them with `--ar-cols` in its style, as CSS grid columns: `.cols(style="--ar-cols: 2fr 1fr")`, `auto 1fr` |
+| `.cols` | columns side by side, one per child, of equal width; set them with `--ar-cols` in its style, as CSS grid columns: `.cols(style="--ar-cols: 2fr 1fr")`, `auto 1fr` (whole `fr`: see below) |
 | `.cols-2`, `.cols-3`, `.cols-4` | that many equal columns, filled row by row, every row as tall as the tallest |
 | `.rows` | rows one under another, of equal height, sharing its height (give it one: `.grow`, or a zone's); `--ar-rows` sets them (`auto 1fr`) |
 | `.stack` | its children one under another, the gap between them instead of their own margins |
@@ -249,19 +249,29 @@ Slide(layout="split")
 ```
 
 - Placement classes go on an element of yours: a layout lays out its own blocks (a `.row` written
-  on a side of `split` stays a column), so put it on an element inside. Alignment, gaps and the
-  look work on a layout's blocks too.
+  on a side of `split` stays a column), so put it on an element inside. Gaps and the look work on
+  a layout's blocks too, and alignment on a side of `split` or a zone; a block of `grid` takes
+  `.top`, `.middle` and `.bottom`, but across it follows grid's `align` (`.center` on it centres
+  top to bottom only).
 - A `Snippet`, or an `Img` that should fill, needs a box with a height: `.grow` on the columns
   around it.
 - In columns and rows, a child is never wider than its track: what is wider inside it is clipped
   at the track's edge, never painted over its neighbour; rows grow to fit their content. A child
   collapsed by `v-step.collapse` frees its track.
-- `--ar-cols` and `--ar-rows` apply to the element whose style sets them, never inherited: columns
-  inside columns start equal again.
-- Sizes, colours, the marker and `.upper` win over what a layout or a theme sets on the same
-  element (`!important`): `p.accent` in a block of `grid`, whose text is muted, is the accent.
-  Placement, alignment and spacing do not, so a layout keeps its own blocks and
-  `v-step.collapse` still hides.
+- `--ar-cols` and `--ar-rows` are CSS grid tracks, taken as written, and apply to the element whose
+  style sets them, never inherited (columns inside columns start equal again). Write whole `fr`:
+  `fr` that add up to less than 1 fill only that part (`.3fr .2fr` fills half the width).
+- Sizes, colours, the marker and `.upper` are `!important`: they win over what a layout or a
+  theme sets on the same element (`p.accent` in a block of `grid`, whose text is muted, is the
+  accent) and over an inline `style="color: …"` on it; children get them by inheritance, so a
+  child's own colour still shows. A theme restyles them through their tokens (`--ar-accent`,
+  `--ar-muted`, `--ar-text-small`/`-large`/`-xlarge`, `--ar-highlight`). Placement, alignment
+  and spacing are not `!important`, so a layout keeps its own blocks and `v-step.collapse` still
+  hides.
+- The names are short and common, and apply to any element inside a slide: a class of the same
+  name from elsewhere (`.row`, `.stack` of Bootstrap or daisyUI, Tailwind's `text-*`, Pygments'
+  `.highlight` around code pasted as HTML) gets their style there too. An accepted trade-off;
+  outside the slides (the presenter view, the list of decks) they touch nothing.
 
 ## Img
 

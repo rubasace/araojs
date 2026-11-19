@@ -4,7 +4,7 @@ Deck(:themes="['ocean', 'sage', 'midnight', 'default']")
     span ACME · DevConf 2026
     span {{ number }} / {{ total }}
 
-  Slide(layout="grid" align="start")
+  Slide.top(layout="grid" align="start" text-size="1em")
     h2 Same slides, another venue
     div
       h3 #[Icon.accent(name="lucide:palette")] Colours

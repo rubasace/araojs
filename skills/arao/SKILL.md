@@ -79,7 +79,8 @@ Do:
 - Arrange the slide with a `layout` (the library's: `cover`, `section`, `split`, `grid`, `quote`,
   `statement`, `overlay`, `caption`, `agenda`, `image-left`, `image-right`; each's HTML and
   parameters: `npx arao layouts`): two sides are `split`, blocks in rows (features, pillars,
-  logos, cards) are `grid`. Tune a layout on one slide with its parameters, attributes named after
+  logos, cards) are `grid`, columns of text `Slide.top(layout="grid" align="start"
+  text-size="1em")`. Tune a layout on one slide with its parameters, attributes named after
   its tokens: `Slide(layout="image-right" columns="3fr 2fr")`, `Slide(layout="split" columns="2fr 1fr")`,
   `Slide(layout="grid" columns="4" cards="…")`, `Slide(layout="cover" bar="gold")` (each layout's:
   `npx arao layouts`). Another layout's attribute does nothing (and fails `vue-tsc` with
@@ -134,7 +135,7 @@ Don't:
   repeats is a layout file, not deck CSS.
 - Don't write `Cols`, `Rows`, `Grid` or `Center`: they are gone (Vue warns "Failed to resolve
   component"; `check-deck.mjs` names the replacement). Whole-slide columns are `split` or `grid`;
-  inside a block, `.cols`, `.cols-3`, `.stack`, `.center`
+  inside a block, `.cols`, `.cols-3`, `.stack`, `.center.grow`
   ([troubleshooting.md](references/troubleshooting.md#decks-written-for-an-older-arao)).
 - Don't use the props older Arao had on `Slide` (`title`, `align`, `footer`, `ratio`, `bg`,
   `bg-*`) or `template(#background)`: they do nothing now, silently (where the layout has a

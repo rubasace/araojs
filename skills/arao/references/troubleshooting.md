@@ -41,22 +41,29 @@
 - `layout="two-cols"` is gone: use `layout="split"`.
 - **`Cols`, `Rows`, `Grid` and `Center` are gone** (BREAKING): written in a deck, Vue warns
   "Failed to resolve component" and renders an element of that name that lays nothing out (its
-  content one block under another); `check-deck.mjs` reports each as "removed component", with
-  its replacement. A slide's
+  content one block under another); `check-deck.mjs` reports `Cols`, `Rows` and `Grid` as
+  "removed components", with the replacement, and warns about a `center` element (it may be
+  HTML's old `<center>`). A slide's
   columns are its layout; inside one block, utility classes:
   - `Cols` of two sides, the whole slide → `Slide(layout="split")`, a `div` per side;
     `ratio="2 1"` → `columns="2fr 1fr"`; `gap="lg"` is split's default (`gap="96px"` for another).
-  - `Cols` of three or more blocks, or `Grid` of cards or logos, the whole slide →
+  - `Cols` of three or more columns of text, the whole slide →
+    `Slide.top(layout="grid" align="start" text-size="1em")`, a `div` per column: `.top` keeps
+    them under the title (grid centres its rows), `text-size="1em"` keeps the slide's text size
+    (a block's `p` is a small muted caption by default).
+  - `Cols` of three or more blocks with an icon, or `Grid` of cards or logos, the whole slide →
     `Slide(layout="grid")`, a `div` per block (an icon, an `h3`, a `p`). It balances the rows by
     count, the last one centred, as `Grid(ratio="2:1")` did; `Grid(cols="4")` → `columns="4"`; a
-    card's background → `cards="…"`; text columns → `align="start"`; an `Icon(size)` in a block →
-    `icon-size="140px"` (the layout sizes a block's leading icon).
-  - `Cols` inside a block → `.cols`; `ratio="2 1"` → `.cols(style="--ar-cols: 2fr 1fr")`.
+    card's background → `cards="…"`; an `Icon(size)` in a block → `icon-size="140px"` (the layout
+    sizes a block's leading icon).
+  - `Cols` inside a block → `.cols`; `ratio="2 1"` → `.cols(style="--ar-cols: 2fr 1fr")`, whole
+    `fr` (`fr` adding up to less than 1 fill only that part: `.3fr .2fr` is half the width).
     `Grid(cols="3")` inside a block → `.cols-3` (`.cols-2`, `.cols-4`).
   - `Rows(ratio="auto 1")` → `.stack` with `.grow` on what fills (or `.rows` with
     `style="--ar-rows: auto 1fr"` and a height, `.grow`).
-  - `Center` → `.center`; around a picture with a size, `.stack.center`; around a `Snippet`, drop
-    it (a snippet centres its window).
+  - `Center` → `.center.grow` (`Center` filled the space left; in a cell of `.cols` it fills
+    anyway); around a picture with a size, `.stack.center.grow`; around a `Snippet`, drop it (a
+    snippet fills and centres its window).
   - `align="start"` / `"center"` / `"end"` → `.top` / `.middle` / `.bottom` on the columns (or on a
     side of `split`); `gap="sm"` / `"md"` / `"lg"` → `.gap-sm` / `.gap` / `.gap-lg`.
   - The classes are as tall as their content, as the pieces were not: a `Snippet` (or an `Img`
@@ -116,7 +123,15 @@
   columns: `.cols.grow`.
 - **A placement class on a layout's block does nothing**: `split`'s sides and `grid`'s blocks are
   laid out by the layout (a `div.row` written as a side stays a column). Put the class on an
-  element inside the side. Alignment, gaps, sizes and colours do work on them.
+  element inside the side. Gaps, sizes and colours do work on them, alignment on a side of
+  `split`; a block of `grid` takes `.top` / `.middle` / `.bottom`, but across it follows grid's
+  `align` (`.center` on it centres top to bottom only).
+- **A colour or size class beats an inline style on the same element**: `.accent`, `.muted`,
+  `.text-*`, `.highlight` and `.upper` are `!important`. Drop the class, or change the theme's
+  token (`--ar-accent`, `--ar-text-large`…).
+- **A class of another framework's name changes look inside a slide**: `.row`, `.stack`,
+  `.highlight`, `.text-sm`… are Arao's there (Bootstrap's `.row`, Pygments' `.highlight` around
+  pasted code). Rename yours, or keep it outside the slides.
 - `.collapse` steps in a `.center` slide re-centre the body as they come and go: use plain
   `v-step` (keeps its space) when the rest must not move.
 - **The footer sits in the bottom margin.** Where it shows, that margin is at least the band's

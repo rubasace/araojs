@@ -127,11 +127,11 @@ After the layouts, a block per group of utility classes (`Placement`, `Alignment
 are the library's, read from the doc comments of its stylesheet (`src/styles/utilities.css` in the
 package); a project adds none.
 
-`--json` prints one object, `{ "version": "…", "layouts": [ … ], "classes": [ … ], "classGroups":
-[ … ] }`: `version` is the araojs that printed it, `classes` a member per class of each group
-(`{ "name", "group", "description" }`; a class two groups document, as `center` on a block and on a
-`Slide`, is in both), `classGroups` a member per group (`{ "name", "summary", "description",
-"example" }`), and `layouts` a member per layout in the same order as above:
+`--json` prints one object, `{ "version": "…", "layouts": [ … ], "classGroups": [ … ] }`:
+`version` is the araojs that printed it; `classGroups` a member per group, in the order above,
+`{ "name", "summary", "description", "example", "classes": [{ "name", "description" }] }` (a class
+two groups document, as `center` on a block and on a `Slide`, is in each of them; within a group no
+name repeats); and `layouts` a member per layout in the same order as above:
 
 | Field | Value |
 |---|---|

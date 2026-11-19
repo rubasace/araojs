@@ -752,6 +752,8 @@ export default function arao(options = {}) {
     configureServer(server) {
       // the watcher covers the root; a folder outside it is added, so its new files show up live
       for (const d of outside()) server.watcher.add(d)
+      // the server closing: the declaration file is not written after it (watchChange, below)
+      server.httpServer?.once('close', () => clearTimeout(settling))
     },
     // the layouts' declaration file: when Vite starts (the dev server, a build), and when a layout
     // file is added, removed or edited (its parameters may change; the file is written only if
@@ -760,7 +762,10 @@ export default function arao(options = {}) {
     // as its writer starts, and a writer that empties it first and writes it a moment later
     // (fs.writeFile, many editors) would be read empty, its problems said for nothing; and the
     // events of the rest of its write come within the watcher's throttle (chokidar drops a file's
-    // changes for 50 ms after one it reports), so nothing would read the file again
+    // changes for 50 ms after one it reports), so nothing would read the file again. The pending
+    // write is dropped only when the watching ends: the dev server closing (configureServer,
+    // above), vite build --watch stopping (closeWatcher); not when a rebuild of build --watch ends
+    // (closeBundle runs after each one, and would drop the write the change it rebuilt for asked)
     buildStart() {
       writeLayoutsDts()
     },
@@ -770,8 +775,7 @@ export default function arao(options = {}) {
       settling = setTimeout(writeLayoutsDts, SETTLE_MS)
       settling.unref?.()
     },
-    // the server closing: no read after it
-    closeBundle() {
+    closeWatcher() {
       clearTimeout(settling)
     },
     resolveId(id) {

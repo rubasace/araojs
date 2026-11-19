@@ -12,8 +12,15 @@
    its own blocks wins over them (put the class on an element inside the block) and v-step.collapse
    still hides (base.css); the look (sizes, colours, the marker, upper case) is !important, as
    PrimeFlex's classes are, so it wins over what a layout or a theme sets on the same element (a
-   p.accent in a block of grid, whose text is muted). What only shapes the children (their
-   clipping, their margins) has zero specificity, or the slide's: a rule of the deck's wins. */
+   p.accent in a block of grid, whose text is muted), an inline style="color: …" on it too; a
+   theme restyles them through their tokens, never by overriding the classes. What only shapes the
+   children (their clipping, their margins) has zero specificity, or the slide's: a rule of the
+   deck's wins.
+   Names: short and common on purpose (an author types them, an agent guesses them), and they
+   apply to any element inside a slide, so a class of the same name from elsewhere gets their
+   style there too (.row and .stack of Bootstrap or daisyUI, Tailwind's text-*, Pygments'
+   .highlight around code pasted as HTML): an accepted trade-off. Outside .ar-slide (the presenter
+   view, the list of decks) they touch nothing. */
 
 /**
  * Placement: arrange a block's children, in columns, rows, a stack or a row.
@@ -38,7 +45,8 @@
  *       ul
  *         li One file
  * @class cols    columns side by side, one per child, of equal width; set them with `--ar-cols`
- *                in its style, as CSS grid columns (`style="--ar-cols: 2fr 1fr"`, `auto 1fr`)
+ *                in its style, as CSS grid columns, taken as written (`style="--ar-cols: 2fr
+ *                1fr"`, `auto 1fr`; `fr` adding up to less than 1 fill only that part)
  * @class cols-2  two equal columns, filled row by row, every row as tall as the tallest
  * @class cols-3  three equal columns, filled row by row
  * @class cols-4  four equal columns, filled row by row
@@ -80,7 +88,8 @@
  * On a block of yours (or a side of split, a zone): its content. In `cols`, `cols-*`, `rows` and a
  * `row`: each child in its track or on the line (their default: columns stretch each child to the
  * row's height). In a `stack`: its children. `center` is `middle` with the text centred, and the
- * children centred across too.
+ * children centred across too. On a block of grid only top to bottom: across, it follows grid's
+ * own `align`.
  * @example
  * .cols.middle
  *   Img(file="chart.svg")

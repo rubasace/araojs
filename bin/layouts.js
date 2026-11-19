@@ -3,8 +3,8 @@
 // templates it places) and its parameters (attributes of the slide), each described; and then
 // the utility classes a deck writes inside a slide, by group, each described:
 //   arao layouts            for a person: a block per layout, then a block per group of classes
-//   arao layouts --json     for a program (an agent): { version, layouts: [...], classes: [...],
-//                           classGroups: [...] }
+//   arao layouts --json     for a program (an agent): { version, layouts: [...],
+//                           classGroups: [{ ..., classes: [...] }] }
 // Run by bin/arao.js: its options are what follows the command.
 // The classes are the library's, as its stylesheet documents them (src/styles/utilities.css, in
 // the package; read by vite/class-docs.js): a project adds none.
@@ -30,8 +30,8 @@ const HELP = `Usage: arao layouts [--json]     (in a project: npx arao layouts)
   --json      the same as JSON, for a program: { "version" (araojs's), "layouts": [{ name,
               source, file, replaces, validName, documented, summary, description, example,
               zones: [{ name, description }], params: [{ name, token, description }],
-              problems }], "classes": [{ name, group, description }], "classGroups": [{ name,
-              summary, description, example }] }
+              problems }], "classGroups": [{ name, summary, description, example,
+              classes: [{ name, description }] }] }
   -h, --help  this help
 
 Run it in the slides project: its folder is the current directory, its layouts the ones its Vite
@@ -91,13 +91,18 @@ if (args.json) {
     params: l.params.map((p) => ({ name: p.thing, token: `--ar-layout-${l.name}-${p.thing}`, description: p.description })),
     problems: l.problems,
   }))
-  // the classes, one entry per class of each group (a class two groups document is in both), and
-  // what each group says of its classes
-  const classes = classGroups.flatMap((g) => g.classes.map((c) => ({ name: c.name, group: g.name, description: c.description })))
-  const groups = classGroups.map((g) => ({ name: g.name, summary: g.summary, description: g.description, example: g.example }))
+  // the classes, by group: what each group says, and its classes (a class two groups document,
+  // center on a block and on a Slide, is in each, once: no name repeats within a group)
+  const groups = classGroups.map((g) => ({
+    name: g.name,
+    summary: g.summary,
+    description: g.description,
+    example: g.example,
+    classes: g.classes.map((c) => ({ name: c.name, description: c.description })),
+  }))
   // the araojs that printed it: its package.json, next to this folder
   const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
-  console.log(JSON.stringify({ version, layouts: out, classes, classGroups: groups }, null, 2))
+  console.log(JSON.stringify({ version, layouts: out, classGroups: groups }, null, 2))
   process.exit(0)
 }
 

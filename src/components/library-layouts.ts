@@ -364,7 +364,9 @@ export interface LibraryLayouts {
    * wrap at `max-columns`. `columns` fixes the count instead (4 with 9 blocks: 4 + 4 + 1), and
    * `rows` the rows (2 with 9 blocks: 5 + 4). With or without a title; the rows sit in the middle
    * of the space left (a slide's `top` or `bottom` class moves them). Write each block as an
-   * element (a `div`) holding its content.
+   * element (a `div`) holding its content. Columns of text are blocks too: `align="start"`,
+   * `text-size="1em"` (the slide's text, not a caption's) and the slide's `top` class (under the
+   * title): `Slide.top(layout="grid" align="start" text-size="1em")`.
    *
    * Parameters (attributes):
    * - `align`: a block's content: `center` or `start` (default `center`)
@@ -379,6 +381,8 @@ export interface LibraryLayouts {
    *   row is wider (default `5`)
    * - `rows`: how many rows, whatever their count: a row holds the count divided by it, rounded
    *   up (counted up to 24 blocks; `columns` wins over it)
+   * - `text-size`: the size of a block's text, its `p` (default `--ar-text-small`, a caption's;
+   *   `1em` keeps the slide's)
    *
    * @example
    * ```pug
@@ -411,7 +415,9 @@ export interface LibraryLayouts {
      * wrap at `max-columns`. `columns` fixes the count instead (4 with 9 blocks: 4 + 4 + 1), and
      * `rows` the rows (2 with 9 blocks: 5 + 4). With or without a title; the rows sit in the middle
      * of the space left (a slide's `top` or `bottom` class moves them). Write each block as an
-     * element (a `div`) holding its content.
+     * element (a `div`) holding its content. Columns of text are blocks too: `align="start"`,
+     * `text-size="1em"` (the slide's text, not a caption's) and the slide's `top` class (under the
+     * title): `Slide.top(layout="grid" align="start" text-size="1em")`.
      *
      * Parameters (attributes):
      * - `align`: a block's content: `center` or `start` (default `center`)
@@ -426,6 +432,8 @@ export interface LibraryLayouts {
      *   row is wider (default `5`)
      * - `rows`: how many rows, whatever their count: a row holds the count divided by it, rounded
      *   up (counted up to 24 blocks; `columns` wins over it)
+     * - `text-size`: the size of a block's text, its `p` (default `--ar-text-small`, a caption's;
+     *   `1em` keeps the slide's)
      *
      * @example
      * ```pug
@@ -492,6 +500,13 @@ export interface LibraryLayouts {
      * `--ar-layout-grid-rows`
      */
     rows?: string
+    /**
+     * the size of a block's text, its `p` (default `--ar-text-small`, a caption's; `1em` keeps the
+     * slide's)
+     *
+     * `--ar-layout-grid-text-size`
+     */
+    textSize?: string
   }
   /**
    * A picture beside the text, the picture on the left.

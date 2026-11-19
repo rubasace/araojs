@@ -126,6 +126,7 @@ A `*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows 
 | `--ar-layout-grid-align` | `align` | `center` | a block's content: `center` or `start` |
 | `--ar-layout-grid-cards` | `cards` | `none` | each block's background, making it a card (a colour, a gradient) |
 | `--ar-layout-grid-icon-size` | `icon-size` | `3em` (`2em` from 9 blocks) | the size of a block's leading picture or icon |
+| `--ar-layout-grid-text-size` | `text-size` | `--ar-text-small` | the size of a block's text, its `p`; `1em` keeps the slide's (columns of text) |
 | `--ar-layout-quote-size` | `size` | 0.8x `--ar-title` | the quote's size |
 | `--ar-layout-quote-mark` | `mark` | `'“'` | the decorative mark, a CSS string (quotes written: `mark="'«'"`) |
 | `--ar-layout-quote-mark-color` | `mark-color` | `--ar-accent` | its colour |

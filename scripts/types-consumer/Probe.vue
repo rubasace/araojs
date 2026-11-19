@@ -26,7 +26,7 @@
     <Slide layout="cover" title-size="120px" bar="gold" />
     <Slide layout="cover" titleSize="120px" />
     <Slide layout="callout" size="80px" mark-color="red" />
-    <Slide layout="grid" columns="4" max-columns="3" icon-size="64px" cards="none" align="start" />
+    <Slide layout="grid" columns="4" max-columns="3" icon-size="64px" cards="none" align="start" text-size="1em" />
     <Slide layout="split" divider="2px solid red" gap="96px" />
     <Slide layout="quote" mark="'«'" mark-color="red" />
     <Slide layout="caption" caption-size="24px" captionAlign="start" />

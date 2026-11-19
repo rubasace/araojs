@@ -35,9 +35,10 @@
 //      the araojs version and lists default, the library's but cover (each documented in full),
 //      then every project file (cover replacing the library's, as its doc block says, its /**
 //      comment after its code a problem; epigraph, the playground's, documented; plain, with no doc
-//      block and its problem; "bad name", which no slide can name), then the utility classes
-//      (UTILITY_CLASSES among them, from the stylesheet the package ships), each described, in
-//      groups with a summary and an example; and <bin> layouts prints a block per layout saying
+//      block and its problem; "bad name", which no slide can name), then the utility classes by
+//      group (classGroups, each with a summary, an example and its classes, UTILITY_CLASSES
+//      among them, each described, none twice in a group: from the stylesheet the package ships);
+//      and <bin> layouts prints a block per layout saying
 //      where it comes from, then a block per group of classes;
 //      with a theme source that is a package not installed, one that gives no theme, one whose
 //      themes folder is outside it, or a bare name that is a root folder, it must stop with an
@@ -759,13 +760,16 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
         }
         if (by.plain?.documented !== false || !by.plain.problems.some((p) => /names no \.layout-plain/.test(p))) complaints.push('plain is not listed with no doc block and its problem (it names no .layout-plain)')
         // the utility classes, from the package's own stylesheet (src/styles/utilities.css, which
-        // it must ship): each in its group, described; each group with its summary and example
-        const classes = printed.classes ?? []
+        // it must ship): by group, each group with its summary, its example and its classes, each
+        // described, no name twice in a group; no flat list beside them
         const groups = printed.classGroups ?? []
+        const classes = groups.flatMap((g) => g.classes ?? [])
         const missing = UTILITY_CLASSES.filter((c) => !classes.some((x) => x.name === c))
         if (missing.length) complaints.push(`its classes lack ${missing.join(', ')} (it lists ${classes.map((c) => c.name).join(', ') || 'none'})`)
-        if (classes.some((c) => !c.description || !groups.some((g) => g.name === c.group))) complaints.push('a class is not described, or not in a group it lists')
-        if (!groups.length || groups.some((g) => !g.summary || !g.example)) complaints.push('a group of classes has no summary or no example')
+        if (classes.some((c) => !c.description)) complaints.push('a class is not described')
+        if (!groups.length || groups.some((g) => !g.summary || !g.example || !g.classes?.length)) complaints.push('a group of classes has no summary, no example or no class')
+        if (groups.some((g) => new Set(g.classes.map((c) => c.name)).size !== g.classes.length)) complaints.push('a group lists a class twice')
+        if ('classes' in printed) complaints.push('it has a flat classes list beside classGroups')
         if (classes.some((c) => ['Cols', 'Rows', 'Grid', 'Center'].includes(c.name))) complaints.push('it lists a removed component as a class')
         for (const x of complaints) fail(`${BIN} layouts --json: ${x}`)
         if (!complaints.length) console.log(`  ${BIN} layouts --json: version ${printed.version}; ${names(got)}; each library layout described, the project's epigraph and cover as their doc blocks say (cover replacing the library's; after a licence header; its zones its own; its example with an @ line), plain and "bad name" with their problems; the config's own output on stderr; ${classes.length} utility classes in ${groups.length} groups, each described`)
