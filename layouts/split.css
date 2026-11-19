@@ -1,17 +1,24 @@
-/* split: the slide's header (and the body, when there is one: a lead line) across the top, then
-   two zones side by side, #left and #right, filling the rest of the slide.
-     Slide(layout="split")
-       h2 Before and after
-       template(#left)
-         p Every team rolled its own.
-       template(#right)
-         p(v-step="2") One starter, one version.
+/**
+ * Two zones side by side, under the slide's title.
+ * The slide's header (and the body, when there is one: a lead line) across the top, then the two
+ * zones, `#left` and `#right`, filling the rest of the slide. A zone keeps its width: what is
+ * wider is clipped at its edge.
+ * @example
+ * Slide(layout="split")
+ *   h2 Before and after
+ *   template(#left)
+ *     p Every team rolled its own.
+ *   template(#right)
+ *     p(v-step="2") One starter, one version.
+ * @zone left     the left side, under the header
+ * @zone right    the right side, under the header
+ * @param columns  the two zones' widths, left to right, as CSS grid columns (default `1fr 1fr`)
+ * @param gap      the space between them (default `--ar-gap-lg`)
+ */
 
-   Tokens, and their defaults (a theme, the project's :root or one slide sets them, a slide also as
-   attributes: Slide(layout="split" columns="2fr 1fr"); why each is resolved on the slide:
-   cover.css):
-     --ar-layout-split-columns   the two zones' widths, left to right, as CSS grid columns  1fr 1fr
-     --ar-layout-split-gap       the space between them                      --ar-gap-lg
+/* Its tokens, --ar-layout-split-<thing>, each a @param above (a theme, the project's :root or one
+   slide sets them, a slide also as attributes: Slide(layout="split" columns="2fr 1fr"); why each
+   is resolved on the slide: cover.css).
    A zone keeps its width: what is wider is clipped at its edge (Slide.vue's .ar-zone). */
 :where(.layout-split) {
   --_ar-split-columns: var(--ar-layout-split-columns, 1fr 1fr);

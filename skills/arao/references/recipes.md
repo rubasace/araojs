@@ -248,7 +248,21 @@ an attribute of the layout's slides, `<thing>` (below: `size`, `footer`); a `<th
 has as an attribute (`title`, `id`, `hidden`, `lang`, `class`, `style`, `key`, `layout`, `on-…`,
 `data-…`, `aria-…`) is none and Vite warns: name it `title-size`, say. A file replacing a library
 layout replaces its parameters too.
+It starts with its doc block (always): the first line says what the layout is for, then
+`@example` (a slide of it, in Pug), `@zone <name> <description>` per named template it places
+(`.ar-zone-<name>`), `@param <thing> <description>` per token, its default said. `npx arao layouts`
+prints it back, with any problem (a `@param` naming no token…); full rules:
+`docs/guide/slides-and-layouts.md#its-doc-block`.
 ```css
+/**
+ * One big quote, centred on the slide, its author under it.
+ * @example
+ * Slide(layout="quote" size="64px")
+ *   blockquote Make it work, make it right, make it fast.
+ *   p.muted Kent Beck
+ * @param size    the quote's size (default .8 x `--ar-title`)
+ * @param footer  the deck's footer: `none` hides it, `flex` shows it (default `none`)
+ */
 :where(.layout-quote) {
   --_ar-quote-size: var(--ar-layout-quote-size, calc(var(--ar-title) * .8));
   --_ar-quote-footer: var(--ar-layout-quote-footer, none);
@@ -263,10 +277,11 @@ Slide(layout="quote" size="64px")
   blockquote Make it work, make it right, make it fast.
   p.muted Kent Beck
 ```
-The plugin also writes the project's layout names and parameters into `src/arao-layouts.d.ts`, so
-that in a TypeScript project the editor completes `layout` and that layout's attributes, and
-`vue-tsc` rejects a name that is none (and, with `strictTemplates`, another layout's attribute): it
-is generated (don't edit it), and committed like any source file.
+The plugin also writes the project's layout names, parameters, zones and doc blocks into
+`src/arao-layouts.d.ts`, so that in a TypeScript project the editor completes `layout` and that
+layout's attributes and zones, shows their docs on hover, and `vue-tsc` rejects a name that is none,
+a named template that is not one of the layout's zones (and, with `strictTemplates`, another
+layout's attribute): it is generated (don't edit it), and committed like any source file.
 What a slide renders, to style: `.ar-header` (its opening heading), `.ar-body` (the rest),
 `.ar-zone-<name>` for each `template(#<name>)`, `.ar-footer`. Defaults that are other tokens go
 in the `:where(.layout-<name>)` block, never at `:root` (there `var()` resolves once, and a

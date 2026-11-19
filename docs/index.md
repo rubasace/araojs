@@ -39,7 +39,7 @@ Every prop, slot, token, option and URL, exactly.
 | [Composables](reference/composables.md) | `useDeck()`, `useSlide()` |
 | [Theme tokens](reference/theme-tokens.md) | every `--ar-*` token and its default, the layouts' included |
 | [Vite plugin](reference/vite-plugin.md) | `arao()` and its options |
-| [CLI](reference/cli.md) | `arao export` and its options |
+| [CLI](reference/cli.md) | `arao export`, `arao layouts` and their options |
 | [URLs](reference/urls.md) | paths, query parameters and the hash |
 
 ## Elsewhere

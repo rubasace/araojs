@@ -238,7 +238,17 @@ layout's parameters; `SlideLayouts` is the library's (`LibraryLayouts`, generate
 `scripts/layout-types.mjs` when the library is built; CI fails if the committed file is not
 what it writes) with the project's over them (`ProjectLayouts`), which the plugin
 augments in a declaration file it writes into the project (`src/arao-layouts.d.ts`, rewritten
-as layout files and their tokens change). A file states what it does and its tokens: their defaults are other tokens
+as layout files and their tokens change). A file starts with a doc block saying what the layout
+is for, an example, its zones (`@zone`) and its parameters (`@param`, which only describes a
+token the CSS reads); `vite/layout-docs.js` alone reads it (and the zones: those `@zone` names,
+then any `.ar-zone-<name>` the CSS styles), for the types and for `arao layouts`, which asks the
+plugin (`api.layouts()`, as `arao export` asks it for the decks: `bin/project.js` loads the
+project's config). The types carry it: each layout's entry and its `layout` member hold its doc
+(the member is what an editor shows on hovering `layout="…"`: a string literal has no doc of its
+own), its parameters and zones hold theirs, and the zones are typed too (`LibraryLayoutZones`
+with `ProjectLayoutZones` over them: `SlideLayoutZones`), so `Slide`'s slots are its layout's:
+`default`, `#title` and its zones, through a mapped type that keeps each zone's doc. The library
+build stops on a library layout that is not documented in full. Their defaults are other tokens
 (`--ar-accent`, `--ar-title`), so, as in `tokens.css`, they cannot sit at the root; each file
 resolves them on its own slides (`:where(.layout-<name>)`) into private `--_ar-…` properties its
 rules read, and a theme, the project's `:root` or one slide sets the public ones. What every

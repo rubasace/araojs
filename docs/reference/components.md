@@ -99,8 +99,12 @@ Slots, all with `{ step }` (the slide's current step) as slot props:
   body (the rest).
 - `#title`: the header instead, for a header with more than a heading (a kicker line, a logo);
   the whole default slot is then the body.
-- any other name (`#image`, `#left`, `#right`, your own): a zone, a column with the class
-  `ar-zone-<name>`, which the layout's CSS places.
+- the layout's zones (`#image`, `#left`, `#right`, a project layout's own): each a column with the
+  class `ar-zone-<name>`, which the layout's CSS places. Which zones a layout has, it says (its
+  `@zone` tags and the `.ar-zone-<name>` its CSS styles: `npx arao layouts`); in a type-checked
+  template a slide takes its layout's zones only, an error otherwise, `strictTemplates` or not
+  ([Layouts in the editor](../guide/slides-and-layouts.md#layouts-in-the-editor)). At runtime any
+  other name renders too, where the layout's CSS leaves it.
 
 The slide's name in the jump menu, the presenter bar and the notes pages is the text of its first
 `h1`/`h2`/`h3` (outside its background and the footer).
@@ -120,9 +124,10 @@ wins over the same token there), and the classes the engine knows:
 
 ### Layouts
 
-Each is one CSS file of the library (its `layouts/` folder), whose comment says what it does; its
-tokens, with their defaults, are in [Theme tokens](theme-tokens.md#layouts). A project file of the
-same name replaces it.
+Each is one CSS file of the library (its `layouts/` folder), whose doc block says what it is for,
+how to use it, its zones and its parameters (`npx arao layouts` prints it, the editor shows it on
+hover); its tokens, with their defaults, are in [Theme tokens](theme-tokens.md#layouts). A project
+file of the same name replaces it.
 
 | Layout | What it does | Slots |
 |---|---|---|

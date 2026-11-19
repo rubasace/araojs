@@ -9,9 +9,9 @@
 // another layout's, with its own parameters).
 // This file alone says what a parameter is. Slide (src/components/Slide.vue) sets them from the
 // Vite plugin's virtual:arao/layout-tokens (index.js); the types say which attributes each layout
-// takes: the library's are built into its types (scripts/layout-types.mjs; CI checks the committed
-// file is what it writes), the project's go in the declaration file the plugin writes
-// (src/arao-layouts.d.ts).
+// takes (layout-docs.js writes them, with what the layout's doc block says of each): the library's
+// are built into its types (scripts/layout-types.mjs; CI checks the committed file is what it
+// writes), the project's go in the declaration file the plugin writes (src/arao-layouts.d.ts).
 // A <thing> is no attribute when it is not written in lower case, kebab-case (letters, digits and
 // -, a letter first: an attribute's name in any template, and one Vue turns into camelCase and
 // back the same), or when an attribute of that name already means something on a slide
@@ -103,16 +103,3 @@ export function layoutParams(css, name) {
  * @param {string} thing
  */
 export const camelize = (thing) => thing.replace(/-(\w)/g, (_, c) => c.toUpperCase())
-
-/**
- * A layout's parameters as an object type: one optional string member per parameter, under its
- * camelCase name (Volar checks an attribute written footer-bg as footerBg, as it does any prop's),
- * the token it sets as its doc; {} for none. indent: the line's indent where the type starts.
- * @param {string} name
- * @param {string[]} params
- * @param {string} indent
- */
-export function paramsType(name, params, indent) {
-  if (!params.length) return '{}'
-  return `{\n${params.map((t) => `${indent}  /** --ar-layout-${name}-${t} */\n${indent}  ${camelize(t)}?: string\n`).join('')}${indent}}`
-}

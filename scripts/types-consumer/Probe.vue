@@ -38,6 +38,23 @@
     <Slide layout="split">
       <template #title="{ step }"><h2>{{ step.toFixed(0) }}</h2></template>
       <template #left="{ step }">{{ step.toFixed(0) }}</template>
+      <template #right>right</template>
+    </Slide>
+    <!-- a slide's named templates are its layout's zones: the library's (image-right: image), the
+         project's (quote: author, its @zone, and source, which its CSS styles) -->
+    <Slide layout="image-right"><template #image>picture</template></Slide>
+    <Slide layout="quote"><template #author>Kent Beck</template><template #source>a talk</template></Slide>
+    <Slide layout="split">
+      <!-- @vue-expect-error image is image-right's zone, not split's -->
+      <template #image>picture</template>
+    </Slide>
+    <Slide>
+      <!-- @vue-expect-error the default layout has no zone -->
+      <template #left>left</template>
+    </Slide>
+    <Slide layout="section">
+      <!-- @vue-expect-error author is quote's zone; the project's section has none -->
+      <template #author>nobody</template>
     </Slide>
     <!-- @vue-expect-error fit is 'cover' or 'contain' -->
     <Background fit="fill" />

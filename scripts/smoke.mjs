@@ -27,7 +27,13 @@
 //      .layout-<name>, warns and is loaded; each build writes src/arao-layouts.d.ts, the project's
 //      layouts' valid names (for the editor and vue-tsc), each with its parameters (the tokens it
 //      reads: the playground's quote's), the project's cover's replacing the library's, and its
-//      token named as an HTML attribute (--ar-layout-cover-title) none, with one warning;
+//      token named as an HTML attribute (--ar-layout-cover-title) none, with one warning; with the
+//      zones each places (the cover's doc block's @zone, then the .ar-zone-<name> its CSS styles)
+//      and its doc, and one warning for its @param naming no token; with those files,
+//      <bin> layouts --json lists default, the library's but cover (each documented in full), then
+//      the project's (cover replacing the library's, as its doc block says; quote, the
+//      playground's, documented; plain, with no doc block and its problem), and <bin> layouts
+//      prints a block per layout saying where it comes from;
 //      with a theme source that is a package not installed, one that gives no theme, one whose
 //      themes folder is outside it, or a bare name that is a root folder, it must stop with an
 //      [arao] error (the last one with the "./" hint); a name two sources give warns once (a
@@ -92,7 +98,7 @@
 //   5f. the layouts' names, under the dev server: a layout file added to src/layouts while it runs
 //      is in src/arao-layouts.d.ts, and out again once removed; an edit that changes no token
 //      leaves the file untouched, one that reads a token more adds that parameter to it and to
-//      the tokens module the dev server serves
+//      the tokens module the dev server serves, one that writes a doc block its doc and its zone
 //   6. the talk's length, under the dev server, on the second deck (duration="15m"), in the
 //      presenter's bar: 1h30 typed with real keys moves no slide and opens no jump menu, and the
 //      countdown follows in an audience window too (useDeck()); after an apply from the keyboard,
@@ -554,17 +560,32 @@ try {
     await run(process.execPath, [viteBin, 'build'], project) // the project's own build back in dist/
   }
 
-  // the layouts' names the plugin wrote for the editor and vue-tsc (src/arao-layouts.d.ts), sorted
-  // as the plugin sorts them; null when there is no such file
+  // an interface of the file the plugin wrote for the editor and vue-tsc (src/arao-layouts.d.ts):
+  // its body, from its first line to the one closing it; null when there is no such file or no such
+  // interface
+  const typedInterface = async (name) => {
+    const text = await readFile(join(project, 'src', 'arao-layouts.d.ts'), 'utf8').catch(() => '')
+    return text.match(new RegExp(`^ {2}interface ${name} \\{\\n([\\s\\S]*?)^ {2}\\}$`, 'm'))?.[1] ?? null
+  }
+  // a layout's entry in one of its interfaces: the lines of its members; null when it has none
+  const typedEntry = (body, name) => body?.match(new RegExp(`^ {4}'${name}': \\{\\n([\\s\\S]*?)^ {4}\\}$`, 'm'))?.[1] ?? null
+  // the layouts' names it typed (ProjectLayouts), sorted as the plugin sorts them; null when there
+  // is no such file
   const typedLayouts = async () => {
-    const text = await readFile(join(project, 'src', 'arao-layouts.d.ts'), 'utf8').catch(() => null)
-    return text == null ? null : [...text.matchAll(/^ {4}'([^']+)': /gm)].map((m) => m[1]).join(', ')
+    const body = await typedInterface('ProjectLayouts')
+    return body == null ? null : [...body.matchAll(/^ {4}'([^']+)': /gm)].map((m) => m[1]).join(', ')
   }
   // and the parameters it typed for one of them (camelCase, as written there); null when none
   const typedParams = async (name) => {
-    const text = await readFile(join(project, 'src', 'arao-layouts.d.ts'), 'utf8').catch(() => '')
-    const body = text.match(new RegExp(`^ {4}'${name}': \\{([^}]*)\\}`, 'm'))?.[1]
-    return body == null ? null : [...body.matchAll(/^\s*(\w+)\?: string$/gm)].map((m) => m[1]).join(', ')
+    const entry = typedEntry(await typedInterface('ProjectLayouts'), name)
+    return entry == null ? null : [...entry.matchAll(/^ {6}(\w+)\?: string$/gm)].map((m) => m[1]).join(', ')
+  }
+  // and the zones it typed for one of them (ProjectLayoutZones); '' for none, null when not typed
+  const typedZones = async (name) => {
+    const body = await typedInterface('ProjectLayoutZones')
+    if (body?.includes(`\n    '${name}': {}\n`) || body?.startsWith(`    '${name}': {}\n`)) return ''
+    const entry = typedEntry(body, name)
+    return entry == null ? null : [...entry.matchAll(/^ {6}([\w$]+|'[^']+'): true$/gm)].map((m) => m[1]).join(', ')
   }
   const ownLayouts = async () => (await readdir(join(project, 'src', 'layouts')).catch(() => [])).filter((f) => f.endsWith('.css')).map((f) => basename(f, '.css')).sort()
 
@@ -587,14 +608,30 @@ try {
     else if (missing.length) fail(`vite build: no CSS for the layouts ${missing.join(', ')} in the build`)
     else if (typed !== own.join(', ')) fail(`vite build: src/arao-layouts.d.ts ${typed == null ? 'not written' : `lists ${typed || 'no layout'}`}, not ${own.join(', ')}`)
     else console.log(`  layouts: ${library.join(', ')} (the library's) and ${own.join(', ')} (the project's) in the build, and the project's in src/arao-layouts.d.ts`)
-    // the playground's quote.css reads --ar-layout-quote-footer, -mark and -size: its parameters
+    // the playground's quote.css reads --ar-layout-quote-footer, -mark and -size: its parameters;
+    // it places no zone
     const quote = await typedParams('quote')
+    const quoteZones = await typedZones('quote')
     if (quote !== 'footer, mark, size') fail(`vite build: src/arao-layouts.d.ts types quote's parameters as ${quote ?? 'nothing'}, not footer, mark, size`)
-    else console.log(`  layout parameters: quote's (${quote}) in src/arao-layouts.d.ts`)
+    else if (quoteZones !== '') fail(`vite build: src/arao-layouts.d.ts types quote's zones as ${quoteZones ?? 'nothing'}, not none`)
+    else console.log(`  layout parameters: quote's (${quote}) in src/arao-layouts.d.ts, and its zones (none)`)
     // the project's cover replaces the library's, its parameters too: pad, not bar, footer and
-    // title-size; its --ar-layout-cover-title is none (title is an HTML attribute), with a warning
+    // title-size; its --ar-layout-cover-title is none (title is an HTML attribute), with a warning.
+    // Its doc block names a zone (aside), and its CSS styles another (badge): its zones are both;
+    // its @param nope names no token, with a warning
+    const COVER_DOC = ['The smoke project\'s own cover.', 'Slide(layout="cover" pad="20px")\n  h1 Hello', 'a note beside the title', 'the slide\'s padding']
     const added = {
-      'cover.css': '.layout-cover { --smoke-own-cover: 1; padding: var(--ar-layout-cover-pad, 0); color: var(--ar-layout-cover-title, inherit); }\n',
+      'cover.css': `/**
+ * ${COVER_DOC[0]}
+ * @example
+${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
+ * @zone aside  ${COVER_DOC[2]}
+ * @param pad   ${COVER_DOC[3]}
+ * @param nope  no token of the layout
+ */
+.layout-cover { --smoke-own-cover: 1; padding: var(--ar-layout-cover-pad, 0); color: var(--ar-layout-cover-title, inherit); }
+.layout-cover > .ar-zone-badge { order: -1; }
+`,
       'bad name.css': '.x { --smoke-bad: 1; }\n',
       'plain.css': ':root { --smoke-plain: 1; }\n',
     }
@@ -614,9 +651,66 @@ try {
       else if (!/\[arao\] src\/layouts\/cover\.css: --ar-layout-cover-title is no attribute of Slide\(layout="cover"\): "title" is an HTML attribute/.test(said)) fail(`${what}: no warning that --ar-layout-cover-title is no attribute`)
       else if (said.match(/--ar-layout-cover-title is no attribute/g).length !== 1) fail(`${what}: the warning about --ar-layout-cover-title is given ${said.match(/--ar-layout-cover-title is no attribute/g).length} times, not once`)
       else if ((typed = await typedParams('cover')) !== 'pad') fail(`${what}: src/arao-layouts.d.ts types cover's parameters as ${typed ?? 'nothing'}, not pad (the project's, which replace the library's)`)
+      else if ((typed = await typedZones('cover')) !== 'aside, badge') fail(`${what}: src/arao-layouts.d.ts types cover's zones as ${typed ?? 'nothing'}, not aside, badge (its @zone, then what its CSS styles)`)
+      else if (!typedEntry(await typedInterface('ProjectLayouts'), 'cover')?.includes(COVER_DOC[0])) fail(`${what}: src/arao-layouts.d.ts does not carry cover's doc ("${COVER_DOC[0]}")`)
+      else if (said.match(/\[arao\] src\/layouts\/cover\.css: @param nope names no token of the layout/g)?.length !== 1) fail(`${what}: the warning that cover.css's @param nope names no token is given ${said.match(/@param nope names no token/g)?.length ?? 0} times, not once`)
       else if (!['--smoke-own-cover', '--smoke-bad', '--smoke-plain'].every((t) => css.includes(t))) fail(`${what}: the project's files are not all in the build`)
       else if (css.includes('--_ar-cover-bar')) fail(`${what}: the library's cover.css is in the build`)
-      else console.log('  layouts: a project cover replaces the library\'s, saying so, its parameters too; a token named as an HTML attribute warns once; a file with a bad name, and one naming no layout, warn and load; the valid names are typed')
+      else console.log('  layouts: a project cover replaces the library\'s, saying so, its parameters too, its zones and its doc typed; a token named as an HTML attribute and a @param naming no token warn once; a file with a bad name, and one naming no layout, warn and load; the valid names are typed')
+
+      // arao layouts, with those files: every layout a slide can name, each with its doc. As JSON:
+      // default, the library's (but cover, which the project's replaces), the project's (but "bad
+      // name"); the library's documented in full, the playground's quote with its doc block, the
+      // project's cover as its doc block says, plain with none and its problem
+      log(`${BIN} layouts --json`)
+      const json = await exec('npx', ['--no-install', BIN, 'layouts', '--json'], project)
+      let got = null
+      try {
+        got = JSON.parse(json.out).layouts
+      } catch (e) {
+        fail(`${BIN} layouts --json: no JSON (${e.message}), exit ${json.code}`)
+      }
+      if (got) {
+        const wanted = ['default', ...library.filter((n) => n !== 'cover').sort(), ...named.split(', ')]
+        const by = Object.fromEntries(got.map((l) => [l.name, l]))
+        const lib = got.filter((l) => l.source === 'library')
+        const names = (list) => list.map((x) => x.name).join(', ')
+        const complaints = []
+        if (json.code !== 0) complaints.push(`exits with ${json.code}`)
+        if (names(got) !== wanted.join(', ')) complaints.push(`lists ${names(got)}, not ${wanted.join(', ')}`)
+        if (by.default?.source !== 'engine' || by.default.file !== null) complaints.push('default is not the engine\'s, with no file')
+        for (const l of lib) {
+          if (!l.documented || !l.summary || !l.example.startsWith(`Slide(layout="${l.name}"`)) complaints.push(`the library's ${l.name} has no summary or no example of itself`)
+          if (!l.params.length || l.params.some((p) => !p.description || p.token !== `--ar-layout-${l.name}-${p.name}`)) complaints.push(`the library's ${l.name}: its parameters are not each described, with their token`)
+        }
+        if (names(by['image-right']?.zones ?? []) !== 'image' || !by['image-right'].zones[0].description) complaints.push(`image-right's zones are ${names(by['image-right']?.zones ?? [])}, not image, described`)
+        if (names(by.split?.zones ?? []) !== 'left, right') complaints.push(`split's zones are ${names(by.split?.zones ?? [])}, not left, right`)
+        const q = by.quote
+        if (!q?.documented || q.source !== 'project' || q.file !== 'src/layouts/quote.css' || q.replaces || !q.summary || !q.example.includes('Slide(layout="quote"')) complaints.push('the playground\'s quote is not the project\'s src/layouts/quote.css, with its summary and example')
+        else if (names(q.params) !== 'footer, mark, size' || q.params.some((p) => !p.description)) complaints.push(`quote's parameters are ${names(q.params)}, not footer, mark, size, each described`)
+        const c = by.cover
+        if (c?.source !== 'project' || !c.replaces || c.file !== 'src/layouts/cover.css') complaints.push('cover is not the project\'s src/layouts/cover.css, replacing the library\'s')
+        else {
+          if (c.summary !== COVER_DOC[0] || c.example !== COVER_DOC[1]) complaints.push(`cover's summary and example are ${JSON.stringify([c.summary, c.example])}, not its doc block's`)
+          if (JSON.stringify(c.zones) !== JSON.stringify([{ name: 'aside', description: COVER_DOC[2] }, { name: 'badge', description: '' }])) complaints.push(`cover's zones are ${JSON.stringify(c.zones)}, not aside (described) and badge`)
+          if (JSON.stringify(c.params) !== JSON.stringify([{ name: 'pad', token: '--ar-layout-cover-pad', description: COVER_DOC[3] }])) complaints.push(`cover's parameters are ${JSON.stringify(c.params)}, not pad, described`)
+          if (!c.problems.some((p) => /@param nope names no token/.test(p)) || !c.problems.some((p) => /--ar-layout-cover-title is no attribute/.test(p))) complaints.push(`cover's problems are ${JSON.stringify(c.problems)}: not its @param nope and its title token`)
+        }
+        if (by.plain?.documented !== false || !by.plain.problems.some((p) => /names no \.layout-plain/.test(p))) complaints.push('plain is not listed with no doc block and its problem (it names no .layout-plain)')
+        for (const x of complaints) fail(`${BIN} layouts --json: ${x}`)
+        if (!complaints.length) console.log(`  ${BIN} layouts --json: ${names(got)}; each library layout described, the project's quote and cover as their doc blocks say (cover replacing the library's), plain with its problem`)
+      }
+      // and for a person: a block per layout, saying where it comes from
+      log(`${BIN} layouts`)
+      const text = await exec('npx', ['--no-install', BIN, 'layouts'], project)
+      const lines = [
+        'cover (project, src/layouts/cover.css, replaces the library\'s)', `  ${COVER_DOC[0]}`, '    #aside  a note beside the title',
+        'quote (project, src/layouts/quote.css)', 'split (library)', '    #left ', 'default (the engine\'s: a Slide without a layout)',
+        'plain (project, src/layouts/plain.css)', '  No doc block', '  Problems:', '  Example:',
+      ]
+      const absent = lines.filter((l) => !text.out.includes(l))
+      if (text.code !== 0 || absent.length) fail(`${BIN} layouts: exit ${text.code}${absent.length ? `; no line with ${absent.map((l) => JSON.stringify(l)).join(', ')}` : ''}`)
+      else console.log(`  ${BIN} layouts: a block per layout, where it comes from, its doc, zones, parameters and problems`)
     } finally {
       for (const f of Object.keys(added)) await rm(join(project, 'src', 'layouts', f), { force: true })
     }
@@ -1085,7 +1179,8 @@ try {
   // the layouts' names while the dev server runs (src/arao-layouts.d.ts): a layout file added is
   // in it, one removed is out again; an edit that leaves its tokens as they were leaves the file
   // untouched, one that reads a token more adds that parameter, to the file and to the tokens
-  // module the dev server serves (virtual:arao/layout-tokens: what the page reloads with)
+  // module the dev server serves (virtual:arao/layout-tokens: what the page reloads with), one
+  // that writes a doc block adds its doc and its zone to the file
   async function layoutNames(base) {
     const complaints = []
     const file = join(project, 'src', 'layouts', 'smoke-live.css')
@@ -1112,12 +1207,16 @@ try {
         return /\\"smoke-live\\":\[\\"row-gap\\"\]/.test(code)
       }
       if (!(await until(served, true))) complaints.push('with a token added to src/layouts/smoke-live.css, virtual:arao/layout-tokens does not have it')
+      // a doc block written: the file carries it, and the zone it names
+      await writeFile(file, '/**\n * Live and documented.\n * @zone side  the side\n */\n.layout-smoke-live { --smoke-live: 2; gap: var(--ar-layout-smoke-live-row-gap, 0); }\n')
+      const documented = async () => !!typedEntry(await typedInterface('ProjectLayouts'), 'smoke-live')?.includes('Live and documented.') && (await typedZones('smoke-live')) === 'side'
+      if (!(await until(documented, true))) complaints.push('with a doc block written in src/layouts/smoke-live.css, it does not carry its doc and its zone')
     } finally {
       await rm(file, { force: true })
     }
     const got = await until(typedLayouts, own.join(', '))
     if (got !== own.join(', ')) complaints.push(`with src/layouts/smoke-live.css removed it lists ${got}, not ${own.join(', ')}`)
-    console.log(`  dev layouts' names: ${complaints.length ? 'problems below' : 'a layout file added and removed, src/arao-layouts.d.ts follows, its parameters too, and the tokens module; an edit of no token leaves it'}`)
+    console.log(`  dev layouts' names: ${complaints.length ? 'problems below' : 'a layout file added and removed, src/arao-layouts.d.ts follows, its parameters, its doc and zones too, and the tokens module; an edit of no token leaves it'}`)
     for (const c of complaints) fail(`dev src/arao-layouts.d.ts: ${c}`)
   }
 

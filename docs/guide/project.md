@@ -20,9 +20,9 @@ src/
   images/           pictures used by Img(file="…") and Background(src="…"), by name (subfolders allowed)
   themes/           the project's themes, if any: CSS files, each [data-theme="<name>"] a theme
   layouts/          the project's layouts, if any: one CSS file per layout, quote.css for
-                    Slide(layout="quote")
-  arao-layouts.d.ts written by the plugin once there are layouts: their names and parameters,
-                    for the editor and vue-tsc (do not edit; commit it)
+                    Slide(layout="quote"), starting with its doc block (npx arao layouts)
+  arao-layouts.d.ts written by the plugin once there are layouts: their names, parameters,
+                    zones and docs, for the editor and vue-tsc (do not edit; commit it)
 ```
 
 Paths like `src/decks` are the plugin's default folders; each one is an option of `arao()`

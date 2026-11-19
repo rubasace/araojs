@@ -60,9 +60,10 @@ src/snippets/      code files, by name, for Snippet(file="…")
 src/images/        pictures, by name, for Img(file="…") and Background(src="…")
 src/themes/        the project's themes, if any: CSS files, loaded by the plugin (no import)
 src/layouts/       the project's layouts, if any: <name>.css styles Slide(layout="<name>"),
-                   loaded by the plugin (no import); one named like a library layout replaces it
-src/arao-layouts.d.ts  written by the plugin once there are layouts: their names, for the
-                   editor and vue-tsc (generated: don't edit it; commit it)
+                   loaded by the plugin (no import); one named like a library layout replaces it;
+                   each starts with its doc block (recipes.md)
+src/arao-layouts.d.ts  written by the plugin once there are layouts: their names, parameters,
+                   zones and docs, for the editor and vue-tsc (generated: don't edit it; commit it)
 src/shortcuts.ts   optional: keys remapped/added/turned off (see shortcuts.md)
 ```
 

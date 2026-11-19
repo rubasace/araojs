@@ -1,22 +1,29 @@
-/* cover: the deck's opening slide (and its closing one). Its content, title and all, is one group
-   centred vertically, left-aligned like any slide; its h1 is larger; a .bar element draws a short
-   bar in the accent; the deck's footer is hidden.
-     Slide(layout="cover")
-       .bar
-       h1 Building a framework
-       p.muted Jane Doe · DevConf 2026
+/**
+ * The deck's opening slide (and its closing one).
+ * Its content, title and all, is one group centred vertically, left-aligned like any slide; its
+ * `h1` is larger; a `.bar` element draws a short bar in the accent; the deck's footer is hidden.
+ * @example
+ * Slide(layout="cover")
+ *   .bar
+ *   h1 Building a framework
+ *   p.muted Jane Doe · DevConf 2026
+ * @param title-size  the `h1`'s size (default 1.25 x `--ar-title`)
+ * @param bar         the `.bar`'s colour (default `--ar-accent`)
+ * @param footer      the deck's footer: `none` hides it, `flex` shows it (default `none`); a
+ *                    slide's `with-footer` or `no-footer` class wins over it
+ */
 
-   A layout is this: CSS for the slides of Slide(layout="<name>"), whose section carries the class
+/* A layout is this: CSS for the slides of Slide(layout="<name>"), whose section carries the class
    layout-<name>. The engine renders every slide the same way (its header, its body, a zone per
-   named template, the footer: Slide.vue) and has no code for any layout.
+   named template, the footer: Slide.vue) and has no code for any layout. What it is for, how to
+   use it, its zones and its parameters are in the doc block it starts with, above
+   (vite/layout-docs.js reads it: the types and arao layouts show it).
 
-   Tokens, and their defaults. Set them in a theme ([data-theme="x"] { … }), at the project's
-   :root, or on one slide, where each is also an attribute named after it (Slide(layout="cover"
-   bar="gold") sets --ar-layout-cover-bar: gold on that slide; the engine finds a layout's tokens
-   in its CSS, vite/layout-params.js, and has no code for any of them):
-     --ar-layout-cover-title-size   the h1's size                 1.25 x --ar-title
-     --ar-layout-cover-bar          the .bar's colour             --ar-accent
-     --ar-layout-cover-footer       the deck's footer: none hides it, flex shows it      none
+   Its tokens, --ar-layout-cover-<thing>, each a @param above. Set them in a theme
+   ([data-theme="x"] { … }), at the project's :root, or on one slide, where each is also an
+   attribute named after it (Slide(layout="cover" bar="gold") sets --ar-layout-cover-bar: gold on
+   that slide; the engine finds a layout's tokens in its CSS, vite/layout-params.js, and has no
+   code for any of them).
    Each default is another token, so it is resolved on the slide itself, into a private --_ar-…
    the rules read: declared at :root, var() would be resolved there, and a theme's --ar-accent
    would never reach it (tokens.css says why). A slide's with-footer or no-footer class wins over

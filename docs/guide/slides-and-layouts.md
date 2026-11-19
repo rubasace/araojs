@@ -13,8 +13,13 @@ slide's attributes too ([Layout parameters](#layout-parameters)). Every prop and
 file of the library; the full table, and the tokens each one reads:
 [Layouts](../reference/components.md#layouts). A name with no CSS behind it is the `default`
 layout, its slides carrying the class `layout-<name>` for a theme or a deck to style. In a
-TypeScript project the editor completes the names there are, and each layout's parameters, and
-`vue-tsc` turns down any other ([Layouts in the editor](#layouts-in-the-editor)).
+TypeScript project the editor completes the names there are, each layout's parameters and zones,
+shows each one's doc on hover, and `vue-tsc` turns down any other
+([Layouts in the editor](#layouts-in-the-editor)).
+
+Every layout documents itself, the library's and the project's alike: what it is for, an example,
+its zones and its parameters. `npx arao layouts` prints them all, for the layouts the project has
+(`--json` for a program: [CLI](../reference/cli.md#arao-layouts)).
 
 A cover:
 
@@ -139,10 +144,12 @@ Slide
   `Cols(align="stretch")`, written out, keeps full-height columns.
 - **Zones**: each named template (`template(#image)`, `template(#left)`…) is a zone of its own, a
   column with the class `ar-zone-<name>` (`#title` is the header's). The layout's CSS places it:
-  `#image` beside the text in `image-*`, `#left` and `#right` under the header in `split`. In the
-  page the zones always come after the header and the body, in the order written, whatever side
-  the layout draws them on: in `image-left` a screen reader, the tab order and a copied text read
-  the text first, then the picture.
+  `#image` beside the text in `image-*`, `#left` and `#right` under the header in `split`; a
+  layout's zones are the ones it says it places (`npx arao layouts`), and in a type-checked
+  template a slide takes its layout's only ([Layouts in the editor](#layouts-in-the-editor)). In
+  the page the zones always come after the header and the body, in the order written, whatever
+  side the layout draws them on: in `image-left` a screen reader, the tab order and a copied text
+  read the text first, then the picture.
 - **Footer**: the `Deck`'s `#footer` slot, in a band `--ar-footer-height` tall (88 px) over the
   bottom of the slide, with the slide's side padding and its text in `--ar-footer-size` and
   `--ar-footer-color`. Its children sit in a row, spread by `--ar-footer-align` (`space-between`:
@@ -216,11 +223,22 @@ never reach it), so the file resolves each public token into a private one in a
 slide's padding onto its zones (as `image-*` do) keeps them clear of the footer the same way:
 `padding-bottom: max(var(--ar-pad-y), var(--ar-footer-height))`.
 
+The file starts with its doc block, which says what the layout is for and how to use it
+([Its doc block](#its-doc-block)):
+
 ```css
-/* src/layouts/quote.css: one big quote, centred on the slide, its author under it
-     --ar-layout-quote-size     the quote's size             .8 x --ar-title
-     --ar-layout-quote-mark     the opening mark's colour    --ar-accent
-     --ar-layout-quote-footer   the deck's footer            none */
+/**
+ * One big quote, centred on the slide, its author under it.
+ * The quote is a `blockquote`, opened by a mark in the accent; whatever follows it (its author, a
+ * source) sits under it. The deck's footer is hidden.
+ * @example
+ * Slide(layout="quote" size="72px")
+ *   blockquote Simplicity is prerequisite for reliability.
+ *   p.muted Edsger W. Dijkstra
+ * @param size    the quote's size (default .8 x `--ar-title`)
+ * @param mark    the opening mark's colour (default `--ar-accent`)
+ * @param footer  the deck's footer: `none` hides it, `flex` shows it (default `none`)
+ */
 :where(.layout-quote) {
   --_ar-quote-size: var(--ar-layout-quote-size, calc(var(--ar-title) * .8));
   --_ar-quote-mark: var(--ar-layout-quote-mark, var(--ar-accent));
@@ -255,13 +273,62 @@ The library's own files, in the package's `layouts/` folder, are worked examples
 and `section.css` centre their content, `split.css` and `image-right.css` lay the slide out as a
 grid and place its zones.
 
+### Its doc block
+
+A layout says what it is for in a `/** … */` comment its file starts with, each line after a `*`
+as in JSDoc. Write one for every layout of the project: it is what `npx arao layouts` prints, what
+the editor shows on hover, and what a person or an agent reads to use the layout without opening
+its CSS. A file without one is a layout all the same, with nothing said of it.
+
+```css
+/**
+ * Two pictures, each with its caption.
+ * Longer description lines, if it needs them.
+ * @example
+ * Slide(layout="two-up")
+ *   h2 Before and after
+ *   template(#first)
+ *     Img(file="before.png")
+ *   template(#second)
+ *     Img(file="after.png")
+ * @zone first   the left picture
+ * @zone second  the right picture
+ * @param gap    the space between them (default `--ar-gap-lg`)
+ */
+```
+
+- The first line says what the layout is for, in one line; the lines after it, up to the first
+  tag, describe it further (as written: their line breaks are kept).
+- `@example`: a slide of the layout, in Pug, on the lines after it, indented as you write it.
+  Keep it short.
+- `@zone <name> <description>`: one per named template the layout places, `template(#<name>)`.
+  Its zones are these and any other `.ar-zone-<name>` its CSS styles (undescribed); `default` and
+  `title` are every slide's, no zone.
+- `@param <thing> <description>`: describes the parameter `<thing>`, the token
+  `--ar-layout-<name>-<thing>`; say its default. The parameters themselves are the tokens the CSS
+  reads, whatever the block says: a `@param` naming no token is a warning.
+- A description goes on to the next tag. Backticks mark code: the editor shows the block as
+  Markdown.
+- What a block gets wrong (a `@param` naming no token, an unknown tag, a zone named twice, no
+  first line) the Vite plugin warns about, once, naming the file, and `npx arao layouts` lists it
+  with the layout. The library's own layouts are all documented this way.
+
 ### Layouts in the editor
 
-`Slide` is typed with the layouts there are and their parameters: in a TypeScript project the
-editor (Volar) completes the names in `layout`, and, once one is given, that layout's parameters
-among the slide's attributes (`columns` on `layout="image-right"`, not on `layout="cover"`).
-`vue-tsc` turns down a name that is none, a parameter of another layout, and a value that is not
-a string:
+`Slide` is typed with the layouts there are, their parameters and their zones: in a TypeScript
+project the editor (Volar) completes the names in `layout`, and, once one is given, that layout's
+parameters among the slide's attributes (`columns` on `layout="image-right"`, not on
+`layout="cover"`) and its zones among its named templates. Hovering shows each one's doc block:
+
+| Hover on | Shows |
+|---|---|
+| `layout` (the attribute's name) | the layout's doc: what it is for, its description, its zones and parameters, its example |
+| a parameter (`columns`) | its `@param` description, and the token it sets |
+| a zone (`#image`) | its `@zone` description |
+| the layout's name (`"image-right"`, the value) | nothing: the editor has no doc for a string |
+
+`vue-tsc` turns down a name that is none, a parameter of another layout, a value that is not a
+string, and a named template that is not one of the layout's zones:
 
 ```
 Slide(layout="covr")                    error TS2820: Type '"covr"' is not assignable to type
@@ -270,25 +337,38 @@ Slide(layout="cover" columns="2fr 1fr") error TS2353: Object literal may only sp
                                         properties, and 'columns' does not exist in type
                                         '{ layout?: "cover" | undefined; bar?: string | undefined; … }'
 Slide(layout="cover" :bar="1")          error TS2322: Type 'number' is not assignable to type 'string'.
+Slide(layout="split")                   error TS2339: Property 'image' does not exist on type
+  template(#image) …                    '{ default?: SlideSlot | undefined; title?: … } & { left?: …; right?: … }'
 ```
 
 (Once the project has layouts of its own, the first one reads `'keyof LibraryLayouts | keyof
 ProjectLayouts | undefined'`.) The library's come with the package; the project's are added by the Vite plugin, which writes them
-into `src/arao-layouts.d.ts`, where the `tsconfig` of a Vite project already looks (`src/**`):
+into `src/arao-layouts.d.ts`, where the `tsconfig` of a Vite project already looks (`src/**`),
+each with what its doc block says (shortened here):
 
 ```ts
 // src/arao-layouts.d.ts: Generated by araojs/vite … Do not edit …
 export {}
 declare module 'araojs' {
   interface ProjectLayouts {
+    /** One big quote, centred on the slide, its author under it. … @example … */
     'quote': {
-      /** --ar-layout-quote-footer */
+      /** One big quote, centred on the slide, its author under it. … @example … */
+      layout?: 'quote'
+      /**
+       * the deck's footer: `none` hides it, `flex` shows it (default `none`)
+       *
+       * `--ar-layout-quote-footer`
+       */
       footer?: string
-      /** --ar-layout-quote-mark */
+      /** … `--ar-layout-quote-mark` */
       mark?: string
-      /** --ar-layout-quote-size */
+      /** … `--ar-layout-quote-size` */
       size?: string
     }
+  }
+  interface ProjectLayoutZones {
+    'quote': {}
   }
 }
 ```
@@ -297,13 +377,20 @@ declare module 'araojs' {
   `"vueCompilerOptions": { "strictTemplates": true }` (or `"checkUnknownProps": true`) in the
   `tsconfig`. Without it Vue's type check lets any attribute through, on `Slide` as on any
   component; the editor still completes only the layout's own.
+- A named template that is not a zone of the slide's layout is an error in any type-checked
+  template, with `strictTemplates` or without: Volar checks a component's slots whenever they are
+  typed. Any named template still renders (a layout that does not place it leaves it where the
+  grid or the column puts it, below the body on `default`); for the type check to take one, the
+  layout says it places it (`@zone`, or a rule for its `.ar-zone-<name>`).
 - Parameters are typed in camelCase (`footerBg`): Volar checks an attribute written `footer-bg`
   as `footerBg`, as it does any prop, and completes it in the case your editor's settings say
   (kebab-case in templates, by default).
-- `SlideLayouts`, exported by `araojs`, is every layout (its keys, `keyof SlideLayouts`) with its
-  parameters (`SlideLayouts['cover']`): the library's, with the project's over them.
-  `ProjectLayouts`, also exported, is the project's, which the file adds to; a project layout
-  named like a library one replaces it there, its parameters with it.
+- `SlideLayouts`, exported by `araojs`, is every layout (its keys, `keyof SlideLayouts`) with the
+  attributes a slide of it takes (`SlideLayouts['cover']`: its parameters, and `layout`, which
+  carries the layout's doc): the library's, with the project's over them. `ProjectLayouts`, also
+  exported, is the project's, which the file adds to; a project layout named like a library one
+  replaces it there, its parameters with it. `SlideLayoutZones` and `ProjectLayoutZones` are the
+  same for the zones (`SlideLayoutZones['split']`: `left` and `right`).
 - It is written when Vite starts (`npm run dev`, `npm run build`) and again when a layout file
   changes during development, only if its text changes, once the project has a layout of its own.
   Commit it, so that a type check (`vue-tsc --noEmit`, in CI) knows the project's layouts without
@@ -319,7 +406,10 @@ declare module 'araojs' {
 - Turning `dts` off or moving it leaves the old file behind, still accepting its names: delete it.
 - A name with no file of its own (a class a theme styles, `layout="wide"`) still works at
   runtime; for the type check to take it, declare it the same way in a `.d.ts` of the project,
-  with no parameters: `declare module 'araojs' { interface ProjectLayouts { wide: {} } }`.
+  with no parameters: `declare module 'araojs' { interface ProjectLayouts { wide: {} } }`. It has
+  no zones; to give it some, declare them too:
+  `interface ProjectLayoutZones { wide: { aside: true } }` (a member per zone; its doc is the
+  zone's hover).
 - Pug templates are type-checked only with Volar's Pug plugin
   ([Components](../reference/components.md), "In TypeScript").
 
