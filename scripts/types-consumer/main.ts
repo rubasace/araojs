@@ -50,8 +50,9 @@ void [titled, libSection, sized]
 
 // the zones each layout places: the library's (generated from its doc blocks and CSS), the
 // project's (src/arao-layouts.d.ts: quote's @zone author and the source its CSS styles), a
-// project layout replacing the library's of its name with its own (section: none)
-const splitZones: (keyof SlideLayoutZones['split'])[] = ['left', 'right']
+// project layout replacing the library's of its name with its own (section: none), and a zone the
+// project declares on a library layout (src/arao-zones.d.ts: split's caption)
+const splitZones: (keyof SlideLayoutZones['split'])[] = ['left', 'right', 'caption']
 const quoteZones: (keyof ProjectLayoutZones['quote'])[] = ['author', 'source']
 const imageZones: (keyof SlideLayoutZones['image-left'])[] = ['image']
 void [splitZones, quoteZones, imageZones]

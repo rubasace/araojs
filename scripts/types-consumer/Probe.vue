@@ -56,6 +56,14 @@
       <!-- @vue-expect-error author is quote's zone; the project's section has none -->
       <template #author>nobody</template>
     </Slide>
+    <!-- a slide whose layout may be any of several takes the zones of any of them -->
+    <Slide :layout="either(1)"><template #left>left</template><template #image>picture</template></Slide>
+    <Slide :layout="either(0)">
+      <!-- @vue-expect-error author is quote's zone, neither split's nor image-right's -->
+      <template #author>nobody</template>
+    </Slide>
+    <!-- a zone the project declares on a library layout (src/arao-zones.d.ts: split's caption) -->
+    <Slide layout="split"><template #caption>a caption</template><template #left>left</template></Slide>
     <!-- @vue-expect-error fit is 'cover' or 'contain' -->
     <Background fit="fill" />
     <!-- @vue-expect-error size is a number -->
@@ -69,4 +77,6 @@
 
 <script setup lang="ts">
 const themes = ['default'] as const
+// a layout chosen from data: one of two
+const either = (n: number): 'split' | 'image-right' => (n ? 'split' : 'image-right')
 </script>

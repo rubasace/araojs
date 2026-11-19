@@ -28,12 +28,15 @@
 //      layouts' valid names (for the editor and vue-tsc), each with its parameters (the tokens it
 //      reads: the playground's quote's), the project's cover's replacing the library's, and its
 //      token named as an HTML attribute (--ar-layout-cover-title) none, with one warning; with the
-//      zones each places (the cover's doc block's @zone, then the .ar-zone-<name> its CSS styles)
-//      and its doc, and one warning for its @param naming no token; with those files,
-//      <bin> layouts --json lists default, the library's but cover (each documented in full), then
-//      the project's (cover replacing the library's, as its doc block says; quote, the
-//      playground's, documented; plain, with no doc block and its problem), and <bin> layouts
-//      prints a block per layout saying where it comes from;
+//      zones each places (the cover's doc block's @zone, then the .ar-zone-<name> its CSS styles
+//      under .layout-cover, not a rule of split's) and its doc (read after a licence header, a Pug
+//      line starting with @ kept in its example), and one warning for its @param naming no token;
+//      with those files, <bin> layouts --json (the config printing as it loads: on stderr) gives
+//      the araojs version and lists default, the library's but cover (each documented in full),
+//      then every project file (cover replacing the library's, as its doc block says, its /**
+//      comment after its code a problem; quote, the playground's, documented; plain, with no doc
+//      block and its problem; "bad name", which no slide can name), and <bin> layouts prints a
+//      block per layout saying where it comes from;
 //      with a theme source that is a package not installed, one that gives no theme, one whose
 //      themes folder is outside it, or a bare name that is a root folder, it must stop with an
 //      [arao] error (the last one with the "./" hint); a name two sources give warns once (a
@@ -617,11 +620,14 @@ try {
     else console.log(`  layout parameters: quote's (${quote}) in src/arao-layouts.d.ts, and its zones (none)`)
     // the project's cover replaces the library's, its parameters too: pad, not bar, footer and
     // title-size; its --ar-layout-cover-title is none (title is an HTML attribute), with a warning.
-    // Its doc block names a zone (aside), and its CSS styles another (badge): its zones are both;
-    // its @param nope names no token, with a warning
-    const COVER_DOC = ['The smoke project\'s own cover.', 'Slide(layout="cover" pad="20px")\n  h1 Hello', 'a note beside the title', 'the slide\'s padding']
+    // Its doc block, after a licence header, names a zone (aside), and its CSS styles another
+    // (badge): its zones are both, not caption (a rule of split's); its example keeps a Pug line
+    // starting with @; its @param nope names no token, with a warning, and a /** comment after its
+    // code is no doc block, with a problem
+    const COVER_DOC = ['The smoke project\'s own cover.', 'Slide(layout="cover" pad="20px")\n  h1 Hello\n  button(\n    @click="next"\n  ) Next', 'a note beside the title', 'the slide\'s padding']
     const added = {
-      'cover.css': `/**
+      'cover.css': `/* smoke licence header */
+/**
  * ${COVER_DOC[0]}
  * @example
 ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
@@ -631,6 +637,8 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
  */
 .layout-cover { --smoke-own-cover: 1; padding: var(--ar-layout-cover-pad, 0); color: var(--ar-layout-cover-title, inherit); }
 .layout-cover > .ar-zone-badge { order: -1; }
+.layout-split .ar-zone-caption { order: 1; }
+/** not read */
 `,
       'bad name.css': '.x { --smoke-bad: 1; }\n',
       'plain.css': ':root { --smoke-plain: 1; }\n',
@@ -647,7 +655,7 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
       else if (typed !== named) fail(`${what}: src/arao-layouts.d.ts lists ${typed ?? 'nothing'}, not ${named}`)
       else if (!/\[arao\] layout "cover" of src\/layouts\/cover\.css replaces the library's one/.test(said)) fail(`${what}: nothing says the project's cover replaces the library's`)
       else if (!/\[arao\] src\/layouts\/bad name\.css: "bad name" is no layout's name/.test(said)) fail(`${what}: no warning about "bad name"`)
-      else if (!/\[arao\] src\/layouts\/plain\.css names no \.layout-plain/.test(said)) fail(`${what}: no warning about plain.css`)
+      else if (!/\[arao\] src\/layouts\/plain\.css: it names no \.layout-plain/.test(said)) fail(`${what}: no warning about plain.css`)
       else if (!/\[arao\] src\/layouts\/cover\.css: --ar-layout-cover-title is no attribute of Slide\(layout="cover"\): "title" is an HTML attribute/.test(said)) fail(`${what}: no warning that --ar-layout-cover-title is no attribute`)
       else if (said.match(/--ar-layout-cover-title is no attribute/g).length !== 1) fail(`${what}: the warning about --ar-layout-cover-title is given ${said.match(/--ar-layout-cover-title is no attribute/g).length} times, not once`)
       else if ((typed = await typedParams('cover')) !== 'pad') fail(`${what}: src/arao-layouts.d.ts types cover's parameters as ${typed ?? 'nothing'}, not pad (the project's, which replace the library's)`)
@@ -658,28 +666,44 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
       else if (css.includes('--_ar-cover-bar')) fail(`${what}: the library's cover.css is in the build`)
       else console.log('  layouts: a project cover replaces the library\'s, saying so, its parameters too, its zones and its doc typed; a token named as an HTML attribute and a @param naming no token warn once; a file with a bad name, and one naming no layout, warn and load; the valid names are typed')
 
-      // arao layouts, with those files: every layout a slide can name, each with its doc. As JSON:
-      // default, the library's (but cover, which the project's replaces), the project's (but "bad
-      // name"); the library's documented in full, the playground's quote with its doc block, the
-      // project's cover as its doc block says, plain with none and its problem
+      // arao layouts, with those files: every layout the project has, each with its doc. As JSON
+      // (the config printing a line as it loads: on stderr, the JSON alone on stdout), with the
+      // araojs version: default, the library's (but cover, which the project's replaces), every
+      // file of the project's folder ("bad name" too, which no slide can name); the library's
+      // documented in full, the playground's quote with its doc block, the project's cover as its
+      // doc block says, plain with none and its problem
       log(`${BIN} layouts --json`)
-      const json = await exec('npx', ['--no-install', BIN, 'layouts', '--json'], project)
-      let got = null
+      const viteConfig = join(project, 'vite.config.js')
+      const config = await readFile(viteConfig, 'utf8')
+      const HELLO = 'smoke: the config says hello as it loads'
+      let json
       try {
-        got = JSON.parse(json.out).layouts
-      } catch (e) {
-        fail(`${BIN} layouts --json: no JSON (${e.message}), exit ${json.code}`)
+        await writeFile(viteConfig, `console.log(${JSON.stringify(HELLO)})\n${config}`)
+        json = await exec('npx', ['--no-install', BIN, 'layouts', '--json'], project)
+      } finally {
+        await writeFile(viteConfig, config)
       }
+      let printed = null
+      try {
+        printed = JSON.parse(json.out)
+      } catch (e) {
+        fail(`${BIN} layouts --json: stdout is no JSON (${e.message}), exit ${json.code}`)
+      }
+      const got = printed?.layouts
       if (got) {
-        const wanted = ['default', ...library.filter((n) => n !== 'cover').sort(), ...named.split(', ')]
+        const wanted = ['default', ...library.filter((n) => n !== 'cover').sort(), ...[...named.split(', '), 'bad name'].sort()]
         const by = Object.fromEntries(got.map((l) => [l.name, l]))
-        const lib = got.filter((l) => l.source === 'library')
+        const fromLibrary = got.filter((l) => l.source === 'library')
         const names = (list) => list.map((x) => x.name).join(', ')
         const complaints = []
         if (json.code !== 0) complaints.push(`exits with ${json.code}`)
+        if (!json.err.includes(HELLO)) complaints.push('what the config printed is not on stderr')
+        if (printed.version !== lib.version) complaints.push(`its version is ${printed.version}, not ${lib.version}`)
         if (names(got) !== wanted.join(', ')) complaints.push(`lists ${names(got)}, not ${wanted.join(', ')}`)
+        if (by['bad name']?.validName !== false || !by['bad name'].problems.some((p) => /"bad name" is no layout's name/.test(p))) complaints.push('"bad name" is not listed as a file no slide can name, saying so')
+        if (got.some((l) => l.name !== 'bad name' && !l.validName)) complaints.push('a layout with a valid name is listed as having none')
         if (by.default?.source !== 'engine' || by.default.file !== null) complaints.push('default is not the engine\'s, with no file')
-        for (const l of lib) {
+        for (const l of fromLibrary) {
           if (!l.documented || !l.summary || !l.example.startsWith(`Slide(layout="${l.name}"`)) complaints.push(`the library's ${l.name} has no summary or no example of itself`)
           if (!l.params.length || l.params.some((p) => !p.description || p.token !== `--ar-layout-${l.name}-${p.name}`)) complaints.push(`the library's ${l.name}: its parameters are not each described, with their token`)
         }
@@ -694,11 +718,11 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
           if (c.summary !== COVER_DOC[0] || c.example !== COVER_DOC[1]) complaints.push(`cover's summary and example are ${JSON.stringify([c.summary, c.example])}, not its doc block's`)
           if (JSON.stringify(c.zones) !== JSON.stringify([{ name: 'aside', description: COVER_DOC[2] }, { name: 'badge', description: '' }])) complaints.push(`cover's zones are ${JSON.stringify(c.zones)}, not aside (described) and badge`)
           if (JSON.stringify(c.params) !== JSON.stringify([{ name: 'pad', token: '--ar-layout-cover-pad', description: COVER_DOC[3] }])) complaints.push(`cover's parameters are ${JSON.stringify(c.params)}, not pad, described`)
-          if (!c.problems.some((p) => /@param nope names no token/.test(p)) || !c.problems.some((p) => /--ar-layout-cover-title is no attribute/.test(p))) complaints.push(`cover's problems are ${JSON.stringify(c.problems)}: not its @param nope and its title token`)
+          if (![/@param nope names no token/, /--ar-layout-cover-title is no attribute/, /the \/\*\* comment at line \d+ is not its doc block/].every((re) => c.problems.some((p) => re.test(p)))) complaints.push(`cover's problems are ${JSON.stringify(c.problems)}: not its @param nope, its title token and its /** comment after its code`)
         }
         if (by.plain?.documented !== false || !by.plain.problems.some((p) => /names no \.layout-plain/.test(p))) complaints.push('plain is not listed with no doc block and its problem (it names no .layout-plain)')
         for (const x of complaints) fail(`${BIN} layouts --json: ${x}`)
-        if (!complaints.length) console.log(`  ${BIN} layouts --json: ${names(got)}; each library layout described, the project's quote and cover as their doc blocks say (cover replacing the library's), plain with its problem`)
+        if (!complaints.length) console.log(`  ${BIN} layouts --json: version ${printed.version}; ${names(got)}; each library layout described, the project's quote and cover as their doc blocks say (cover replacing the library's; after a licence header; its zones its own; its example with an @ line), plain and "bad name" with their problems; the config's own output on stderr`)
       }
       // and for a person: a block per layout, saying where it comes from
       log(`${BIN} layouts`)
@@ -707,6 +731,7 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
         'cover (project, src/layouts/cover.css, replaces the library\'s)', `  ${COVER_DOC[0]}`, '    #aside  a note beside the title',
         'quote (project, src/layouts/quote.css)', 'split (library)', '    #left ', 'default (the engine\'s: a Slide without a layout)',
         'plain (project, src/layouts/plain.css)', '  No doc block', '  Problems:', '  Example:',
+        'bad name (project, src/layouts/bad name.css, no slide can name it)',
       ]
       const absent = lines.filter((l) => !text.out.includes(l))
       if (text.code !== 0 || absent.length) fail(`${BIN} layouts: exit ${text.code}${absent.length ? `; no line with ${absent.map((l) => JSON.stringify(l)).join(', ')}` : ''}`)

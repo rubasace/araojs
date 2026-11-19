@@ -3,7 +3,8 @@
 // with the options the project gives it, resolved by the project's Vite (a peer dependency of this
 // package) as its build resolves them. Every command that needs to know the project asks here.
 // A config that cannot be loaded, or that has no arao() plugin, ends the command: its message says
-// which, after the command's name.
+// which, after the command's name. What the config prints as it is loaded (a console.log of its
+// own) goes to stderr: a command's stdout is its own (arao layouts --json is read by programs).
 
 /**
  * @typedef {{ folders: () => Record<string, string>, decks: () => string[],
@@ -20,12 +21,17 @@ export async function projectPlugin(command, root) {
   const { resolveConfig } = await import('vite')
   /** @type {AraoApi | undefined} */
   let api
+  // stdout's writes (console.log, console.info… write there) go to stderr while the config loads
+  const write = process.stdout.write
+  process.stdout.write = /** @type {typeof write} */ (process.stderr.write.bind(process.stderr))
   try {
     const config = await resolveConfig({ root, logLevel: 'error' }, 'build')
     api = /** @type {{ api?: AraoApi }} */ (config.plugins.find((p) => p.name === 'arao'))?.api
   } catch (e) {
     console.error(`${command}: cannot load the Vite config of ${root}: ${/** @type {Error} */ (e).message}`)
     process.exit(1)
+  } finally {
+    process.stdout.write = write
   }
   if (!api) {
     console.error(`${command}: the Vite config of ${root} has no arao() plugin: is this a slides project?`)

@@ -138,15 +138,21 @@ type SlideProps<L extends keyof SlideLayouts> = { layout?: L } & SlideLayouts[L]
 /** A slot of a Slide, given the slide's current step. */
 type SlideSlot = (props: { step: number }) => unknown
 /**
- * Its slots for a layout: the default and #title, every slide's, and the layout's zones, each with
- * the zone's description as its doc (a mapped type of the zones keeps it).
+ * The zones of a slide whose layout is L, each a slot, with the zone's description as its doc (a
+ * mapped type of the zones keeps it): that layout's, or, when L is several (:layout="x", x one of
+ * them), any of theirs, as it takes any of their parameters: each layout's zone slots, put together
+ * (a union of function parameters infers their intersection). The mapped type is written out, not
+ * named, so that an error lists the zones there are.
  */
+type SlideZoneSlots<L extends keyof SlideLayouts> =
+  (L extends keyof SlideLayouts ? (zones: { [Z in keyof SlideLayoutZones[L]]?: SlideSlot }) => void : never) extends (zones: infer Z) => void ? Z : never
+/** Its slots for a layout: the default and #title, every slide's, and the layout's zones. */
 type SlideSlots<L extends keyof SlideLayouts> = {
   /** The slide's content: its title (the h1 or h2 it starts with, and the headings right after it) in the header, then the body. */
   default?: SlideSlot
   /** The slide's header instead of the heading its content starts with (a kicker line, a logo): the whole content is then the body. */
   title?: SlideSlot
-} & { [Z in keyof SlideLayoutZones[L]]?: SlideSlot }
+} & SlideZoneSlots<L>
 /**
  * Slide as templates see it (exported as such, src/index.ts): generic in its layout, so that the
  * attributes it accepts are that layout's parameters, and no other layout's, besides what every

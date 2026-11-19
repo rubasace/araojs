@@ -87,16 +87,19 @@ npx arao layouts [--json]
 | `-h`, `--help` | print the usage and exit; an unknown option prints the error and the usage, and exits with code 1 |
 
 The layouts, in this order: `default` (a `Slide` without a layout), the library's (those a project
-file replaces left out), then the project's (its layouts folder: `src/layouts`, or the plugin's
-`layouts` option), each by name. Each one's description, example, zones and parameter
+file replaces left out), then every file of the project's layouts folder (`src/layouts`, or the
+plugin's `layouts` option), each by name; a file whose name is no layout's is listed too, saying
+that no slide can name it. Each one's description, example, zones and parameter
 descriptions come from the doc block its file starts with
 ([Its doc block](../guide/slides-and-layouts.md#its-doc-block)); its parameters are the tokens its
 CSS reads, its zones its `@zone` tags and the `.ar-zone-<name>` its CSS styles. A project layout
 says so, and whether it replaces the library's of its name; one with no doc block says that. A
 project layout's problems are listed with it: what its doc block gets wrong (a `@param` naming no
-token, an unknown tag…), a token that is no attribute, a file that styles no slide (the warnings
-the Vite plugin gives). It reads the files and writes nothing; it exits with 0 whatever the
+token, an unknown tag…), a token that is no attribute, a name that is no layout's, a file that
+styles no slide (the warnings the Vite plugin gives). It reads the files and writes nothing; it exits with 0 whatever the
 problems (1 only when the project's Vite config cannot be loaded or has no `arao()` plugin).
+What the project's Vite config prints as it loads goes to stderr, so stdout holds the command's
+output alone (the JSON, with `--json`).
 
 ```
 quote (project, src/layouts/quote.css)
@@ -116,7 +119,8 @@ quote (project, src/layouts/quote.css)
     size    the quote's size (default .8 x `--ar-title`)
 ```
 
-`--json` prints one object, `{ "layouts": [ … ] }`, a member per layout in the same order:
+`--json` prints one object, `{ "version": "…", "layouts": [ … ] }`: `version` is the araojs that
+printed it, `layouts` a member per layout in the same order:
 
 | Field | Value |
 |---|---|
@@ -124,6 +128,7 @@ quote (project, src/layouts/quote.css)
 | `source` | `"engine"` (`default`), `"library"` or `"project"` |
 | `file` | its CSS file: a path from the project's folder, or an absolute one outside it; `null` for `default` |
 | `replaces` | `true` for a project layout named like a library one |
+| `validName` | `false` for a file whose name is no layout's (letters, digits, `-` and `_`): loaded, but no slide can name it |
 | `documented` | whether its file has a doc block |
 | `summary`, `description` | its first line, and the lines after it (line breaks kept); `""` when none |
 | `example` | its `@example`, Pug, as written; `""` when none |

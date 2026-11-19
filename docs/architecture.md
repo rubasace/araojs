@@ -247,7 +247,7 @@ project's config). The types carry it: each layout's entry and its `layout` memb
 (the member is what an editor shows on hovering `layout="…"`: a string literal has no doc of its
 own), its parameters and zones hold theirs, and the zones are typed too (`LibraryLayoutZones`
 with `ProjectLayoutZones` over them: `SlideLayoutZones`), so `Slide`'s slots are its layout's:
-`default`, `#title` and its zones, through a mapped type that keeps each zone's doc. The library
+`default`, `#title` and its zones (those of any of them where the layout may be one of several), through a mapped type that keeps each zone's doc. The library
 build stops on a library layout that is not documented in full. Their defaults are other tokens
 (`--ar-accent`, `--ar-title`), so, as in `tokens.css`, they cannot sit at the root; each file
 resolves them on its own slides (`:where(.layout-<name>)`) into private `--_ar-…` properties its

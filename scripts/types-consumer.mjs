@@ -3,7 +3,9 @@
 // types must resolve and be strict (read-only refs, typed global components in templates, the
 // layouts Slide's layout accepts: the library's and the project's, and the parameters each takes
 // as Slide's attributes, no other layout's: checked with vueCompilerOptions.checkUnknownProps, as
-// any unknown prop is; and the named templates each takes, its zones, no other layout's), in HTML
+// any unknown prop is; and the named templates each takes, its zones, no other layout's, those of
+// any of several for a layout that may be one of them, and a zone the project declares on a
+// library layout, src/arao-zones.d.ts), in HTML
 // templates (Probe.vue) and in Pug ones (ProbePug.vue, through @vue/language-plugin-pug, the
 // version of vue-tsc's).
 //   node scripts/types-consumer.mjs <araojs-x.y.z.tgz>

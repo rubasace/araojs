@@ -278,7 +278,8 @@ grid and place its zones.
 A layout says what it is for in a `/** … */` comment its file starts with, each line after a `*`
 as in JSDoc. Write one for every layout of the project: it is what `npx arao layouts` prints, what
 the editor shows on hover, and what a person or an agent reads to use the layout without opening
-its CSS. A file without one is a layout all the same, with nothing said of it.
+its CSS. A file without one is a layout all the same, with nothing said of it. Only white space and
+plain `/* … */` comments (a licence header) may come before it.
 
 ```css
 /**
@@ -300,18 +301,21 @@ its CSS. A file without one is a layout all the same, with nothing said of it.
 - The first line says what the layout is for, in one line; the lines after it, up to the first
   tag, describe it further (as written: their line breaks are kept).
 - `@example`: a slide of the layout, in Pug, on the lines after it, indented as you write it.
-  Keep it short.
+  Keep it short. Inside it, a line begins a tag only if it is `@example`, `@zone` or `@param`,
+  not indented (right after the `* `): any other line, a Pug one starting with `@` too, is the
+  example's.
 - `@zone <name> <description>`: one per named template the layout places, `template(#<name>)`.
-  Its zones are these and any other `.ar-zone-<name>` its CSS styles (undescribed); `default` and
-  `title` are every slide's, no zone.
+  Its zones are these and any other `.ar-zone-<name>` its CSS styles (undescribed) in a selector
+  that names the layout (`.layout-<name>`) or no layout at all: `.layout-split .ar-zone-caption`
+  in `cards.css` is no zone of `cards`. `default` and `title` are every slide's, no zone.
 - `@param <thing> <description>`: describes the parameter `<thing>`, the token
   `--ar-layout-<name>-<thing>`; say its default. The parameters themselves are the tokens the CSS
   reads, whatever the block says: a `@param` naming no token is a warning.
 - A description goes on to the next tag. Backticks mark code: the editor shows the block as
   Markdown.
 - What a block gets wrong (a `@param` naming no token, an unknown tag, a zone named twice, no
-  first line) the Vite plugin warns about, once, naming the file, and `npx arao layouts` lists it
-  with the layout. The library's own layouts are all documented this way.
+  first line, another `/**` comment in the file, which is not read) the Vite plugin warns about,
+  once, naming the file, and `npx arao layouts` lists it with the layout. The library's own layouts are all documented this way.
 
 ### Layouts in the editor
 
@@ -381,7 +385,11 @@ declare module 'araojs' {
   template, with `strictTemplates` or without: Volar checks a component's slots whenever they are
   typed. Any named template still renders (a layout that does not place it leaves it where the
   grid or the column puts it, below the body on `default`); for the type check to take one, the
-  layout says it places it (`@zone`, or a rule for its `.ar-zone-<name>`).
+  layout says it places it (`@zone`, or a rule for its `.ar-zone-<name>`). A zone that a theme
+  or the deck's own CSS places on a library layout (`template(#caption)` on `split`, with a
+  rule for `.layout-split > .ar-zone-caption` in the theme) is declared the same way as a layout
+  with no file of its own (below), the layout's own zones restated, since the declaration replaces
+  them: `interface ProjectLayoutZones { split: { left: true; right: true; caption: true } }`.
 - Parameters are typed in camelCase (`footerBg`): Volar checks an attribute written `footer-bg`
   as `footerBg`, as it does any prop, and completes it in the case your editor's settings say
   (kebab-case in templates, by default).
@@ -402,7 +410,8 @@ declare module 'araojs' {
 - A layout chosen from data (`:layout="s.layout"`, with `s.layout` a `string`) fails the type check:
   type the data with the names, `keyof SlideLayouts` (`import type { SlideLayouts } from 'araojs'`), or
   cast it: `:layout="s.layout as keyof SlideLayouts"`. A slide whose layout may be any of
-  several takes the parameters of any of them.
+  several takes the parameters of any of them, and the zones of any of them (`#left` and
+  `#image` where it is `'split' | 'image-right'`).
 - Turning `dts` off or moving it leaves the old file behind, still accepting its names: delete it.
 - A name with no file of its own (a class a theme styles, `layout="wide"`) still works at
   runtime; for the type check to take it, declare it the same way in a `.d.ts` of the project,
@@ -410,6 +419,28 @@ declare module 'araojs' {
   no zones; to give it some, declare them too:
   `interface ProjectLayoutZones { wide: { aside: true } }` (a member per zone; its doc is the
   zone's hover).
+- The same declaration gives a library layout a zone its CSS does not place, one a theme or the
+  deck's CSS does: in a `.d.ts` of the project (`src/arao-zones.d.ts`, not the generated file),
+  restating the layout's own zones, which an entry there replaces:
+
+  ```ts
+  // src/arao-zones.d.ts: template(#caption) on split, placed by the theme's .layout-split > .ar-zone-caption
+  export {}
+  declare module 'araojs' {
+    interface ProjectLayoutZones {
+      split: {
+        left: true
+        right: true
+        /** the caption under both sides (the theme places it) */
+        caption: true
+      }
+    }
+  }
+  ```
+
+  For a layout of the project's own, say it in its doc block instead (`@zone caption …`): the
+  generated file declares its zones, and a second declaration of the same layout conflicts with
+  it.
 - Pug templates are type-checked only with Volar's Pug plugin
   ([Components](../reference/components.md), "In TypeScript").
 

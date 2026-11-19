@@ -3,8 +3,9 @@
 // Slide is typed with (the library's layouts: scripts/layout-types.mjs; the project's: the
 // declaration file the Vite plugin writes) and as the arao layouts command prints it.
 //
-// The doc block: a /** … */ comment the file starts with (white space before it aside), each line
-// written after a * as in JSDoc:
+// The doc block: a /** … */ comment the file starts with (white space and ordinary /* … */
+// comments before it aside, a licence header say; /*** … and /**/ are ordinary), each line written
+// after a * as in JSDoc:
 //   /**
 //    * One line: what the layout is for.
 //    * Optional longer description lines.
@@ -19,7 +20,9 @@
 //   - the lines before the first tag: the first is the summary, the rest the description (as
 //     written: their line breaks kept, their common indent removed);
 //   - @example: the Pug of a slide of the layout, on the lines after it, as written (its common
-//     indent removed); a second @example is added to the first, after a blank line;
+//     indent removed); a second @example is added to the first, after a blank line. Inside it, a
+//     line is a tag only if it is one of the three, not indented: a Pug line starting with @ is
+//     the example's;
 //   - @zone <name> <description>: a named template the layout places, template(#<name>); its
 //     description goes on until the next tag;
 //   - @param <thing> <description>: describes the parameter <thing>, the token
@@ -27,11 +30,14 @@
 //     says: @param only describes one, and one naming no token is a problem.
 // A file with no doc block is a layout all the same, with nothing said of it.
 // Its zones: those its @zone tags name, in their order, then any other its CSS styles,
-// .ar-zone-<name> (in its code: not in a comment or a string), by name. default and title are
-// every slide's slots (the content and the header), no zone's.
+// .ar-zone-<name> (in its code: not in a comment or a string), by name: in a selector that names
+// its layout, .layout-<name>, or no layout at all (.layout-split .ar-zone-caption in cards.css is
+// split's, not cards'). default and title are every slide's slots (the content and the header), no
+// zone's.
 // What a block gets wrong (an unknown tag, a zone named twice, a @param naming no token…) is a
-// problem: the plugin warns about a project's, the build of the library stops on its own.
-import { camelize, cssCode, layoutParams } from './layout-params.js'
+// problem, and so is a /** … */ comment that is not the doc block (after code, or after the doc
+// block): the plugin warns about a project's, the build of the library stops on its own.
+import { camelize, cssCode, layoutParams, scanCss } from './layout-params.js'
 
 /**
  * @typedef {{ name: string, description: string }} ZoneDoc
@@ -87,22 +93,50 @@ function dedent(lines) {
   return kept.map((l) => l.slice(Number.isFinite(indent) ? indent : 0))
 }
 
+// a doc comment: /** and then neither * nor / (/*** … and /**/ are ordinary comments)
+const DOC_COMMENT = /^\/\*\*(?![*/])/
+// a tag inside @example: one of the three, not indented (a Pug line may start with @)
+const EXAMPLE_TAG = new RegExp(`^@(${TAGS.join('|')})(?:\\s+(.*))?$`)
+// a tag anywhere else: any, so that one that is none is said
+const ANY_TAG = /^\s*@([\w-]+)(?:\s+(.*))?$/
+
 /**
- * The doc block a layout's CSS starts with, read; null when it starts with none.
+ * A layout's CSS's doc comments: the doc block (the text between the /** and the end of the first
+ * one, when only white space and ordinary comments come before it, and it is closed), and the line
+ * of every other one, which is not read.
  * @param {string} css
- * @returns {DocBlock | null}
+ * @returns {{ block: string | null, stray: number[] }}
  */
-export function docBlock(css) {
-  const start = css.match(/^\uFEFF?\s*\/\*\*(?!\/)/)
-  if (!start) return null
-  const end = css.indexOf('*/', start[0].length)
-  if (end < 0) return null
+function docComments(css) {
+  /** @type {string | null} */
+  let block = null
+  /** @type {number[]} */
+  const stray = []
+  let clear = true // nothing but white space (a BOM too: trim takes it) and ordinary comments yet
+  let at = 0
+  for (const { start, end } of scanCss(css).comments) {
+    if (css.slice(at, start).trim()) clear = false
+    at = end
+    const text = css.slice(start, end)
+    if (!DOC_COMMENT.test(text)) continue
+    if (clear && block == null && text.endsWith('*/')) block = text.slice(3, -2)
+    else stray.push(css.slice(0, start).split('\n').length)
+  }
+  return { block, stray }
+}
+
+/**
+ * A doc block's text read (see the top).
+ * @param {string} block
+ * @returns {DocBlock}
+ */
+function readDoc(block) {
   // each line without what starts it: white space, a *, and one space or tab after it
-  const lines = css.slice(start[0].length, end).split(/\r?\n/).map((l) => l.replace(/^\s*\*(?:[ \t]|$)/, ''))
+  const lines = block.split(/\r?\n/).map((l) => l.replace(/^\s*\*(?:[ \t]|$)/, ''))
   /** @type {{ tag: string | null, first: string, lines: string[] }[]} */
   const sections = [{ tag: null, first: '', lines: [] }]
   for (const line of lines) {
-    const tag = line.match(/^\s*@([\w-]+)(?:\s+(.*))?$/)
+    const tag = line.match(sections[sections.length - 1].tag === 'example' ? EXAMPLE_TAG : ANY_TAG)
     if (tag) sections.push({ tag: tag[1], first: tag[2] ?? '', lines: [] })
     else sections[sections.length - 1].lines.push(line)
   }
@@ -141,13 +175,52 @@ export function docBlock(css) {
 }
 
 /**
- * The zones a layout's CSS styles: each .ar-zone-<name> in its code, by name (default and title
- * aside: no zones).
+ * The doc block a layout's CSS starts with, read; null when it starts with none.
  * @param {string} css
+ * @returns {DocBlock | null}
  */
-export function cssZones(css) {
-  const names = [...cssCode(css).matchAll(/\.ar-zone-([A-Za-z_][\w-]*)/g)].map((m) => m[1])
-  return [...new Set(names)].filter((n) => !SLOTS.includes(n)).sort()
+export function docBlock(css) {
+  const { block } = docComments(css)
+  return block == null ? null : readDoc(block)
+}
+
+/**
+ * A selector list's selectors: split at its commas outside parentheses (:is(.a, .b) is one).
+ * @param {string} list
+ */
+function selectors(list) {
+  const out = []
+  let depth = 0
+  let from = 0
+  for (let i = 0; i < list.length; i++) {
+    if (list[i] === '(') depth++
+    else if (list[i] === ')') depth = Math.max(0, depth - 1)
+    else if (list[i] === ',' && !depth) {
+      out.push(list.slice(from, i))
+      from = i + 1
+    }
+  }
+  return [...out, list.slice(from)]
+}
+
+/**
+ * The zones a layout's CSS styles: each .ar-zone-<name> in a selector of its code that names the
+ * layout (.layout-<name>) or no layout at all, by name (default and title aside: no zones).
+ * @param {string} css
+ * @param {string} name the layout's
+ */
+export function cssZones(css, name) {
+  const own = new RegExp(`\\.layout-${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w-])`)
+  /** @type {Set<string>} */
+  const zones = new Set()
+  // a rule's selector list: what comes before its {, from the }, { or ; before that
+  for (const [, list] of cssCode(css).matchAll(/([^{};]*)\{/g)) {
+    for (const selector of selectors(list)) {
+      if (/\.layout-[\w-]/.test(selector) && !own.test(selector)) continue
+      for (const m of selector.matchAll(/\.ar-zone-([A-Za-z_][\w-]*)/g)) if (!SLOTS.includes(m[1])) zones.add(m[1])
+    }
+  }
+  return [...zones].sort()
 }
 
 /**
@@ -158,15 +231,18 @@ export function cssZones(css) {
  */
 export function describeLayout(css, name) {
   const { params, skipped } = layoutParams(css, name)
-  const doc = docBlock(css)
+  const { block, stray } = docComments(css)
+  const doc = block == null ? null : readDoc(block)
   const problems = [...(doc?.problems ?? [])]
   const described = new Map((doc?.params ?? []).map((p) => [p.thing, p.description]))
   for (const thing of described.keys()) {
     if (!params.includes(thing) && !skipped.some((s) => s.thing === thing))
       problems.push(`@param ${thing} names no token of the layout: its CSS reads no --ar-layout-${name}-${thing}${params.length ? ` (its parameters: ${params.join(', ')})` : ''}`)
   }
+  for (const line of stray)
+    problems.push(`the /** comment at line ${line} is not its doc block, and is not read: the doc block is the first one, before any code (only white space and plain /* comments before it)`)
   const zones = [...(doc?.zones ?? [])]
-  for (const z of cssZones(css)) if (!zones.some((d) => d.name === z)) zones.push({ name: z, description: '' })
+  for (const z of cssZones(css, name)) if (!zones.some((d) => d.name === z)) zones.push({ name: z, description: '' })
   return {
     name,
     documented: !!doc,

@@ -2,16 +2,19 @@
 // current directory), with what each one is: what it is for, an example, its zones (the named
 // templates it places) and its parameters (attributes of the slide), each described:
 //   arao layouts            for a person: a block per layout
-//   arao layouts --json     for a program (an agent): { layouts: [...] }
+//   arao layouts --json     for a program (an agent): { version, layouts: [...] }
 // Run by bin/arao.js: its options are what follows the command.
 // The layouts are the project's Vite config's arao() plugin's (project.js: the same options, its
 // layouts folder among them, as arao export and the app's build see): default (a Slide without a
-// layout), the library's (but those a project file replaces), then the project's, each by name. What
+// layout), the library's (but those a project file replaces), then every file of the project's
+// folder, each by name (one whose name is no layout's too: no slide can name it, and it says so). What
 // each says is the doc block its CSS file starts with, read by vite/layout-docs.js (which the
 // types are written from too); its parameters are the tokens its CSS reads, its zones its @zone
 // tags and the .ar-zone-<name> its CSS styles. A project layout's problems (a doc block that names
-// a token it does not read, a token that is no attribute, a file that styles no slide) are listed
-// with it. Reads, and writes nothing.
+// a token it does not read, a token that is no attribute, a name that is no layout's, a file that
+// styles no slide) are listed with it. Reads, and writes nothing; what the project's Vite config
+// prints as it loads goes to stderr (project.js), so the JSON is all there is on stdout.
+import { readFileSync } from 'node:fs'
 import { isAbsolute, relative } from 'node:path'
 import { parseArgs } from 'node:util'
 import { wrap } from '../vite/layout-docs.js'
@@ -19,9 +22,10 @@ import { projectPlugin } from './project.js'
 
 const HELP = `Usage: arao layouts [--json]     (in a project: npx arao layouts)
 
-  --json      the same as JSON, for a program: { "layouts": [{ name, source, file, replaces,
-              documented, summary, description, example, zones: [{ name, description }],
-              params: [{ name, token, description }], problems }] }
+  --json      the same as JSON, for a program: { "version" (araojs's), "layouts": [{ name,
+              source, file, replaces, validName, documented, summary, description, example,
+              zones: [{ name, description }], params: [{ name, token, description }],
+              problems }] }
   -h, --help  this help
 
 Run it in the slides project: its folder is the current directory, its layouts the ones its Vite
@@ -66,6 +70,7 @@ if (args.json) {
     source: l.source,
     file: where(l.file),
     replaces: l.replaces,
+    validName: l.validName,
     documented: l.documented,
     summary: l.summary,
     description: l.description,
@@ -74,7 +79,9 @@ if (args.json) {
     params: l.params.map((p) => ({ name: p.thing, token: `--ar-layout-${l.name}-${p.thing}`, description: p.description })),
     problems: l.problems,
   }))
-  console.log(JSON.stringify({ layouts: out }, null, 2))
+  // the araojs that printed it: its package.json, next to this folder
+  const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  console.log(JSON.stringify({ version, layouts: out }, null, 2))
   process.exit(0)
 }
 
@@ -94,7 +101,7 @@ const table = (items) => {
 const from = (/** @type {typeof layouts[number]} */ l) =>
   l.source === 'engine' ? "the engine's: a Slide without a layout"
     : l.source === 'library' ? 'library'
-      : `project, ${where(l.file)}${l.replaces ? ", replaces the library's" : ''}`
+      : `project, ${where(l.file)}${l.replaces ? ", replaces the library's" : ''}${l.validName ? '' : ', no slide can name it'}`
 
 console.log(wrap('The layouts of this project, each named by Slide(layout="<name>"). Every slide takes the default '
   + 'slot (its title, the h1 or h2 it starts with, then its body) and #title (a header of its own '

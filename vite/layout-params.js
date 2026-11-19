@@ -48,18 +48,23 @@ export function notAnAttribute(thing) {
 }
 
 /**
- * A stylesheet's code: its comments and its strings ("…" or '…', escapes included; one a line
- * break ends unclosed, as CSS does) each turned into a space, in one pass, so that a token named
- * in either is no token, and a /* in a string or a quote in a comment hides nothing.
+ * A stylesheet read in one pass: its code, with its comments and its strings ("…" or '…', escapes
+ * included; one a line break ends unclosed, as CSS does) each turned into a space, so that a token
+ * named in either is no token, and a /* in a string or a quote in a comment hides nothing; and its
+ * comments, each where it starts and ends in the text (an unclosed one ends with it).
  * @param {string} css
+ * @returns {{ code: string, comments: { start: number, end: number }[] }}
  */
-export function cssCode(css) {
+export function scanCss(css) {
   let out = ''
+  /** @type {{ start: number, end: number }[]} */
+  const comments = []
   let i = 0
   while (i < css.length) {
     const c = css[i]
     if (c === '/' && css[i + 1] === '*') {
       const end = css.indexOf('*/', i + 2)
+      comments.push({ start: i, end: end < 0 ? css.length : end + 2 })
       i = end < 0 ? css.length : end + 2
       out += ' '
     } else if (c === '"' || c === "'") {
@@ -72,8 +77,14 @@ export function cssCode(css) {
       i++
     }
   }
-  return out
+  return { code: out, comments }
 }
+
+/**
+ * A stylesheet's code: scanCss's, its comments and strings each a space.
+ * @param {string} css
+ */
+export const cssCode = (css) => scanCss(css).code
 
 /**
  * A layout's tokens, --ar-layout-<name>-<thing>, that its CSS declares or reads: its parameters
