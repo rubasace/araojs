@@ -105,7 +105,7 @@ import vue from '@vitejs/plugin-vue'
 import { normalizePath, searchForWorkspaceRoot } from 'vite'
 import { fonts } from './fonts.js'
 import { createIcons, forced } from './icons.js'
-import { layoutParams, notAnAttribute, paramsType } from './layout-params.js'
+import { cssCode, layoutParams, paramsType } from './layout-params.js'
 import shortcuts from './shortcuts.js'
 
 const require = createRequire(import.meta.url)
@@ -470,7 +470,8 @@ declare module '${PACKAGE}' {
 ${layouts.map(([n, params]) => `    '${n}': ${paramsType(n, params, '    ')}\n`).join('')}  }
 }
 `
-// whether a stylesheet names .layout-<name> (outside its comments); an unreadable file does not
+// whether a stylesheet names .layout-<name> (in its code: not in a comment or a string); an
+// unreadable file does not
 /** @param {string} file @param {string} name */
 function stylesLayout(file, name) {
   let css
@@ -480,7 +481,7 @@ function stylesLayout(file, name) {
     return false
   }
   // name is a layout's (LAYOUT_NAME): nothing in it is special in a pattern
-  return new RegExp(`\\.layout-${name}(?![\\w-])`).test(css.replace(/\/\*[\s\S]*?\*\//g, ''))
+  return new RegExp(`\\.layout-${name}(?![\\w-])`).test(cssCode(css))
 }
 
 /**
@@ -571,17 +572,19 @@ export default function arao(options = {}) {
   const inBuiltinLayouts = (file) => file.endsWith('.css') && relative(real(BUILTIN_LAYOUTS), file) === basename(file)
   /** @type {string | null} */
   let paramsLoaded = null // the parameters the tokens module was last loaded with
-  const paramsWarned = new Set() // the tokens already said to be no attribute, once each
-  /** @param {{ name: string, thing: string, why: string }} s */
-  const noParam = ({ name, thing, why }) => {
-    if (paramsWarned.has(`${name}\0${thing}`)) return
-    paramsWarned.add(`${name}\0${thing}`)
-    // a name to suggest: its kebab-case (fontSize, font_size: font-size), else what it sets after
-    // it (title: title-size, title-color), only if that is an attribute
-    const kebab = thing.replace(/([a-z0-9])([A-Z])/g, '$1-$2').replace(/_/g, '-').toLowerCase()
-    const better = (kebab !== thing ? [kebab] : [`${thing}-size`, `${thing}-color`]).filter((t) => !notAnAttribute(t))
-    const rename = !better.length ? '' : kebab !== thing ? ` --ar-layout-${name}-${kebab}` : ` after what it sets (${better.map((t) => `--ar-layout-${name}-${t}`).join(', ')}…)`
-    logger.warn(`[arao] ${layoutFile(name)}: --ar-layout-${name}-${thing} is no attribute of Slide(layout="${name}"): ${why}. It works set in style or in a theme; to make it an attribute, rename it${rename}`)
+  /** @type {Set<string>} */
+  let noParams = new Set() // the project's tokens that are no attribute, as last said
+  // Says which of the project's tokens are no attribute: each one once while it stays so (Vite
+  // starting, then loading the tokens module, says nothing twice), and again once it comes back
+  // after it was renamed or removed
+  /** @param {{ name: string, thing: string, why: string }[]} skipped */
+  const noParam = (skipped) => {
+    const now = new Set(skipped.map((s) => `${s.name}\0${s.thing}`))
+    for (const { name, thing, why } of skipped) {
+      if (!noParams.has(`${name}\0${thing}`))
+        logger.warn(`[arao] ${layoutFile(name)}: --ar-layout-${name}-${thing} is no attribute of Slide(layout="${name}"): ${why}. It works set in style or in a theme; rename it to make it an attribute`)
+    }
+    noParams = now
   }
   // The declaration file of the project's layouts (see the top), written only if its text changed
   // (line endings aside: a checkout may have turned them into CRLF), and not at all while the
@@ -590,7 +593,7 @@ export default function arao(options = {}) {
   // here as well (once each), so that Vite says so as it starts
   const writeLayoutsDts = () => {
     const { params, skipped } = paramsOf(layoutsDir())
-    for (const s of skipped) noParam(s)
+    noParam(skipped)
     if (dts === false) return
     const file = resolve(root, dts === true ? DEFAULT_DTS : dts.trim())
     const names = filesIn(layoutsDir(), '.css').filter((n) => LAYOUT_NAME.test(n))
@@ -816,7 +819,7 @@ export const themeSources = ${JSON.stringify(themeSources.map((t) => t.label))}`
       // one more key), for Slide to set them
       if (id === resolved('layout-tokens')) {
         const { params, skipped } = paramsOf(layoutsDir())
-        for (const s of skipped) noParam(s)
+        noParam(skipped)
         paramsLoaded = JSON.stringify(params)
         return `export const layoutTokens = Object.assign(Object.create(null), JSON.parse(${JSON.stringify(paramsLoaded)}))`
       }

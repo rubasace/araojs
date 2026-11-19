@@ -6,13 +6,12 @@
 // for its side effects (its CSS, the layouts and themes through virtual:arao/layout-styles and
 // virtual:arao/theme-styles) is
 // dropped: those modules exist only in the library's build and in a project with the Vite plugin.
-import { readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { readFile, rm, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { rollup } from 'rollup'
 import { dts } from 'rollup-plugin-dts'
-import { camelize, layoutParams } from '../vite/layout-params.js'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const tmp = resolve(root, 'dist/types-tmp')
@@ -70,46 +69,6 @@ for (const name of Object.keys(ENTRIES)) {
   const bad = text.split('\n').map((line, i) => [i + 1, line]).filter(([, line]) => UNRESOLVABLE.test(line))
   if (bad.length) {
     console.error(`[arao] dist/types/${name}.d.ts imports what a consumer cannot resolve:\n${bad.map(([n, l]) => `  ${n}: ${l.trim()}`).join('\n')}`)
-    process.exit(1)
-  }
-}
-
-// LibraryLayouts (src/components/library-layouts.ts, which SlideLayouts is made of), the layouts
-// Slide's layout accepts in a typed template and the attributes each takes, is the library's as
-// its CSS is: default and one per file of layouts/, no more, no less, each with its parameters
-// (vite/layout-params.js), no more, no less. scripts/layout-types.mjs writes it from there when
-// the build starts; this checks what ships. And ProjectLayouts, which a project's declaration
-// file augments, and SlideLayouts are exported.
-const types = await readFile(resolve(out, 'index.d.ts'), 'utf8')
-const files = (await readdir(resolve(root, 'layouts'))).filter((f) => f.endsWith('.css')).map((f) => f.slice(0, -4))
-/** @type {Map<string, string>} layout → its parameters, camelCase, sorted, as text */
-const expected = new Map([['default', '']])
-for (const name of files) expected.set(name, layoutParams(await readFile(resolve(root, 'layouts', `${name}.css`), 'utf8'), name).params.map(camelize).sort().join(', '))
-// the interface's body, from its brace to the one closing it, comments out
-const start = types.search(/^interface LibraryLayouts \{/m)
-let body = null
-if (start >= 0) {
-  let depth = 0
-  for (let i = types.indexOf('{', start); i < types.length; i++) {
-    if (types[i] === '{') depth++
-    else if (types[i] === '}' && --depth === 0) {
-      body = types.slice(types.indexOf('{', start) + 1, i).replace(/\/\*[\s\S]*?\*\//g, '')
-      break
-    }
-  }
-}
-/** @type {Map<string, string>} */
-const typed = new Map([...(body ?? '').matchAll(/(['"]?)([\w-]+)\1\s*:\s*\{([^{}]*)\}/g)]
-  .map((m) => [m[2], [...m[3].matchAll(/(\w+)\??\s*:/g)].map((p) => p[1]).sort().join(', ')]))
-const show = (m) => [...m].sort(([a], [b]) => a.localeCompare(b)).map(([n, p]) => `${n} (${p || 'none'})`).join('; ')
-if (show(typed) !== show(expected)) {
-  console.error(`[arao] LibraryLayouts (src/components/library-layouts.ts, written by scripts/layout-types.mjs) ${body == null ? 'is not in dist/types/index.d.ts' : `lists ${show(typed)}`}; layouts/ has ${show(expected)} (with default): make them the same`)
-  process.exit(1)
-}
-const exported = types.match(/^export type \{([^}]*)\}/m)?.[1] ?? ''
-for (const name of ['SlideLayouts', 'ProjectLayouts']) {
-  if (!new RegExp(`\\b${name}\\b`).test(exported)) {
-    console.error(`[arao] dist/types/index.d.ts does not export the type ${name}`)
     process.exit(1)
   }
 }

@@ -4,8 +4,9 @@
 // `npm run build` runs it first, so the types the build checks and ships are the CSS's; the file
 // is committed, so a type check of the source needs no build. Written only if its text changed.
 // A token of the library's that is no attribute (a name HTML, Vue or Slide already gives a
-// meaning, or not lower-case kebab-case) stops it: rename the token. scripts/bundle-types.mjs
-// checks the shipped types against layouts/ again.
+// meaning, or not lower-case kebab-case) stops it: rename the token. CI checks that the committed
+// file is what this writes (git diff after the build, .github/workflows/ci.yml): a layout's CSS
+// changed without its types fails there.
 //   node scripts/layout-types.mjs
 import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'

@@ -245,7 +245,7 @@ the library's layouts and before the themes; one named like a library layout (`c
 replaces it. Follow the library's convention (`node_modules/araojs/layouts/cover.css`): tokens
 named `--ar-layout-<name>-<thing>`, each resolved with its default on the slide. Each token is
 an attribute of the layout's slides, `<thing>` (below: `size`, `footer`); a `<thing>` a slide already
-has as an attribute (`title`, `id`, `hidden`, `lang`, `class`, `style`, `key`, `layout`, `on…`,
+has as an attribute (`title`, `id`, `hidden`, `lang`, `class`, `style`, `key`, `layout`, `on-…`,
 `data-…`, `aria-…`) is none and Vite warns: name it `title-size`, say. A file replacing a library
 layout replaces its parameters too.
 ```css

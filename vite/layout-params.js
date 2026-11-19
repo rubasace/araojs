@@ -1,13 +1,16 @@
 // A layout's parameters: the attributes Slide takes for it. A layout is a CSS file (the package's
 // layouts/, the project's src/layouts); its parameters are the public tokens of its own that the
-// file declares or reads, --ar-layout-<name>-<thing> (outside its comments; the private --_ar-…
-// are not), each one an attribute of Slide(layout="<name>") named <thing>, whose value the slide
-// sets as that token, verbatim, in its own style:
+// file declares or reads, --ar-layout-<name>-<thing> (in its code: not in a comment or a string;
+// the private --_ar-… are not), each one an attribute of Slide(layout="<name>") named <thing>,
+// whose value the slide sets as that token, verbatim, in its own style:
 //   Slide(layout="image-right" columns="2fr 1fr")   →   --ar-layout-image-right-columns: 2fr 1fr
+// A token is the file's layout's by its prefix alone: a layout named image whose file reads
+// --ar-layout-image-right-columns has a parameter right-columns (image-right's own file is
+// another layout's, with its own parameters).
 // This file alone says what a parameter is. Slide (src/components/Slide.vue) sets them from the
 // Vite plugin's virtual:arao/layout-tokens (index.js); the types say which attributes each layout
-// takes: the library's are built into its types (scripts/layout-types.mjs, checked again by
-// scripts/bundle-types.mjs), the project's go in the declaration file the plugin writes
+// takes: the library's are built into its types (scripts/layout-types.mjs; CI checks the committed
+// file is what it writes), the project's go in the declaration file the plugin writes
 // (src/arao-layouts.d.ts).
 // A <thing> is no attribute when it is not written in lower case, kebab-case (letters, digits and
 // -, a letter first: an attribute's name in any template, and one Vue turns into camelCase and
@@ -15,8 +18,9 @@
 // (notAnAttribute): the token still works, set in style or a theme, and the plugin says so.
 
 // Attribute names a slide already has a meaning for: HTML's global attributes (and ARIA's role),
-// Vue's own (key, ref, is) and Slide's prop; and, by how they start, event handlers (on…, which
-// Vue also reads as listeners), data-… and aria-… attributes, and Vue's directives (v-…)
+// Vue's own (key, ref, is) and Slide's prop; and, by how they start, what Vue reads as a listener
+// (on, or on followed by anything but a lower-case letter: on-…; onset and one-col are fine),
+// data-… and aria-… attributes, and Vue's directives (v-…)
 const HTML = ['accesskey', 'autocapitalize', 'autocorrect', 'autofocus', 'class', 'contenteditable', 'dir', 'draggable',
   'enterkeyhint', 'exportparts', 'hidden', 'id', 'inert', 'inputmode', 'is', 'itemid', 'itemprop', 'itemref', 'itemscope',
   'itemtype', 'lang', 'nonce', 'part', 'popover', 'role', 'slot', 'spellcheck', 'style', 'tabindex', 'title', 'translate',
@@ -26,7 +30,7 @@ const RESERVED = [
   [new RegExp(`^(?:${HTML.join('|')})$`), 'an HTML attribute already'],
   [/^(?:key|ref)$/, "Vue's"],
   [/^layout$/, "Slide's own prop"],
-  [/^on/, 'an event handler (on…)'],
+  [/^on(?![a-z])/, 'a listener to Vue (on, on-…)'],
   [/^(?:data|aria)-/, "the page's own (data-…, aria-…)"],
   [/^v-/, 'a Vue directive (v-…)'],
 ]
@@ -44,6 +48,34 @@ export function notAnAttribute(thing) {
 }
 
 /**
+ * A stylesheet's code: its comments and its strings ("…" or '…', escapes included; one a line
+ * break ends unclosed, as CSS does) each turned into a space, in one pass, so that a token named
+ * in either is no token, and a /* in a string or a quote in a comment hides nothing.
+ * @param {string} css
+ */
+export function cssCode(css) {
+  let out = ''
+  let i = 0
+  while (i < css.length) {
+    const c = css[i]
+    if (c === '/' && css[i + 1] === '*') {
+      const end = css.indexOf('*/', i + 2)
+      i = end < 0 ? css.length : end + 2
+      out += ' '
+    } else if (c === '"' || c === "'") {
+      let j = i + 1
+      while (j < css.length && css[j] !== c && css[j] !== '\n') j += css[j] === '\\' ? 2 : 1
+      i = j + 1
+      out += ' '
+    } else {
+      out += c
+      i++
+    }
+  }
+  return out
+}
+
+/**
  * A layout's tokens, --ar-layout-<name>-<thing>, that its CSS declares or reads: its parameters
  * (the things that are attributes) and the things that are not, each with why; sorted, once each.
  * @param {string} css
@@ -51,7 +83,7 @@ export function notAnAttribute(thing) {
  * @returns {{ params: string[], skipped: { thing: string, why: string }[] }}
  */
 export function layoutParams(css, name) {
-  const code = css.replace(/\/\*[\s\S]*?\*\//g, '')
+  const code = cssCode(css)
   const token = new RegExp(`(?<![\\w-])--ar-layout-${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-([\\w-]+)`, 'g')
   const things = [...new Set([...code.matchAll(token)].map((m) => m[1]))].sort()
   /** @type {string[]} */

@@ -235,8 +235,8 @@ attribute for: HTML's global ones, Vue's, `layout`), for the plugin and the libr
 The names and parameters are types too: `Slide` is exported typed generic in its layout
 (`SlideComponent`, `Slide.vue`), its `layout` a key of `SlideLayouts` and its other attributes that
 layout's parameters; `SlideLayouts` is the library's (`LibraryLayouts`, generated from `layouts/` by
-`scripts/layout-types.mjs` when the library is built, and checked against it once more by
-`scripts/bundle-types.mjs`) with the project's over them (`ProjectLayouts`), which the plugin
+`scripts/layout-types.mjs` when the library is built; CI fails if the committed file is not
+what it writes) with the project's over them (`ProjectLayouts`), which the plugin
 augments in a declaration file it writes into the project (`src/arao-layouts.d.ts`, rewritten
 as layout files and their tokens change). A file states what it does and its tokens: their defaults are other tokens
 (`--ar-accent`, `--ar-title`), so, as in `tokens.css`, they cannot sit at the root; each file

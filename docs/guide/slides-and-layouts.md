@@ -103,9 +103,10 @@ Slide(layout="cover" bar="gold" title-size="160px")
   ([Layout tokens](../reference/theme-tokens.md#layouts)), and a project layout's
   ([A layout of your own](#a-layout-of-your-own)). A token whose name is an attribute a slide
   already has (any HTML global attribute: `title`, `id`, `hidden`, `lang`, `dir`, `class`,
-  `style`, `slot`, `tabindex`…; Vue's `key`, `ref` and `is`; `Slide`'s `layout`; anything
-  starting with `on`, `data-`, `aria-` or `v-`), or that is not in lower-case kebab-case, is no
-  attribute: set it in `style`.
+  `style`, `slot`, `tabindex`…; Vue's `key`, `ref` and `is`; `Slide`'s `layout`; `on` and
+  `on-…`, which Vue reads as listeners, though `onset` or `one-col` are fine; anything starting
+  with `data-`, `aria-` or `v-`), or that is not in lower-case kebab-case, is no attribute: set it
+  in `style`.
 
 ## Zones: header, body, footer
 
@@ -239,13 +240,15 @@ Slide(layout="quote")
 ```
 
 Its tokens are its slides' attributes ([Layout parameters](#layout-parameters)): the Vite plugin
-finds them in the file, every `--ar-layout-quote-<thing>` it declares or reads (comments and the
-private `--_ar-…` aside), so `quote.css` gives `Slide(layout="quote" size="64px" mark="gold")`,
+finds them in the file, every `--ar-layout-quote-<thing>` it declares or reads (not in a comment
+or a string; the private `--_ar-…` aside), so `quote.css` gives `Slide(layout="quote" size="64px" mark="gold")`,
 typed for the editor ([Layouts in the editor](#layouts-in-the-editor)). Name a token's last part
 as an attribute: lower-case kebab-case, and none a slide already has. `--ar-layout-quote-title`
 is no attribute (`title` is HTML's): the plugin warns, once, naming the file, and the token works
 in `style` and in themes only; `--ar-layout-quote-title-size` is one. A file that replaces a
-library layout replaces its parameters too: the slide's attributes are the new file's tokens.
+library layout replaces its parameters too: the slide's attributes are the new file's tokens. A
+token is the layout's by its name alone: a layout `image` whose file reads
+`--ar-layout-image-right-columns` gets a parameter `right-columns`.
 Adding, removing or renaming a token while the dev server runs reloads the page.
 
 The library's own files, in the package's `layouts/` folder, are worked examples: `cover.css`
@@ -257,10 +260,20 @@ grid and place its zones.
 `Slide` is typed with the layouts there are and their parameters: in a TypeScript project the
 editor (Volar) completes the names in `layout`, and, once one is given, that layout's parameters
 among the slide's attributes (`columns` on `layout="image-right"`, not on `layout="cover"`).
-`vue-tsc` turns down a name that is none (`layout="covr"`: `Type '"covr"' is not assignable to
-type 'keyof LibraryLayouts | keyof ProjectLayouts | undefined'`), and a parameter of another layout (`Slide(layout="cover"
-columns="2fr 1fr")`: `'columns' does not exist in type …`) or a value that is not a string. The
-library's come with the package; the project's are added by the Vite plugin, which writes them
+`vue-tsc` turns down a name that is none, a parameter of another layout, and a value that is not
+a string:
+
+```
+Slide(layout="covr")                    error TS2820: Type '"covr"' is not assignable to type
+                                        'keyof LibraryLayouts | undefined'. Did you mean '"cover"'?
+Slide(layout="cover" columns="2fr 1fr") error TS2353: Object literal may only specify known
+                                        properties, and 'columns' does not exist in type
+                                        '{ layout?: "cover" | undefined; bar?: string | undefined; … }'
+Slide(layout="cover" :bar="1")          error TS2322: Type 'number' is not assignable to type 'string'.
+```
+
+(Once the project has layouts of its own, the first one reads `'keyof LibraryLayouts | keyof
+ProjectLayouts | undefined'`.) The library's come with the package; the project's are added by the Vite plugin, which writes them
 into `src/arao-layouts.d.ts`, where the `tsconfig` of a Vite project already looks (`src/**`):
 
 ```ts
