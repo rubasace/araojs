@@ -28,7 +28,8 @@ How themes are written, found and applied: [Themes](../guide/themes.md).
 
 | Token | Default | Meaning |
 |---|---|---|
-| `--ar-pad` | `110px 140px` | slide padding, the safe margin (and the text side of `image-*`); on a slide whose footer shows, its bottom is at least `--ar-footer-height`, so the content never sits under the band |
+| `--ar-pad-y` | `110px` | slide padding, the safe margin: top and bottom (and the text side of `image-*`); the bottom is always at least `--ar-footer-height`, so the content never sits under the footer |
+| `--ar-pad-x` | `140px` | slide padding, the safe margin: both sides (and the footer's sides) |
 | `--ar-radius` | `4px` | corner radius (`Img rounded`, placeholders) |
 | `--ar-gap-sm` / `-md` / `-lg` | `24px` / `48px` / `80px` | `gap="sm\|md\|lg"`; `md` is the default gap of `Cols`/`Rows`/`Grid`; `lg` between `split`'s zones; `sm` between the footer's children |
 

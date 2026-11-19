@@ -233,10 +233,9 @@ resolves them on its own slides (`:where(.layout-<name>)`) into private `--_ar-â
 rules read, and a theme, the project's `:root` or one slide sets the public ones. What every
 layout shares is the engine's: where the body sits (`--ar-body-align`, the classes `top`,
 `center`, `bottom`), and the footer's classes `no-footer` and `with-footer`, which win over a
-layout's own footer token. Two facts CSS alone cannot give are read by `Slide` from the computed
-style, as the header band is: whether the footer shows (its `display`: the slide then carries
-`.ar-footed`, whose bottom padding is at least the band) and the bottom of the `--ar-pad`
-shorthand (copied into `scroll-padding`, whose longhands the style resolves: `--_ar-pad-bottom`). A slide's background is a component, `Background`, which renders a hidden element where it is
+layout's own footer token. The slide's bottom padding is always at least the footer's band
+(`max(var(--ar-pad-y), var(--ar-footer-height))`), footer or not, so nothing needs to know
+whether the footer shows. A slide's background is a component, `Background`, which renders a hidden element where it is
 written (what `v-step` applies to) and teleports what it draws into the slide's background layer
 (`useSlideLayer()`), where a CSS rule hides the theme's default background behind it; the drawn
 layer follows the step classes of that element and of the elements around it, and stacks in their

@@ -14,7 +14,8 @@
   --ar-font-mono: "JetBrains Mono", ui-monospace, monospace;
   --ar-text-base: 34px;
   --ar-title: 88px;
-  --ar-pad: 104px 120px;
+  --ar-pad-y: 104px;
+  --ar-pad-x: 120px;
   --ar-radius: 0px;
   --ar-list-gap: .3em;
 

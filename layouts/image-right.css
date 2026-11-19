@@ -37,12 +37,12 @@
 /* the text side carries the slide's padding: the header its top, the body its bottom (all of it
    when there is no header), both its sides. The header's band (--ar-header-height) is under the
    padding, as on any slide. */
-.layout-image-right > :is(.ar-header, .ar-body) { grid-column: 1; min-width: 0; padding: var(--ar-pad); }
+.layout-image-right > :is(.ar-header, .ar-body) { grid-column: 1; min-width: 0; padding: var(--ar-pad-y) var(--ar-pad-x); }
 .layout-image-right > .ar-header { grid-row: 1; padding-bottom: 0; box-sizing: content-box; }
 .layout-image-right > .ar-body { grid-row: 2; }
 .layout-image-right > .ar-header + .ar-body { padding-top: 0; }
-/* where the footer shows (.ar-footed, Slide.vue), the text side ends above it, as any slide does */
-.layout-image-right.ar-footed > .ar-body { padding-bottom: max(var(--ar-footer-height), var(--_ar-pad-bottom, 0px)); }
+/* the text side ends above the footer's band, as any slide does (Slide.vue) */
+.layout-image-right > .ar-body { padding-bottom: max(var(--ar-pad-y), var(--ar-footer-height)); }
 
 /* the picture: edge to edge (a theme may inset it), whatever is in it filling it */
 .layout-image-right > .ar-zone-image {
