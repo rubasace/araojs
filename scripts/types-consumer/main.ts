@@ -4,7 +4,7 @@
 import Arao, {
   createDeckApp, useDeck, useSlide, step, stepFrom,
   Deck, Slide, Background, Img, Icon, Snippet, Notes, Cols, Rows, Grid, Center, ProgressBar, SlideNumber,
-  type DeckFace, type DeckAppOptions, type SlideControls, type Role, type Timer,
+  type DeckFace, type DeckAppOptions, type SlideControls, type SlideLayouts, type Role, type Timer,
 } from 'araojs'
 import arao, { arao as namedArao, type AraoOptions } from 'araojs/vite'
 
@@ -18,6 +18,19 @@ arao({ decks: 42 })
 arao({ layouts: ['src/layouts'] })
 // @ts-expect-error the named export is the same plugin
 namedArao({ icons: 'lucide:rocket' })
+// the layouts' declaration file: where it goes, or none
+arao({ dts: 'types/arao-layouts.d.ts' })
+arao({ dts: false })
+// @ts-expect-error dts is a path or a boolean
+arao({ dts: 42 })
+
+// the layouts a Slide can name: the library's, and the project's (src/arao-layouts.d.ts, which the
+// plugin wrote from src/layouts/quote.css before this check)
+const layouts: (keyof SlideLayouts)[] = ['default', 'cover', 'section', 'split', 'image-left', 'image-right', 'quote']
+void layouts
+// @ts-expect-error no layout of that name
+const unknownLayout: keyof SlideLayouts = 'nope'
+void unknownLayout
 
 // the app and the Vue plugin
 const appOptions: DeckAppOptions = { deckList: 'always' }

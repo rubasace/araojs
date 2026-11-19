@@ -14,7 +14,10 @@ by hand from `'araojs'`: the [addons](#addons) (`ProgressBar`, `SlideNumber`) an
 template of a project that imports `'araojs'`. That declaration claims the names: a project that
 also declares a global component of its own under one of them (its own global `Icon`, say) gets
 `TS2717: Subsequent property declarations must have the same type`. Give yours another name
-(`AppIcon`), or import it where it is used instead of registering it globally.
+(`AppIcon`), or import it where it is used instead of registering it globally. A Pug template
+is type-checked only with Volar's Pug plugin: `npm install -D @vue/language-plugin-pug`, and
+`"vueCompilerOptions": { "plugins": ["@vue/language-plugin-pug"] }` in the `tsconfig`; without
+it, `vue-tsc` and the editor skip Pug templates.
 
 Contents: [Deck](#deck) · [Slide](#slide) · [Background](#background) · [Cols, Rows, Grid, Center](#cols-rows-grid-center) ·
 [Utility classes](#utility-classes) · [Img](#img) · [Icon](../guide/icons.md) · [Snippet](#snippet) ·
@@ -80,7 +83,7 @@ template and the deck's footer ([Zones](../guide/slides-and-layouts.md#zones-hea
 
 | Prop | Type | Default | Accepted values |
 |---|---|---|---|
-| `layout` | String | `default` | a layout's name: the library's (below) or the project's (`src/layouts/<name>.css`: [A layout of your own](../guide/slides-and-layouts.md#a-layout-of-your-own)). Any other name works as `default`, with the class `layout-<name>` for a theme or a deck to style |
+| `layout` | String (typed: `keyof SlideLayouts`) | `default` | a layout's name: the library's (below) or the project's (`src/layouts/<name>.css`: [A layout of your own](../guide/slides-and-layouts.md#a-layout-of-your-own)). Any other name works as `default`, with the class `layout-<name>` for a theme or a deck to style. In a type-checked template only the layouts there are pass: the library's, and the project's, which the Vite plugin declares ([Layout names in the editor](../guide/slides-and-layouts.md#layout-names-in-the-editor)) |
 
 Slots, all with `{ step }` (the slide's current step) as slot props:
 - default: the header (the `h1`/`h2` it starts with, and the headings right after it) and the

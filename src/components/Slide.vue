@@ -73,8 +73,27 @@
   </Transition>
 </template>
 
+<script lang="ts">
+/**
+ * The layouts a Slide can name, as keys: what its layout prop accepts in a template checked by
+ * Volar / vue-tsc. The library's own (layouts/, plus default), which the build checks against
+ * that folder (scripts/bundle-types.mjs); a project's are added by augmenting it, which the Vite
+ * plugin writes for src/layouts (src/arao-layouts.d.ts):
+ *   declare module 'araojs' { interface SlideLayouts { quote: true } }
+ * Types only: at runtime the prop is any string (one with no CSS is the default layout).
+ */
+export interface SlideLayouts {
+  default: true
+  cover: true
+  section: true
+  split: true
+  'image-left': true
+  'image-right': true
+}
+</script>
+
 <script setup lang="ts">
-import { Comment, Text, cloneVNode, h, onMounted, onUpdated, ref, shallowRef, useSlots, watch, type FunctionalComponent, type VNode } from 'vue'
+import { Comment, Text, cloneVNode, h, onMounted, onUpdated, ref, shallowRef, useSlots, watch, type FunctionalComponent, type PropType, type VNode } from 'vue'
 import { useDeck } from '../state/deck'
 import { createSlide } from '../state/slide'
 import Notes from './Notes.vue'
@@ -82,7 +101,7 @@ import Background from './Background.vue'
 
 const props = defineProps({
   // the layout: the section's class is layout-<name>, and the layout's CSS (layouts/) does the rest
-  layout: { type: String, default: 'default' },
+  layout: { type: String as PropType<keyof SlideLayouts>, default: 'default' },
 })
 const slots = useSlots()
 

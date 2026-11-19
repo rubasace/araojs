@@ -259,6 +259,9 @@ Slide(layout="quote")
   blockquote Make it work, make it right, make it fast.
   p.muted Kent Beck
 ```
+The plugin also writes the project's layout names into `src/arao-layouts.d.ts`, so that in a
+TypeScript project the editor completes `layout` and `vue-tsc` rejects a name that is none: it is
+generated (don't edit it), and committed like any source file.
 What a slide renders, to style: `.ar-header` (its opening heading), `.ar-body` (the rest),
 `.ar-zone-<name>` for each `template(#<name>)`, `.ar-footer`. Defaults that are other tokens go
 in the `:where(.layout-<name>)` block, never at `:root` (there `var()` resolves once, and a

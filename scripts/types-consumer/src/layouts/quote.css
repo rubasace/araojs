@@ -1,0 +1,2 @@
+/* a project layout: the plugin adds "quote" to the layouts Slide's layout accepts (src/arao-layouts.d.ts) */
+.layout-quote { justify-content: safe center; }

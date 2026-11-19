@@ -226,7 +226,10 @@ package's root (`cover`, `section`, `split`, `image-left`, `image-right`); the p
 the plugin's `layouts` folder (default `src/layouts`). The Vite plugin loads both through
 `virtual:arao/layout-styles` (an eager glob of the library's files, all but those a project file
 of the same name replaces, then one of the project's folder); when a project file starts or stops
-replacing a library one in the dev server, the module is reloaded with the page. A file states
+replacing a library one in the dev server, the module is reloaded with the page. The names are
+types too: `layout` is `keyof SlideLayouts`, an interface listing the library's (the build checks
+it against `layouts/`), which the plugin augments with the project's in a declaration file it
+writes into the project (`src/arao-layouts.d.ts`, rewritten as layout files come and go). A file states
 what it does and its tokens, `--ar-layout-<name>-<thing>`: their defaults are other tokens
 (`--ar-accent`, `--ar-title`), so, as in `tokens.css`, they cannot sit at the root; each file
 resolves them on its own slides (`:where(.layout-<name>)`) into private `--_ar-…` properties its

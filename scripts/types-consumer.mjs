@@ -1,10 +1,12 @@
 // Type-checks a TypeScript project against a packed araojs, under the module resolutions
 // consumers use (bundler, as Vite's templates; nodenext), with skipLibCheck off: the published
-// types must resolve and be strict (read-only refs, typed global components in templates).
+// types must resolve and be strict (read-only refs, typed global components in templates, the
+// layouts Slide's layout accepts: the library's and the project's).
 //   node scripts/types-consumer.mjs <araojs-x.y.z.tgz>
 // The project is scripts/types-consumer/, copied to a temporary folder with the tarball and the
-// type checkers installed.
-import { cpSync, mkdtempSync, rmSync } from 'node:fs'
+// type checkers installed. First a vite build with the plugin (its vite.config.js), which must
+// write src/arao-layouts.d.ts from its src/layouts; then the type checks, which include it.
+import { cpSync, existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -24,6 +26,11 @@ try {
   cpSync(join(here, 'types-consumer'), dir, { recursive: true })
   const dev = ['typescript', 'vue-tsc', 'vue', 'vite', '@types/node'].map((n) => `${n}@${pkg.devDependencies[n]}`)
   run('npm', ['install', '--no-audit', '--no-fund', '--silent', resolve(tarball), ...dev])
+  run('npx', ['vite', 'build'])
+  if (!existsSync(join(dir, 'src/arao-layouts.d.ts'))) {
+    console.error('types-consumer: vite build wrote no src/arao-layouts.d.ts')
+    failed = true
+  }
   for (const mode of ['bundler', 'nodenext']) {
     try {
       run('npx', ['vue-tsc', '-p', `tsconfig.${mode}.json`])
