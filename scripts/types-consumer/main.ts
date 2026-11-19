@@ -5,6 +5,7 @@ import Arao, {
   createDeckApp, useDeck, useSlide, step, stepFrom,
   Deck, Slide, Background, Img, Icon, Snippet, Notes, Cols, Rows, Grid, Center, ProgressBar, SlideNumber,
   type DeckFace, type DeckAppOptions, type SlideControls, type SlideLayouts, type ProjectLayouts, type Role, type Timer,
+  type SlideLayoutZones, type ProjectLayoutZones,
 } from 'araojs'
 import arao, { arao as namedArao, type AraoOptions } from 'araojs/vite'
 
@@ -46,6 +47,22 @@ const libSection: SlideLayouts['section'] = { bg: 'navy' }
 // @ts-expect-error a parameter's value is a string
 const sized: SlideLayouts['cover'] = { titleSize: 120 }
 void [titled, libSection, sized]
+
+// the zones each layout places: the library's (generated from its doc blocks and CSS), the
+// project's (src/arao-layouts.d.ts: quote's @zone author and the source its CSS styles), a
+// project layout replacing the library's of its name with its own (section: none), and a zone the
+// project declares on a library layout (src/arao-zones.d.ts: split's caption)
+const splitZones: (keyof SlideLayoutZones['split'])[] = ['left', 'right', 'caption']
+const quoteZones: (keyof ProjectLayoutZones['quote'])[] = ['author', 'source']
+const imageZones: (keyof SlideLayoutZones['image-left'])[] = ['image']
+void [splitZones, quoteZones, imageZones]
+// @ts-expect-error split has no zone image
+const noImage: keyof SlideLayoutZones['split'] = 'image'
+// @ts-expect-error the default layout has no zone
+const noZone: keyof SlideLayoutZones['default'] = 'left'
+// @ts-expect-error the project's section has no zone
+const noSectionZone: keyof SlideLayoutZones['section'] = 'author'
+void [noImage, noZone, noSectionZone]
 
 // the app and the Vue plugin
 const appOptions: DeckAppOptions = { deckList: 'always' }

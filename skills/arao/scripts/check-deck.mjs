@@ -10,8 +10,14 @@
 // screenshot of every step in outDir (default ./deck-check), named s<slide>-<step>.png. Exit code
 // 1 if any warning, error, overflow, removed Slide API, quirks mode (no <!doctype html>) or no
 // slide rendered.
+// It also warns, without failing, about named templates that are no zone of their slide's layout
+// (the project's layouts and their zones from `arao layouts --json`, run in the project; not
+// checked when that fails, as with an older araojs): the layout's CSS does not place them, but a
+// theme or the deck's own CSS may (.ar-zone-<name>), and then the type check needs them declared
+// (ProjectLayoutZones: docs/guide/slides-and-layouts.md).
+import { spawnSync } from 'node:child_process'
 import { mkdirSync } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
 
@@ -35,6 +41,19 @@ if (!url) {
   process.exit(2)
 }
 mkdirSync(outDir, { recursive: true })
+
+// the zones of each layout the project has (name → zone names), from the araojs it has installed:
+// null when that cannot be asked (an araojs without arao layouts, a config that does not load)
+const zonesOf = (() => {
+  try {
+    const bin = join(dirname(require.resolve('araojs/package.json')), 'bin', 'arao.js')
+    const run = spawnSync(process.execPath, [bin, 'layouts', '--json'], { encoding: 'utf8' })
+    if (run.status !== 0) return null
+    return Object.fromEntries(JSON.parse(run.stdout).layouts.map((l) => [l.name, l.zones.map((z) => z.name)]))
+  } catch {
+    return null
+  }
+})()
 
 const browser = await chromium.launch()
 const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
@@ -83,6 +102,20 @@ const removed = await page.evaluate(() => {
   })
 })
 
+// named templates that are no zone of their slide's layout: its CSS does not place them (a theme
+// or the deck's CSS may), and the type check turns them down unless they are declared. A warning:
+// it does not fail the check. A layout the project has no file for is not judged, nor
+// template(#background) (removed Slide API, above)
+const strayZones = zonesOf == null ? [] : await page.evaluate((zones) => [...document.querySelectorAll('.ar-slide')].flatMap((slide, i) => {
+  const layout = [...slide.classList].find((c) => c.startsWith('layout-'))?.slice('layout-'.length) ?? 'default'
+  const own = zones[layout]
+  if (!own) return []
+  const stray = [...slide.querySelectorAll(':scope > .ar-zone')]
+    .flatMap((z) => [...z.classList].filter((c) => c.startsWith('ar-zone-')).map((c) => c.slice('ar-zone-'.length)))
+    .filter((n) => n !== 'background' && !own.includes(n))
+  return stray.length ? [`slide ${i + 1} (layout ${layout}): ${stray.map((n) => `template(#${n})`).join(', ')}; its zones: ${own.length ? own.map((n) => `#${n}`).join(', ') : 'none'}`] : []
+}), zonesOf)
+
 const hash = () => page.evaluate(() => location.hash)
 const parse = (h) => (h.match(/^#\/(\d+)\/(\d+)/) || []).slice(1).map(Number)
 const steps = {}
@@ -114,6 +147,8 @@ console.log(`slides: ${slides}`)
 console.log(`steps per slide: ${Object.entries(steps).map(([k, v]) => `${k}:${v}`).join(' ')}`)
 if (overflow.size) console.log(`overflow on slides: ${[...overflow].join(', ')}`)
 if (removed.length) console.log(`removed Slide API (${removed.length} slides):\n  ${removed.join('\n  ')}`)
+if (zonesOf == null) console.log('zones: not checked (npx arao layouts --json failed)')
+else if (strayZones.length) console.log(`warning: templates that are no zone of their layout, placed only if a theme or the deck's CSS styles .ar-zone-<name> (${strayZones.length} slides; npx arao layouts):\n  ${strayZones.join('\n  ')}`)
 if (problems.length) console.log(`console problems (${problems.length}):\n  ${problems.join('\n  ')}`)
 else console.log('console: clean')
 console.log(`screenshots: ${outDir}/`)

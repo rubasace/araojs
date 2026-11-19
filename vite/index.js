@@ -88,6 +88,14 @@
 // nothing; only once the project has a layout of its own (it stays, emptied, if the last one
 // goes); only valid names. arao({ dts: 'path' }) moves it (from the Vite root), arao({ dts:
 // false }) turns it off.
+// What each layout says of itself: the doc block its file starts with (layout-docs.js: what it is
+// for, an example, its zones, its parameters described). It is in the types, on each layout's
+// entry and its layout member (an editor shows it on hovering layout="…"), its parameters' and its
+// zones' descriptions on theirs; a layout's zones (its @zone and the .ar-zone-<name> its CSS
+// styles) are the named templates Slide takes for it (ProjectLayoutZones, in the same file). The
+// arao layouts command prints all of it, for every layout the project has (api.layouts()). A
+// project file with no doc block is a layout all the same; what a doc block gets wrong (a @param
+// naming no token, an unknown tag…) Vite warns about, once.
 //
 // Icons: <Icon name="lucide:rocket"> draws an icon of an installed Iconify set (@iconify-json/<prefix>),
 // resolved here, at build time: the source is read for the names it uses and only those go into
@@ -105,7 +113,8 @@ import vue from '@vitejs/plugin-vue'
 import { normalizePath, searchForWorkspaceRoot } from 'vite'
 import { fonts } from './fonts.js'
 import { createIcons, forced } from './icons.js'
-import { cssCode, layoutParams, paramsType } from './layout-params.js'
+import { DEFAULT_LAYOUT, describeLayout, layoutEntry, zonesEntry } from './layout-docs.js'
+import { cssCode } from './layout-params.js'
 import shortcuts from './shortcuts.js'
 
 const require = createRequire(import.meta.url)
@@ -122,6 +131,13 @@ const { name: PACKAGE } = require('../package.json')
  * @typedef {{ decks?: string, snippets?: string, images?: string, themes?: string | string[], builtinThemes?: boolean | string[], layouts?: string, dts?: boolean | string, icons?: string[], fonts?: import('./fonts.js').FontsOption, vue?: import('@vitejs/plugin-vue').Options }} AraoOptions
  * @typedef {'decks' | 'snippets' | 'images'} Folder
  * @typedef {{ spec: string, dir: string, pkg: string | null, label: string, files?: string[] }} ThemeSource
+ * A layout the project has (api.layouts()): what it is (layout-docs.js), where it comes from (the
+ * engine: default; the library's layouts/; the project's folder), its file (none for default),
+ * whether it replaces the library's of its name, whether its name is a layout's (validName: a
+ * slide can name it), and what its file gets wrong (its doc block's problems, its tokens that are
+ * no attribute, a name that is no layout's, a file that styles no slide).
+ * @typedef {import('./layout-docs.js').LayoutInfo & { source: 'engine' | 'library' | 'project',
+ *   file: string | null, replaces: boolean, validName: boolean }} ProjectLayout
  */
 
 const IMAGES = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'svg']
@@ -414,9 +430,9 @@ function cssGlob(root, folder, pick) {
 const cssPick = (names) => (names.length > 1 ? `{${names.map(escapeGlob).join(',')}}` : names.map(escapeGlob)[0] ?? '')
 
 // The layouts: the library's files (by name, without .css), the project folder's, the library's
-// that a project file replaces (shadowed), and the library's to load (loaded). And what each
-// project file gets wrong, for a warning: its name is no layout's (badName), or it never names
-// .layout-<name> (unstyled). The library's own files are trusted.
+// that a project file replaces (shadowed), and the library's to load (loaded). And what a
+// project file gets wrong, for its problems (layoutsInfo): its name is no layout's (badName), or
+// it never names .layout-<name> (unstyled). The library's own files are trusted.
 /** @param {string} folder */
 function layoutsOf(folder) {
   const builtin = filesIn(BUILTIN_LAYOUTS, '.css')
@@ -427,47 +443,66 @@ function layoutsOf(folder) {
   const unstyled = project.filter((n) => LAYOUT_NAME.test(n) && !stylesLayout(join(folder, `${n}.css`), n))
   return { builtin, project, shadowed, loaded, badName, unstyled }
 }
-// The layouts' parameters (layout-params.js), by layout: the library's that are loaded, and the
-// project's (valid names only: no slide can name the others), each file replacing the library's
-// of its name; and what a project file reads that is no attribute, for a warning (the library's
-// own are checked when it is built). An unreadable file has none.
+// What each layout is (layout-docs.js), by layout: the library's that are loaded, and every file
+// of the project's folder, each replacing the library's of its name, in that order (each by name),
+// each with where it comes from and whether its name is a layout's (validName: no slide can name
+// the others, which are loaded all the same). All that a project file gets wrong is here, for a
+// warning (sayProblems) and for arao layouts: its doc block's problems, its tokens that are no
+// attribute, a name that is no layout's, a file that names no .layout-<name>. The library's own
+// are checked when it is built. An unreadable file is a layout with nothing known of it.
 /** @param {string} folder */
-function paramsOf(folder) {
-  const { loaded, project } = layoutsOf(folder)
-  /** @type {Record<string, string[]>} */
-  const params = Object.create(null)
-  /** @type {{ name: string, thing: string, why: string }[]} */
-  const skipped = []
+function layoutsInfo(folder) {
+  const { loaded, project, shadowed, badName, unstyled } = layoutsOf(folder)
+  /** @type {Record<string, ProjectLayout>} */
+  const layouts = Object.create(null)
   /** @param {string} file @param {string} name */
   const read = (file, name) => {
     try {
-      return layoutParams(readFileSync(file, 'utf8'), name)
+      return describeLayout(readFileSync(file, 'utf8'), name)
     } catch {
-      return { params: [], skipped: [] }
+      return describeLayout('', name)
     }
   }
-  for (const n of loaded) params[n] = read(join(BUILTIN_LAYOUTS, `${n}.css`), n).params
-  for (const n of project.filter((p) => LAYOUT_NAME.test(p))) {
-    const r = read(join(folder, `${n}.css`), n)
-    params[n] = r.params
-    skipped.push(...r.skipped.map((s) => ({ name: n, ...s })))
+  for (const n of loaded) layouts[n] = { ...read(join(BUILTIN_LAYOUTS, `${n}.css`), n), source: 'library', file: join(real(BUILTIN_LAYOUTS), `${n}.css`), replaces: false, validName: true }
+  for (const n of project) {
+    const info = read(join(folder, `${n}.css`), n)
+    const problems = [
+      ...(badName.includes(n) ? [`"${n}" is no layout's name (letters, digits, - and _ only): it is loaded, but no slide can name it in its layout`] : []),
+      ...(unstyled.includes(n) ? [`it names no .layout-${n}, so it styles no slide of Slide(layout="${n}") (it is loaded all the same)`] : []),
+      ...info.problems,
+      ...info.skipped.map((s) => `--ar-layout-${n}-${s.thing} is no attribute of Slide(layout="${n}"): ${s.why}. It works set in style or in a theme; rename it to make it an attribute`),
+    ]
+    layouts[n] = { ...info, problems, source: 'project', file: join(folder, `${n}.css`), replaces: shadowed.includes(n), validName: !badName.includes(n) }
   }
-  return { params, skipped }
+  return layouts
+}
+// The layouts' parameters, by layout, those a slide can name (no prototype: a layout named
+// __proto__ is one more key)
+/** @param {Record<string, ProjectLayout>} layouts */
+function paramsOf(layouts) {
+  /** @type {Record<string, string[]>} */
+  const params = Object.create(null)
+  for (const [n, l] of Object.entries(layouts)) if (l.validName) params[n] = l.params.map((p) => p.thing)
+  return params
 }
 // The declaration file's text: the project's layouts (valid names: what no slide can name stays
-// out) and their parameters, as members of the library's ProjectLayouts, by module augmentation
-// (export {} makes the file a module: without it, declare module would replace the package's
-// types instead of adding to them)
-/** @param {[string, string[]][]} layouts */
-const layoutsDts = (layouts) => `// Generated by ${PACKAGE}/vite: the project's layouts (the .css files of its layouts folder) and
-// their parameters (an attribute per --ar-layout-<name>-<thing> token each reads), for the editor
-// and vue-tsc to check Slide's layout and its attributes. Do not edit: it is rewritten when Vite
-// starts and when a layout file changes. Commit it, so a type check needs no Vite run first.
-// arao({ dts: false }) stops it, arao({ dts: 'path' }) moves it.
+// out), each with what it says of itself, its parameters and its zones, as members of the
+// library's ProjectLayouts and ProjectLayoutZones, by module augmentation (export {} makes the
+// file a module: without it, declare module would replace the package's types instead of adding
+// to them)
+/** @param {ProjectLayout[]} layouts */
+const layoutsDts = (layouts) => `// Generated by ${PACKAGE}/vite: the project's layouts (the .css files of its layouts folder), each
+// with what its doc block says of it, its parameters (an attribute per --ar-layout-<name>-<thing>
+// token it reads) and its zones (the named templates it places), for the editor and vue-tsc to
+// check Slide's layout, its attributes and its templates, and to show each one's doc. Do not
+// edit: it is rewritten when Vite starts and when a layout file changes. Commit it, so a type
+// check needs no Vite run first. arao({ dts: false }) stops it, arao({ dts: 'path' }) moves it.
 export {}
 declare module '${PACKAGE}' {
   interface ProjectLayouts {
-${layouts.map(([n, params]) => `    '${n}': ${paramsType(n, params, '    ')}\n`).join('')}  }
+${layouts.map((l) => layoutEntry(l, '    ')).join('')}  }
+  interface ProjectLayoutZones {
+${layouts.map((l) => zonesEntry(l, '    ')).join('')}  }
 }
 `
 // whether a stylesheet names .layout-<name> (in its code: not in a comment or a string); an
@@ -560,10 +595,6 @@ export default function arao(options = {}) {
   /** @param {string} name */
   const layoutFile = (name) => normalizePath(relative(root, join(layoutsDir(), `${name}.css`)))
   /** @param {string} name */
-  const badLayout = (name) => logger.warn(`[arao] ${layoutFile(name)}: "${name}" is no layout's name (letters, digits, - and _ only): it is loaded, but no slide can name it in its layout`)
-  /** @param {string} name */
-  const unstyledLayout = (name) => logger.warn(`[arao] ${layoutFile(name)} names no .layout-${name}: it is loaded, but styles no slide of Slide(layout="${name}")`)
-  /** @param {string} name */
   const shadowLayout = (name) => logger.info(`[arao] layout "${name}" of ${layoutFile(name)} replaces the library's one of that name (${PACKAGE}'s layouts/${name}.css is not loaded)`)
   /** @param {string} file */
   const inLayoutsFolder = (file) => file.endsWith('.css') && relative(layoutsDir(), file) === basename(file)
@@ -573,38 +604,43 @@ export default function arao(options = {}) {
   /** @type {string | null} */
   let paramsLoaded = null // the parameters the tokens module was last loaded with
   /** @type {Set<string>} */
-  let noParams = new Set() // the project's tokens that are no attribute, as last said
-  // Says which of the project's tokens are no attribute: each one once while it stays so (Vite
-  // starting, then loading the tokens module, says nothing twice), and again once it comes back
-  // after it was renamed or removed
-  /** @param {{ name: string, thing: string, why: string }[]} skipped */
-  const noParam = (skipped) => {
-    const now = new Set(skipped.map((s) => `${s.name}\0${s.thing}`))
-    for (const { name, thing, why } of skipped) {
-      if (!noParams.has(`${name}\0${thing}`))
-        logger.warn(`[arao] ${layoutFile(name)}: --ar-layout-${name}-${thing} is no attribute of Slide(layout="${name}"): ${why}. It works set in style or in a theme; rename it to make it an attribute`)
+  let saidProblems = new Set() // the project's layouts' problems, as last said
+  // Says the problems of the project's layout files (layoutsInfo: their doc blocks', their tokens
+  // that are no attribute, a name that is no layout's, a file that styles no slide): each one once
+  // while it stays (Vite starting, loading the tokens module, a file edited: nothing twice), and
+  // again once it comes back after it was fixed
+  /** @param {Record<string, ProjectLayout>} layouts */
+  const sayProblems = (layouts) => {
+    const now = new Set()
+    for (const l of Object.values(layouts)) {
+      if (l.source !== 'project') continue
+      for (const p of l.problems) {
+        const said = `${l.name}\0${p}`
+        now.add(said)
+        if (!saidProblems.has(said)) logger.warn(`[arao] ${layoutFile(l.name)}: ${p}`)
+      }
     }
-    noParams = now
+    saidProblems = now
   }
   // The declaration file of the project's layouts (see the top), written only if its text changed
   // (line endings aside: a checkout may have turned them into CRLF), and not at all while the
   // project has no layout and no such file; one that cannot be written is a warning, never a
-  // failed build (the deck does not need it). And the project's tokens that are no attribute, said
-  // here as well (once each), so that Vite says so as it starts
+  // failed build (the deck does not need it). And the problems of the project's layouts, said here
+  // as well (once each), so that Vite says so as it starts
   const writeLayoutsDts = () => {
-    const { params, skipped } = paramsOf(layoutsDir())
-    noParam(skipped)
+    const layouts = layoutsInfo(layoutsDir())
+    sayProblems(layouts)
     if (dts === false) return
     const file = resolve(root, dts === true ? DEFAULT_DTS : dts.trim())
-    const names = filesIn(layoutsDir(), '.css').filter((n) => LAYOUT_NAME.test(n))
+    const own = Object.values(layouts).filter((l) => l.source === 'project' && l.validName)
     let was = null
     try {
       was = readFileSync(file, 'utf8').replace(/\r\n/g, '\n')
     } catch {
       // not written yet
     }
-    const text = layoutsDts(names.map((n) => [n, params[n] ?? []]))
-    if (text === was || (was == null && !names.length)) return
+    const text = layoutsDts(own)
+    if (text === was || (was == null && !own.length)) return
     // a file of the project's own (dts: 'src/env.d.ts'): never overwritten
     if (was != null && !was.startsWith('// Generated by araojs/vite')) {
       logger.warn(`[arao] dts: ${normalizePath(relative(root, file))} is not the file araojs/vite generates: it is left as it is; point dts at a file of its own`)
@@ -614,7 +650,7 @@ export default function arao(options = {}) {
       mkdirSync(dirname(file), { recursive: true })
       writeFileSync(file, text)
     } catch (e) {
-      logger.warn(`[arao] cannot write ${normalizePath(relative(root, file))}, the layouts' names and parameters for the editor: ${/** @type {Error} */ (e).message}`)
+      logger.warn(`[arao] cannot write ${normalizePath(relative(root, file))}, the layouts' names, parameters and zones for the editor: ${/** @type {Error} */ (e).message}`)
     }
   }
 
@@ -643,14 +679,25 @@ export default function arao(options = {}) {
     },
   }
 
-  /** @type {import('vite').Plugin & { api: { folders: () => Record<Folder, string>, decks: () => string[] } }} */
+  /** @type {import('vite').Plugin & { api: { folders: () => Record<Folder, string>, decks: () => string[], layouts: () => ProjectLayout[] } }} */
   const plugin = {
     name: 'arao',
-    // for tools that run the project's Vite config (the export CLI): the folders, resolved
+    // for tools that run the project's Vite config (the CLI: arao export, arao layouts): the
+    // folders, resolved
     api: {
       folders: () => /** @type {Record<Folder, string>} */ (Object.fromEntries(names.map((n) => [n, dir(n)]))),
       // the decks' names, sorted: what the decks glob below ('*.vue') takes
       decks: () => decksIn(dir('decks')),
+      // every layout the project has, with what it is (layoutsInfo): default (the engine's, unless
+      // the project has a file of that name), the library's that are loaded, then every file of
+      // the project's folder (one whose name is no layout's too: validName, its problems say so),
+      // each by name
+      layouts: () => {
+        const all = Object.values(layoutsInfo(layoutsDir()))
+        /** @type {ProjectLayout} */
+        const engine = { ...DEFAULT_LAYOUT, source: 'engine', file: null, replaces: false, validName: true }
+        return all.some((l) => l.name === DEFAULT_LAYOUT.name) ? all : [engine, ...all]
+      },
     },
     config(user) {
       root = resolve(user.root ?? process.cwd()) // as Vite resolves it
@@ -746,25 +793,20 @@ export default function arao(options = {}) {
       // (it replaces one, or no longer does), the styles module is loaded again; if it changes the
       // layouts' parameters, the tokens module (which reports the tokens that are no attribute);
       // either way the page reloads. Else the styles module's glob follows the files on its own,
-      // and an edit is a plain CSS update (what the file gets wrong is reported here)
+      // and an edit is a plain CSS update (what the file gets wrong watchChange says, once)
       if (inLayoutsFolder(file) || inBuiltinLayouts(file)) {
-        const { loaded, badName, unstyled } = layoutsOf(layoutsDir())
+        const { loaded } = layoutsOf(layoutsDir())
         const graph = this.environment.moduleGraph
         const styles = graph.getModuleById(resolved('layout-styles'))
         const tokens = graph.getModuleById(resolved('layout-tokens'))
         const stale = [
           styles && JSON.stringify(loaded) !== layoutsLoaded ? styles : null,
-          tokens && JSON.stringify(paramsOf(layoutsDir()).params) !== paramsLoaded ? tokens : null,
+          tokens && JSON.stringify(paramsOf(layoutsInfo(layoutsDir()))) !== paramsLoaded ? tokens : null,
         ].filter((m) => m != null)
         if (stale.length) {
           for (const m of stale) graph.invalidateModule(m)
           this.environment.hot.send({ type: 'full-reload' })
           return []
-        }
-        const name = basename(file, '.css')
-        if (type !== 'delete' && inLayoutsFolder(file)) {
-          if (badName.includes(name)) badLayout(name)
-          if (unstyled.includes(name)) unstyledLayout(name)
         }
       }
       if (!(await icons.update(type, file, read))) return
@@ -807,9 +849,7 @@ export const themeSources = ${JSON.stringify(themeSources.map((t) => t.label))}`
       // the layouts' CSS: the library's own (but those the project replaces), then every file of
       // the project's folder (a folder missing gives nothing), each imported for its styles alone
       if (id === resolved('layout-styles')) {
-        const { shadowed, loaded, badName, unstyled } = layoutsOf(layoutsDir())
-        for (const n of badName) badLayout(n)
-        for (const n of unstyled) unstyledLayout(n)
+        const { shadowed, loaded } = layoutsOf(layoutsDir())
         for (const n of shadowed) shadowLayout(n)
         layoutsLoaded = JSON.stringify(loaded)
         const pick = cssPick(loaded)
@@ -818,9 +858,9 @@ export const themeSources = ${JSON.stringify(themeSources.map((t) => t.label))}`
       // the layouts' parameters, by layout (no prototype, and parsed: a layout named __proto__ is
       // one more key), for Slide to set them
       if (id === resolved('layout-tokens')) {
-        const { params, skipped } = paramsOf(layoutsDir())
-        noParam(skipped)
-        paramsLoaded = JSON.stringify(params)
+        const layouts = layoutsInfo(layoutsDir())
+        sayProblems(layouts)
+        paramsLoaded = JSON.stringify(paramsOf(layouts))
         return `export const layoutTokens = Object.assign(Object.create(null), JSON.parse(${JSON.stringify(paramsLoaded)}))`
       }
       const name = names.find((n) => id === resolved(n))

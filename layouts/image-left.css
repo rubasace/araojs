@@ -1,26 +1,30 @@
-/* image-left: a picture beside the text. The #image zone fills the left of the slide, full height
-   and edge to edge (no padding); the right is the text side, padded like any slide: its title on
-   top, at the height of every other slide's, then its body. The deck's footer stays, over the
-   picture.
-     Slide(layout="image-left")
-       template(#image)
-         Img(file="city.jpg" alt="The city at night")
-       h2 One picture, one idea
-       p The picture fills its side, edge to edge.
+/**
+ * A picture beside the text, the picture on the left.
+ * The `#image` zone fills the left of the slide, full height and edge to edge (no padding); the
+ * right is the text side, padded like any slide: its title on top, at the height of every other
+ * slide's, then its body. The deck's footer stays, over the picture. In `#image` an `Img`, an
+ * `img` or a `video` covers the zone (`fit="contain"` still wins); any other element fills it.
+ * @example
+ * Slide(layout="image-left")
+ *   template(#image)
+ *     Img(file="city.jpg" alt="The city at night")
+ *   h2 One picture, one idea
+ *   p The picture fills its side, edge to edge.
+ * @zone image       the picture's side: the left of the slide, full height, edge to edge
+ * @param columns    the two sides' widths, picture then text, as CSS grid columns (default
+ *                   `1fr 1fr`)
+ * @param inset      padding around the picture in its zone (default `0px`)
+ * @param footer     the deck's footer: `flex` shows it, `none` hides it (default `flex`)
+ * @param footer-bg  a backdrop under the footer (a colour, a gradient), to keep it legible over a
+ *                   photo (default `none`)
+ */
 
-   Tokens, and their defaults (a theme, the project's :root or one slide sets them, a slide also as
-   attributes: Slide(layout="image-left" columns="2fr 3fr"); why each is resolved on the slide:
-   cover.css):
-     --ar-layout-image-left-columns     the two sides' widths, picture then text, as CSS grid
-                                        columns                                           1fr 1fr
-     --ar-layout-image-left-inset       padding around the picture in its zone            0px
-     --ar-layout-image-left-footer      the deck's footer: flex shows it, none hides it   flex
-     --ar-layout-image-left-footer-bg   a backdrop under the footer (a colour, a gradient), to
-                                        keep it legible over a photo                      none
-   In the image zone an Img, an img or a video covers it (fit="contain" still wins); any other
-   element fills it. The zone comes after the text in the page (Slide.vue renders the named zones
-   after the header and the body, whatever side a layout puts them on): a screen reader, the tab
-   order and a copy of the text read the text first, then the picture. */
+/* Its tokens, --ar-layout-image-left-<thing>, each a @param above (a theme, the project's :root
+   or one slide sets them, a slide also as attributes: Slide(layout="image-left"
+   columns="2fr 3fr"); why each is resolved on the slide: cover.css).
+   The zone comes after the text in the page (Slide.vue renders the named zones after the header
+   and the body, whatever side a layout puts them on): a screen reader, the tab order and a copy
+   of the text read the text first, then the picture. */
 :where(.layout-image-left) {
   --_ar-image-left-columns: var(--ar-layout-image-left-columns, 1fr 1fr);
   --_ar-image-left-inset: var(--ar-layout-image-left-inset, 0px);

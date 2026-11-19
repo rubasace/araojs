@@ -11,7 +11,7 @@ Arao way and how to check them.
 
 **Version:** this skill describes araojs 0.5.0 or later (theme sources, fetched web fonts,
 `src/shortcuts.ts`, `Background`, layouts as CSS files, `Slide` with `layout` as its only prop and
-its layout's tokens as attributes).
+its layout's tokens as attributes, self-documented layouts and `arao layouts`).
 With an older araojs in the project, upgrade it (`npm install araojs@latest`, then fix the deck:
 [troubleshooting.md](references/troubleshooting.md#decks-written-for-an-older-arao)) or check its
 own `node_modules/araojs/docs/`.
@@ -28,6 +28,9 @@ at https://github.com/rubasace/araojs/tree/main/docs. Paths below like
 - **New deck**: one file `src/decks/<Name>.vue`, opened at `/<name>`. Start from the skeleton
   and recipes in [references/recipes.md](references/recipes.md).
 - **Editing a deck**: read the whole file first; keep its syntax (Pug or HTML) and its theme.
+- **Layouts**: run `npx arao layouts` (`--json` to parse it) in the project to learn the layouts it
+  has, the library's and its own: what each is for, an example, its zones (named templates) and its
+  parameters (attributes), each described. Don't read layout CSS or the library's source for that.
 - **Always finish** by checking the deck: [references/verify.md](references/verify.md).
 
 ## Mental model
@@ -53,8 +56,9 @@ at https://github.com/rubasace/araojs/tree/main/docs. Paths below like
 - **A layout is a CSS file.** `Slide(layout="x")` gives the slide the class `layout-x`; the
   library's `cover`, `section`, `split`, `image-left`, `image-right` and the project's
   `src/layouts/<name>.css` style it. `layout` is `Slide`'s only prop; the layout's tokens
-  (`--ar-layout-<name>-<thing>`) are attributes of its slides, `<thing>`; the rest is classes,
-  tokens and `Background`.
+  (`--ar-layout-<name>-<thing>`) are attributes of its slides, `<thing>`; its zones are the named
+  templates it places; the rest is classes, tokens and `Background`. Each file starts with a doc
+  block saying all that, which `npx arao layouts` prints.
 - Look comes from the theme (`--ar-*` tokens). Every token has a default; a theme changes some.
 - Global in templates: `Deck Slide Background Img Icon Snippet Notes Cols Rows Grid Center`,
   `v-step`, `v-step-from`. Addons (`ProgressBar`, `SlideNumber`) and composables (`useDeck`, `useSlide`)
@@ -67,8 +71,10 @@ Do:
   composition component (`Cols`, `Rows`, `Grid`, `Center`) and their props (`ratio`, `gap`,
   `align`, `cols`). Tune a layout on one slide with its parameters, attributes named after its
   tokens: `Slide(layout="image-right" columns="3fr 2fr")`, `Slide(layout="split" columns="2fr 1fr")`,
-  `Slide(layout="cover" bar="gold")` (each layout's: `docs/reference/theme-tokens.md#layouts`).
+  `Slide(layout="cover" bar="gold")` (each layout's: `npx arao layouts`).
   Another layout's attribute does nothing (and fails `vue-tsc` with `strictTemplates`).
+- Give a slide only its layout's zones as named templates (`template(#image)` on `image-*`,
+  `#left`/`#right` on `split`; `#title` on any): another name is not placed, and fails `vue-tsc`.
 - Start every slide with its heading (`h2`): the first heading names the slide in the jump
   menu, presenter view and notes pages, and there is no other way to name it. Something before it
   (a kicker line) makes it body: use `template(#title)` for a richer header.
@@ -82,8 +88,11 @@ Do:
   CSS on the slide: `Slide(style="background: #1d2b4a")`.
 - A look one talk repeats (a quote slide, a big number) is a layout: `src/layouts/<name>.css`,
   tokens named `--ar-layout-<name>-<thing>`, each one an attribute of its slides; never a
-  `<thing>` a slide has as an attribute already (`title`, `id`, `hidden`…: use `title-size`)
-  ([recipes.md](references/recipes.md)).
+  `<thing>` a slide has as an attribute already (`title`, `id`, `hidden`…: use `title-size`).
+  It must start with its doc block: a line saying what it is for, `@example` (a slide of it, in
+  Pug), `@zone <name> <description>` per named template it places, `@param <thing> <description>`
+  per token; then `npx arao layouts` shows it with no problems
+  ([recipes.md](references/recipes.md), `docs/guide/slides-and-layouts.md#its-doc-block`).
 - Write tables as plain `table` / `thead` / `tbody`: the theme styles them.
 - One idea per slide. Reveal with steps instead of cramming.
 - Name files, never import them: `Snippet(file="App.java")` from `src/snippets/`,
@@ -146,7 +155,7 @@ More, with the fix for each: [references/troubleshooting.md](references/troubles
 
 - Every prop and slot: `reference/components.md`; `v-step`: `reference/directives.md`;
   `useDeck`/`useSlide`: `reference/composables.md`; plugin options: `reference/vite-plugin.md`;
-  `arao export`: `reference/cli.md`; URLs: `reference/urls.md`; tokens: `reference/theme-tokens.md`.
+  `arao export`, `arao layouts`: `reference/cli.md`; URLs: `reference/urls.md`; tokens: `reference/theme-tokens.md`.
 - Start here: `getting-started.md` (from an empty folder to a deck and a PDF); the project's
   files and `createDeckApp`: `guide/project.md`.
 - Guides: `guide/concepts.md`, `guide/slides-and-layouts.md`, `guide/steps.md`, `guide/code.md`,

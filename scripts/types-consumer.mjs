@@ -3,7 +3,11 @@
 // types must resolve and be strict (read-only refs, typed global components in templates, the
 // layouts Slide's layout accepts: the library's and the project's, and the parameters each takes
 // as Slide's attributes, no other layout's: checked with vueCompilerOptions.checkUnknownProps, as
-// any unknown prop is).
+// any unknown prop is; and the named templates each takes, its zones, no other layout's, those of
+// any of several for a layout that may be one of them, and a zone the project declares on a
+// library layout, src/arao-zones.d.ts), in HTML
+// templates (Probe.vue) and in Pug ones (ProbePug.vue, through @vue/language-plugin-pug, the
+// version of vue-tsc's).
 //   node scripts/types-consumer.mjs <araojs-x.y.z.tgz>
 // The project is scripts/types-consumer/, copied to a temporary folder with the tarball and the
 // type checkers installed. First a vite build with the plugin (its vite.config.js), which must
@@ -28,6 +32,8 @@ let failed = false
 try {
   cpSync(join(here, 'types-consumer'), dir, { recursive: true })
   const dev = ['typescript', 'vue-tsc', 'vue', 'vite', '@types/node'].map((n) => `${n}@${pkg.devDependencies[n]}`)
+  // Volar's Pug plugin is released with vue-tsc, under the same version
+  dev.push(`@vue/language-plugin-pug@${pkg.devDependencies['vue-tsc']}`)
   run('npm', ['install', '--no-audit', '--no-fund', '--silent', resolve(tarball), ...dev])
   // its output read: quote.css's --ar-layout-quote-title is no parameter (title is an HTML
   // attribute), which the plugin says

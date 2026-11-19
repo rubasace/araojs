@@ -9,9 +9,9 @@
 // another layout's, with its own parameters).
 // This file alone says what a parameter is. Slide (src/components/Slide.vue) sets them from the
 // Vite plugin's virtual:arao/layout-tokens (index.js); the types say which attributes each layout
-// takes: the library's are built into its types (scripts/layout-types.mjs; CI checks the committed
-// file is what it writes), the project's go in the declaration file the plugin writes
-// (src/arao-layouts.d.ts).
+// takes (layout-docs.js writes them, with what the layout's doc block says of each): the library's
+// are built into its types (scripts/layout-types.mjs; CI checks the committed file is what it
+// writes), the project's go in the declaration file the plugin writes (src/arao-layouts.d.ts).
 // A <thing> is no attribute when it is not written in lower case, kebab-case (letters, digits and
 // -, a letter first: an attribute's name in any template, and one Vue turns into camelCase and
 // back the same), or when an attribute of that name already means something on a slide
@@ -48,18 +48,23 @@ export function notAnAttribute(thing) {
 }
 
 /**
- * A stylesheet's code: its comments and its strings ("…" or '…', escapes included; one a line
- * break ends unclosed, as CSS does) each turned into a space, in one pass, so that a token named
- * in either is no token, and a /* in a string or a quote in a comment hides nothing.
+ * A stylesheet read in one pass: its code, with its comments and its strings ("…" or '…', escapes
+ * included; one a line break ends unclosed, as CSS does) each turned into a space, so that a token
+ * named in either is no token, and a /* in a string or a quote in a comment hides nothing; and its
+ * comments, each where it starts and ends in the text (an unclosed one ends with it).
  * @param {string} css
+ * @returns {{ code: string, comments: { start: number, end: number }[] }}
  */
-export function cssCode(css) {
+export function scanCss(css) {
   let out = ''
+  /** @type {{ start: number, end: number }[]} */
+  const comments = []
   let i = 0
   while (i < css.length) {
     const c = css[i]
     if (c === '/' && css[i + 1] === '*') {
       const end = css.indexOf('*/', i + 2)
+      comments.push({ start: i, end: end < 0 ? css.length : end + 2 })
       i = end < 0 ? css.length : end + 2
       out += ' '
     } else if (c === '"' || c === "'") {
@@ -72,8 +77,14 @@ export function cssCode(css) {
       i++
     }
   }
-  return out
+  return { code: out, comments }
 }
+
+/**
+ * A stylesheet's code: scanCss's, its comments and strings each a space.
+ * @param {string} css
+ */
+export const cssCode = (css) => scanCss(css).code
 
 /**
  * A layout's tokens, --ar-layout-<name>-<thing>, that its CSS declares or reads: its parameters
@@ -103,16 +114,3 @@ export function layoutParams(css, name) {
  * @param {string} thing
  */
 export const camelize = (thing) => thing.replace(/-(\w)/g, (_, c) => c.toUpperCase())
-
-/**
- * A layout's parameters as an object type: one optional string member per parameter, under its
- * camelCase name (Volar checks an attribute written footer-bg as footerBg, as it does any prop's),
- * the token it sets as its doc; {} for none. indent: the line's indent where the type starts.
- * @param {string} name
- * @param {string[]} params
- * @param {string} indent
- */
-export function paramsType(name, params, indent) {
-  if (!params.length) return '{}'
-  return `{\n${params.map((t) => `${indent}  /** --ar-layout-${name}-${t} */\n${indent}  ${camelize(t)}?: string\n`).join('')}${indent}}`
-}

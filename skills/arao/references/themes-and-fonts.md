@@ -53,8 +53,8 @@ A theme is a `[data-theme="<name>"] { --ar-…: …; }` block in a CSS file of `
   (`--ar-title-*`, `--ar-list-gap`, `--ar-table-*`, `--ar-footer-*`), set in the theme.
 - Where the body sits on every slide: `--ar-body-align` (`start`, the default: right under the
   title; `center`; `end`).
-- Each layout has tokens of its own, `--ar-layout-<name>-<thing>`, documented at the top of its
-  file (`node_modules/araojs/layouts/<name>.css`): `--ar-layout-cover-title-size`,
+- Each layout has tokens of its own, `--ar-layout-<name>-<thing>`, each described by
+  `npx arao layouts` (its parameters): `--ar-layout-cover-title-size`,
   `--ar-layout-section-bg`, `--ar-layout-image-right-columns`, `--ar-layout-cover-footer: flex` (a
   footer on every cover), `--ar-layout-image-right-footer-bg` (a backdrop that keeps the footer
   legible over photos)… Set them in the theme like any token; on one slide they are attributes

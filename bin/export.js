@@ -36,6 +36,7 @@ import { constants, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, relative, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
+import { projectPlugin } from './project.js'
 
 /**
  * What the export page reports (src/core/exporter.ts, ExportView.vue): window.__araoReady.
@@ -113,21 +114,9 @@ if (args.url != null && !URL.canParse(args.url)) usage(`--url ${args.url} is not
 const perSlide = args['per-slide']
 
 // The project's Vite, the one its config is written for (a peer dependency of this package).
-// Its config says where the decks are: the arao() plugin's decks folder.
-const { build, preview, resolveConfig } = await import('vite')
-/** @type {{ folders: () => Record<string, string>, decks: () => string[] } | undefined} */
-let plugin
-try {
-  const config = await resolveConfig({ root, logLevel: 'error' }, 'build')
-  plugin = config.plugins.find((p) => p.name === 'arao')?.api
-} catch (e) {
-  console.error(`export: cannot load the Vite config of ${root}: ${/** @type {Error} */ (e).message}`)
-  process.exit(1)
-}
-if (!plugin) {
-  console.error(`export: the Vite config of ${root} has no arao() plugin: is this a slides project?`)
-  process.exit(1)
-}
+// Its config says where the decks are: the arao() plugin's decks folder (project.js).
+const { build, preview } = await import('vite')
+const plugin = await projectPlugin('export', root)
 const decksDir = plugin.folders().decks
 const decksWhere = relative(root, decksDir) || decksDir
 // the decks as the app has them (the plugin's); the app lists the decks on a name it does not

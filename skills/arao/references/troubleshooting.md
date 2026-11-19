@@ -90,6 +90,11 @@
   Pug templates only with `@vue/language-plugin-pug` in the `tsconfig`'s
   `vueCompilerOptions.plugins`); a project layout it does not know means a stale or missing
   `src/arao-layouts.d.ts`: run `npm run dev` or `npm run build` once to write it.
+- **A named template that shows in the wrong place** (under the body, or in a grid cell): it is
+  not one of the layout's zones, which only its CSS places (`npx arao layouts` lists each
+  layout's zones); in a TypeScript project `vue-tsc` turns it down, and `check-deck.mjs` warns.
+  When a theme or the deck's CSS places it on purpose (`.layout-split > .ar-zone-caption`), declare
+  it for the type check (the warnings table, below).
 - **A layout parameter that does nothing**: it is another layout's (`columns` on a `cover`), so it
   lands on the slide as a plain HTML attribute; or the value is no valid CSS for its token. A
   slide's own `style` setting the same token loses to the attribute.
@@ -126,6 +131,8 @@
 | `[arao] Deck themes: no theme …` | theme name no source gives | fix the name or add its source |
 | `[arao] … duration …` | `Deck(duration)` not a length | `duration="30m"`, `"1h30"`, `"45:00"` |
 | `[arao] src/layouts/x.css: --ar-layout-x-title is no attribute of Slide…` | a layout token named as an attribute a slide already has (`title`, `id`…) or not lower-case kebab-case | rename it (`--ar-layout-x-title-size`); until then it works in `style` and themes only |
+| `[arao] src/layouts/x.css: @param y names no token …` (or another doc block problem) | the layout's doc block describes a token its CSS does not read, has an unknown tag, a zone twice, or no first line | fix the doc block (or the token's name); `npx arao layouts` lists each layout's problems |
+| `Property 'image' does not exist on type '{ default?: SlideSlot …` (`vue-tsc`, the editor) | a named template that is not a zone of the slide's layout | use the layout's zones (`npx arao layouts`); in a project layout, declare it in its doc block (`@zone image …`); a zone a theme or the deck's CSS places on a library layout: declare it in a `.d.ts` of the project, the layout's own zones restated: `declare module 'araojs' { interface ProjectLayoutZones { split: { left: true; right: true; caption: true } } }` |
 | `[arao] src/shortcuts.ts: …` (Vite stops) | reserved key, unknown command or duplicate key | see [shortcuts.md](shortcuts.md) |
 
 Don't edit `node_modules/araojs` to make a deck look right: an engine change belongs in Arao's

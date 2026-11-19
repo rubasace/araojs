@@ -1,8 +1,15 @@
-# CLI: arao export
+# CLI
 
-The `arao` command prints decks to PDF. Run it in the slides project (its folder is the current
-directory); with `"export": "arao export"` in its scripts, `npm run export -- …` (`npx arao export …`
-works too). A walkthrough: [Export to PDF](../guide/export.md).
+The `arao` command, run in the slides project (its folder is the current directory): `arao export`
+prints decks to PDF, `arao layouts` lists the layouts a slide can name, each with its doc. Each
+command reads the project the way its build does: its Vite config, and the options it gives the
+`arao()` plugin (its folders, its layouts folder among them). `arao --help` lists the commands,
+`arao <command> --help` a command's options.
+
+## arao export
+
+Prints decks to PDF. With `"export": "arao export"` in the project's scripts, `npm run export -- …`
+(`npx arao export …` works too). A walkthrough: [Export to PDF](../guide/export.md).
 
 ```
 arao export [--deck <name>] [--theme <name>] [--per-slide | --per-step] [--notes] [--out <path>] [--url <url>]
@@ -19,7 +26,7 @@ arao export [--deck <name>] [--theme <name>] [--per-slide | --per-step] [--notes
 | `--url <url>` | print from a running server instead of building: the site's URL, its base (`http://127.0.0.1:5173/`, or `…/talks/` under a base) |
 | `-h`, `--help` | print the usage and exit; an unknown option prints the error and the usage, and exits with code 1 |
 
-## Behaviour
+### Behaviour
 
 Without `--deck`, **every deck** of the decks folder, one
 PDF each, in name order; `--deck <name>` exports that one. Builds the project once with its own
@@ -63,3 +70,68 @@ print as placeholders and are listed.
 
 Pages are 1920x1080 px (1440x810 pt) with the default canvas: every page is exactly the canvas
 size.
+
+## arao layouts
+
+Lists every layout a slide of the project can name, with what each one says of itself: what it is
+for, an example, its zones and its parameters, each described. For a person by default; `--json`
+for a program, an agent learning the project's layouts without reading their CSS.
+
+```
+npx arao layouts [--json]
+```
+
+| Option | Meaning |
+|---|---|
+| `--json` | the same as JSON (below) |
+| `-h`, `--help` | print the usage and exit; an unknown option prints the error and the usage, and exits with code 1 |
+
+The layouts, in this order: `default` (a `Slide` without a layout), the library's (those a project
+file replaces left out), then every file of the project's layouts folder (`src/layouts`, or the
+plugin's `layouts` option), each by name; a file whose name is no layout's is listed too, saying
+that no slide can name it. Each one's description, example, zones and parameter
+descriptions come from the doc block its file starts with
+([Its doc block](../guide/slides-and-layouts.md#its-doc-block)); its parameters are the tokens its
+CSS reads, its zones its `@zone` tags and the `.ar-zone-<name>` its CSS styles. A project layout
+says so, and whether it replaces the library's of its name; one with no doc block says that. A
+project layout's problems are listed with it: what its doc block gets wrong (a `@param` naming no
+token, an unknown tag…), a token that is no attribute, a name that is no layout's, a file that
+styles no slide (the warnings the Vite plugin gives). It reads the files and writes nothing; it exits with 0 whatever the
+problems (1 only when the project's Vite config cannot be loaded or has no `arao()` plugin).
+What the project's Vite config prints as it loads goes to stderr, so stdout holds the command's
+output alone (the JSON, with `--json`).
+
+```
+quote (project, src/layouts/quote.css)
+  One big quote, centred on the slide, its author under it.
+  The quote is a `blockquote`, opened by a mark in the accent; whatever follows it (its author, a
+  source) sits under it. The deck's footer is hidden.
+
+  Example:
+    Slide(layout="quote" size="72px")
+      blockquote Simplicity is prerequisite for reliability.
+      p.muted Edsger W. Dijkstra
+
+  Zones: none
+  Parameters:
+    footer  the deck's footer: `none` hides it, `flex` shows it (default `none`)
+    mark    the opening mark's colour (default `--ar-accent`)
+    size    the quote's size (default .8 x `--ar-title`)
+```
+
+`--json` prints one object, `{ "version": "…", "layouts": [ … ] }`: `version` is the araojs that
+printed it, `layouts` a member per layout in the same order:
+
+| Field | Value |
+|---|---|
+| `name` | what `Slide(layout)` names |
+| `source` | `"engine"` (`default`), `"library"` or `"project"` |
+| `file` | its CSS file: a path from the project's folder, or an absolute one outside it; `null` for `default` |
+| `replaces` | `true` for a project layout named like a library one |
+| `validName` | `false` for a file whose name is no layout's (letters, digits, `-` and `_`): loaded, but no slide can name it |
+| `documented` | whether its file has a doc block |
+| `summary`, `description` | its first line, and the lines after it (line breaks kept); `""` when none |
+| `example` | its `@example`, Pug, as written; `""` when none |
+| `zones` | `[{ "name", "description" }]`: its named templates, `template(#<name>)` |
+| `params` | `[{ "name", "token", "description" }]`: its attributes (`name`, as written in a template) and the token each sets |
+| `problems` | strings, what its file gets wrong (a project layout's) |

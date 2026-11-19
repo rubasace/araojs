@@ -1,14 +1,20 @@
-/* section: a divider between the parts of a talk. Its content centred both ways, on the accent;
-   its h1 larger; the deck's footer hidden.
-     Slide(layout="section")
-       h1 Why a framework?
+/**
+ * A divider between the parts of a talk.
+ * Its content centred both ways, on the accent; its `h1` larger; the deck's footer hidden. Its
+ * title and its footer take its text colour.
+ * @example
+ * Slide(layout="section")
+ *   h1 Why a framework?
+ * @param bg          the slide's background (default `--ar-accent`); the theme's default
+ *                    background (`--ar-slide-bg-image`) is drawn over it
+ * @param fg          its text, its title and its footer (default `--ar-accent-fg`)
+ * @param title-size  the `h1`'s size (default 1.4 x `--ar-title`)
+ * @param footer      the deck's footer: `none` hides it, `flex` shows it (default `none`)
+ */
 
-   Tokens, and their defaults (a theme, the project's :root or one slide sets them, a slide also as
-   attributes: Slide(layout="section" bg="#0b3d2e"); why each is resolved on the slide: cover.css):
-     --ar-layout-section-bg           the slide's background        --ar-accent
-     --ar-layout-section-fg           its text                      --ar-accent-fg
-     --ar-layout-section-title-size   the h1's size                 1.4 x --ar-title
-     --ar-layout-section-footer       the deck's footer: none hides it, flex shows it      none
+/* Its tokens, --ar-layout-section-<thing>, each a @param above (a theme, the project's :root or
+   one slide sets them, a slide also as attributes: Slide(layout="section" bg="#0b3d2e"); why each
+   is resolved on the slide: cover.css).
    Its title and its footer take its text colour (--ar-title-color and --ar-footer-color, set for
    .layout-section in a theme, still win). The theme's default background
    (--ar-slide-bg-image) is drawn over --ar-layout-section-bg, as on any slide: a theme can

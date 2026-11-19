@@ -40,6 +40,12 @@ node <skill>/scripts/check-deck.mjs <the URL Vite printed><name> deck-check
   `footer`, `ratio`, `bg`, `bg-*`), which is now a plain HTML attribute that does nothing, or a
   leftover `template(#background)` (a `.ar-zone-background` zone); the fixes:
   [troubleshooting.md](troubleshooting.md#decks-written-for-an-older-arao);
+- warns (without failing) about named templates that are no zone of their slide's layout
+  (`template(#image)` on a `split`): its CSS does not place them. Fix the name, unless a theme or
+  the deck's CSS places that zone on purpose: then declare it for the type check
+  ([troubleshooting.md](troubleshooting.md#warnings-and-what-they-mean)). It asks
+  `npx arao layouts --json` for each layout's zones; where that fails (an older araojs) it says
+  the zones were not checked;
 - flags quirks mode (an `index.html` without `<!doctype html>`: tables lose their theme);
 - counts the slides and presses `→` until the hash stops changing, recording the highest step per
   slide: compare with what you meant;
@@ -47,8 +53,8 @@ node <skill>/scripts/check-deck.mjs <the URL Vite printed><name> deck-check
 - saves a screenshot of every step (`deck-check/s<slide>-<step>.png`): look at them.
 
 It exits 1 on any warning, error, removed Slide API, quirks mode or overflow, and when no slide
-renders at the URL (wrong URL or port, server not running): it then prints the console problems it
-collected.
+renders at the URL (wrong URL or port, server not running): it then prints the console problems
+it collected.
 Without the script, do the same with Playwright by hand.
 
 ## 3. Export

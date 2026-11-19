@@ -2,7 +2,8 @@
      (layout-default without it), and CSS does the rest. The engine renders every slide the same
      way, whatever its layout, and has no code for any of them: a layout is one CSS file, named as
      the layout, in the library's layouts/ folder (cover, section, split, image-left,
-     image-right: each file says what it does and the tokens it reads) or the project's
+     image-right: each file starts with a doc block saying what it is for, how to use it, its
+     zones and its parameters: vite/layout-docs.js reads it) or the project's
      src/layouts (the Vite plugin loads both, the project's after; one of the same name replaces
      the library's). A name with no CSS is the default layout, below.
      A layout's parameters are attributes: each token of its own its CSS reads,
@@ -19,7 +20,8 @@
        the body                 .ar-body: the rest of the default slot
        a zone per named slot    .ar-zone-<name>: template(#image), template(#left)… each in a box
                                 of its own, in the order written; a layout's CSS places them
-                                (#title is the header's, below)
+                                (#title is the header's, below). Any name renders; the types take
+                                the layout's zones only (its @zone, the .ar-zone-<name> it styles)
        the footer               .ar-footer: the Deck's #footer slot
      The default layout lays them out in a column, inside the slide's padding (--ar-pad-y, --ar-pad-x): the
      header, then the body filling the rest.
@@ -85,47 +87,81 @@
 
 <script lang="ts">
 import type { ComponentPublicInstance, PublicProps } from 'vue'
-import type { LibraryLayouts } from './library-layouts'
+import type { LibraryLayoutZones, LibraryLayouts } from './library-layouts'
 
 /**
- * The project's layouts, and the parameters each takes: added by module augmentation, which the
- * Vite plugin writes for src/layouts (src/arao-layouts.d.ts), one optional string per token the
- * layout's CSS reads, under its <thing> in camelCase:
+ * The project's layouts, and the attributes a slide of each takes: added by module augmentation,
+ * which the Vite plugin writes for src/layouts (src/arao-layouts.d.ts), with what each file's doc
+ * block says of it (vite/layout-docs.js): layout, its name, documented, and one optional string
+ * per token the layout's CSS reads, under its <thing> in camelCase:
  *   declare module 'araojs' { interface ProjectLayouts { quote: { size?: string } } }
  * A layout named like a library one replaces it here too, its parameters with it.
  */
 export interface ProjectLayouts {}
 
 /**
- * Every layout a Slide can name, and its parameters: the library's (layouts/, plus default:
+ * The zones of the project's layouts, the named templates each places (besides #title): added the
+ * same way, one member per zone (what it is does not matter: Slide's slots make each a slot), its
+ * description as its doc:
+ *   declare module 'araojs' { interface ProjectLayoutZones { quote: { author: true } } }
+ * A project layout with no entry here (a name declared by hand in ProjectLayouts) has none.
+ */
+export interface ProjectLayoutZones {}
+
+/**
+ * Every layout a Slide can name, and its attributes: the library's (layouts/, plus default:
  * library-layouts.ts, generated from that folder by scripts/layout-types.mjs), with the project's
  * over them (ProjectLayouts). keyof SlideLayouts is the names, what the layout prop accepts in a
  * template checked by Volar / vue-tsc; SlideLayouts[name] the attributes a slide of that layout
- * takes. Types only: at runtime the prop is any string (one with no CSS is the default layout).
+ * takes (its parameters, and layout, documented with what the layout says of itself, which an
+ * editor shows on hovering layout="…"). Types only: at runtime the prop is any string (one with no
+ * CSS is the default layout).
  */
 export type SlideLayouts = {
   [K in keyof LibraryLayouts | keyof ProjectLayouts]: K extends keyof ProjectLayouts ? ProjectLayouts[K]
     : K extends keyof LibraryLayouts ? LibraryLayouts[K] : never
 }
 
+/**
+ * Every layout's zones, the named templates a slide of it takes besides #title: the library's
+ * (LibraryLayoutZones), with the project's over them (ProjectLayoutZones; a project layout that
+ * has no entry there has none, not the library's of its name).
+ */
+export type SlideLayoutZones = {
+  [K in keyof SlideLayouts]: K extends keyof ProjectLayoutZones ? ProjectLayoutZones[K]
+    : K extends keyof ProjectLayouts ? {}
+    : K extends keyof LibraryLayoutZones ? LibraryLayoutZones[K] : {}
+}
+
 /** A Slide's props for a layout: the layout's name, and its parameters. */
 type SlideProps<L extends keyof SlideLayouts> = { layout?: L } & SlideLayouts[L]
 /** A slot of a Slide, given the slide's current step. */
 type SlideSlot = (props: { step: number }) => unknown
-/** Its slots: the default (header and body), #title (the header instead), any other a zone. */
-interface SlideSlots {
+/**
+ * The zones of a slide whose layout is L, each a slot, with the zone's description as its doc (a
+ * mapped type of the zones keeps it): that layout's, or, when L is several (:layout="x", x one of
+ * them), any of theirs, as it takes any of their parameters: each layout's zone slots, put together
+ * (a union of function parameters infers their intersection). The mapped type is written out, not
+ * named, so that an error lists the zones there are.
+ */
+type SlideZoneSlots<L extends keyof SlideLayouts> =
+  (L extends keyof SlideLayouts ? (zones: { [Z in keyof SlideLayoutZones[L]]?: SlideSlot }) => void : never) extends (zones: infer Z) => void ? Z : never
+/** Its slots for a layout: the default and #title, every slide's, and the layout's zones. */
+type SlideSlots<L extends keyof SlideLayouts> = {
+  /** The slide's content: its title (the h1 or h2 it starts with, and the headings right after it) in the header, then the body. */
   default?: SlideSlot
+  /** The slide's header instead of the heading its content starts with (a kicker line, a logo): the whole content is then the body. */
   title?: SlideSlot
-  [zone: string]: SlideSlot | undefined
-}
+} & SlideZoneSlots<L>
 /**
  * Slide as templates see it (exported as such, src/index.ts): generic in its layout, so that the
  * attributes it accepts are that layout's parameters, and no other layout's, besides what every
- * component takes (class, style, key, ref). Volar infers L from layout="…"; without one it is
- * default, which takes none.
+ * component takes (class, style, key, ref), and its named templates that layout's zones, and no
+ * other's, besides #title. Volar infers L from layout="…"; without one it is default, which takes
+ * no parameter and has no zone.
  */
 export type SlideComponent = new <L extends keyof SlideLayouts = 'default'>(props: SlideProps<L> & PublicProps) =>
-  Omit<ComponentPublicInstance<SlideProps<L>, {}, {}, {}, {}, {}, PublicProps>, '$slots'> & { $slots: SlideSlots }
+  Omit<ComponentPublicInstance<SlideProps<L>, {}, {}, {}, {}, {}, PublicProps>, '$slots'> & { $slots: SlideSlots<L> }
 </script>
 
 <script setup lang="ts">
