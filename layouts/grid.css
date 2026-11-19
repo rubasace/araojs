@@ -9,7 +9,9 @@
  * wrap at `max-columns`. `columns` fixes the count instead (4 with 9 blocks: 4 + 4 + 1), and
  * `rows` the rows (2 with 9 blocks: 5 + 4). With or without a title; the rows sit in the middle
  * of the space left (a slide's `top` or `bottom` class moves them). Write each block as an
- * element (a `div`) holding its content.
+ * element (a `div`) holding its content. Columns of text are blocks too: `align="start"`,
+ * `text-size="1em"` (the slide's text, not a caption's) and the slide's `top` class (under the
+ * title): `Slide.top(layout="grid" align="start" text-size="1em")`.
  * @example
  * Slide(layout="grid")
  *   h2 Ship a talk
@@ -38,6 +40,8 @@
  *                     (`color-mix(in srgb, currentColor 8%, transparent)`; default `none`)
  * @param icon-size    the size of a block's leading picture or icon (default `3em`, three times
  *                     the text's size; `2em` with 9 blocks or more)
+ * @param text-size    the size of a block's text, its `p` (default `--ar-text-small`, a
+ *                     caption's; `1em` keeps the slide's)
  */
 
 /* Its tokens, --ar-layout-grid-<thing>, each a @param above (a theme, the project's :root or one
@@ -62,6 +66,7 @@
   --_ar-grid-gap: var(--ar-layout-grid-gap, var(--ar-gap-sm));
   --_ar-grid-align: var(--ar-layout-grid-align, center);
   --_ar-grid-cards: var(--ar-layout-grid-cards, none);
+  --_ar-grid-text: var(--ar-layout-grid-text-size, var(--ar-text-small));
   --ar-body-align: center;
 }
 
@@ -130,5 +135,5 @@
 }
 /* its heading and its text, wherever they are in it */
 .layout-grid > .ar-body > :not([hidden]) h3 { margin: 0 0 .2em; font-size: 1.05em; line-height: 1.2; }
-.layout-grid > .ar-body > :not([hidden]) p { margin: 0; font-size: var(--ar-text-small); line-height: 1.35; color: var(--ar-muted); }
+.layout-grid > .ar-body > :not([hidden]) p { margin: 0; font-size: var(--_ar-grid-text); line-height: 1.35; color: var(--ar-muted); }
 .layout-grid > .ar-body > :not([hidden]) p + p { margin-top: .4em; }

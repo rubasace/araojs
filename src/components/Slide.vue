@@ -28,7 +28,7 @@
      header, then the body filling the rest.
        Slide
          h2 Three pillars          ← header
-         Cols …                    ← body
+         ul …                      ← body
      Header: when the default slot starts with a heading (h1 or h2), that is the slide's title and
      goes into the header, with the headings right after it: those of its tag are titles too (one
      title per step with v-step.only), any other is its subtitle (h2 then h3, the convention: h1 on
@@ -41,14 +41,13 @@
      slide's computed style).
      Body: a column, its content from the top, right under the header, on every slide alike. The
      token --ar-body-align places it (start, the default; center; end), so a theme or a layout can
-     change it, and so can a class on the slide: top, center (the text centred too) or bottom
-     (utility classes, below). In a centred or end-aligned body, Cols/Rows/Grid placed directly in
-     it centre their rows too (below); what fills the body (Img, Snippet, an element with flex: 1,
-     the 1fr rows of Grid and Rows) still fills it.
+     change it, and so can a class on the slide: top, middle, center (the text centred too) or
+     bottom (styles/utilities.css, with the other utility classes). What fills the body (Img,
+     Snippet, an element with flex: 1, .grow) still fills it.
      Footer: the Deck's #footer slot, drawn on every slide (a band --ar-footer-height tall over the
      bottom of the slide, in its padding); whether it shows is CSS: the default layout shows it, a
      layout's token can hide it (cover and section do), and a class on the slide overrides both:
-     no-footer hides it, with-footer shows it. The slide's bottom padding is always at least the band
+     no-footer hides it, with-footer shows it (utilities.css). The slide's bottom padding is always at least the band
      (max(--ar-pad-y, --ar-footer-height)), footer or not, so the content never sits under it and
      every slide's body ends at the same place. Its slot props are { number, total }: this slide's number (1-based) and the
      deck's slide count.
@@ -351,20 +350,14 @@ watch([deck.theme, () => props.layout], readTokens, { flush: 'post' })
    least that tall with the title centred in it, the gap under the band. */
 .ar-header { flex: none; display: flex; flex-direction: column; margin-bottom: var(--_ar-title-gap); }
 .ar-header-band { min-height: var(--ar-header-height); justify-content: center; box-sizing: border-box; }
-/* The body fills the rest: a column like the slide itself, so pieces and flex: 1 fill it. What
-   does not fill it sits where --ar-body-align says (start, center, end; default start); what does
-   not fit overflows at the bottom, never at the top (safe; an invalid value is start). Pieces
-   placed directly in it still fill it, but their auto rows shrink to their content and move with
-   it (1fr rows, as Grid's, still fill), unless they hold something that needs the full height: a
-   Snippet, an Img or another piece (those keep the rows as tall as the body), or set their own
-   --_ar-align-content (Cols align="stretch"). Zero specificity: a class on the piece wins. */
+/* The body fills the rest: a column like the slide itself, so what has flex: 1 fills it (an Img,
+   a Snippet, .grow). What does not fill it sits where --ar-body-align says (start, center, end;
+   default start); what does not fit overflows at the bottom, never at the top (safe; an invalid
+   value is start). */
 .ar-body {
   flex: 1 1 auto; min-height: 0;
   display: flex; flex-direction: column;
   justify-content: safe var(--ar-body-align);
-}
-:where(.ar-body > :is(.ar-cols, .ar-rows, .ar-grid):not(:has(.ar-snippet, .ar-img, .ar-cols, .ar-rows, .ar-grid, .ar-center))) {
-  align-content: var(--_ar-align-content, safe var(--ar-body-align));
 }
 
 /* A zone, one per named slot (template(#image) → .ar-zone-image): a column, placed by the
@@ -376,7 +369,8 @@ watch([deck.theme, () => props.layout], readTokens, { flush: 'post' })
    its bottom padding, with the slide's side padding, its children in a row (--ar-footer-align:
    space-between puts one at the start, two at both ends), above the content. A layout hides it
    with a token of its own (cover, section); a slide's class wins over both: no-footer hides it,
-   with-footer shows it. The slide's bottom padding is always at least the band (.ar-slide), so
+   with-footer shows it (styles/utilities.css, with the classes that place the body: top, middle,
+   center, bottom). The slide's bottom padding is always at least the band (.ar-slide), so
    the content never sits under it; a layout that pads its zones itself instead of the slide
    (image-*) does the same for them, with the same max(). */
 .ar-footer {
@@ -387,24 +381,6 @@ watch([deck.theme, () => props.layout], readTokens, { flush: 'post' })
   font-size: var(--ar-footer-size); line-height: 1.2; color: var(--_ar-footer-color);
   white-space: nowrap;
 }
-.ar-slide.no-footer > .ar-footer { display: none; }
-.ar-slide.with-footer > .ar-footer { display: flex; }
-
-/* utility classes: an escape hatch for one-off tweaks, not a styling system */
-.ar-slide .muted { color: var(--ar-muted); }
-.ar-slide .upper { text-transform: uppercase; }
-.ar-slide .small { font-size: var(--ar-text-small); }
-/* Where content sits. On a Slide: its body, from the top (top), centred both ways (center: its
-   text centred too, the title's included) or at the bottom (bottom), whatever the theme's
-   --ar-body-align. On a block inside a slide: its content within it, when the block is taller
-   than it (a column of Cols, a cell of Grid, a block given a height); center centres its text
-   too. */
-.ar-slide.top { --ar-body-align: start; }
-.ar-slide.center { --ar-body-align: center; text-align: center; }
-.ar-slide.bottom { --ar-body-align: end; }
-.ar-slide .top { align-content: start; }
-.ar-slide .center { align-content: safe center; text-align: center; }
-.ar-slide .bottom { align-content: safe end; }
 
 /* slide transition */
 .ar-slide-enter-active, .ar-slide-leave-active { transition: opacity var(--ar-slide-duration) ease; }

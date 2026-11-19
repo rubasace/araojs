@@ -20,8 +20,10 @@ Deck(duration="30m")      //- the deck: canvas, keys, URL, presenter view, expor
     p Said once.
 ```
 
-`Deck`, `Slide`, `Img`, `Icon`, `Snippet`, `Notes`, `Cols`, `Rows`, `Grid`, `Center`, `v-step`
-and `v-step-from` are registered globally. Addons and composables are imported from `'araojs'`.
+`Deck`, `Slide`, `Background`, `Img`, `Icon`, `Snippet`, `Notes`, `Agenda`, `v-step` and
+`v-step-from` are registered globally. Addons and composables are imported from `'araojs'`. A
+slide's structure is its layout; inside it, a few [utility classes](composition.md) arrange and
+mark things (`.cols`, `.row`, `.accent`).
 
 ## One fixed canvas
 

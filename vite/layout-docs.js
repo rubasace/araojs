@@ -83,7 +83,7 @@ export const DEFAULT_LAYOUT = {
  * end.
  * @param {string[]} lines
  */
-function dedent(lines) {
+export function dedent(lines) {
   let from = 0
   let to = lines.length
   while (from < to && !lines[from].trim()) from++

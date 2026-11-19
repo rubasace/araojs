@@ -159,6 +159,9 @@ const DEFAULT_LAYOUTS = 'src/layouts'
 const LAYOUT_NAME = /^[A-Za-z0-9_-]+$/
 // the declaration file of the project's layouts' names (see the top), from the Vite root
 const DEFAULT_DTS = 'src/arao-layouts.d.ts'
+// how long after a layout file's last reported change the declaration file is written for it
+// (watchChange, below): past the watcher's throttle of a file's changes (50 ms)
+const SETTLE_MS = 150
 // a source that is a package's name, not a path: a bare lowercase npm name, 'name' or
 // '@scope/name' (npm's rules: lowercase letters, digits, - . _ ~); anything else, or a name
 // written with './', is a folder
@@ -606,6 +609,8 @@ export default function arao(options = {}) {
   let paramsLoaded = null // the parameters the tokens module was last loaded with
   /** @type {Set<string>} */
   let saidProblems = new Set() // the project's layouts' problems, as last said
+  /** @type {ReturnType<typeof setTimeout> | undefined} */
+  let settling // the declaration file's read once a layout file's changes have settled (watchChange)
   // Says the problems of the project's layout files (layoutsInfo: their doc blocks', their tokens
   // that are no attribute, a name that is no layout's, a file that styles no slide): each one once
   // while it stays (Vite starting, loading the tokens module, a file edited: nothing twice), and
@@ -747,15 +752,31 @@ export default function arao(options = {}) {
     configureServer(server) {
       // the watcher covers the root; a folder outside it is added, so its new files show up live
       for (const d of outside()) server.watcher.add(d)
+      // the server closing: the declaration file is not written after it (watchChange, below)
+      server.httpServer?.once('close', () => clearTimeout(settling))
     },
     // the layouts' declaration file: when Vite starts (the dev server, a build), and when a layout
     // file is added, removed or edited (its parameters may change; the file is written only if
-    // its text does), whatever the HMR settings
+    // its text does), whatever the HMR settings: once its changes have settled (SETTLE_MS after
+    // the last one the watcher reports). Not as the first is reported: the watcher reports a file
+    // as its writer starts, and a writer that empties it first and writes it a moment later
+    // (fs.writeFile, many editors) would be read empty, its problems said for nothing; and the
+    // events of the rest of its write come within the watcher's throttle (chokidar drops a file's
+    // changes for 50 ms after one it reports), so nothing would read the file again. The pending
+    // write is dropped only when the watching ends: the dev server closing (configureServer,
+    // above), vite build --watch stopping (closeWatcher); not when a rebuild of build --watch ends
+    // (closeBundle runs after each one, and would drop the write the change it rebuilt for asked)
     buildStart() {
       writeLayoutsDts()
     },
     watchChange(file) {
-      if (inLayoutsFolder(file)) writeLayoutsDts()
+      if (!inLayoutsFolder(file)) return
+      clearTimeout(settling)
+      settling = setTimeout(writeLayoutsDts, SETTLE_MS)
+      settling.unref?.()
+    },
+    closeWatcher() {
+      clearTimeout(settling)
     },
     resolveId(id) {
       const name = id.startsWith('virtual:arao/') ? id.slice('virtual:arao/'.length) : ''

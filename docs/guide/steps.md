@@ -59,7 +59,7 @@ of any slide.
 ```pug
 Slide
   h2 Two cards, one after the other
-  Cols
+  .cols
     Card(title="A" :items="['One', 'Two', 'Three']" v-step-from="2")   //- steps 2, 3, 4
     Card(title="B" :items="['Four', 'Five']" v-step-from="5")          //- steps 5, 6
   Snippet(file="App.java" v-step-from="7" :highlights='{ "3": 2 }')    //- highlight at step 8

@@ -49,6 +49,6 @@ Slide
 
 Slide
   h2 Inline code
-  Center
-    Snippet(code="npm run export -- --deck demo" lang="bash" name="terminal" fit :line-numbers="false")
+  //- fit: the window hugs its code, centred in the space the snippet fills
+  Snippet(code="npm run export -- --deck demo" lang="bash" name="terminal" fit :line-numbers="false")
 ```

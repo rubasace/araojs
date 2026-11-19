@@ -35,8 +35,11 @@
 //      the araojs version and lists default, the library's but cover (each documented in full),
 //      then every project file (cover replacing the library's, as its doc block says, its /**
 //      comment after its code a problem; epigraph, the playground's, documented; plain, with no doc
-//      block and its problem; "bad name", which no slide can name), and <bin> layouts prints a
-//      block per layout saying where it comes from;
+//      block and its problem; "bad name", which no slide can name), then the utility classes by
+//      group (classGroups, each with a summary, an example and its classes, UTILITY_CLASSES
+//      among them, each described, none twice in a group: from the stylesheet the package ships);
+//      and <bin> layouts prints a block per layout saying
+//      where it comes from, then a block per group of classes;
 //      with a theme source that is a package not installed, one that gives no theme, one whose
 //      themes folder is outside it, or a bare name that is a root folder, it must stop with an
 //      [arao] error (the last one with the "./" hint); a name two sources give warns once (a
@@ -78,6 +81,12 @@
 //      each done, current (aria-current) or upcoming as seen from its slide, in the audience
 //      view, the presenter view (its slide and the preview's copy) and the export's book; on
 //      the sixth deck, an Agenda on its first slide, in its window and in its thumbnail in the list
+//   4d. the utility classes, under both servers (so the package's arao.css has them), on the
+//      playground's slide "Utility classes" at its last step: .cols lays its two children out in
+//      columns of 3 to 2 (style="--ar-cols: 3fr 2fr"), which they do not inherit; .middle centres
+//      each one in its column, .grow fills; .row is a centred row, .stack a column, .gap-sm the
+//      small gap; .text-lg and .text-sm are 1.25 and .75 times the text; .accent is the accent and
+//      .highlight has a background of its own
 //   5. useDeck()'s face, under the dev server, on the second deck: frozen, its refs read-only all
 //      the way down, setTheme refuses a name the deck has not (one [arao] warning), and in the
 //      presenter view's preview no function acts
@@ -109,6 +118,8 @@
 //      is in src/arao-layouts.d.ts, and out again once removed; an edit that changes no token
 //      leaves the file untouched, one that reads a token more adds that parameter to it and to
 //      the tokens module the dev server serves, one that writes a doc block its doc and its zone
+//      (written as an editor that empties the file first does: the watcher reports the emptied
+//      file and drops the events of the write, and the file still follows)
 //   6. the talk's length, under the dev server, on the second deck (duration="15m"), in the
 //      presenter's bar: 1h30 typed with real keys moves no slide and opens no jump menu, and the
 //      countdown follows in an audience window too (useDeck()); after an apply from the keyboard,
@@ -169,7 +180,7 @@
 // Chromium's own needs (shared libraries, fonts: LD_LIBRARY_PATH, FONTCONFIG_FILE…) pass through
 // to the browser and to the export as they are.
 import { spawn } from 'node:child_process'
-import { cp, mkdir, mkdtemp, readdir, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises'
+import { cp, mkdir, mkdtemp, open, readdir, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
@@ -235,6 +246,8 @@ const LINKED_PKG = '@smoke/linked-themes'
 // the plugin's theme sources, in order
 const THEME_SOURCES = `themes: ['src/themes', 'src/venues', '${HALL_PKG}', '${LINKED_PKG}']`
 const DURATION = 15 * 60000
+// utility classes arao layouts --json must list (src/styles/utilities.css): one of each group
+const UTILITY_CLASSES = ['cols', 'cols-2', 'rows', 'stack', 'row', 'middle', 'gap-sm', 'grow', 'text-lg', 'accent', 'highlight', 'no-footer']
 // Its cover has a parameter of its layout, bound to a ref the page can change (window.__bar), the
 // colour of its .bar (--ar-layout-cover-bar: BAR), and an attribute that is none (data-smoke)
 const BAR = ['rgb(1, 2, 3)', 'rgb(4, 5, 6)']
@@ -746,8 +759,20 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
           if (![/@param nope names no token/, /--ar-layout-cover-title is no attribute/, /the \/\*\* comment at line \d+ is not its doc block/].every((re) => c.problems.some((p) => re.test(p)))) complaints.push(`cover's problems are ${JSON.stringify(c.problems)}: not its @param nope, its title token and its /** comment after its code`)
         }
         if (by.plain?.documented !== false || !by.plain.problems.some((p) => /names no \.layout-plain/.test(p))) complaints.push('plain is not listed with no doc block and its problem (it names no .layout-plain)')
+        // the utility classes, from the package's own stylesheet (src/styles/utilities.css, which
+        // it must ship): by group, each group with its summary, its example and its classes, each
+        // described, no name twice in a group; no flat list beside them
+        const groups = printed.classGroups ?? []
+        const classes = groups.flatMap((g) => g.classes ?? [])
+        const missing = UTILITY_CLASSES.filter((c) => !classes.some((x) => x.name === c))
+        if (missing.length) complaints.push(`its classes lack ${missing.join(', ')} (it lists ${classes.map((c) => c.name).join(', ') || 'none'})`)
+        if (classes.some((c) => !c.description)) complaints.push('a class is not described')
+        if (!groups.length || groups.some((g) => !g.summary || !g.example || !g.classes?.length)) complaints.push('a group of classes has no summary, no example or no class')
+        if (groups.some((g) => new Set(g.classes.map((c) => c.name)).size !== g.classes.length)) complaints.push('a group lists a class twice')
+        if ('classes' in printed) complaints.push('it has a flat classes list beside classGroups')
+        if (classes.some((c) => ['Cols', 'Rows', 'Grid', 'Center'].includes(c.name))) complaints.push('it lists a removed component as a class')
         for (const x of complaints) fail(`${BIN} layouts --json: ${x}`)
-        if (!complaints.length) console.log(`  ${BIN} layouts --json: version ${printed.version}; ${names(got)}; each library layout described, the project's epigraph and cover as their doc blocks say (cover replacing the library's; after a licence header; its zones its own; its example with an @ line), plain and "bad name" with their problems; the config's own output on stderr`)
+        if (!complaints.length) console.log(`  ${BIN} layouts --json: version ${printed.version}; ${names(got)}; each library layout described, the project's epigraph and cover as their doc blocks say (cover replacing the library's; after a licence header; its zones its own; its example with an @ line), plain and "bad name" with their problems; the config's own output on stderr; ${classes.length} utility classes in ${groups.length} groups, each described`)
       }
       // and for a person: a block per layout, saying where it comes from
       log(`${BIN} layouts`)
@@ -757,6 +782,7 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
         'epigraph (project, src/layouts/epigraph.css)', 'image-right (library)', '    #image ', 'default (the engine\'s: a Slide without a layout)',
         'plain (project, src/layouts/plain.css)', '  No doc block', '  Problems:', '  Example:',
         'bad name (project, src/layouts/bad name.css, no slide can name it)',
+        'Utility classes: ', 'Placement: ', '    cols-2 ', '    highlight ', 'On a Slide: ', '    no-footer ',
       ]
       const absent = lines.filter((l) => !text.out.includes(l))
       if (text.code !== 0 || absent.length) fail(`${BIN} layouts: exit ${text.code}${absent.length ? `; no line with ${absent.map((l) => JSON.stringify(l)).join(', ')}` : ''}`)
@@ -1331,11 +1357,79 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
     for (const c of complaints) fail(`${mode} slides of the deck: ${c}`)
   }
 
+  // the utility classes (src/styles/utilities.css, in the package's arao.css), on the playground's
+  // slide "Utility classes" at its last step (header, 4d)
+  async function utilities(base, mode) {
+    const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
+    const complaints = []
+    page.on('console', (m) => ['warning', 'error'].includes(m.type()) && complaints.push(`console ${m.type()}: ${m.text()}`))
+    page.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
+    try {
+      await page.goto(new URL('playground#/1/1', base).href)
+      await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
+      const n = await page.evaluate(() => [...document.querySelectorAll('.ar-slide')].findIndex((s) => s.querySelector('.ar-title')?.textContent.trim() === 'Utility classes') + 1)
+      if (!n) complaints.push('no slide "Utility classes" in the playground')
+      else {
+        await page.goto(new URL(`playground#/${n}/2`, base).href)
+        await page.waitForFunction((h) => location.hash === h, `#/${n}/2`, { timeout: 5_000 }).catch(() => {})
+        await pause(500)
+        const got = await page.evaluate((i) => {
+          const s = document.querySelectorAll('.ar-slide')[i]
+          const style = (sel) => { const e = s.querySelector(sel); return e ? getComputedStyle(e) : null }
+          // a token as a colour, resolved where the slide is
+          const resolve = (token) => {
+            const probe = document.createElement('span')
+            probe.style.color = `var(${token})`
+            s.append(probe)
+            const color = getComputedStyle(probe).color
+            probe.remove()
+            return color
+          }
+          const cols = style('.cols')
+          const tracks = cols?.gridTemplateColumns.split(' ').map(parseFloat) ?? []
+          const text = parseFloat(getComputedStyle(s).fontSize)
+          const row = style('.row')
+          const stack = style('.stack.gap-sm')
+          const child = s.querySelector('.cols > *')
+          return {
+            cols: cols ? `${cols.display} ${cols.alignItems} ${cols.flexGrow}` : null,
+            ratio: tracks.length === 2 ? tracks[0] / tracks[1] : NaN,
+            inherited: child ? getComputedStyle(child).getPropertyValue('--ar-cols').trim() : null,
+            row: row ? `${row.display} ${row.flexDirection} ${row.alignItems}` : null,
+            stack: stack ? `${stack.display} ${stack.flexDirection} ${stack.rowGap}` : null,
+            small: getComputedStyle(s).getPropertyValue('--ar-gap-sm').trim(),
+            lg: parseFloat(style('.text-lg')?.fontSize) / text,
+            sm: parseFloat(style('p.text-sm')?.fontSize) / text,
+            accent: style('span.accent')?.color === resolve('--ar-accent'),
+            highlight: style('.highlight')?.backgroundColor,
+          }
+        }, n - 1)
+        if (got.cols !== 'grid center 1') complaints.push(`.cols.grow.middle is "${got.cols}" (display, align-items, flex-grow), not "grid center 1"`)
+        if (Math.abs(got.ratio - 1.5) > 0.01) complaints.push(`.cols with --ar-cols: 3fr 2fr has columns of ${got.ratio.toFixed(2)} to 1, not 3 to 2`)
+        if (got.inherited) complaints.push(`a child of .cols inherits --ar-cols (${got.inherited})`)
+        if (got.row !== 'flex row center') complaints.push(`.row is "${got.row}", not "flex row center"`)
+        if (got.stack !== `flex column ${got.small}`) complaints.push(`.stack.gap-sm is "${got.stack}", not "flex column ${got.small}"`)
+        if (Math.abs(got.lg - 1.25) > 0.01 || Math.abs(got.sm - 0.75) > 0.01) complaints.push(`.text-lg and .text-sm are ${got.lg} and ${got.sm} times the text, not 1.25 and .75`)
+        if (!got.accent) complaints.push('.accent is not the accent')
+        if (!got.highlight || /rgba\(0, 0, 0, 0\)|transparent/.test(got.highlight)) complaints.push(`.highlight has no background (${got.highlight})`)
+      }
+      console.log(`  ${mode} utility classes: ${complaints.length ? 'problems below' : 'columns of 3 to 2 not inherited, middle, grow, row, stack and its gap, text sizes, accent and highlight'}`)
+    } finally {
+      await page.context().close()
+    }
+    for (const c of complaints) fail(`${mode} utility classes: ${c}`)
+  }
+
   // the layouts' names while the dev server runs (src/arao-layouts.d.ts): a layout file added is
   // in it, one removed is out again; an edit that leaves its tokens as they were leaves the file
   // untouched, one that reads a token more adds that parameter, to the file and to the tokens
   // module the dev server serves (virtual:arao/layout-tokens: what the page reloads with), one
-  // that writes a doc block adds its doc and its zone to the file
+  // that writes a doc block adds its doc and its zone to the file, written as an editor that
+  // empties the file first and writes it a moment later does: the watcher reports the emptied
+  // file and drops the events of the write (they come within its throttle), and the file must
+  // still follow (the plugin reads a layout file once its changes have settled). What changes is
+  // polled for (until), up to 10 s; only that an edit of no token leaves it untouched is a wait,
+  // of many times the plugin's settling
   async function layoutNames(base) {
     const complaints = []
     const file = join(project, 'src', 'layouts', 'smoke-live.css')
@@ -1344,6 +1438,16 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
     const until = async (read, want) => {
       for (let i = 0; i < 100 && (await read()) !== want; i++) await pause(100)
       return read()
+    }
+    // emptied, then written 20 ms later (two writes: what fs.writeFile does in one go, slowed)
+    const emptiedThenWritten = async (text) => {
+      const handle = await open(file, 'w')
+      try {
+        await pause(20)
+        await handle.writeFile(text)
+      } finally {
+        await handle.close()
+      }
     }
     try {
       let got = await typedLayouts()
@@ -1362,8 +1466,9 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
         return /\\"smoke-live\\":\[\\"row-gap\\"\]/.test(code)
       }
       if (!(await until(served, true))) complaints.push('with a token added to src/layouts/smoke-live.css, virtual:arao/layout-tokens does not have it')
-      // a doc block written: the file carries it, and the zone it names
-      await writeFile(file, '/**\n * Live and documented.\n * @zone side  the side\n */\n.layout-smoke-live { --smoke-live: 2; gap: var(--ar-layout-smoke-live-row-gap, 0); }\n')
+      // a doc block written, by a writer that empties the file first: the file carries it, and
+      // the zone it names
+      await emptiedThenWritten('/**\n * Live and documented.\n * @zone side  the side\n */\n.layout-smoke-live { --smoke-live: 2; gap: var(--ar-layout-smoke-live-row-gap, 0); }\n')
       const documented = async () => !!typedEntry(await typedInterface('ProjectLayouts'), 'smoke-live')?.includes('Live and documented.') && (await typedZones('smoke-live')) === 'side'
       if (!(await until(documented, true))) complaints.push('with a doc block written in src/layouts/smoke-live.css, it does not carry its doc and its zone')
     } finally {
@@ -1371,7 +1476,7 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
     }
     const got = await until(typedLayouts, own.join(', '))
     if (got !== own.join(', ')) complaints.push(`with src/layouts/smoke-live.css removed it lists ${got}, not ${own.join(', ')}`)
-    console.log(`  dev layouts' names: ${complaints.length ? 'problems below' : 'a layout file added and removed, src/arao-layouts.d.ts follows, its parameters, its doc and zones too, and the tokens module; an edit of no token leaves it'}`)
+    console.log(`  dev layouts' names: ${complaints.length ? 'problems below' : 'a layout file added and removed, src/arao-layouts.d.ts follows, its parameters, its doc and zones too (written emptied first), and the tokens module; an edit of no token leaves it'}`)
     for (const c of complaints) fail(`dev src/arao-layouts.d.ts: ${c}`)
   }
 
@@ -2086,6 +2191,7 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
       await selector(base, mode)
       await layoutParams(base, mode)
       await deckSlides(base, mode)
+      await utilities(base, mode)
       if (mode === 'dev') {
         await face(base)
         await themes(base)

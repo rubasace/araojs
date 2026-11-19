@@ -101,15 +101,25 @@ Deck
     div(v-step="3")
       Background.wash
 
-  Slide
-    h2 Composition
-    Cols(gap="lg")
-      div
-        h3 One
-        p.muted First column
-      div(v-step="2")
-        h3 Two
-        p.muted Second column
+  //- the slide's structure is its layout's; inside a block, the utility classes arrange and mark
+  Slide(layout="split")
+    h2 Utility classes
+    div
+      h3 A row, a stack
+      .stack
+        .row
+          Icon.accent(name="lucide:ruler" size="120")
+          .stack.gap-sm.grow
+            p.text-lg Classes arrange what is inside a block
+            p.text-sm.muted row, stack, cols, gap, grow, and the alignments
+        p Mark a #[span.highlight word], say it in #[span.accent the accent], or #[span.upper.muted label] it.
+    div(v-step="2")
+      h3 Columns
+      .cols.grow.middle(style="--ar-cols: 3fr 2fr")
+        Snippet(code="npm install\nnpm run dev" lang="bash" name="terminal" fit :line-numbers="false")
+        ul.text-sm
+          li Code beside a list
+          li.muted Each centred in its column
 
   Slide
     h2 A table
@@ -128,12 +138,11 @@ Deck
     h2 A slide in a component
     p(v-step="2") It counts as a slide: its place, its title, its steps, its page.
 
-  Slide.no-footer
+  Slide.no-footer(layout="grid" icon-size="120px")
     h2 #[Icon(name="lucide:shapes")] Icons
-    Grid(cols="3" gap="lg")
-      Center(v-for="(t, i) in tech" :key="t.icon" v-step="i + 1")
-        Icon(:name="t.icon" size="120" :label="t.label")
-        p {{ t.label }}
+    div(v-for="(t, i) in tech" :key="t.icon" v-step="i + 1")
+      Icon(:name="t.icon" :label="t.label")
+      h3 {{ t.label }}
 
   Slide(layout="epigraph" size="48px")
     h2 A layout of the project's own

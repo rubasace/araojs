@@ -4,7 +4,7 @@
     <Slide layout="image-right" class="center no-footer">
       <Background src="city.jpg" :opacity="0.4" fit="cover" />
       <p v-step="2">two</p>
-      <Cols ratio="2 1"><div /><div /></Cols>
+      <div class="cols grow" style="--ar-cols: 2fr 1fr"><div /><div /></div>
       <Snippet file="App.java" :size="30" />
       <Img file="team.jpg" fit="cover" />
       <Icon name="lucide:rocket" />
@@ -26,7 +26,7 @@
     <Slide layout="cover" title-size="120px" bar="gold" />
     <Slide layout="cover" titleSize="120px" />
     <Slide layout="callout" size="80px" mark-color="red" />
-    <Slide layout="grid" columns="4" max-columns="3" icon-size="64px" cards="none" align="start" />
+    <Slide layout="grid" columns="4" max-columns="3" icon-size="64px" cards="none" align="start" text-size="1em" />
     <Slide layout="split" divider="2px solid red" gap="96px" />
     <Slide layout="quote" mark="'«'" mark-color="red" />
     <Slide layout="caption" caption-size="24px" captionAlign="start" />

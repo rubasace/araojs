@@ -11,11 +11,11 @@ this: [the docs](index.md) are their manual, [the Arao skill](../skills/arao/) t
 | `composables/` | effects | small internal composables, one per file, that tie the state to the browser: the URL, other windows, keys, touch, the mouse, fullscreen |
 | `core/` | the pure how | plain modules with no Vue component state: sync, exporter, flip, image, icons |
 | `views/` | full screens | what a window shows: the deck's `AudienceView`, `PresenterView` and `ExportView`, and `DeckSelectorView`, the list of decks `createDeckApp` shows at `/` |
-| `components/` | what deck authors write | `Deck`, `Slide`, `Background`, `Img`, `Icon`, `Snippet`, `Notes`; `internal/` holds the engine's own components, which no author names: `Stage` (the scaled canvas), `Controls`, `PresenterBar`, `Thumbnail` (a deck drawn as its cover) and `DeckCover` (a cover in the list); `layout/` holds the layout components (`Cols`, `Rows`, `Grid`, `Center`), the parsers of their props (`layout.ts`: ratio, gap, grid shape) and the CSS they share (`layout.css`), `directives/` holds `v-step` and `v-step-from` |
+| `components/` | what deck authors write | `Deck`, `Slide`, `Background`, `Img`, `Icon`, `Snippet`, `Notes`, `Agenda`; `internal/` holds the engine's own components, which no author names: `Stage` (the scaled canvas), `Controls`, `PresenterBar`, `Thumbnail` (a deck drawn as its cover) and `DeckCover` (a cover in the list); `directives/` holds `v-step` and `v-step-from` |
 | `addons/` | drawn over every slide | `ProgressBar`, `SlideNumber` |
 | `i18n/` | the UI's words | the engine's own text, one catalogue per language (`en.ts`, `es.ts`, `de.ts`, `fr.ts`, `it.ts`, `pl.ts`, `ja.ts`, `zh-Hans.ts`), and `i18n.ts`, the lookup: `t(key, ...values)` and `lang` ([Interface language](#interface-language)) |
 | `env.d.ts` | types | the shapes of the virtual modules the Vite plugin gives the engine (`virtual:arao/decks`, `…/images`, `…/themes`…) |
-| `styles/` | CSS | only what is global: `tokens.css` (every token and its default: the `default` theme), `base.css` (the page, the viewport, the steps). Everything else comes with its component ([CSS](#css)); the themes are not here but in the package's `themes/` folder, a theme source ([Themes](#themes)), and the slide layouts in its `layouts/` folder ([Layouts](#layouts)) |
+| `styles/` | CSS | only what is global: `tokens.css` (every token and its default: the `default` theme), `utilities.css` (the utility classes a deck writes, [CSS](#css)), `base.css` (the page, the viewport, the steps). Everything else comes with its component ([CSS](#css)); the themes are not here but in the package's `themes/` folder, a theme source ([Themes](#themes)), and the slide layouts in its `layouts/` folder ([Layouts](#layouts)) |
 
 The rule: `components/` is what an author names or imports (registered by `plugin.ts` or exported
 by `index.ts`, explicitly, never by folder); `components/internal/` is the engine's components that
@@ -166,25 +166,32 @@ and fullscreen.
 
 ## CSS
 
-Every component carries its own CSS, in the `<style>` block of its `.vue` file: the layout
-components, `Img`, `Icon`, `Snippet`, `Slide` (its zones, its footer, the slide's content, the
-utility classes), `Background`, the addons, the views and their parts. The slide layouts are not
+Every component carries its own CSS, in the `<style>` block of its `.vue` file: `Img`, `Icon`,
+`Snippet`, `Slide` (its zones, its footer, the slide's content), `Background`, the addons, the
+views and their parts. The slide layouts are not
 components' CSS: each is a file of its own ([Layouts](#layouts)). Not scoped: a theme or a deck must be able to override any of it, so
 the selectors are the `ar-` classes at the specificity they always had (zero, with `:where()`,
 where a deck's own rule must win); they are hooks for that, not classes a deck writes. `Notes` has
 none: its content is drawn, and styled, where it is teleported (the presenter's notes panel,
 `PresenterView`; the export's notes pages, `ExportView`).
 
-The layout components share one file, `layout/layout.css` (filling their container, the gap,
-children clipped at their track), which each links as its first style block,
-`<style src="./layout.css">` (the build keeps one copy), and add their own rules after it. They
-do no layout in JavaScript: a component turns its props into private custom properties set inline
-on its element (`--_ar-gap`, `--_ar-tracks`, `--_ar-cols`…), whose defaults its own rule declares
-(so a piece inside another never inherits them), and its CSS lays it out; validation and its
-warnings stay in JavaScript (`layout.ts`). `Grid` with `ratio` counts its children for its
-columns and rows, and centres an incomplete last row with an `::after` spacer before it.
+The classes a deck does write are the utility classes, one file: `styles/utilities.css`. They are
+the second level of a slide's layout: its structure is its layout's (a CSS file of `layouts/`),
+and inside one block (the body, a side of `split`, a block of `grid`, a zone) these arrange and
+mark things (`.cols`, `.row`, `.stack`, `.middle`, `.gap-sm`, `.grow`, `.text-lg`, `.accent`,
+`.highlight`…), every value a token, so a theme restyles them; the classes of a `Slide` itself
+(`.top`, `.middle`, `.center`, `.bottom`, `.no-footer`, `.with-footer`) are there too. No
+JavaScript: uneven tracks are a custom property the deck sets in the element's style (`--ar-cols`,
+`--ar-rows`), registered with `@property` as not inherited, so columns inside columns start equal
+again. Placement, alignment and spacing are `.ar-slide .<class>`, below a layout's rule for its
+own blocks and below `v-step.collapse`'s `display: none !important`; the look (sizes, colours, the
+marker) is `!important`, so that it wins over a layout's or a theme's rule on the same element.
+Each group of classes is a `/** … */` doc comment in the file, `@class <name> <description>` per
+class: `vite/class-docs.js` reads them for `arao layouts` (which prints and lists them after the
+layouts: the package ships the file for it), and the library build fails if a class a rule names
+is not documented, or a documented one is in no rule (`vite.config.js`, `utilityDocs`).
 
-`styles/` keeps what no component owns: `tokens.css` and `base.css`. `tokens.css` declares every
+`styles/` keeps what no component owns: `tokens.css`, `utilities.css` and `base.css`. `tokens.css` declares every
 token the engine reads, with its default, and nowhere else is a default written: no component
 holds a literal colour, font, font size, radius, shadow or duration (its header gives the rule for
 what stays literal: structural values, proportions of a token, weights, a part's inner geometry).
@@ -205,11 +212,11 @@ export views share, and the classes `v-step` sets.
 The library build concatenates it all into `dist/arao.css` in import order, and order decides
 between two rules of the same specificity on the same element. `plugin.ts` imports in that order
 and its header says why: `tokens.css`; the views (through `Deck`); `Snippet`, `Img` (with
-`Background`), `Slide`, `Icon` and the layout components: `Img` before the layout components
-(their children clip `overflow-x`); `base.css` last (its step fade wins over Snippet's own
-transitions); the library build fails if `dist/arao.css` loses two of them (the `overflow-x` of an
-`Img` in a layout piece, the step fade), or if it holds `layout.css` more than once (a later copy
-would beat the pieces' own rules): `vite.config.js`, `CSS_ORDER` and `CSS_ONCE`. `index.ts` then
+`Background`), `Slide`, `Icon`, `Notes`, `Agenda`, then `utilities.css`: `Img` before the utility
+classes (the children of their columns clip `overflow-x`); `base.css` last (its step fade wins
+over Snippet's own transitions); the library build fails if `dist/arao.css` loses two of them (the
+`overflow-x` of an `Img` in a column of the utility classes, the step fade): `vite.config.js`,
+`CSS_ORDER`. `index.ts` then
 adds the addons, `app.ts` the deck selector, then the layouts (`virtual:arao/layout-styles`) and
 last the themes (`virtual:arao/theme-styles`), after all of the engine's CSS, so that a layout's
 rule wins over an engine rule of the same specificity and a theme's over both; the library build

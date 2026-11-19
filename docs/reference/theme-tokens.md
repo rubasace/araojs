@@ -21,7 +21,10 @@ How themes are written, found and applied: [Themes](../guide/themes.md).
 | `--ar-font-heading` | none: the font around the heading (the text font) | the headings' font (`h1`–`h6` in a slide, the cover's and the section's titles included); a web font named here is fetched at build time |
 | `--ar-text-base` | `42px` | base font size of a slide |
 | `--ar-title` | `96px` | the type scale: `h1` size; `h2` is 0.6x; the slide title 0.6x and its subtitle 0.45x by default (`--ar-title-size`, `--ar-subtitle-size`); the cover's title 1.25x and the section's 1.4x by default ([Layouts](#layouts)) |
-| `--ar-text-small` | `.75em` | `.small` |
+| `--ar-text-small` | `.75em` | `.text-sm` ([utility classes](components.md#utility-classes)) |
+| `--ar-text-large` | `1.25em` | `.text-lg` |
+| `--ar-text-xlarge` | `1.6em` | `.text-xl` |
+| `--ar-highlight` | `--ar-accent` at 25 % over transparent | the marker behind `.highlight` text: a CSS background (a colour or a gradient) |
 | `--ar-placeholder` | `currentColor` (the text colour where drawn) | colour of the missing-picture and missing-icon boxes |
 
 ## Spacing and shape
@@ -31,7 +34,7 @@ How themes are written, found and applied: [Themes](../guide/themes.md).
 | `--ar-pad-y` | `110px` | slide padding, the safe margin: top and bottom (and the text side of `image-*`); the bottom is always at least `--ar-footer-height`, so the content never sits under the footer |
 | `--ar-pad-x` | `140px` | slide padding, the safe margin: both sides (and the footer's sides) |
 | `--ar-radius` | `4px` | corner radius (`Img rounded`, placeholders) |
-| `--ar-gap-sm` / `-md` / `-lg` | `24px` / `48px` / `80px` | `gap="sm\|md\|lg"`; `md` is the default gap of `Cols`/`Rows`/`Grid`; `lg` between `split`'s sides; `sm` between the footer's children |
+| `--ar-gap-sm` / `-md` / `-lg` | `24px` / `48px` / `80px` | `.gap-sm`, `.gap`, `.gap-lg`; `md` is the gap of `.cols`, `.rows`, `.stack` and `.row`; `lg` between `split`'s sides; `sm` between `grid`'s blocks and the footer's children |
 
 ## Background, motion, addons
 
@@ -123,6 +126,7 @@ A `*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows 
 | `--ar-layout-grid-align` | `align` | `center` | a block's content: `center` or `start` |
 | `--ar-layout-grid-cards` | `cards` | `none` | each block's background, making it a card (a colour, a gradient) |
 | `--ar-layout-grid-icon-size` | `icon-size` | `3em` (`2em` from 9 blocks) | the size of a block's leading picture or icon |
+| `--ar-layout-grid-text-size` | `text-size` | `--ar-text-small` | the size of a block's text, its `p`; `1em` keeps the slide's (columns of text) |
 | `--ar-layout-quote-size` | `size` | 0.8x `--ar-title` | the quote's size |
 | `--ar-layout-quote-mark` | `mark` | `'“'` | the decorative mark, a CSS string (quotes written: `mark="'«'"`) |
 | `--ar-layout-quote-mark-color` | `mark-color` | `--ar-accent` | its colour |

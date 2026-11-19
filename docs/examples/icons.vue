@@ -1,15 +1,15 @@
 <template lang="pug">
 Deck
-  Slide
+  Slide(layout="grid" icon-size="140px")
     h2 #[Icon(name="lucide:rocket")] Our stack
-    Grid(cols="3" gap="sm")
-      Center(v-for="(t, i) in tech" :key="t.icon" v-step="i + 1")
-        Icon(:name="t.icon" size="140" :label="t.label")
-        p {{ t.label }}
+    div(v-for="(t, i) in tech" :key="t.icon" v-step="i + 1")
+      Icon(:name="t.icon" :label="t.label")
+      h3 {{ t.label }}
 </template>
 
 <script setup>
-// Logos are icons like any other: they take the colour of the text, one ink for all of them.
+// Logos are icons like any other, one ink for all of them: the grid layout draws a block's
+// leading icon in the accent, at its icon-size.
 const tech = [
   { icon: 'simple-icons:vuedotjs', label: 'Vue' },
   { icon: 'simple-icons:vite', label: 'Vite' },

@@ -48,18 +48,16 @@ Deck
     p The picture fills its side, edge to edge.
     p.muted The text side is padded like any slide.
 
-  Slide
+  Slide.top(layout="grid" align="start" text-size="1em")
     h2 Three pillars
-    Cols(gap="lg")
-      div(v-for="p in pillars" :key="p.title")
-        h3 #[Icon.accent(:name="p.icon")] {{ p.title }}
-        p.muted {{ p.text }}
+    div(v-for="p in pillars" :key="p.title")
+      h3 #[Icon.accent(:name="p.icon")] {{ p.title }}
+      p {{ p.text }}
 
-  Slide
+  Slide(layout="grid" cards="color-mix(in srgb, var(--ar-fg) 7%, var(--ar-bg))")
     h2 What it brings
-    Grid(cols="3" gap="md")
-      .card(v-for="c in cards" :key="c")
-        span {{ c }}
+    .card(v-for="c in cards" :key="c")
+      span {{ c }}
 
   Slide(layout="split")
     h2 Before and after
@@ -70,13 +68,12 @@ Deck
       h3 After
       p One starter, one version.
 
-  Slide
+  Slide(layout="split")
     h2 Try it
-    Cols(ratio="1 1" align="center" gap="lg")
-      div
-        p Three commands, and the deck is live.
-        p.muted It reloads as you type.
-      Snippet(code="npm install\nnpm run dev\nnpm run export" lang="bash" name="terminal" fit :line-numbers="false")
+    div.middle
+      p Three commands, and the deck is live.
+      p.muted It reloads as you type.
+    Snippet(code="npm install\nnpm run dev\nnpm run export" lang="bash" name="terminal" fit :line-numbers="false")
 
   Slide.with-footer(layout="cover")
     h1 Thank you
@@ -101,11 +98,10 @@ const cards = ['Logging', 'Metrics', 'Tracing', 'Clients', 'Errors', 'Security']
 </script>
 
 <style scoped>
-.accent { color: var(--ar-accent); }
+/* a block of the grid as a tile: tall, its word in the middle, an accent edge (the layout gives it
+   its padding, its background, cards, and its radius) */
 .card {
-  display: grid; place-items: center;
-  border-radius: var(--ar-radius);
-  background: color-mix(in srgb, var(--ar-fg) 7%, var(--ar-bg));
+  min-height: 330px; justify-content: center;
   border-left: 8px solid var(--ar-accent);
   font-size: 40px;
 }
