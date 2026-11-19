@@ -13,7 +13,9 @@
 // if those imports are not the last two, in that order: vite.config.js, themeStylesError).
 export { default } from './plugin'
 export { default as Deck } from './components/Deck.vue'
-export { default as Slide } from './components/Slide.vue'
+import SlideImpl, { type SlideComponent } from './components/Slide.vue'
+// typed generic in its layout: the attributes it takes are its layout's parameters (Slide.vue)
+export const Slide = SlideImpl as unknown as SlideComponent
 export { default as Background } from './components/Background.vue'
 export { default as Img } from './components/Img.vue'
 export { default as Icon } from './components/Icon.vue'
@@ -34,14 +36,13 @@ export type { Command, ShortcutMap } from './core/shortcuts'
 export type { DeckAppOptions } from './app'
 export type { DeckFace } from './state/deck'
 export type { SlideControls } from './state/slide'
-export type { SlideLayouts } from './components/Slide.vue'
+export type { SlideLayouts, ProjectLayouts } from './components/Slide.vue'
 export type { Role } from './state/stage'
 export type { Timer } from './state/timer'
 
 // Global components and directives (app.use(Arao) registers them, plugin.ts): typed for the
 // templates of a TypeScript project (Volar / vue-tsc check their props).
 import type DeckComponent from './components/Deck.vue'
-import type SlideComponent from './components/Slide.vue'
 import type BackgroundComponent from './components/Background.vue'
 import type ImgComponent from './components/Img.vue'
 import type IconComponent from './components/Icon.vue'
@@ -55,7 +56,7 @@ import type { default as StepDirective, stepFrom as StepFromDirective } from './
 declare module 'vue' {
   export interface GlobalComponents {
     Deck: typeof DeckComponent
-    Slide: typeof SlideComponent
+    Slide: SlideComponent
     Background: typeof BackgroundComponent
     Img: typeof ImgComponent
     Icon: typeof IconComponent

@@ -29,8 +29,8 @@
   - `align="start"` → drop it (the default now); `align="center"` → `Slide.center`
     (it centres the text too); `align="end"` → `Slide.bottom`.
   - `:footer="false"` → `Slide.no-footer`; `:footer="true"` → `Slide.with-footer`.
-  - `ratio="3 2"` → `style="--ar-layout-image-right-columns: 3fr 2fr"` (`image-left`:
-    `--ar-layout-image-left-columns`; `split`: `--ar-layout-split-columns`).
+  - `ratio="3 2"` → `columns="3fr 2fr"`, the layout's parameter (`image-left`, `image-right`,
+    `split`: `--ar-layout-<layout>-columns`).
   - `bg="city.jpg" bg-opacity="0.4"` → `Background(src="city.jpg" opacity="0.4")` inside the
     slide (`position`, `blur`, `fit` likewise); `bg="#1d2b4a"` or a gradient →
     `style="background: …"` on the slide.
@@ -39,6 +39,11 @@
 - **Slides start at the top now.** The body sits right under the title on every slide (it used to
   be centred): `Slide.center` centres one, or a theme sets `--ar-body-align: center`.
 - `layout="two-cols"` is gone: use `Cols` or `layout="split"`.
+- A theme's `--ar-layout-cover-title` / `--ar-layout-section-title` does nothing now: they are
+  `--ar-layout-cover-title-size` / `--ar-layout-section-title-size` (`title-size` on the slide).
+- A hand-written `declare module 'araojs' { interface SlideLayouts { wide: true } }` fails the type
+  check now: it is `interface ProjectLayouts { wide: {} }`. A generated `src/arao-layouts.d.ts`
+  of an older Arao is rewritten the next time Vite starts.
 - A theme's `--ar-image-inset` does nothing now: it is `--ar-layout-image-left-inset` and
   `--ar-layout-image-right-inset`, one per layout.
 - A theme's `--ar-pad` does nothing now: it is two tokens, `--ar-pad-y` (top and bottom) and
@@ -85,6 +90,9 @@
   Pug templates only with `@vue/language-plugin-pug` in the `tsconfig`'s
   `vueCompilerOptions.plugins`); a project layout it does not know means a stale or missing
   `src/arao-layouts.d.ts`: run `npm run dev` or `npm run build` once to write it.
+- **A layout parameter that does nothing**: it is another layout's (`columns` on a `cover`), so it
+  lands on the slide as a plain HTML attribute; or the value is no valid CSS for its token. A
+  slide's own `style` setting the same token loses to the attribute.
 - Snippet highlights don't accumulate: each step shows only its own rules; step 1 is always plain.
 
 ## Titles, covers and the deck list
@@ -117,6 +125,7 @@
 | `[arao] v-step outside a Slide` / `Notes outside a Slide` | directive or notes outside any `Slide` | move it inside the slide |
 | `[arao] Deck themes: no theme …` | theme name no source gives | fix the name or add its source |
 | `[arao] … duration …` | `Deck(duration)` not a length | `duration="30m"`, `"1h30"`, `"45:00"` |
+| `[arao] src/layouts/x.css: --ar-layout-x-title is no attribute of Slide…` | a layout token named as an attribute a slide already has (`title`, `id`…) or not lower-case kebab-case | rename it (`--ar-layout-x-title-size`); until then it works in `style` and themes only |
 | `[arao] src/shortcuts.ts: …` (Vite stops) | reserved key, unknown command or duplicate key | see [shortcuts.md](shortcuts.md) |
 
 Don't edit `node_modules/araojs` to make a deck look right: an engine change belongs in Arao's

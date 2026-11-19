@@ -153,7 +153,9 @@ Where tokens apply, from weakest to strongest:
 Layouts have tokens too, `--ar-layout-<layout>-<thing>` (the section's colours, the cover's title
 size, which layouts show the footer, the image layouts' proportions), set in a theme like any
 other: `[data-theme="venue"] { --ar-layout-section-bg: #0b3d2e; --ar-layout-cover-footer: flex; }`
-([Layout tokens](../reference/theme-tokens.md#layouts)). So is where a slide's body sits:
+([Layout tokens](../reference/theme-tokens.md#layouts)); on one slide each is also an attribute
+(`Slide(layout="section" bg="#0b3d2e")`: [Layout parameters](slides-and-layouts.md#layout-parameters)).
+So is where a slide's body sits:
 `--ar-body-align: center` centres every body, as decks used to by default.
 
 A token whose default is another token (`--ar-footer-color` is `--ar-muted`, the slide title's

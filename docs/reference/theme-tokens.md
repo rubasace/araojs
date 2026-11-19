@@ -93,25 +93,26 @@ table.dense(style="--ar-table-pad: 12px 20px")
 
 Each layout's CSS file (the library's `layouts/`, the project's `src/layouts`) reads tokens of its
 own, `--ar-layout-<layout>-<thing>`. Set them in a theme, at the project's `:root`, or on one
-slide (`Slide(layout="image-right" style="--ar-layout-image-right-columns: 3fr 2fr")`). A
-`*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows it; a slide's
+slide, where each is also an attribute of `Slide`, its `<thing>`
+(`Slide(layout="image-right" columns="3fr 2fr")`: [Layout parameters](../guide/slides-and-layouts.md#layout-parameters)).
+A `*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows it; a slide's
 `.no-footer` or `.with-footer` wins over it.
 
-| Token | Default | Meaning |
-|---|---|---|
-| `--ar-layout-cover-title` | 1.25x `--ar-title` | the cover's `h1` size |
-| `--ar-layout-cover-bar` | `--ar-accent` | the colour of its `.bar` |
-| `--ar-layout-cover-footer` | `none` | the deck's footer on covers |
-| `--ar-layout-section-bg` | `--ar-accent` | a section's background (the theme's `--ar-slide-bg-image` is drawn over it) |
-| `--ar-layout-section-fg` | `--ar-accent-fg` | its text, its title and its footer |
-| `--ar-layout-section-title` | 1.4x `--ar-title` | its `h1` size |
-| `--ar-layout-section-footer` | `none` | the deck's footer on sections |
-| `--ar-layout-split-columns` | `1fr 1fr` | the widths of `#left` and `#right`, as CSS grid columns |
-| `--ar-layout-split-gap` | `--ar-gap-lg` | the space between them |
-| `--ar-layout-image-left-columns` / `--ar-layout-image-right-columns` | `1fr 1fr` | the two sides' widths, left to right, as CSS grid columns (`3fr 2fr`, `1fr 720px`) |
-| `--ar-layout-image-left-inset` / `--ar-layout-image-right-inset` | `0px` | padding around the picture in its zone |
-| `--ar-layout-image-left-footer` / `--ar-layout-image-right-footer` | `flex` | the deck's footer on those slides, over the picture |
-| `--ar-layout-image-left-footer-bg` / `--ar-layout-image-right-footer-bg` | `none` | a backdrop under that footer (a colour, a gradient), to keep it legible over a photo |
+| Token | Attribute | Default | Meaning |
+|---|---|---|---|
+| `--ar-layout-cover-title-size` | `title-size` | 1.25x `--ar-title` | the cover's `h1` size |
+| `--ar-layout-cover-bar` | `bar` | `--ar-accent` | the colour of its `.bar` |
+| `--ar-layout-cover-footer` | `footer` | `none` | the deck's footer on covers |
+| `--ar-layout-section-bg` | `bg` | `--ar-accent` | a section's background (the theme's `--ar-slide-bg-image` is drawn over it) |
+| `--ar-layout-section-fg` | `fg` | `--ar-accent-fg` | its text, its title and its footer |
+| `--ar-layout-section-title-size` | `title-size` | 1.4x `--ar-title` | its `h1` size |
+| `--ar-layout-section-footer` | `footer` | `none` | the deck's footer on sections |
+| `--ar-layout-split-columns` | `columns` | `1fr 1fr` | the widths of `#left` and `#right`, as CSS grid columns |
+| `--ar-layout-split-gap` | `gap` | `--ar-gap-lg` | the space between them |
+| `--ar-layout-image-left-columns` / `--ar-layout-image-right-columns` | `columns` | `1fr 1fr` | the two sides' widths, left to right, as CSS grid columns (`3fr 2fr`, `1fr 720px`) |
+| `--ar-layout-image-left-inset` / `--ar-layout-image-right-inset` | `inset` | `0px` | padding around the picture in its zone |
+| `--ar-layout-image-left-footer` / `--ar-layout-image-right-footer` | `footer` | `flex` | the deck's footer on those slides, over the picture |
+| `--ar-layout-image-left-footer-bg` / `--ar-layout-image-right-footer-bg` | `footer-bg` | `none` | a backdrop under that footer (a colour, a gradient), to keep it legible over a photo |
 
 ```css
 [data-theme="venue"] {

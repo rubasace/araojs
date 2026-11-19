@@ -49,8 +49,9 @@ shows when the slide arrives, and a slide counts its own steps: the largest one 
 
 Slides say *what*, themes say *how it looks*. A theme is a block of `--ar-*` CSS variables over
 the defaults, in a file of `src/themes`, found on its own. Same slides, another venue: only the
-theme changes, even live while presenting ([Themes](themes.md)). Layouts are props, so a deck
-needs little or no CSS of its own.
+theme changes, even live while presenting ([Themes](themes.md)). Layouts are props, and their
+tokens attributes (`Slide(layout="split" columns="2fr 1fr")`), so a deck needs little or no CSS of
+its own.
 
 ## Pug or HTML
 

@@ -1,2 +1,10 @@
-/* a project layout: the plugin adds "quote" to the layouts Slide's layout accepts (src/arao-layouts.d.ts) */
-.layout-quote { justify-content: safe center; }
+/* a project layout: the plugin adds "quote" to the layouts Slide's layout accepts, with its
+   parameters, the tokens it reads (src/arao-layouts.d.ts): size and mark-color (markColor); its
+   --ar-layout-quote-title is none (title is an HTML attribute), and the plugin warns */
+:where(.layout-quote) {
+  --_ar-quote-size: var(--ar-layout-quote-size, 64px);
+  --_ar-quote-title: var(--ar-layout-quote-title, 1em);
+}
+.layout-quote { justify-content: safe center; font-size: var(--_ar-quote-size); }
+.layout-quote h2 { font-size: var(--_ar-quote-title); }
+.layout-quote blockquote::before { content: '“'; color: var(--ar-layout-quote-mark-color, currentColor); }

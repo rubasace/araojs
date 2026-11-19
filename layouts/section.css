@@ -3,12 +3,12 @@
      Slide(layout="section")
        h1 Why a framework?
 
-   Tokens, and their defaults (a theme, the project's :root or one slide sets them; why each is
-   resolved on the slide: cover.css):
-     --ar-layout-section-bg       the slide's background        --ar-accent
-     --ar-layout-section-fg       its text                      --ar-accent-fg
-     --ar-layout-section-title    the h1's size                 1.4 x --ar-title
-     --ar-layout-section-footer   the deck's footer: none hides it, flex shows it      none
+   Tokens, and their defaults (a theme, the project's :root or one slide sets them, a slide also as
+   attributes: Slide(layout="section" bg="#0b3d2e"); why each is resolved on the slide: cover.css):
+     --ar-layout-section-bg           the slide's background        --ar-accent
+     --ar-layout-section-fg           its text                      --ar-accent-fg
+     --ar-layout-section-title-size   the h1's size                 1.4 x --ar-title
+     --ar-layout-section-footer       the deck's footer: none hides it, flex shows it      none
    Its title and its footer take its text colour (--ar-title-color and --ar-footer-color, set for
    .layout-section in a theme, still win). The theme's default background
    (--ar-slide-bg-image) is drawn over --ar-layout-section-bg, as on any slide: a theme can
@@ -16,7 +16,7 @@
 :where(.layout-section) {
   --_ar-section-bg: var(--ar-layout-section-bg, var(--ar-accent));
   --_ar-section-fg: var(--ar-layout-section-fg, var(--ar-accent-fg));
-  --_ar-section-title: var(--ar-layout-section-title, calc(var(--ar-title) * 1.4));
+  --_ar-section-title: var(--ar-layout-section-title-size, calc(var(--ar-title) * 1.4));
   --_ar-section-footer: var(--ar-layout-section-footer, none);
   --ar-title-color: currentColor;
   --ar-footer-color: currentColor;

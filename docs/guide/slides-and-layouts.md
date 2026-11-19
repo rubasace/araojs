@@ -2,7 +2,8 @@
 
 A slide is a `Slide` inside the `Deck`. Its one prop, `layout`, names a layout: CSS that
 arranges the slide's parts (the header, the body, the zones of its named templates, the footer).
-Every slide finds those parts the same way, whatever its layout. Every prop and slot:
+Every slide finds those parts the same way, whatever its layout. The layout's tokens are the
+slide's attributes too ([Layout parameters](#layout-parameters)). Every prop and slot:
 [Slide](../reference/components.md#slide).
 
 ## Layouts
@@ -12,8 +13,8 @@ Every slide finds those parts the same way, whatever its layout. Every prop and 
 file of the library; the full table, and the tokens each one reads:
 [Layouts](../reference/components.md#layouts). A name with no CSS behind it is the `default`
 layout, its slides carrying the class `layout-<name>` for a theme or a deck to style. In a
-TypeScript project the editor completes the names there are, and `vue-tsc` turns down any other
-([Layout names in the editor](#layout-names-in-the-editor)).
+TypeScript project the editor completes the names there are, and each layout's parameters, and
+`vue-tsc` turns down any other ([Layouts in the editor](#layouts-in-the-editor)).
 
 A cover:
 
@@ -72,14 +73,39 @@ Slide(layout="section")
   h1 Why a framework?
 ```
 
-A layout's tokens tune it, in a theme for every slide or on one slide, as any token:
+### Layout parameters
+
+A layout's tokens tune it ([Layout tokens](../reference/theme-tokens.md#layouts)): in a theme, for
+every slide of that layout, or on one slide, where each token of its layout is an attribute of
+`Slide` too, named as the token ends: `--ar-layout-<layout>-<thing>` is `<thing>`.
 
 ```pug
-Slide(layout="image-right" style="--ar-layout-image-right-columns: 3fr 2fr")   //- text 3/5, picture 2/5
+Slide(layout="image-right" columns="3fr 2fr")   //- text 3/5, picture 2/5
   …
-Slide(layout="split" style="--ar-layout-split-columns: 2fr 1fr")
+Slide(layout="split" columns="2fr 1fr" gap="96px")
+  …
+Slide(layout="cover" bar="gold" title-size="160px")
   …
 ```
+
+- The value is set as that token on the slide, as written: any value the token takes
+  (`columns="3fr 2fr"` is `--ar-layout-image-right-columns: 3fr 2fr`). It is not an attribute of
+  the slide's element. An empty one sets nothing: the layout's default stays.
+- The attributes are the slide's layout's: `columns` on a `cover` is no parameter of it, and goes
+  on the slide's element as a plain HTML attribute, doing nothing; in a type-checked template it
+  is an error ([Layouts in the editor](#layouts-in-the-editor)).
+- Written in kebab-case or in camelCase (`footer-bg`, `footerBg`), and bound like any attribute:
+  `:bar="accent"` follows `accent`. In every view of the deck: the audience's, the presenter's,
+  the list of decks' covers, the export.
+- The token in `style` works too (`style="--ar-layout-image-right-columns: 3fr 2fr"`); given both
+  ways, the attribute wins.
+- A layout's parameters are the tokens its CSS file reads, nothing more to declare: the library's
+  ([Layout tokens](../reference/theme-tokens.md#layouts)), and a project layout's
+  ([A layout of your own](#a-layout-of-your-own)). A token whose name is an attribute a slide
+  already has (any HTML global attribute: `title`, `id`, `hidden`, `lang`, `dir`, `class`,
+  `style`, `slot`, `tabindex`…; Vue's `key`, `ref` and `is`; `Slide`'s `layout`; anything
+  starting with `on`, `data-`, `aria-` or `v-`), or that is not in lower-case kebab-case, is no
+  attribute: set it in `style`.
 
 ## Zones: header, body, footer
 
@@ -212,43 +238,75 @@ Slide(layout="quote")
   p.muted Edsger W. Dijkstra
 ```
 
+Its tokens are its slides' attributes ([Layout parameters](#layout-parameters)): the Vite plugin
+finds them in the file, every `--ar-layout-quote-<thing>` it declares or reads (comments and the
+private `--_ar-…` aside), so `quote.css` gives `Slide(layout="quote" size="64px" mark="gold")`,
+typed for the editor ([Layouts in the editor](#layouts-in-the-editor)). Name a token's last part
+as an attribute: lower-case kebab-case, and none a slide already has. `--ar-layout-quote-title`
+is no attribute (`title` is HTML's): the plugin warns, once, naming the file, and the token works
+in `style` and in themes only; `--ar-layout-quote-title-size` is one. A file that replaces a
+library layout replaces its parameters too: the slide's attributes are the new file's tokens.
+Adding, removing or renaming a token while the dev server runs reloads the page.
+
 The library's own files, in the package's `layouts/` folder, are worked examples: `cover.css`
 and `section.css` centre their content, `split.css` and `image-right.css` lay the slide out as a
 grid and place its zones.
 
-### Layout names in the editor
+### Layouts in the editor
 
-`Slide`'s `layout` is typed with the names of the layouts there are: in a TypeScript project the
-editor (Volar) completes them, and `vue-tsc` turns down a name that is none (`layout="covr"`:
-`Type '"covr"' is not assignable to type 'keyof SlideLayouts | undefined'`). The library's come
-with the package (the interface `SlideLayouts`, exported by `araojs`); the project's are added by
-the Vite plugin, which writes them into `src/arao-layouts.d.ts`, where the `tsconfig` of a Vite
-project already looks (`src/**`):
+`Slide` is typed with the layouts there are and their parameters: in a TypeScript project the
+editor (Volar) completes the names in `layout`, and, once one is given, that layout's parameters
+among the slide's attributes (`columns` on `layout="image-right"`, not on `layout="cover"`).
+`vue-tsc` turns down a name that is none (`layout="covr"`: `Type '"covr"' is not assignable to
+type 'keyof LibraryLayouts | keyof ProjectLayouts | undefined'`), and a parameter of another layout (`Slide(layout="cover"
+columns="2fr 1fr")`: `'columns' does not exist in type …`) or a value that is not a string. The
+library's come with the package; the project's are added by the Vite plugin, which writes them
+into `src/arao-layouts.d.ts`, where the `tsconfig` of a Vite project already looks (`src/**`):
 
 ```ts
 // src/arao-layouts.d.ts: Generated by araojs/vite … Do not edit …
 export {}
 declare module 'araojs' {
-  interface SlideLayouts {
-    'quote': true
+  interface ProjectLayouts {
+    'quote': {
+      /** --ar-layout-quote-footer */
+      footer?: string
+      /** --ar-layout-quote-mark */
+      mark?: string
+      /** --ar-layout-quote-size */
+      size?: string
+    }
   }
 }
 ```
 
-- It is written when Vite starts (`npm run dev`, `npm run build`) and again when a layout file is
-  added or removed during development, once the project has a layout of its own.
+- A parameter of another layout is an error only where unknown attributes are: with
+  `"vueCompilerOptions": { "strictTemplates": true }` (or `"checkUnknownProps": true`) in the
+  `tsconfig`. Without it Vue's type check lets any attribute through, on `Slide` as on any
+  component; the editor still completes only the layout's own.
+- Parameters are typed in camelCase (`footerBg`): Volar checks an attribute written `footer-bg`
+  as `footerBg`, as it does any prop, and completes it in the case your editor's settings say
+  (kebab-case in templates, by default).
+- `SlideLayouts`, exported by `araojs`, is every layout (its keys, `keyof SlideLayouts`) with its
+  parameters (`SlideLayouts['cover']`): the library's, with the project's over them.
+  `ProjectLayouts`, also exported, is the project's, which the file adds to; a project layout
+  named like a library one replaces it there, its parameters with it.
+- It is written when Vite starts (`npm run dev`, `npm run build`) and again when a layout file
+  changes during development, only if its text changes, once the project has a layout of its own.
   Commit it, so that a type check (`vue-tsc --noEmit`, in CI) knows the project's layouts without
-  running Vite first.
+  running Vite first. A file written by an earlier Arao (with `interface SlideLayouts` in it) is
+  rewritten the next time Vite starts.
 - A `tsconfig` that does not include `src/**` needs the file in its `include`, or the file moved
   where it looks: `arao({ dts: 'types/arao-layouts.d.ts' })`. `arao({ dts: false })` writes none
   ([Vite plugin](../reference/vite-plugin.md)).
 - A layout chosen from data (`:layout="s.layout"`, with `s.layout` a `string`) fails the type check:
   type the data with the names, `keyof SlideLayouts` (`import type { SlideLayouts } from 'araojs'`), or
-  cast it: `:layout="s.layout as keyof SlideLayouts"`.
+  cast it: `:layout="s.layout as keyof SlideLayouts"`. A slide whose layout may be any of
+  several takes the parameters of any of them.
 - Turning `dts` off or moving it leaves the old file behind, still accepting its names: delete it.
 - A name with no file of its own (a class a theme styles, `layout="wide"`) still works at
-  runtime; for the type check to take it, declare it the same way in a `.d.ts` of the project:
-  `declare module 'araojs' { interface SlideLayouts { wide: true } }`.
+  runtime; for the type check to take it, declare it the same way in a `.d.ts` of the project,
+  with no parameters: `declare module 'araojs' { interface ProjectLayouts { wide: {} } }`.
 - Pug templates are type-checked only with Volar's Pug plugin
   ([Components](../reference/components.md), "In TypeScript").
 

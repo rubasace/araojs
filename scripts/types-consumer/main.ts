@@ -4,7 +4,7 @@
 import Arao, {
   createDeckApp, useDeck, useSlide, step, stepFrom,
   Deck, Slide, Background, Img, Icon, Snippet, Notes, Cols, Rows, Grid, Center, ProgressBar, SlideNumber,
-  type DeckFace, type DeckAppOptions, type SlideControls, type SlideLayouts, type Role, type Timer,
+  type DeckFace, type DeckAppOptions, type SlideControls, type SlideLayouts, type ProjectLayouts, type Role, type Timer,
 } from 'araojs'
 import arao, { arao as namedArao, type AraoOptions } from 'araojs/vite'
 
@@ -31,6 +31,21 @@ void layouts
 // @ts-expect-error no layout of that name
 const unknownLayout: keyof SlideLayouts = 'nope'
 void unknownLayout
+// and the parameters each takes: the library's (from its layouts/), the project's (from its CSS:
+// a token that is an HTML attribute's name, quote.css's --ar-layout-quote-title, is none), a
+// project layout replacing the library's of its name (section.css) with its own
+const own: (keyof ProjectLayouts)[] = ['quote', 'section']
+const cover: SlideLayouts['cover'] = { titleSize: '120px', bar: 'gold', footer: 'flex' }
+const quote: SlideLayouts['quote'] = { size: '80px', markColor: 'red' }
+const section: SlideLayouts['section'] = { tone: 'navy' }
+void [own, cover, quote, section]
+// @ts-expect-error title is an HTML attribute: no parameter
+const titled: SlideLayouts['quote'] = { title: 'x' }
+// @ts-expect-error the project's section has none of the library's parameters
+const libSection: SlideLayouts['section'] = { bg: 'navy' }
+// @ts-expect-error a parameter's value is a string
+const sized: SlideLayouts['cover'] = { titleSize: 120 }
+void [titled, libSection, sized]
 
 // the app and the Vue plugin
 const appOptions: DeckAppOptions = { deckList: 'always' }
@@ -68,6 +83,10 @@ export function inComponent(): void {
   // @ts-expect-error the slide's step is read-only
   slide.step.value = 2
 }
+
+// Slide, typed generic in its layout, is still a component
+const slideComponent: import('vue').Component = Slide
+void slideComponent
 
 // the components are components (not any)
 // @ts-expect-error a component is not a number

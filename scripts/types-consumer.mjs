@@ -1,16 +1,19 @@
 // Type-checks a TypeScript project against a packed araojs, under the module resolutions
 // consumers use (bundler, as Vite's templates; nodenext), with skipLibCheck off: the published
 // types must resolve and be strict (read-only refs, typed global components in templates, the
-// layouts Slide's layout accepts: the library's and the project's).
+// layouts Slide's layout accepts: the library's and the project's, and the parameters each takes
+// as Slide's attributes, no other layout's: checked with vueCompilerOptions.checkUnknownProps, as
+// any unknown prop is).
 //   node scripts/types-consumer.mjs <araojs-x.y.z.tgz>
 // The project is scripts/types-consumer/, copied to a temporary folder with the tarball and the
 // type checkers installed. First a vite build with the plugin (its vite.config.js), which must
-// write src/arao-layouts.d.ts from its src/layouts; then the type checks, which include it.
+// write src/arao-layouts.d.ts from its src/layouts, and warn about the token of one that is no
+// attribute; then the type checks, which include it.
 import { cpSync, existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 
 const tarball = process.argv[2]
 if (!tarball) {
@@ -26,9 +29,18 @@ try {
   cpSync(join(here, 'types-consumer'), dir, { recursive: true })
   const dev = ['typescript', 'vue-tsc', 'vue', 'vite', '@types/node'].map((n) => `${n}@${pkg.devDependencies[n]}`)
   run('npm', ['install', '--no-audit', '--no-fund', '--silent', resolve(tarball), ...dev])
-  run('npx', ['vite', 'build'])
+  // its output read: quote.css's --ar-layout-quote-title is no parameter (title is an HTML
+  // attribute), which the plugin says
+  const built = spawnSync('npx', ['vite', 'build'], { cwd: dir, encoding: 'utf8' })
+  process.stdout.write(built.stdout)
+  process.stderr.write(built.stderr)
+  if (built.status !== 0) throw new Error(`vite build exited with ${built.status}`)
   if (!existsSync(join(dir, 'src/arao-layouts.d.ts'))) {
     console.error('types-consumer: vite build wrote no src/arao-layouts.d.ts')
+    failed = true
+  }
+  if (!/\[arao\] src\/layouts\/quote\.css: --ar-layout-quote-title is no attribute of Slide/.test(built.stdout + built.stderr)) {
+    console.error('types-consumer: vite build did not warn that --ar-layout-quote-title (src/layouts/quote.css) is no attribute')
     failed = true
   }
   for (const mode of ['bundler', 'nodenext']) {

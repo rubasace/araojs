@@ -11,16 +11,18 @@
    named template, the footer: Slide.vue) and has no code for any layout.
 
    Tokens, and their defaults. Set them in a theme ([data-theme="x"] { … }), at the project's
-   :root, or on one slide (Slide(layout="cover" style="--ar-layout-cover-bar: gold")):
-     --ar-layout-cover-title    the h1's size                 1.25 x --ar-title
-     --ar-layout-cover-bar      the .bar's colour             --ar-accent
-     --ar-layout-cover-footer   the deck's footer: none hides it, flex shows it      none
+   :root, or on one slide, where each is also an attribute named after it (Slide(layout="cover"
+   bar="gold") sets --ar-layout-cover-bar: gold on that slide; the engine finds a layout's tokens
+   in its CSS, vite/layout-params.js, and has no code for any of them):
+     --ar-layout-cover-title-size   the h1's size                 1.25 x --ar-title
+     --ar-layout-cover-bar          the .bar's colour             --ar-accent
+     --ar-layout-cover-footer       the deck's footer: none hides it, flex shows it      none
    Each default is another token, so it is resolved on the slide itself, into a private --_ar-…
    the rules read: declared at :root, var() would be resolved there, and a theme's --ar-accent
    would never reach it (tokens.css says why). A slide's with-footer or no-footer class wins over
    the footer's token (Slide.vue). */
 :where(.layout-cover) {
-  --_ar-cover-title: var(--ar-layout-cover-title, calc(var(--ar-title) * 1.25));
+  --_ar-cover-title: var(--ar-layout-cover-title-size, calc(var(--ar-title) * 1.25));
   --_ar-cover-bar: var(--ar-layout-cover-bar, var(--ar-accent));
   --_ar-cover-footer: var(--ar-layout-cover-footer, none);
   /* no header band on a cover: its title is part of the centred group */

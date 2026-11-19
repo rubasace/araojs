@@ -8,11 +8,11 @@
        h2 One picture, one idea
        p The picture fills its side, edge to edge.
 
-   Tokens, and their defaults (a theme, the project's :root or one slide sets them; why each is
-   resolved on the slide: cover.css):
+   Tokens, and their defaults (a theme, the project's :root or one slide sets them, a slide also as
+   attributes: Slide(layout="image-left" columns="2fr 3fr"); why each is resolved on the slide:
+   cover.css):
      --ar-layout-image-left-columns     the two sides' widths, picture then text, as CSS grid
-                                        columns (one slide: style="--ar-layout-image-left-columns:
-                                        2fr 3fr")                                         1fr 1fr
+                                        columns                                           1fr 1fr
      --ar-layout-image-left-inset       padding around the picture in its zone            0px
      --ar-layout-image-left-footer      the deck's footer: flex shows it, none hides it   flex
      --ar-layout-image-left-footer-bg   a backdrop under the footer (a colour, a gradient), to

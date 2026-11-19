@@ -7,10 +7,10 @@
        template(#right)
          p(v-step="2") One starter, one version.
 
-   Tokens, and their defaults (a theme, the project's :root or one slide sets them; why each is
-   resolved on the slide: cover.css):
-     --ar-layout-split-columns   the two zones' widths, left to right, as CSS grid columns
-                                 (one slide: style="--ar-layout-split-columns: 2fr 1fr")   1fr 1fr
+   Tokens, and their defaults (a theme, the project's :root or one slide sets them, a slide also as
+   attributes: Slide(layout="split" columns="2fr 1fr"); why each is resolved on the slide:
+   cover.css):
+     --ar-layout-split-columns   the two zones' widths, left to right, as CSS grid columns  1fr 1fr
      --ar-layout-split-gap       the space between them                      --ar-gap-lg
    A zone keeps its width: what is wider is clipped at its edge (Slide.vue's .ar-zone). */
 :where(.layout-split) {

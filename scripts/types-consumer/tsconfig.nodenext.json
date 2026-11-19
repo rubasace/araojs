@@ -4,5 +4,6 @@
     "strict": true, "skipLibCheck": false, "noEmit": true,
     "lib": ["ES2023", "DOM"], "types": ["node"]
   },
+  "vueCompilerOptions": { "checkUnknownProps": true },
   "include": ["main.ts", "Probe.vue", "src/**/*.ts"]
 }
