@@ -16,9 +16,10 @@
      section as it is.
      What a slide renders, in this order:
        the background layer     .ar-slide-bg, behind everything, edge to edge (below)
-       the header               .ar-header: the title the default slot starts with (below)
+       the header               .ar-header: the title the default slot starts with, and its
+                                subtitle (below)
        the body                 .ar-body: the rest of the default slot
-       a zone per named slot    .ar-zone-<name>: template(#image), template(#left)… each in a box
+       a zone per named slot    .ar-zone-<name>: template(#image), a project layout's… each in a box
                                 of its own, in the order written; a layout's CSS places them
                                 (#title is the header's, below). Any name renders; the types take
                                 the layout's zones only (its @zone, the .ar-zone-<name> it styles)

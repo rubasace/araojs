@@ -194,13 +194,12 @@ export function createStage({ follow, onMove, role = 'audience' }: StageOptions 
   }
 }
 
-// A slide's title, for the jump menu, the presenter view, the notes pages and useDeck().slides:
-// the text of the first heading of its section (el) outside the background and the footer.
-// titleOf reads it now; a slide keeps it in its title too, read after each of its renders
-// (state/slide.ts), for what follows it (useDeck().slides, Agenda).
+// A slide's title, for the jump menu, the presenter view, the notes pages, a thumbnail's cover
+// and Agenda: the text of the first heading of its section (el) outside the background and the
+// footer. Each slide reads it after each of its renders and keeps it (its title, state/slide.ts);
+// every reader takes it from there, through view.slides (useDeck().slides, titles()).
 const HEADING = ':is(h1, h2, h3):not(.ar-slide-bg *, .ar-footer *)'
 export const titleIn = (el: HTMLElement | null | undefined) => el?.querySelector(HEADING)?.textContent?.replace(/\s+/g, ' ').trim() || ''
-export const titleOf = (slide: StageSlide) => titleIn(slide.el.value)
 
 // Where the audience will be after one more press: the next step of the same slide, else the
 // next slide at its first step; at the very end, { end: true }.

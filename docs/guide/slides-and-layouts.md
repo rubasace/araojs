@@ -88,7 +88,9 @@ Slide(layout="section")
 A grid of blocks: each child of the body is a block (a picture or an `Icon` first, drawn at one
 size, then its `h3` and a muted `p`), in rows balanced by how many there are (4 as 2 + 2, 5 as
 3 + 2, 7 as 4 + 3, 9 as 3 + 3 + 3…), the last one centred; `columns="4"` fixes the count,
-`cards` gives each block a background, `align="start"` lines their content up on the left. Past
+`rows="2"` the rows, `cards` gives each block a background, `align="start"` lines their content
+up on the left. A block's parts are found at any depth in it (a link around them, a component of
+your own), its picture when it comes first. Past
 eight blocks, keep each short (an icon and a title): the pictures get smaller from nine on, but
 three rows of three lines each fill a slide.
 
@@ -219,13 +221,14 @@ Deck
 
 Each item carries `ar-agenda-item` and one of `ar-agenda-done`, `ar-agenda-current` (with
 `aria-current="step"`) and `ar-agenda-upcoming`; `Agenda` draws no look of its own. The look is
-the layout's: a colour, an opacity and a weight per state
-(`--ar-layout-agenda-done-opacity`, `--ar-layout-agenda-current-color`… [Layout
-tokens](../reference/theme-tokens.md#layouts)), which a theme or one slide changes. Give the three
-states the same values and the effect is gone:
+the layout's: a colour, a number colour, an opacity and a weight per state
+(`--ar-layout-agenda-done-color`, `--ar-layout-agenda-current-weight`… [Layout
+tokens](../reference/theme-tokens.md#layouts)), which a theme or one slide changes. A done part
+is dimmed by its colour, the muted one made lighter, number and all, which keeps it legible (at
+least 3:1 on every built-in theme). Give the three states the same values and the effect is gone:
 
 ```pug
-Slide(layout="agenda" done-opacity="1" current-color="currentColor" current-weight="400")
+Slide(layout="agenda" done-color="currentColor" done-number-color="var(--ar-accent)" current-color="currentColor" current-weight="400")
   h2 Agenda
   Agenda
 ```
@@ -345,6 +348,12 @@ Slide
   p …
   h3 Pillar one             //- a heading of the body
 ```
+
+Only a heading *right after* the title is its subtitle: an `h3` there is drawn under the title,
+muted and smaller, even when the slide's later `h3` are headings of the body. A slide that opens
+its body with a heading (`h2 Pillars`, then `h3 Logging`, `p …`, `h3 Metrics`) needs something
+before that first `h3` (a `p`) or its header in `template(#title)`, else "Logging" is the
+subtitle. The skill's `check-deck` script warns about such a slide.
 
 ### Placing the body
 

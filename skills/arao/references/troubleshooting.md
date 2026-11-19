@@ -44,8 +44,13 @@
   lead line under the title is its subtitle: an `h3` right after the `h2`.
 - **An `h1` title looks like an `h2` one now**: the title's look is the tokens' and the layout's,
   never the tag's (`h1` on a cover or a section, `h2` elsewhere). A bigger title on one slide:
-  `style="--ar-title-size: 80px"`. An `h3` right after the title is its subtitle (muted, smaller):
-  to have it as a heading of the body, put something before it.
+  `style="--ar-title-size: 80px"`.
+- **An `h3` right after the title is its subtitle, not a heading of the body**, even when the
+  slide's later `h3` are body headings: in `h2 Pillars` / `h3 Logging` / `p …` / `h3 Metrics`,
+  "Logging" is drawn under the title, muted and smaller, and "Metrics" as a heading. To make the
+  first one a body heading too, put something before it (a `p`, a lead line), or write the header
+  in `template(#title)` (then the whole default slot is the body). `scripts/check-deck.mjs` warns
+  about a slide with an `h3` subtitle and more `h3` in its body.
 - A theme's `--ar-layout-cover-title` / `--ar-layout-section-title` does nothing now: they are
   `--ar-layout-cover-title-size` / `--ar-layout-section-title-size` (`title-size` on the slide).
 - A hand-written `declare module 'araojs' { interface SlideLayouts { wide: true } }` fails the type

@@ -48,23 +48,27 @@ export interface LibraryLayouts {
    *
    * An `ol` under the title, its items in large rows numbered in the accent. With `Agenda` in it,
    * the list is the deck's own (the titles of its `section` slides, kept up to date) and each row
-   * shows where the talk stands, seen from this slide: the parts already given dimmed (`done`), the
-   * next one in the accent, bold (`current`), the ones after it as they are (`upcoming`). Each state
-   * has its own tokens; give the three the same values to show no state. A hand-written `ol` is
-   * styled the same, with no state.
+   * shows where the talk stands, seen from this slide: the parts already given dimmed, number and
+   * all (`done`), the next one in the accent, bold (`current`), the ones after it as they are
+   * (`upcoming`). Each state has its own tokens; give the three the same values to show no state.
+   * A hand-written `ol` is styled the same, with no state.
    *
    * Parameters (attributes):
    * - `current-color`: the next part, the one this slide leads to: its colour (default
    *   `--ar-accent`)
+   * - `current-number-color`: its number's colour (default `number-color`)
    * - `current-opacity`: its opacity (default `1`)
    * - `current-weight`: its font weight (default `700`)
-   * - `done-color`: a part already given: its colour (default `currentColor`)
-   * - `done-opacity`: its opacity (default `.4`)
+   * - `done-color`: a part already given: its colour (default `--ar-muted` at 80 %, at least 3:1
+   *   on every built-in theme)
+   * - `done-number-color`: its number's colour (default: its colour)
+   * - `done-opacity`: its opacity (default `1`)
    * - `done-weight`: its font weight (default `400`)
    * - `gap`: the space between rows (default `.35em`)
    * - `number-color`: the numbers' colour (default `--ar-accent`)
    * - `size`: the rows' size (default 0.65 x `--ar-title`)
    * - `upcoming-color`: the parts after it: their colour (default `currentColor`)
+   * - `upcoming-number-color`: their numbers' colour (default `number-color`)
    * - `upcoming-opacity`: their opacity (default `1`)
    * - `upcoming-weight`: their font weight (default `400`)
    *
@@ -88,23 +92,27 @@ export interface LibraryLayouts {
      *
      * An `ol` under the title, its items in large rows numbered in the accent. With `Agenda` in it,
      * the list is the deck's own (the titles of its `section` slides, kept up to date) and each row
-     * shows where the talk stands, seen from this slide: the parts already given dimmed (`done`), the
-     * next one in the accent, bold (`current`), the ones after it as they are (`upcoming`). Each state
-     * has its own tokens; give the three the same values to show no state. A hand-written `ol` is
-     * styled the same, with no state.
+     * shows where the talk stands, seen from this slide: the parts already given dimmed, number and
+     * all (`done`), the next one in the accent, bold (`current`), the ones after it as they are
+     * (`upcoming`). Each state has its own tokens; give the three the same values to show no state.
+     * A hand-written `ol` is styled the same, with no state.
      *
      * Parameters (attributes):
      * - `current-color`: the next part, the one this slide leads to: its colour (default
      *   `--ar-accent`)
+     * - `current-number-color`: its number's colour (default `number-color`)
      * - `current-opacity`: its opacity (default `1`)
      * - `current-weight`: its font weight (default `700`)
-     * - `done-color`: a part already given: its colour (default `currentColor`)
-     * - `done-opacity`: its opacity (default `.4`)
+     * - `done-color`: a part already given: its colour (default `--ar-muted` at 80 %, at least 3:1
+     *   on every built-in theme)
+     * - `done-number-color`: its number's colour (default: its colour)
+     * - `done-opacity`: its opacity (default `1`)
      * - `done-weight`: its font weight (default `400`)
      * - `gap`: the space between rows (default `.35em`)
      * - `number-color`: the numbers' colour (default `--ar-accent`)
      * - `size`: the rows' size (default 0.65 x `--ar-title`)
      * - `upcoming-color`: the parts after it: their colour (default `currentColor`)
+     * - `upcoming-number-color`: their numbers' colour (default `number-color`)
      * - `upcoming-opacity`: their opacity (default `1`)
      * - `upcoming-weight`: their font weight (default `400`)
      *
@@ -130,6 +138,12 @@ export interface LibraryLayouts {
      */
     currentColor?: string
     /**
+     * its number's colour (default `number-color`)
+     *
+     * `--ar-layout-agenda-current-number-color`
+     */
+    currentNumberColor?: string
+    /**
      * its opacity (default `1`)
      *
      * `--ar-layout-agenda-current-opacity`
@@ -142,13 +156,20 @@ export interface LibraryLayouts {
      */
     currentWeight?: string
     /**
-     * a part already given: its colour (default `currentColor`)
+     * a part already given: its colour (default `--ar-muted` at 80 %, at least 3:1 on every
+     * built-in theme)
      *
      * `--ar-layout-agenda-done-color`
      */
     doneColor?: string
     /**
-     * its opacity (default `.4`)
+     * its number's colour (default: its colour)
+     *
+     * `--ar-layout-agenda-done-number-color`
+     */
+    doneNumberColor?: string
+    /**
+     * its opacity (default `1`)
      *
      * `--ar-layout-agenda-done-opacity`
      */
@@ -183,6 +204,12 @@ export interface LibraryLayouts {
      * `--ar-layout-agenda-upcoming-color`
      */
     upcomingColor?: string
+    /**
+     * their numbers' colour (default `number-color`)
+     *
+     * `--ar-layout-agenda-upcoming-number-color`
+     */
+    upcomingNumberColor?: string
     /**
      * their opacity (default `1`)
      *
@@ -329,13 +356,15 @@ export interface LibraryLayouts {
    * A grid of blocks: features, pillars, a team, logos.
    *
    * Each child of the body is a block, centred in its cell: an optional picture or icon first
-   * (`Icon`, `Img`, an `img` or an `svg`, drawn at one size), then its `h3` and a `p` (muted). The
+   * (`Icon`, `Img`, an `img` or an `svg`, drawn at one size), then its `h3` and a `p` (muted),
+   * styled at any depth in the block (a link around them, a component of the project's). The
    * blocks wrap in rows, the last one centred when it is not full; how many go in a row follows how
    * many there are, so the rows are balanced: 1 to 3 in one row, 4 as 2 + 2, 5 as 3 + 2, 6 as 3 + 3,
    * 7 as 4 + 3, 8 as 4 + 4, 9 as 3 + 3 + 3, 10 as 5 + 5, 11 as 4 + 4 + 3, 12 as 4 x 3; 13 and more
-   * wrap at `max-columns`. `columns` fixes the count instead (4 with 9 blocks: 4 + 4 + 1). With or
-   * without a title; the rows sit in the middle of the space left (a slide's `top` or `bottom` class
-   * moves them). Write each block as an element (a `div`) holding its content.
+   * wrap at `max-columns`. `columns` fixes the count instead (4 with 9 blocks: 4 + 4 + 1), and
+   * `rows` the rows (2 with 9 blocks: 5 + 4). With or without a title; the rows sit in the middle
+   * of the space left (a slide's `top` or `bottom` class moves them). Write each block as an
+   * element (a `div`) holding its content.
    *
    * Parameters (attributes):
    * - `align`: a block's content: `center` or `start` (default `center`)
@@ -348,6 +377,8 @@ export interface LibraryLayouts {
    *   text's size; `2em` with 9 blocks or more)
    * - `max-columns`: the most blocks in a row: 13 blocks and more wrap there, and no balanced
    *   row is wider (default `5`)
+   * - `rows`: how many rows, whatever their count: a row holds the count divided by it, rounded
+   *   up (counted up to 24 blocks; `columns` wins over it)
    *
    * @example
    * ```pug
@@ -372,13 +403,15 @@ export interface LibraryLayouts {
      * A grid of blocks: features, pillars, a team, logos.
      *
      * Each child of the body is a block, centred in its cell: an optional picture or icon first
-     * (`Icon`, `Img`, an `img` or an `svg`, drawn at one size), then its `h3` and a `p` (muted). The
+     * (`Icon`, `Img`, an `img` or an `svg`, drawn at one size), then its `h3` and a `p` (muted),
+     * styled at any depth in the block (a link around them, a component of the project's). The
      * blocks wrap in rows, the last one centred when it is not full; how many go in a row follows how
      * many there are, so the rows are balanced: 1 to 3 in one row, 4 as 2 + 2, 5 as 3 + 2, 6 as 3 + 3,
      * 7 as 4 + 3, 8 as 4 + 4, 9 as 3 + 3 + 3, 10 as 5 + 5, 11 as 4 + 4 + 3, 12 as 4 x 3; 13 and more
-     * wrap at `max-columns`. `columns` fixes the count instead (4 with 9 blocks: 4 + 4 + 1). With or
-     * without a title; the rows sit in the middle of the space left (a slide's `top` or `bottom` class
-     * moves them). Write each block as an element (a `div`) holding its content.
+     * wrap at `max-columns`. `columns` fixes the count instead (4 with 9 blocks: 4 + 4 + 1), and
+     * `rows` the rows (2 with 9 blocks: 5 + 4). With or without a title; the rows sit in the middle
+     * of the space left (a slide's `top` or `bottom` class moves them). Write each block as an
+     * element (a `div`) holding its content.
      *
      * Parameters (attributes):
      * - `align`: a block's content: `center` or `start` (default `center`)
@@ -391,6 +424,8 @@ export interface LibraryLayouts {
      *   text's size; `2em` with 9 blocks or more)
      * - `max-columns`: the most blocks in a row: 13 blocks and more wrap there, and no balanced
      *   row is wider (default `5`)
+     * - `rows`: how many rows, whatever their count: a row holds the count divided by it, rounded
+     *   up (counted up to 24 blocks; `columns` wins over it)
      *
      * @example
      * ```pug
@@ -450,6 +485,13 @@ export interface LibraryLayouts {
      * `--ar-layout-grid-max-columns`
      */
     maxColumns?: string
+    /**
+     * how many rows, whatever their count: a row holds the count divided by it, rounded up
+     * (counted up to 24 blocks; `columns` wins over it)
+     *
+     * `--ar-layout-grid-rows`
+     */
+    rows?: string
   }
   /**
    * A picture beside the text, the picture on the left.

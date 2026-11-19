@@ -4,7 +4,7 @@ import { exportOptions } from '../core/exporter'
 import { useDeckSync } from '../composables/useDeckSync'
 import { useFullscreen } from '../composables/useFullscreen'
 import { usePresenterWindow } from '../composables/usePresenterWindow'
-import { ahead, createStage, titleOf, useStage, type DeckSlide, type Role, type Stage } from './stage'
+import { ahead, createStage, useStage, type DeckSlide, type Role, type Stage } from './stage'
 import { createTheme } from './theme'
 import { createTimer, type Timer } from './timer'
 
@@ -105,12 +105,12 @@ export function createDeck(props: DeckProps) {
     : createStage({ onMove: moved, role: mode })
   const next = computed(() => ahead(stage))
   const preview = mode === 'presenter' ? createStage({ follow: () => next.value, role: 'preview' }) : null
-  const titles = () => stage.list.map(titleOf)
+  // every slide's title, as useDeck().slides has it (each slide keeps its own: state/slide.ts)
+  const titles = () => stage.view.slides.value.map((s) => s.title)
   const coverTitle = thumbnail?.title
   if (coverTitle) {
     watchPostEffect(() => {
-      const cover = stage.list[0]
-      coverTitle.value = cover ? titleOf(cover) : ''
+      coverTitle.value = stage.view.slides.value[0]?.title ?? ''
     })
   }
 

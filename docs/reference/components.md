@@ -136,7 +136,7 @@ file of the same name replaces it.
 | `cover` | the header and the body as one group, centred vertically, left-aligned; its title (an `h1`) at 1.25x `--ar-title`, in the text colour; a `.bar` element draws a short bar in the accent; no footer | default, `#title` |
 | `section` | everything centred both ways, on `--ar-accent` in `--ar-accent-fg` (the title, its subtitle and the footer too); its title (an `h1`) at 1.4x `--ar-title`; no footer | default, `#title` |
 | `split` | the header across the top, then the body's two children side by side, its two sides, filling the rest; a side may start with an `h3`, its heading (`columns="2fr 1fr"`, `gap`, `divider="2px solid …"`; default `1fr 1fr`, no divider) | default, `#title` |
-| `grid` | each child of the body a block (a leading `Icon`/`Img`/`img`/`svg` at one size, an `h3`, a muted `p`), in rows balanced by their count (1-3 in a row, 4: 2+2, 5: 3+2, 6: 3+3, 7: 4+3, 8: 4+4, 9: 3+3+3, 10: 5+5, 11: 4+4+3, 12: 4x3, 13 and more at `max-columns`), the last one centred (`columns`, `max-columns`, `gap`, `align`, `cards`, `icon-size`) | default, `#title` |
+| `grid` | each child of the body a block (a leading `Icon`/`Img`/`img`/`svg` at one size, an `h3`, a muted `p`), in rows balanced by their count (1-3 in a row, 4: 2+2, 5: 3+2, 6: 3+3, 7: 4+3, 8: 4+4, 9: 3+3+3, 10: 5+5, 11: 4+4+3, 12: 4x3, 13 and more at `max-columns`), the last one centred; a block's parts found at any depth in it (`columns`, `rows`, `max-columns`, `gap`, `align`, `cards`, `icon-size`) | default, `#title` |
 | `quote` | a `blockquote` opened by a big mark, and its `cite` (small, muted), in the middle; also two `p` (`size`, `mark`, `mark-color`, `align`); the footer shown | default, `#title` |
 | `statement` | its title (an `h2`) huge in the accent, the rest small under it, in the middle; also a `p` first (`size`, `color`, `align`) | default, `#title` |
 | `overlay` | for a slide with a `Background`: the title and the text in a corner (bottom left), white, over a dark gradient (`position`, `scrim`, `color`) | default, `#title` |
@@ -335,8 +335,9 @@ Each item (`li.ar-agenda-item`) carries one state, as seen from the slide the `A
 | `ar-agenda-upcoming` | those after the current one |
 
 - It has no look of its own: on an `agenda` slide the layout draws it (big numbered rows; done
-  dimmed, current in the accent and bold, upcoming as it is), one colour, opacity and weight per
-  state, each a token (`--ar-layout-agenda-done-opacity`…: [Layout tokens](theme-tokens.md#layouts)).
+  dimmed, number and all, current in the accent and bold, upcoming as it is), a colour, a number
+  colour, an opacity and a weight per state, each a token (`--ar-layout-agenda-done-color`…:
+  [Layout tokens](theme-tokens.md#layouts)).
   The same values for the three states show no state. On another layout it is a plain `ol`.
 - The titles are the sections' first headings (their name in the jump menu), the same in the
   audience view, the presenter view (its slide and its preview, each seen from its own copy of

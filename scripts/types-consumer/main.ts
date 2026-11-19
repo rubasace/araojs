@@ -39,13 +39,13 @@ const own: (keyof ProjectLayouts)[] = ['callout', 'section']
 const cover: SlideLayouts['cover'] = { titleSize: '120px', bar: 'gold', footer: 'flex' }
 const callout: SlideLayouts['callout'] = { size: '80px', markColor: 'red' }
 const section: SlideLayouts['section'] = { tone: 'navy' }
-const grid: SlideLayouts['grid'] = { columns: '4', maxColumns: '3', gap: '24px', align: 'start', cards: 'none', iconSize: '64px' }
+const grid: SlideLayouts['grid'] = { columns: '4', rows: '2', maxColumns: '3', gap: '24px', align: 'start', cards: 'none', iconSize: '64px' }
 const split: SlideLayouts['split'] = { columns: '2fr 1fr', gap: '96px', divider: '2px solid red' }
 const quote: SlideLayouts['quote'] = { size: '80px', mark: "'«'", markColor: 'red', align: 'start' }
 const statement: SlideLayouts['statement'] = { size: '200px', color: 'red', align: 'center' }
 const overlay: SlideLayouts['overlay'] = { position: 'end start', scrim: 'none', color: '#fff' }
 const caption: SlideLayouts['caption'] = { captionSize: '24px', captionAlign: 'start' }
-const agenda: SlideLayouts['agenda'] = { doneOpacity: '1', currentColor: 'currentColor', currentWeight: '400', upcomingColor: 'red' }
+const agenda: SlideLayouts['agenda'] = { doneColor: 'currentColor', doneNumberColor: 'red', doneOpacity: '1', currentColor: 'currentColor', currentWeight: '400', upcomingColor: 'red' }
 void [own, cover, callout, section, grid, split, quote, statement, overlay, caption, agenda]
 // @ts-expect-error title is an HTML attribute: no parameter
 const titled: SlideLayouts['callout'] = { title: 'x' }

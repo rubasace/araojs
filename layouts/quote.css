@@ -51,13 +51,19 @@
   line-height: 1.2;
 }
 .layout-quote > .ar-body > blockquote > :last-child { margin-bottom: 0; }
-/* its mark: large, in the accent, above the quote's first line */
+/* its mark: large, in the accent, above the quote's first line. Its box is trimmed (text-box) to
+   the font's cap height on top and its text edge below (the bottom of descenders, not the
+   baseline), so a mark that sits high (“), one on the x-height («, ») and one under the baseline
+   („) all end above the quote; a browser without text-box gives it its whole line, a little
+   further from the quote, never over it. */
 .layout-quote > .ar-body > :is(blockquote, p):nth-child(1 of :not([hidden]))::before {
   content: var(--_ar-quote-mark);
   display: block;
-  height: .72em;
+  height: auto;
+  margin-bottom: 0;
   font-size: 3em;
   line-height: 1;
+  text-box: trim-both cap text;
   color: var(--_ar-quote-mark-color);
 }
 /* its author: cite, or the plain form's p after the quote */

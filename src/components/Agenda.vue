@@ -17,7 +17,8 @@
      Its titles are the sections' (state/stage.ts titleIn: their first heading), as useDeck().slides
      lists them, in every drawing of the deck: the audience's, the presenter's (current and
      preview: each seen from its own copy of the slide), the export, a thumbnail. Outside a slide it
-     warns and draws nothing. -->
+     warns and draws nothing; in development, a deck with no section slide warns too (the list is
+     empty), once the deck has mounted, from the audience's or the presenter's copy only. -->
 <template>
   <ol class="ar-agenda" v-if="inSlide">
     <li
@@ -30,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useDeck } from '../state/deck'
 import { useSlideIndex } from '../state/slide'
 
@@ -49,5 +50,11 @@ const sections = computed(() => {
   const list = deck.slides.value.filter((s) => s.layout === 'section')
   const current = list.find((s) => s.index >= at)
   return list.map((s) => ({ ...s, state: (s.index < at ? 'done' : s === current ? 'current' : 'upcoming') as State }))
+})
+// no section to list: said once mounted (every slide of the deck has registered by then), in one
+// copy of the deck (not the presenter's preview, nor a thumbnail)
+onMounted(() => {
+  if (import.meta.env.DEV && inSlide && !sections.value.length && deck.role !== 'preview' && deck.role !== 'thumbnail')
+    console.warn('[arao] Agenda lists the deck\'s section slides, Slide(layout="section"), and the deck has none: it is empty')
 })
 </script>

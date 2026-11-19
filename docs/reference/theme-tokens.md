@@ -117,6 +117,7 @@ A `*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows 
 | `--ar-layout-split-gap` | `gap` | `--ar-gap-lg` | the space between them |
 | `--ar-layout-split-divider` | `divider` | `none` | a line between them, as a CSS border (`2px solid currentColor`) |
 | `--ar-layout-grid-columns` | `columns` | balanced by the count | blocks per row, whatever their count |
+| `--ar-layout-grid-rows` | `rows` | none | how many rows, whatever the count: a row holds the count divided by it, rounded up (up to 24 blocks; `columns` wins) |
 | `--ar-layout-grid-max-columns` | `max-columns` | `5` | the most blocks in a row: 13 and more wrap there, no balanced row is wider |
 | `--ar-layout-grid-gap` | `gap` | `--ar-gap-sm` | the space between the blocks (the cards) |
 | `--ar-layout-grid-align` | `align` | `center` | a block's content: `center` or `start` |
@@ -137,9 +138,9 @@ A `*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows 
 | `--ar-layout-agenda-size` | `size` | 0.65x `--ar-title` | the rows' size |
 | `--ar-layout-agenda-gap` | `gap` | `.35em` | the space between rows |
 | `--ar-layout-agenda-number-color` | `number-color` | `--ar-accent` | the numbers' colour |
-| `--ar-layout-agenda-done-color` / `-opacity` / `-weight` | `done-color`… | `currentColor` / `.4` / `400` | a part already given (`Agenda`'s `ar-agenda-done`) |
-| `--ar-layout-agenda-current-color` / `-opacity` / `-weight` | `current-color`… | `--ar-accent` / `1` / `700` | the next part (`ar-agenda-current`) |
-| `--ar-layout-agenda-upcoming-color` / `-opacity` / `-weight` | `upcoming-color`… | `currentColor` / `1` / `400` | the parts after it (`ar-agenda-upcoming`) |
+| `--ar-layout-agenda-done-color` / `-number-color` / `-opacity` / `-weight` | `done-color`… | `--ar-muted` at 80 % / its colour / `1` / `400` | a part already given (`Agenda`'s `ar-agenda-done`): dimmed, at least 3:1 on every built-in theme |
+| `--ar-layout-agenda-current-color` / `-number-color` / `-opacity` / `-weight` | `current-color`… | `--ar-accent` / `number-color` / `1` / `700` | the next part (`ar-agenda-current`) |
+| `--ar-layout-agenda-upcoming-color` / `-number-color` / `-opacity` / `-weight` | `upcoming-color`… | `currentColor` / `number-color` / `1` / `400` | the parts after it (`ar-agenda-upcoming`) |
 | `--ar-layout-image-left-columns` / `--ar-layout-image-right-columns` | `columns` | `1fr 1fr` | the two sides' widths, left to right, as CSS grid columns (`3fr 2fr`, `1fr 720px`) |
 | `--ar-layout-image-left-inset` / `--ar-layout-image-right-inset` | `inset` | `0px` | padding around the picture in its zone |
 | `--ar-layout-image-left-footer` / `--ar-layout-image-right-footer` | `footer` | `flex` | the deck's footer on those slides, over the picture |
@@ -150,7 +151,8 @@ A `*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows 
   --ar-layout-section-bg: #0b3d2e;
   --ar-layout-image-right-footer-bg: linear-gradient(transparent, rgb(0 0 0 / .45));
   /* an agenda that shows no state: the three states alike */
-  --ar-layout-agenda-done-opacity: 1;
+  --ar-layout-agenda-done-color: currentColor;
+  --ar-layout-agenda-done-number-color: var(--ar-accent);
   --ar-layout-agenda-current-color: currentColor;
   --ar-layout-agenda-current-weight: 400;
 }

@@ -104,7 +104,8 @@ const from = (/** @type {typeof layouts[number]} */ l) =>
       : `project, ${where(l.file)}${l.replaces ? ", replaces the library's" : ''}${l.validName ? '' : ', no slide can name it'}`
 
 console.log(wrap('The layouts of this project, each named by Slide(layout="<name>"). Every slide takes the default '
-  + 'slot (its title, the h1 or h2 it starts with, then its body) and #title (a header of its own '
+  + 'slot (its title, the h1 or h2 it starts with, and its subtitle, a heading right after it of '
+  + 'another tag, then its body) and #title (a header of its own '
   + "instead); a layout's zones are the other named templates it places, template(#<zone>); its "
   + 'parameters are attributes of the slide, each one setting the token --ar-layout-<name>-<parameter> '
   + 'on it.', WIDTH).join('\n'))

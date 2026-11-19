@@ -14,7 +14,9 @@
 // (the project's layouts and their zones from `arao layouts --json`, run in the project; not
 // checked when that fails, as with an older araojs): the layout's CSS does not place them, but a
 // theme or the deck's own CSS may (.ar-zone-<name>), and then the type check needs them declared
-// (ProjectLayoutZones: docs/guide/slides-and-layouts.md).
+// (ProjectLayoutZones: docs/guide/slides-and-layouts.md). And about a slide whose header has an h3
+// subtitle (the h3 right after its title) while its body goes on with h3 headings: the first one
+// was most likely meant as a heading of the body too.
 import { spawnSync } from 'node:child_process'
 import { mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -119,6 +121,14 @@ const strayZones = zonesOf == null ? [] : await page.evaluate((zones) => [...doc
   return stray.length ? [`slide ${i + 1} (layout ${layout}): ${stray.map((n) => `template(#${n})`).join(', ')}; its zones: ${own.length ? own.map((n) => `#${n}`).join(', ') : 'none'}`] : []
 }), zonesOf)
 
+// an h3 right after the title is its subtitle (Slide.vue), even when the slide's other h3 are
+// headings of its body: a slide with an h3 subtitle and an h3 directly in its body likely meant
+// the first one as a body heading. A warning: it does not fail the check
+const subtitleHeadings = await page.evaluate(() => [...document.querySelectorAll('.ar-slide')].flatMap((slide, i) => {
+  const sub = slide.querySelector(':scope > .ar-header > h3.ar-subtitle')
+  return sub && slide.querySelector(':scope > .ar-body > h3') ? [`slide ${i + 1}: "${sub.textContent.trim()}"`] : []
+}))
+
 const hash = () => page.evaluate(() => location.hash)
 const parse = (h) => (h.match(/^#\/(\d+)\/(\d+)/) || []).slice(1).map(Number)
 const steps = {}
@@ -152,6 +162,7 @@ if (overflow.size) console.log(`overflow on slides: ${[...overflow].join(', ')}`
 if (removed.length) console.log(`removed Slide API (${removed.length} slides):\n  ${removed.join('\n  ')}`)
 if (zonesOf == null) console.log('zones: not checked (npx arao layouts --json failed)')
 else if (strayZones.length) console.log(`warning: templates that are no zone of their layout, placed only if a theme or the deck's CSS styles .ar-zone-<name> (${strayZones.length} slides; npx arao layouts):\n  ${strayZones.join('\n  ')}`)
+if (subtitleHeadings.length) console.log(`warning: an h3 right after the title is its subtitle, and these slides have more h3 in the body: did you mean a body heading? Put something before it (a p), or use template(#title) for the header (${subtitleHeadings.length} slides):\n  ${subtitleHeadings.join('\n  ')}`)
 if (problems.length) console.log(`console problems (${problems.length}):\n  ${problems.join('\n  ')}`)
 else console.log('console: clean')
 console.log(`screenshots: ${outDir}/`)
