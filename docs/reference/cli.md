@@ -1,7 +1,8 @@
 # CLI
 
 The `arao` command, run in the slides project (its folder is the current directory): `arao export`
-prints decks to PDF, `arao layouts` lists the layouts a slide can name, each with its doc. Each
+prints decks to PDF, `arao layouts` lists the layouts a slide can name, each with its doc, then the
+utility classes. Each
 command reads the project the way its build does: its Vite config, and the options it gives the
 `arao()` plugin (its folders, its layouts folder among them). `arao --help` lists the commands,
 `arao <command> --help` a command's options.
@@ -74,8 +75,10 @@ size.
 ## arao layouts
 
 Lists every layout a slide of the project can name, with what each one says of itself: what it is
-for, an example, its zones and its parameters, each described. For a person by default; `--json`
-for a program, an agent learning the project's layouts without reading their CSS.
+for, an example, its zones and its parameters, each described; then the
+[utility classes](components.md#utility-classes), by group, each described. For a person by
+default; `--json` for a program, an agent learning the project's layouts and classes without
+reading their CSS.
 
 ```
 npx arao layouts [--json]
@@ -119,8 +122,16 @@ quote (project, src/layouts/quote.css)
     size    the quote's size (default .8 x `--ar-title`)
 ```
 
-`--json` prints one object, `{ "version": "…", "layouts": [ … ] }`: `version` is the araojs that
-printed it, `layouts` a member per layout in the same order:
+After the layouts, a block per group of utility classes (`Placement`, `Alignment`, `Spacing`,
+`Size`, `Colour and marks`, `On a Slide`): what they do, an example, and each class described. They
+are the library's, read from the doc comments of its stylesheet (`src/styles/utilities.css` in the
+package); a project adds none.
+
+`--json` prints one object, `{ "version": "…", "layouts": [ … ], "classGroups": [ … ] }`:
+`version` is the araojs that printed it; `classGroups` a member per group, in the order above,
+`{ "name", "summary", "description", "example", "classes": [{ "name", "description" }] }` (a class
+two groups document, as `center` on a block and on a `Slide`, is in each of them; within a group no
+name repeats); and `layouts` a member per layout in the same order as above:
 
 | Field | Value |
 |---|---|

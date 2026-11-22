@@ -2,7 +2,7 @@
      set in the Vite plugin; subfolders allowed: "team/ana.jpg"); src="https://…" takes any URL instead.
        Img(file="team.jpg" fit="cover" position="center 30%" opacity="0.5" rounded alt="The team")
      Size: an Img has no size of its own. It takes the box its container gives it (the rest of the
-     slide under the title, a column of Cols, a cell of Grid, a zone, Center) and fits the picture in:
+     slide under the title, a side of split, a column of .cols, a zone) and fits the picture in:
        fit="contain"   the whole picture, centred, with empty bands if the shapes differ (default)
        fit="cover"     fills the box and crops what does not fit (default in the image zone of
                        image-left and image-right, and in a Background)

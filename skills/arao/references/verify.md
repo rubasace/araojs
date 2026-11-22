@@ -32,13 +32,17 @@ node <skill>/scripts/check-deck.mjs <the URL Vite printed><name> deck-check
 
 - collects `console` warnings/errors and page errors: expect none. Two kinds:
   - Vue's own, `[Vue warn]: Invalid prop: …`, when a prop fails its type or validator
-    (`gap="huge"`, `size="36"` without the colon, `fit="fill"`);
+    (`size="36"` without the colon, `fit="fill"`), and `Failed to resolve component` for a
+    component Arao no longer has (`Cols`, `Rows`, `Grid`, `Center`);
   - Arao's, prefixed `[arao]`: missing files or icons, values it cannot use (`duration`),
     `v-step`, `Notes` or `Background` outside a slide, a path that names no deck, an unknown
     theme name;
 - reports "removed Slide API": a slide carrying a prop older Arao had (`title`, `align`,
   `footer`, `ratio`, `bg`, `bg-*`), which is now a plain HTML attribute that does nothing, or a
-  leftover `template(#background)` (a `.ar-zone-background` zone); the fixes:
+  leftover `template(#background)` (a `.ar-zone-background` zone); and "removed components":
+  `Cols`, `Rows`, `Grid` (rendered as plain elements of those names), each with its replacement.
+  It warns, without failing, about a `center` element (the removed `Center`, or HTML's old
+  `<center>`) and the class `.small` (now `.text-sm`, unless it is the deck's own); the fixes:
   [troubleshooting.md](troubleshooting.md#decks-written-for-an-older-arao);
 - warns (without failing) about named templates that are no zone of their slide's layout
   (`template(#image)` on a `split`): its CSS does not place them. Fix the name, unless a theme or
@@ -52,7 +56,7 @@ node <skill>/scripts/check-deck.mjs <the URL Vite printed><name> deck-check
 - flags slides whose content overflows (`scrollHeight`/`scrollWidth` over the client size);
 - saves a screenshot of every step (`deck-check/s<slide>-<step>.png`): look at them.
 
-It exits 1 on any warning, error, removed Slide API, quirks mode or overflow, and when no slide
+It exits 1 on any warning, error, removed Slide API or component, quirks mode or overflow, and when no slide
 renders at the URL (wrong URL or port, server not running): it then prints the console problems
 it collected.
 Without the script, do the same with Playwright by hand.

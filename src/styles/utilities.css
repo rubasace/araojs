@@ -1,0 +1,189 @@
+/* The utility classes: the classes a deck writes on an element of a slide (p.muted, .cols), a
+   small design system that reads the theme's tokens, so a theme restyles them. They arrange and
+   mark what is inside a block (the body, a side of split, a block of grid, a zone); the slide's
+   structure is its layout's (layouts/), never theirs. On a Slide itself, a few place its body or
+   decide its footer (the last group).
+   Each /** … *\/ comment below documents a group of them, and is what `arao layouts` prints
+   (vite/class-docs.js reads it): a first line "<Group>: what they do", more lines if need be,
+   @example (Pug), then @class <name> <description> per class. Every class a rule here names
+   (but the engine's own, ar-…) is documented in one, and every documented one has a rule here: the
+   library build checks it (vite.config.js).
+   Specificity: placement, alignment and spacing are .ar-slide .<class>, so a layout's rule for
+   its own blocks wins over them (put the class on an element inside the block) and v-step.collapse
+   still hides (base.css); the look (sizes, colours, the marker, upper case) is !important, as
+   PrimeFlex's classes are, so it wins over what a layout or a theme sets on the same element (a
+   p.accent in a block of grid, whose text is muted), an inline style="color: …" on it too; a
+   theme restyles them through their tokens, never by overriding the classes. What only shapes the
+   children (their clipping, their margins) has zero specificity, or the slide's: a rule of the
+   deck's wins.
+   Names: short and common on purpose (an author types them, an agent guesses them), and they
+   apply to any element inside a slide, so a class of the same name from elsewhere gets their
+   style there too (.row and .stack of Bootstrap or daisyUI, Tailwind's text-*, Pygments'
+   .highlight around code pasted as HTML): an accepted trade-off. Outside .ar-slide (the presenter
+   view, the list of decks) they touch nothing. */
+
+/**
+ * Placement: arrange a block's children, in columns, rows, a stack or a row.
+ * Written on an element of yours: a layout's own blocks (split's sides, grid's blocks) are the
+ * layout's, so put the class on an element inside one. Each is as tall as its content (`grow`
+ * makes it fill the rest of its container, which a `Snippet` or a filling `Img` inside needs), its
+ * children `gap` apart (`--ar-gap-md`; `gap-sm`, `gap-lg`). In columns and rows a child is never
+ * wider than its track: what is wider is clipped at its edge, never painted over its neighbour.
+ * When columns or rows are the whole slide, that is a layout: `split`, `grid`.
+ * @example
+ * Slide(layout="split")
+ *   h2 Before and after
+ *   div
+ *     h3 A row
+ *     .row
+ *       Icon(name="lucide:rocket" size="96")
+ *       p.grow An icon beside its text
+ *   div
+ *     h3 Columns
+ *     .cols.grow(style="--ar-cols: 3fr 2fr")
+ *       Snippet(file="App.java")
+ *       ul
+ *         li One file
+ * @class cols    columns side by side, one per child, of equal width; set them with `--ar-cols`
+ *                in its style, as CSS grid columns, taken as written (`style="--ar-cols: 2fr
+ *                1fr"`, `auto 1fr`; `fr` adding up to less than 1 fill only that part)
+ * @class cols-2  two equal columns, filled row by row, every row as tall as the tallest
+ * @class cols-3  three equal columns, filled row by row
+ * @class cols-4  four equal columns, filled row by row
+ * @class rows    rows one under another, of equal height, sharing its height (give it one:
+ *                `grow`, or a zone's); set them with `--ar-rows` in its style (`auto 1fr`)
+ * @class stack   its children one under another, `gap` apart instead of their own margins
+ * @class row     its children side by side, as wide as their content, centred on one line,
+ *                `gap` apart (their own top and bottom margins dropped): an icon or a picture
+ *                and its text, with `grow` on the text
+ */
+.ar-slide .cols {
+  display: grid; gap: var(--ar-gap-md);
+  grid-template-columns: var(--ar-cols, none); grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
+}
+.ar-slide :is(.cols-2, .cols-3, .cols-4) { display: grid; gap: var(--ar-gap-md); grid-auto-rows: 1fr; }
+.ar-slide .cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ar-slide .cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ar-slide .cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ar-slide .rows {
+  display: grid; gap: var(--ar-gap-md);
+  grid-template-columns: minmax(0, 1fr); grid-template-rows: var(--ar-rows, none); grid-auto-rows: 1fr;
+}
+.ar-slide .stack { display: flex; flex-direction: column; gap: var(--ar-gap-md); }
+.ar-slide .row { display: flex; flex-direction: row; align-items: center; gap: var(--ar-gap-md); }
+/* widths hold, heights grow: a child is never wider than its track, and what is wider inside it is
+   clipped at the track's edge (the y axis stays visible), so it never paints over its neighbour */
+:where(.cols, .cols-2, .cols-3, .cols-4, .rows) > * { min-width: 0; max-width: 100%; overflow-x: clip; }
+/* the gap is the space between a stack's or a row's children: their own margins along it go (the
+   slide's: a p's or a heading's margin is the slide's too), and a row's text may shrink */
+.ar-slide .stack > * { margin-block: 0; }
+.ar-slide .row > * { margin-block: 0; min-width: 0; }
+/* --ar-cols and --ar-rows are set on one element for that element: never inherited, so columns
+   inside columns start equal again */
+@property --ar-cols { syntax: '*'; inherits: false; }
+@property --ar-rows { syntax: '*'; inherits: false; }
+
+/**
+ * Alignment: where a block's content sits in it, when the block is taller than its content.
+ * On a block of yours (or a side of split, a zone): its content. In `cols`, `cols-*`, `rows` and a
+ * `row`: each child in its track or on the line (their default: columns stretch each child to the
+ * row's height). In a `stack`: its children. `center` is `middle` with the text centred, and the
+ * children centred across too. On a block of grid only top to bottom: across, it follows grid's
+ * own `align`.
+ * @example
+ * .cols.middle
+ *   Img(file="chart.svg")
+ *   p Each child centred top to bottom in its column
+ * @class top     its content at the top
+ * @class middle  its content centred top to bottom, the text as it is
+ * @class bottom  its content at the bottom
+ * @class center  its content centred both ways: top to bottom, and across (its text centred)
+ */
+.ar-slide .top { align-content: start; justify-content: start; }
+.ar-slide .middle { align-content: safe center; justify-content: safe center; }
+.ar-slide .bottom { align-content: safe end; justify-content: safe end; }
+.ar-slide .center { align-content: safe center; justify-content: safe center; align-items: center; text-align: center; }
+/* in columns, rows and a row they place each child in its track or on the line (the cross axis),
+   and do not move the tracks: a row's main axis runs across */
+.ar-slide :is(.cols, .cols-2, .cols-3, .cols-4, .rows, .row):is(.top, .middle, .bottom) { justify-content: normal; }
+.ar-slide :is(.cols, .cols-2, .cols-3, .cols-4, .rows, .row).top { align-items: start; }
+.ar-slide :is(.cols, .cols-2, .cols-3, .cols-4, .rows, .row):is(.middle, .center) { align-items: center; }
+.ar-slide :is(.cols, .cols-2, .cols-3, .cols-4, .rows, .row).bottom { align-items: end; }
+
+/**
+ * Spacing: the gap between the children of a block, from the theme's gap tokens.
+ * On any block that lays its children out: the classes above, a side of split, a zone.
+ * @example
+ * .cols-3.gap-sm
+ *   .card One
+ *   .card Two
+ *   .card Three
+ * @class gap-sm  a small gap (`--ar-gap-sm`)
+ * @class gap     the standard gap (`--ar-gap-md`), the one `cols`, `rows`, `stack` and `row` have
+ * @class gap-lg  a large gap (`--ar-gap-lg`)
+ */
+.ar-slide .gap-sm { gap: var(--ar-gap-sm); }
+.ar-slide .gap { gap: var(--ar-gap-md); }
+.ar-slide .gap-lg { gap: var(--ar-gap-lg); }
+
+/**
+ * Size: an element that fills the space left, and text a size up or down.
+ * The text sizes are the theme's tokens, in em: a size up or down from the text around.
+ * @example
+ * p.text-xl.accent 3x
+ * p.text-sm.muted faster builds, measured on our CI
+ * @class grow     fills the space left in its container, which lays out in a column or a row (the
+ *                 body, a side of split, a zone, a `stack`, a `row`)
+ * @class text-sm  smaller text (`--ar-text-small`)
+ * @class text-lg  larger text (`--ar-text-large`)
+ * @class text-xl  much larger text (`--ar-text-xlarge`)
+ */
+.ar-slide .grow { flex: 1 1 0; min-width: 0; min-height: 0; }
+.ar-slide .text-sm { font-size: var(--ar-text-small) !important; }
+.ar-slide .text-lg { font-size: var(--ar-text-large) !important; }
+.ar-slide .text-xl { font-size: var(--ar-text-xlarge) !important; }
+
+/**
+ * Colour and marks: text in the accent or muted, a word marked, a label in capitals.
+ * The colours are the theme's, so each theme restyles them.
+ * @example
+ * p Ship #[span.highlight on Fridays], with #[span.accent one] command.
+ * p.muted.upper Since 2024
+ * @class accent     text in the accent colour (`--ar-accent`); an `Icon` too
+ * @class muted      secondary text (`--ar-muted`)
+ * @class highlight  a marker behind inline text (`--ar-highlight`; default the accent, light)
+ * @class upper      text in capitals
+ */
+.ar-slide .accent { color: var(--ar-accent) !important; }
+.ar-slide .muted { color: var(--ar-muted) !important; }
+.ar-slide .highlight {
+  background: var(--_ar-highlight) !important;
+  padding: 0 .15em; border-radius: calc(var(--ar-radius) * .5);
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+.ar-slide .upper { text-transform: uppercase !important; }
+
+/**
+ * On a Slide: where its body sits, and its footer, whatever the theme and the layout say.
+ * The body starts at the top on every slide (`--ar-body-align`, which a theme or a layout may
+ * change); these place it on one slide. The footer is the Deck's `#footer`, shown by the default
+ * layout and hidden by some (`cover`, `section`: their token).
+ * @example
+ * Slide.center
+ *   h2 One thing to remember
+ *   p Nothing ships without a test.
+ * @class top          its body from the top (the default, unless the theme or the layout says
+ *                     otherwise)
+ * @class middle       its body centred top to bottom, the text as it is
+ * @class bottom       its body at the bottom
+ * @class center       its body centred both ways: in the space under the header, and its text
+ *                     (the title's too)
+ * @class no-footer    the deck's footer hidden on it
+ * @class with-footer  the deck's footer shown on it
+ */
+.ar-slide.top { --ar-body-align: start; }
+.ar-slide.middle { --ar-body-align: center; }
+.ar-slide.bottom { --ar-body-align: end; }
+.ar-slide.center { --ar-body-align: center; text-align: center; }
+.ar-slide.no-footer > .ar-footer { display: none; }
+.ar-slide.with-footer > .ar-footer { display: flex; }

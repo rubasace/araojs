@@ -8,7 +8,7 @@ prop: [Img](../reference/components.md#img) and [Background](../reference/compon
 
 Behaviour and gotchas:
 - **No size of its own.** It fills the box its container gives it (the space under the title, a
-  column, a cell, a zone, `Center`) and fits the picture inside. In a plain block it is as wide as
+  side of `split`, a column of `.cols`, a zone) and fits the picture inside. In a plain block it is as wide as
   the block and as tall as the picture's shape. For a fixed size, give it a class with width and
   height (or one of them and the other `auto`): `.avatar { flex: none; width: 320px; height: 320px; }`.
 - A missing file (or a URL that fails) shows a dashed box with the file name (and the alt, if
@@ -21,12 +21,15 @@ Behaviour and gotchas:
 - Only `png`, `jpg`, `jpeg`, `gif`, `webp`, `avif`, `svg` are taken from the folder.
 
 ```pug
-Cols
+.cols.grow
   Img(file="demo/landscape.svg")
   Img(file="demo/landscape.svg" fit="cover" rounded)
-  Center
+  .stack.center
     Img.avatar(file="demo/city.svg" fit="cover" rounded="full")
 ```
+
+(`.cols.grow`: columns filling the rest of the slide, so each `Img` has a box; `.stack.center`
+centres the sized avatar in its column: [utility classes](../reference/components.md#utility-classes).)
 
 ## Backgrounds
 

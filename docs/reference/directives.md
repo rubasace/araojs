@@ -30,8 +30,8 @@ Behaviour:
 - Fade duration: `--ar-step-duration` (default `.35s`).
 - With `.collapse`, the elements around it glide to their new place (FLIP). Slides not on screen,
   `prefers-reduced-motion`, and export mode switch without the glide.
-- Inside `Cols`/`Rows`/`Grid`, a collapsed child frees its track and the children after it shift
-  back one track until it shows.
+- Inside `.cols`, `.cols-*` or `.rows` (and among `split`'s sides or `grid`'s blocks), a
+  collapsed child frees its track and the children after it shift back one track until it shows.
 
 ## v-step-from: relative steps for reusable components
 

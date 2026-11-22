@@ -1,10 +1,11 @@
 // Two jobs:
 //   npm run build   the library: dist/index.js (ESM) + dist/arao.css
 //   npm run dev     the playground (playground/), a tiny slides project on the library's source
-import { readdir } from 'node:fs/promises'
+import { readdir, readFile } from 'node:fs/promises'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
+import { describeClasses } from './vite/class-docs.js'
 import arao from './vite/index.js'
 
 const here = (p) => fileURLToPath(new URL(p, import.meta.url))
@@ -37,23 +38,15 @@ function keepImportMeta() {
 // first, the rule that must follow it, what breaks otherwise. A rule no longer in arao.css fails
 // too, so that the guard cannot go stale unseen.
 const CSS_ORDER = [
-  [':where(.ar-img)', ':where(.ar-cols, .ar-rows, .ar-grid) > *', 'an Img in Cols, Rows or Grid clips overflow-x like their other children'],
+  [':where(.ar-img)', ':where(.cols, .cols-2, .cols-3, .cols-4, .rows) > *', 'an Img in the columns or rows of the utility classes clips overflow-x like their other children'],
   ['.ar-snippet-line', '[data-ar-slide] *', "the step fade wins over Snippet's own transitions"],
   ['.ar-snippet-tx', '[data-ar-slide] *', "the step fade wins over Snippet's own transitions"],
 ]
-// Rules that must be in arao.css exactly once: the CSS the layout pieces share (layout.css, which
-// each links with <style src>). The build keeps one copy as long as every piece links it the same
-// way; a second, later copy would beat the pieces' own rules and the order above unseen.
-const CSS_ONCE = [':is(.ar-cols, .ar-rows, .ar-grid, .ar-center)']
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const ruleRe = (selector) => new RegExp(`^${escapeRe(selector)} *\\{`, 'gm')
 // where the rule with exactly this selector starts (a line of its own in the unminified build)
 const ruleAt = (css, selector) => css.search(ruleRe(selector))
 function cssOrderError(css) {
-  for (const selector of CSS_ONCE) {
-    const n = css.match(ruleRe(selector))?.length ?? 0
-    if (n !== 1) return `\`${selector} {\` is in ${CSS} ${n} times, not once: every layout piece links layout.css as its first style block, <style src="./layout.css"></style>`
-  }
   for (const [first, then, why] of CSS_ORDER) {
     const a = ruleAt(css, first), b = ruleAt(css, then)
     if (a < 0 || b < 0) return `no rule \`${a < 0 ? first : then} {\` in ${CSS}: update CSS_ORDER in vite.config.js`
@@ -140,10 +133,29 @@ function catalogues() {
   }
 }
 
+// The utility classes document themselves, in full: every group of src/styles/utilities.css with
+// its summary and its example, every class described, every class a rule names documented and
+// every documented one in a rule (vite/class-docs.js reads them, and `arao layouts` prints them).
+const UTILITIES = here('src/styles/utilities.css')
+function utilityDocs() {
+  return {
+    name: 'arao:utility-docs',
+    async buildStart() {
+      const { groups, problems } = describeClasses(await readFile(UTILITIES, 'utf8'))
+      for (const g of groups) {
+        if (!g.example) problems.push(`${g.name || 'a group'}: no @example`)
+        for (const c of g.classes) if (!c.description) problems.push(`${g.name}: @class ${c.name} has no description`)
+      }
+      if (!groups.length) problems.push('no group of classes documented')
+      if (problems.length) this.error(`utility classes: src/styles/utilities.css is not documented as it must be:\n  ${problems.join('\n  ')}`)
+    },
+  }
+}
+
 export default defineConfig(({ command }) => command === 'build'
   ? {
       // the virtual modules stay imports: the project's plugin resolves them
-      plugins: [keepImportMeta(), vue(), css(), catalogues()],
+      plugins: [keepImportMeta(), vue(), css(), catalogues(), utilityDocs()],
       build: {
         outDir: here('dist'),
         emptyOutDir: true,

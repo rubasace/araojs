@@ -1,11 +1,10 @@
 <template lang="pug">
 Deck
-  Slide
+  Slide(layout="grid" cards="color-mix(in srgb, var(--ar-fg) 6%, var(--ar-bg))" icon-size="88px")
     h2 Five pillars
-    Grid(ratio="2:1" gap="sm")
-      Center.card(v-for="(p, i) in pillars" :key="p.icon" v-step="i + 1")
-        Icon(:name="p.icon" size="88")
-        p {{ p.name }}
+    div(v-for="(p, i) in pillars" :key="p.icon" v-step="i + 1")
+      Icon(:name="p.icon")
+      h3 {{ p.name }}
 </template>
 
 <script setup>
@@ -17,8 +16,3 @@ const pillars = [
   { icon: 'lucide:shield-check', name: 'Security' },
 ]
 </script>
-
-<style scoped>
-.card { background: color-mix(in srgb, var(--ar-fg) 6%, var(--ar-bg)); border-radius: var(--ar-radius); }
-.card .ar-icon { color: var(--ar-accent); }
-</style>

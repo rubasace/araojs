@@ -11,7 +11,8 @@ Arao way and how to check them.
 
 **Version:** this skill describes araojs 0.5.0 or later (theme sources, fetched web fonts,
 `src/shortcuts.ts`, `Background`, layouts as CSS files, `Slide` with `layout` as its only prop and
-its layout's tokens as attributes, self-documented layouts and `arao layouts`).
+its layout's tokens as attributes, self-documented layouts and `arao layouts`, utility classes
+instead of `Cols`, `Rows`, `Grid` and `Center`).
 With an older araojs in the project, upgrade it (`npm install araojs@latest`, then fix the deck:
 [troubleshooting.md](references/troubleshooting.md#decks-written-for-an-older-arao)) or check its
 own `node_modules/araojs/docs/`.
@@ -63,20 +64,33 @@ at https://github.com/rubasace/araojs/tree/main/docs. Paths below like
   block saying all that, the HTML it reads (its semantic form, and the plain one it tolerates),
   which `npx arao layouts` prints: read it before using a layout.
 - Look comes from the theme (`--ar-*` tokens). Every token has a default; a theme changes some.
-- Global in templates: `Deck Slide Background Img Icon Snippet Notes Agenda Cols Rows Grid Center`,
-  `v-step`, `v-step-from`. Addons (`ProgressBar`, `SlideNumber`) and composables (`useDeck`, `useSlide`)
+- **Two levels of layout, no CSS at either.** A slide's structure is its layout; inside one block
+  (the body, a side of `split`, a block of `grid`, a zone) utility classes arrange and mark
+  things: `.cols`, `.cols-3`, `.row`, `.stack`, `.middle`, `.gap-sm`, `.grow`, `.text-lg`,
+  `.accent`, `.highlight`… When columns or rows are the whole slide, that is a layout. `npx arao
+  layouts` prints the layouts, then every class, each described.
+- Global in templates: `Deck Slide Background Img Icon Snippet Notes Agenda`, `v-step`,
+  `v-step-from`. Addons (`ProgressBar`, `SlideNumber`) and composables (`useDeck`, `useSlide`)
   are imported from `'araojs'` in `<script setup>`.
 
 ## Rules
 
 Do:
-- Arrange with a `layout` (the library's: `cover`, `section`, `split`, `grid`, `quote`,
+- Arrange the slide with a `layout` (the library's: `cover`, `section`, `split`, `grid`, `quote`,
   `statement`, `overlay`, `caption`, `agenda`, `image-left`, `image-right`; each's HTML and
-  parameters: `npx arao layouts`) or a composition component (`Cols`, `Rows`, `Grid`, `Center`) and their props (`ratio`, `gap`,
-  `align`, `cols`). Tune a layout on one slide with its parameters, attributes named after its
-  tokens: `Slide(layout="image-right" columns="3fr 2fr")`, `Slide(layout="split" columns="2fr 1fr")`,
-  `Slide(layout="cover" bar="gold")` (each layout's: `npx arao layouts`).
-  Another layout's attribute does nothing (and fails `vue-tsc` with `strictTemplates`).
+  parameters: `npx arao layouts`): two sides are `split`, blocks in rows (features, pillars,
+  logos, cards) are `grid`, columns of text `Slide.top(layout="grid" align="start"
+  text-size="1em")`. Tune a layout on one slide with its parameters, attributes named after
+  its tokens: `Slide(layout="image-right" columns="3fr 2fr")`, `Slide(layout="split" columns="2fr 1fr")`,
+  `Slide(layout="grid" columns="4" cards="…")`, `Slide(layout="cover" bar="gold")` (each layout's:
+  `npx arao layouts`). Another layout's attribute does nothing (and fails `vue-tsc` with
+  `strictTemplates`).
+- Arrange inside a block with the utility classes, on an element of yours (a layout lays out its
+  own blocks): `.row` for an icon or a picture beside its text (`.grow` on the text), `.cols` /
+  `.cols-2…4` for columns (uneven: `.cols(style="--ar-cols: 2fr 1fr")`), `.stack` for a column with
+  a gap, `.top` / `.middle` / `.bottom` / `.center` to place content, `.gap-sm` / `.gap-lg`,
+  `.text-sm` / `.text-lg` / `.text-xl`, `.accent`, `.muted`, `.highlight`. A `Snippet` (or an `Img`
+  that should fill) inside columns needs `.grow` on them: they are as tall as their content.
 - Give a slide only its layout's zones as named templates (`template(#image)` on `image-*`;
   `#title` on any): another name is not placed, and fails `vue-tsc`. The other layouts read the
   body's children: `split`'s two sides, `grid`'s blocks, each a `div`.
@@ -86,8 +100,8 @@ Do:
   menu, presenter view and notes pages, and there is no other way to name it. Something before it
   (a kicker line) makes it body: use `template(#title)` for a richer header.
 - Let the body start at the top (the default, the same height on every slide) or place it with a
-  class on the slide: `Slide.center` (both ways, text centred), `Slide.bottom`. The same classes
-  on a block place its content inside it.
+  class on the slide: `Slide.center` (both ways, text centred), `Slide.middle` (top to bottom
+  only), `Slide.bottom`. The same classes on a block place its content inside it.
 - Put what goes on every slide (event, company, slide number) in `Deck`'s `template(#footer)`.
   Covers and sections hide it; `Slide.no-footer` / `Slide.with-footer` change that for one slide.
 - A picture behind a slide: `Background(src="city.jpg" opacity="0.3")` inside it (`position`,
@@ -107,7 +121,7 @@ Do:
   case-sensitive).
 - Use `Icon` for icons and logos, by name: `lucide:…` for UI icons, `simple-icons:…` for
   technology logos. Colour it like text. Logos name the technology; they are not decoration.
-- Write sizes, if any, in canvas px (`gap="24"`, `:size="36"`, `width: 320px`).
+- Write sizes, if any, in canvas px (`gap="96px"` on `split`, `Icon(size="64")`, `width: 320px`).
 - Put speaker notes in one `Notes` inside the slide. `v-step` works inside `Notes`: a note with
   `v-step="2"` shows from step 2, following the slide's steps (it adds no steps of its own).
 - Put components only one talk uses under `src/decks/<talk>/`, shared ones under `src/slides/`;
@@ -115,9 +129,14 @@ Do:
 
 Don't:
 - Don't write ad-hoc layout CSS (flex/grid wrappers, margins to position things) when a layout,
-  component, class or prop does it: no `margin: auto` or `.ar-slide > …` selectors to centre a
-  body (`Slide.center` does it), no footer drawn in a background image (`#footer` does it). A
-  look that needs real CSS and repeats is a layout file, not deck CSS.
+  a utility class or a parameter does it: no `display: flex` wrapper for an icon and its text
+  (`.row`), no `margin: auto` or `.ar-slide > …` selectors to centre a body (`Slide.center` does
+  it), no footer drawn in a background image (`#footer` does it). A look that needs real CSS and
+  repeats is a layout file, not deck CSS.
+- Don't write `Cols`, `Rows`, `Grid` or `Center`: they are gone (Vue warns "Failed to resolve
+  component"; `check-deck.mjs` names the replacement). Whole-slide columns are `split` or `grid`;
+  inside a block, `.cols`, `.cols-3`, `.stack`, `.center.grow`
+  ([troubleshooting.md](references/troubleshooting.md#decks-written-for-an-older-arao)).
 - Don't use the props older Arao had on `Slide` (`title`, `align`, `footer`, `ratio`, `bg`,
   `bg-*`) or `template(#background)`: they do nothing now, silently (where the layout has a
   token of that name, `footer` on `cover`, `bg` on `section`, the attribute is that token now: a
@@ -136,8 +155,8 @@ Don't:
 
 - **A plain attribute is a string; a `:`-bound one is JavaScript.** Numbers, booleans, arrays and
   objects need the colon: `:size="36"`, `:line-numbers="false"`, `:themes="['default']"`,
-  `:highlights='{ "2-3": 2 }'` (JSON in single quotes). Text props stay plain: `gap="sm"`,
-  `Cols(ratio="2 1")`, `cols="3"`, `file="App.java"`, `Icon(size="64")`.
+  `:highlights='{ "2-3": 2 }'` (JSON in single quotes). Text props stay plain:
+  `columns="2fr 1fr"`, `opacity="0.25"`, `file="App.java"`, `Icon(size="64")`.
 - **Slides start at the top.** The body sits right under the title, never centred unless asked
   (`Slide.center`). A short slide that looks empty: centre it, or give it more to say.
 - **`Img` has no size of its own**: it fills the box its container gives it. Fixed size: a class

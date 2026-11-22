@@ -11,16 +11,16 @@ icon files in `src/images` or paste SVG into a deck. Every prop:
 ```vue
 <template lang="pug">
 Deck
-  Slide
+  Slide(layout="grid" icon-size="140px")
     h2 #[Icon(name="lucide:rocket")] Our stack
-    Grid(cols="3" gap="sm")
-      Center(v-for="(t, i) in tech" :key="t.icon" v-step="i + 1")
-        Icon(:name="t.icon" size="140" :label="t.label")
-        p {{ t.label }}
+    div(v-for="(t, i) in tech" :key="t.icon" v-step="i + 1")
+      Icon(:name="t.icon" :label="t.label")
+      h3 {{ t.label }}
 </template>
 
 <script setup>
-// Logos are icons like any other: they take the colour of the text, one ink for all of them.
+// Logos are icons like any other, one ink for all of them: the grid layout draws a block's
+// leading icon in the accent, at its icon-size.
 const tech = [
   { icon: 'simple-icons:vuedotjs', label: 'Vue' },
   { icon: 'simple-icons:vite', label: 'Vite' },
@@ -38,14 +38,16 @@ const tech = [
 
 ```pug
 h2 #[Icon(name="lucide:rocket")] Launch
-p #[Icon.hot(name="lucide:flame")] The hot path
+p #[Icon.accent(name="lucide:flame")] The hot path
 Icon(name="simple-icons:kubernetes" size="120" label="Kubernetes")
-Grid(cols="4" gap="md")
+.cols-4
   Icon(v-for="it in items" :key="it.icon" :name="it.icon" size="96")
 ```
 
-(`.hot { color: var(--ar-accent); }` in the deck's `<style scoped>`; `items` lists the names in the
-deck's script: `[{ icon: 'lucide:gauge' }, …]`.)
+(`.accent` and `.cols-4` are [utility classes](../reference/components.md#utility-classes): the
+accent colour, four columns; `items` lists the names in the deck's script:
+`[{ icon: 'lucide:gauge' }, …]`. In the `grid` layout, a block's leading icon is drawn at the
+layout's `icon-size`, in the accent, whatever its own `size`.)
 
 ## Sets
 

@@ -278,8 +278,8 @@ the slide's padding (`--ar-pad-y`, `--ar-pad-x`). Nothing to declare: the slide 
 ```pug
 Slide
   h2 Three pillars        //- header: the heading the slide starts with
-  Cols(gap="lg")          //- body: everything else
-    div …
+  ul                      //- body: everything else
+    li …
 ```
 
 - **Header**: when the default slot starts with an `h1` or `h2`, that heading is the slide's title
@@ -297,11 +297,10 @@ Slide
   slot on) is found the same way: its place, its title, its steps and its pages are a slide's.
 - **Body**: everything else, in a column that fills the space under the header. It starts at the
   top, right under the header, so content begins at the same height on every slide. What does not
-  fit overflows at the bottom, never at the top. What fills the body fills it: `Img`, `Snippet`,
-  an element with `flex: 1`, the `1fr` rows of `Grid` and `Rows`. `Cols`, `Rows` and `Grid` placed
-  directly in it shrink their auto rows to their content and move with the body, unless they hold
-  something that needs the full height (a `Snippet`, an `Img`, another piece);
-  `Cols(align="stretch")`, written out, keeps full-height columns.
+  fit overflows at the bottom, never at the top. What fills the body fills it, wherever the body
+  sits: `Img`, `Snippet`, an element with `flex: 1` or the class `.grow`; the rest is as tall as
+  its content (the [utility classes](composition.md#inside-a-block-utility-classes) too) and moves
+  with the body.
 - **Zones**: each named template (`template(#image)`…) is a zone of its own, a column with the
   class `ar-zone-<name>` (`#title` is the header's). The layout's CSS places it: `#image` beside
   the text in `image-*` (the other library layouts read the body's own children instead: `split`'s
@@ -363,12 +362,13 @@ can change it for the whole deck, a layout for its slides. On one slide, a class
 | Class on a `Slide` | Its body |
 |---|---|
 | `.top` | from the top (the default, unless the theme says otherwise) |
+| `.middle` | centred top to bottom in the space under the header, its text as it is |
 | `.center` | centred both ways: in the space under the header, and its text (the title's too) |
 | `.bottom` | at the bottom |
 
-On a block inside a slide (a column of `Cols`, a cell of `Grid`, a block with a height), the same
-classes place its content within it, when the block is taller than its content; `.center` centres
-its text too.
+On a block inside a slide (a side of `split`, a column of `.cols`, a block with a height), the
+same classes place its content within it, when the block is taller than its content; `.center`
+centres its text too ([utility classes](../reference/components.md#utility-classes)).
 
 ```pug
 Slide.center              //- one statement, in the middle
@@ -377,7 +377,7 @@ Slide.center              //- one statement, in the middle
 
 Slide.bottom
   h2 Fine print
-  p.small.muted At the bottom of the slide.
+  p.text-sm.muted At the bottom of the slide.
 ```
 
 ### The footer on one slide

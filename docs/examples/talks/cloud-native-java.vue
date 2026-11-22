@@ -5,12 +5,11 @@ Deck
     h1 Cloud-native Java
     p.muted From a JAR to a cluster, in forty minutes
 
-  Slide
+  Slide(layout="grid" icon-size="140px")
     h2 The path
-    Cols(gap="lg")
-      Center(v-for="t in tech" :key="t.icon")
-        Icon(:name="t.icon" size="140" :label="t.label")
-        p {{ t.label }}
+    div(v-for="t in tech" :key="t.icon")
+      Icon(:name="t.icon" :label="t.label")
+      h3 {{ t.label }}
 </template>
 
 <script setup>
