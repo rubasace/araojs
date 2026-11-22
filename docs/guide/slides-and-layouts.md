@@ -153,8 +153,12 @@ Deck
 
 ![The statement example](../assets/shots/statement.png)
 
-Text over a picture (`position="start end"` puts it top right; `scrim` is the gradient behind it),
-and one picture with its caption (an `Img` followed by a `p` works too):
+Text over a picture, at the bottom left unless `position` names another of nine places
+(`top-left`, `top`, `top-right`, `left`, `center`, `right`, `bottom-left`, `bottom`,
+`bottom-right`), over a scrim that darkens the picture from that corner or side (evenly for
+`center`), as strong as `scrim` says (`0` to `1`, default `.6`; `0` or `none` for none):
+`Slide(layout="overlay" position="top-right" scrim=".4")`. And one picture with its caption (an
+`Img` followed by a `p` works too):
 
 <!-- example:overlay -->
 
@@ -252,7 +256,9 @@ Slide(layout="cover" bar="gold" title-size="160px")
 
 - The value is set as that token on the slide, as written: any value the token takes
   (`columns="3fr 2fr"` is `--ar-layout-image-right-columns: 3fr 2fr`). It is not an attribute of
-  the slide's element. An empty one sets nothing: the layout's default stays.
+  the slide's element. An empty one sets nothing: the layout's default stays. A parameter that
+  takes only some words (`overlay`'s `position`: its nine places) says which in its doc block, and
+  is typed as them ([Its doc block](#its-doc-block)).
 - The attributes are the slide's layout's: `columns` on a `cover` is no parameter of it, and goes
   on the slide's element as a plain HTML attribute, doing nothing; in a type-checked template it
   is an error ([Layouts in the editor](#layouts-in-the-editor)).
@@ -511,6 +517,16 @@ plain `/* … */` comments (a licence header) may come before it.
 - `@param <thing> <description>`: describes the parameter `<thing>`, the token
   `--ar-layout-<name>-<thing>`; say its default. The parameters themselves are the tokens the CSS
   reads, whatever the block says: a `@param` naming no token is a warning.
+- `@param <thing> {<a>|<b>|…} <description>`: a parameter that takes only those words (a
+  keyword, a number: letters, digits, `-`, `_`, `.` and `%`), in braces right after its name.
+  It is typed as them, so the editor completes them and `vue-tsc` turns down any other
+  (`position?: 'top' | 'center' | 'bottom'`), and what describes it lists them ("one of `top`,
+  `center`, `bottom`: …", on hover and in `npx arao layouts`, whose JSON has them as the
+  parameter's `values`). Braces holding anything else are a warning. `overlay`'s `position` is
+  one: `@param position {top-left|top|…|bottom-right} where the text sits…`. CSS cannot branch on
+  a keyword by itself: the layout reads it with a container style query, as `overlay.css` does
+  (`@container style(--ar-layout-<name>-<thing>: <a>) { .layout-<name> > * { … } }`, which
+  styles the slide's children: an element queries its parent, not itself).
 - A description goes on to the next tag. Backticks mark code: the editor shows the block as
   Markdown.
 - What a block gets wrong (a `@param` naming no token, an unknown tag, a zone named twice, no
@@ -532,7 +548,8 @@ parameters among the slide's attributes (`columns` on `layout="image-right"`, no
 | the layout's name (`"image-right"`, the value) | nothing: the editor has no doc for a string |
 
 `vue-tsc` turns down a name that is none, a parameter of another layout, a value that is not a
-string, and a named template that is not one of the layout's zones:
+string or not one of the words a parameter takes, and a named template that is not one of the
+layout's zones:
 
 ```
 Slide(layout="covr")                    error TS2820: Type '"covr"' is not assignable to type
@@ -541,6 +558,8 @@ Slide(layout="cover" columns="2fr 1fr") error TS2353: Object literal may only sp
                                         properties, and 'columns' does not exist in type
                                         '{ layout?: "cover" | undefined; bar?: string | undefined; … }'
 Slide(layout="cover" :bar="1")          error TS2322: Type 'number' is not assignable to type 'string'.
+Slide(layout="overlay" position="end")  error TS2322: Type '"end"' is not assignable to type
+                                        '"top-left" | "top" | … | "bottom-right" | undefined'.
 Slide(layout="split")                   error TS2339: Property 'image' does not exist on type
   template(#image) …                    '{ default?: SlideSlot | undefined; title?: … } & {}'
 ```

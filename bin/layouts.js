@@ -22,16 +22,17 @@ import { readFileSync } from 'node:fs'
 import { isAbsolute, relative } from 'node:path'
 import { parseArgs } from 'node:util'
 import { describeClasses } from '../vite/class-docs.js'
-import { wrap } from '../vite/layout-docs.js'
+import { paramText, wrap } from '../vite/layout-docs.js'
 import { projectPlugin } from './project.js'
 
 const HELP = `Usage: arao layouts [--json]     (in a project: npx arao layouts)
 
   --json      the same as JSON, for a program: { "version" (araojs's), "layouts": [{ name,
               source, file, replaces, validName, documented, summary, description, example,
-              zones: [{ name, description }], params: [{ name, token, description }],
+              zones: [{ name, description }], params: [{ name, token, description, values }],
               problems }], "classGroups": [{ name, summary, description, example,
-              classes: [{ name, description }] }] }
+              classes: [{ name, description }] }] }; a parameter's values are the words it
+              takes, [] when it takes any value
   -h, --help  this help
 
 Run it in the slides project: its folder is the current directory, its layouts the ones its Vite
@@ -39,7 +40,8 @@ config's arao() plugin has: default, the library's, and the project's folder's (
 default), one of which replaces the library's of its name.
 What each layout says of itself is the /** … */ doc block its CSS file starts with: a line saying
 what it is for, more lines if need be, then @example (a slide of it, in Pug), @zone <name>
-<description> per named template it places and @param <thing> <description> per token it reads.
+<description> per named template it places and @param <thing> <description> per token it reads
+(@param <thing> {a|b|c} <description> for one that takes only those words).
 After the layouts: the utility classes, the library's classes a deck writes on an element of a
 slide (p.muted, .cols), by group, as their stylesheet says them.`
 
@@ -88,7 +90,7 @@ if (args.json) {
     description: l.description,
     example: l.example,
     zones: l.zones.map((z) => ({ name: z.name, description: z.description })),
-    params: l.params.map((p) => ({ name: p.thing, token: `--ar-layout-${l.name}-${p.thing}`, description: p.description })),
+    params: l.params.map((p) => ({ name: p.thing, token: `--ar-layout-${l.name}-${p.thing}`, description: p.description, values: p.values })),
     problems: l.problems,
   }))
   // the classes, by group: what each group says, and its classes (a class two groups document,
@@ -138,7 +140,7 @@ for (const l of layouts) {
   if (l.example) out.push('', '  Example:', block(l.example, '    '))
   if (l.documented || l.zones.length || l.params.length) out.push('')
   out.push(l.zones.length ? `  Zones:\n${table(l.zones.map((z) => ({ name: `#${z.name}`, description: z.description })))}` : '  Zones: none')
-  out.push(l.params.length ? `  Parameters:\n${table(l.params.map((p) => ({ name: p.thing, description: p.description })))}` : '  Parameters: none')
+  out.push(l.params.length ? `  Parameters:\n${table(l.params.map((p) => ({ name: p.thing, description: paramText(p) })))}` : '  Parameters: none')
   if (l.problems.length) out.push('  Problems:', ...l.problems.map((p) => wrap(p, WIDTH - 6).map((line, i) => `${i ? '      ' : '    - '}${line}`).join('\n')))
   console.log(out.join('\n'))
 }

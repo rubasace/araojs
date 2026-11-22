@@ -22,6 +22,10 @@ Deck
   Slide(layout="callout" size="80px")
     blockquote Make it work.
     template(#author) Kent Beck
+  Slide(layout="overlay" position="bottom-right" scrim="0")
+    h2 Overlay
+  <!-- @vue-expect-error position is one of nine places -->
+  Slide(layout="overlay" position="start end")
   <!-- @vue-expect-error columns is image-right's parameter, not cover's -->
   Slide(layout="cover" columns="2fr 1fr")
   Slide(layout="split")

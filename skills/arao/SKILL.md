@@ -112,7 +112,8 @@ Do:
   `<thing>` a slide has as an attribute already (`title`, `id`, `hidden`…: use `title-size`).
   It must start with its doc block: a line saying what it is for, `@example` (a slide of it, in
   Pug), `@zone <name> <description>` per named template it places, `@param <thing> <description>`
-  per token; then `npx arao layouts` shows it with no problems
+  per token (`@param <thing> {a|b|c} <description>` for one that takes only those words); then
+  `npx arao layouts` shows it with no problems
   ([recipes.md](references/recipes.md), `docs/guide/slides-and-layouts.md#its-doc-block`).
 - Write tables as plain `table` / `thead` / `tbody`: the theme styles them.
 - One idea per slide. Reveal with steps instead of cramming.

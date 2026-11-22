@@ -27,7 +27,12 @@
 //     description goes on until the next tag;
 //   - @param <thing> <description>: describes the parameter <thing>, the token
 //     --ar-layout-<name>-<thing>. The parameters are the tokens the CSS reads, whatever the block
-//     says: @param only describes one, and one naming no token is a problem.
+//     says: @param only describes one, and one naming no token is a problem. A parameter that
+//     takes only some words says which, in braces, before its description:
+//       @param position {top|center|bottom}  where the text sits (default `bottom`)
+//     each a word of letters, digits, -, _, . or % (a CSS keyword, a number), separated by |: its
+//     type is then those words (position?: 'top' | 'center' | 'bottom'), not any string, and
+//     what describes it lists them; braces that hold anything else are a problem.
 // A file with no doc block is a layout all the same, with nothing said of it.
 // Its zones: those its @zone tags name, in their order, then any other its CSS styles,
 // .ar-zone-<name> (in its code: not in a comment or a string), by name: in a selector that names
@@ -41,7 +46,9 @@ import { camelize, cssCode, layoutParams, scanCss } from './layout-params.js'
 
 /**
  * @typedef {{ name: string, description: string }} ZoneDoc
- * @typedef {{ thing: string, description: string }} ParamDoc
+ * @typedef {{ thing: string, values: string[], description: string }} ParamDoc
+ * A parameter's values are the words it takes (its doc block's {a|b}), none when it takes any
+ * string.
  * @typedef {{ summary: string, description: string, example: string, zones: ZoneDoc[],
  *   params: ParamDoc[], problems: string[] }} DocBlock
  * What a layout is: whether its file has a doc block (documented), what that says, its zones, its
@@ -169,9 +176,44 @@ function readDoc(block) {
       else if (doc.zones.some((z) => z.name === name)) doc.problems.push(`@zone ${name} is in the doc block twice`)
       else doc.zones.push({ name, description })
     } else if (doc.params.some((p) => p.thing === name)) doc.problems.push(`@param ${name} is in the doc block twice`)
-    else doc.params.push({ thing: name, description })
+    else doc.params.push(paramDoc(name, description, doc.problems))
   }
   return doc
+}
+
+// a parameter's values: braces its description starts with, {a|b|c}; each value a word
+const VALUES = /^\{([^}]*)\}\s*/
+const VALUE = /^[\w.%-]+$/
+
+/**
+ * A parameter's tag read, its thing and its text: its values (the words in the braces its text
+ * starts with, when it does), and its description (the rest). Braces that are no list of words
+ * are a problem, and give no values.
+ * @param {string} thing
+ * @param {string} text
+ * @param {string[]} problems
+ * @returns {ParamDoc}
+ */
+function paramDoc(thing, text, problems) {
+  const braces = text.match(VALUES)
+  if (!braces) return { thing, values: [], description: text }
+  const description = text.slice(braces[0].length)
+  const values = braces[1].split('|').map((v) => v.trim())
+  if (values.some((v) => !VALUE.test(v)) || new Set(values).size < values.length) {
+    problems.push(`@param ${thing} {${braces[1]}}: its values are words (letters, digits, -, _, . and %), each once, separated by |`)
+    return { thing, values: [], description }
+  }
+  return { thing, values, description }
+}
+
+/**
+ * What describes a parameter, its values first when it takes only some: "one of `a`, `b`: …".
+ * @param {ParamDoc} param
+ */
+export function paramText({ values, description }) {
+  if (!values.length) return description
+  const list = `one of ${values.map((v) => `\`${v}\``).join(', ')}`
+  return description ? `${list}: ${description}` : list
 }
 
 /**
@@ -234,7 +276,7 @@ export function describeLayout(css, name) {
   const { block, stray } = docComments(css)
   const doc = block == null ? null : readDoc(block)
   const problems = [...(doc?.problems ?? [])]
-  const described = new Map((doc?.params ?? []).map((p) => [p.thing, p.description]))
+  const described = new Map((doc?.params ?? []).map((p) => [p.thing, p]))
   for (const thing of described.keys()) {
     if (!params.includes(thing) && !skipped.some((s) => s.thing === thing))
       problems.push(`@param ${thing} names no token of the layout: its CSS reads no --ar-layout-${name}-${thing}${params.length ? ` (its parameters: ${params.join(', ')})` : ''}`)
@@ -250,8 +292,8 @@ export function describeLayout(css, name) {
     description: doc?.description ?? '',
     example: doc?.example ?? '',
     zones,
-    params: params.map((thing) => ({ thing, description: described.get(thing) ?? '' })),
-    skipped: skipped.map((s) => ({ ...s, description: described.get(s.thing) ?? '' })),
+    params: params.map((thing) => described.get(thing) ?? { thing, values: [], description: '' }),
+    skipped: skipped.map((s) => ({ ...s, description: described.get(s.thing)?.description ?? '' })),
     problems,
   }
 }
@@ -311,7 +353,7 @@ function layoutDoc(info) {
   const item = (/** @type {string} */ name, /** @type {string} */ description) =>
     wrap(`- \`${name}\`${description ? `: ${description}` : ''}`, DOC_WIDTH, '  ')
   if (info.zones.length) lines.push('', 'Zones (named templates):', ...info.zones.flatMap((z) => item(`#${z.name}`, z.description)))
-  if (info.params.length) lines.push('', 'Parameters (attributes):', ...info.params.flatMap((p) => item(p.thing, p.description)))
+  if (info.params.length) lines.push('', 'Parameters (attributes):', ...info.params.flatMap((p) => item(p.thing, paramText(p))))
   if (info.example) lines.push('', '@example', '```pug', ...info.example.split('\n'), '```')
   return lines
 }
@@ -319,9 +361,10 @@ function layoutDoc(info) {
 /**
  * A layout's entry in an interface of layouts (LibraryLayouts, ProjectLayouts): its name, its doc
  * comment, and its members: layout, its name, with the same doc comment (what an editor shows on
- * hovering layout="…" on a slide: a string has no doc of its own), and one optional string per
+ * hovering layout="…" on a slide: a string has no doc of its own), and one optional member per
  * parameter, under its camelCase name (Volar checks an attribute written footer-bg as footerBg, as
- * it does any prop's), its description and its token as its doc. indent: the entry's.
+ * it does any prop's): a string, or the union of its values when it takes only some
+ * ('top' | 'bottom'), its description and its token as its doc. indent: the entry's.
  * @param {LayoutInfo} info
  * @param {string} indent
  */
@@ -331,7 +374,10 @@ export function layoutEntry(info, indent) {
     `${jsdoc(doc, `${indent}  `)}${indent}  layout?: '${info.name}'\n`,
     ...info.params.map((p) => {
       const token = `--ar-layout-${info.name}-${p.thing}`
-      return `${jsdoc(p.description ? [...wrap(p.description, DOC_WIDTH), '', `\`${token}\``] : [token], `${indent}  `)}${indent}  ${camelize(p.thing)}?: string\n`
+      const text = paramText(p)
+      // a value is a word (paramDoc): no quote to escape
+      const type = p.values.length ? p.values.map((v) => `'${v}'`).join(' | ') : 'string'
+      return `${jsdoc(text ? [...wrap(text, DOC_WIDTH), '', `\`${token}\``] : [token], `${indent}  `)}${indent}  ${camelize(p.thing)}?: ${type}\n`
     }),
   ]
   return `${jsdoc(doc, indent)}${indent}${layoutKey(info.name)}: {\n${members.join('')}${indent}}\n`

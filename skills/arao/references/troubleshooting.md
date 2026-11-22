@@ -68,6 +68,13 @@
     side of `split`); `gap="sm"` / `"md"` / `"lg"` → `.gap-sm` / `.gap` / `.gap-lg`.
   - The classes are as tall as their content, as the pieces were not: a `Snippet` (or an `Img`
     that should fill) inside `.cols` needs `.grow` on them.
+- **`overlay`'s `position` names a place now** (BREAKING): `top-left`, `top`, `top-right`,
+  `left`, `center`, `right`, `bottom-left` (the default), `bottom` or `bottom-right`, not a CSS
+  `place-content`. An old value (`position="start end"`, `"end start"`) puts the text at the bottom
+  left, with no warning (`vue-tsc` turns it down): `start end` → `top-right`, `start start` →
+  `top-left`, `end end` → `bottom-right`, `center` stays `center`. `scrim` is the scrim's
+  strength now, `0` to `1` (default `.6`; `none` still none): it follows the position by itself,
+  and a CSS background given there draws no scrim (drop it, or give a number).
 - **`.small` is `.text-sm` now** (BREAKING): `.small` does nothing. With it come `.text-lg` and
   `.text-xl`, and `.middle` on a slide or a block (centred top to bottom, the text as it is).
 - **`split` has no `#left`/`#right` now** (they render below the body, and fail `vue-tsc`): its

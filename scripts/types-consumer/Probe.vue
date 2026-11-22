@@ -25,7 +25,8 @@
     <Slide layout="image-right" columns="2fr 1fr" footer-bg="black" class="center" />
     <Slide layout="cover" title-size="120px" bar="gold" />
     <Slide layout="cover" titleSize="120px" />
-    <Slide layout="callout" size="80px" mark-color="red" />
+    <Slide layout="callout" size="80px" mark-color="red" align="start" />
+    <Slide layout="overlay" position="top-right" scrim=".4" color="#fff" />
     <Slide layout="grid" columns="4" max-columns="3" icon-size="64px" cards="none" align="start" text-size="1em" />
     <Slide layout="split" divider="2px solid red" gap="96px" />
     <Slide layout="quote" mark="'«'" mark-color="red" />
@@ -42,6 +43,10 @@
     <Slide layout="section" bg="navy" />
     <!-- @vue-expect-error a parameter's value is a string -->
     <Slide layout="cover" :bar="1" />
+    <!-- @vue-expect-error position is one of the nine places its doc block lists -->
+    <Slide layout="overlay" position="end start" />
+    <!-- @vue-expect-error the project's callout aligns start or center -->
+    <Slide layout="callout" align="end" />
     <!-- the zones and #title, each given the step -->
     <Slide layout="image-left">
       <template #title="{ step }"><h2>{{ step.toFixed(0) }}</h2></template>

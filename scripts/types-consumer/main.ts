@@ -37,13 +37,13 @@ void unknownLayout
 // project layout replacing the library's of its name (section.css) with its own
 const own: (keyof ProjectLayouts)[] = ['callout', 'section']
 const cover: SlideLayouts['cover'] = { titleSize: '120px', bar: 'gold', footer: 'flex' }
-const callout: SlideLayouts['callout'] = { size: '80px', markColor: 'red' }
+const callout: SlideLayouts['callout'] = { size: '80px', markColor: 'red', align: 'center' }
 const section: SlideLayouts['section'] = { tone: 'navy' }
 const grid: SlideLayouts['grid'] = { columns: '4', rows: '2', maxColumns: '3', gap: '24px', align: 'start', cards: 'none', iconSize: '64px' }
 const split: SlideLayouts['split'] = { columns: '2fr 1fr', gap: '96px', divider: '2px solid red' }
 const quote: SlideLayouts['quote'] = { size: '80px', mark: "'«'", markColor: 'red', align: 'start' }
 const statement: SlideLayouts['statement'] = { size: '200px', color: 'red', align: 'center' }
-const overlay: SlideLayouts['overlay'] = { position: 'end start', scrim: 'none', color: '#fff' }
+const overlay: SlideLayouts['overlay'] = { position: 'top-right', scrim: '.4', color: '#fff' }
 const caption: SlideLayouts['caption'] = { captionSize: '24px', captionAlign: 'start' }
 const agenda: SlideLayouts['agenda'] = { doneColor: 'currentColor', doneNumberColor: 'red', doneOpacity: '1', currentColor: 'currentColor', currentWeight: '400', upcomingColor: 'red' }
 void [own, cover, callout, section, grid, split, quote, statement, overlay, caption, agenda]
@@ -53,7 +53,13 @@ const titled: SlideLayouts['callout'] = { title: 'x' }
 const libSection: SlideLayouts['section'] = { bg: 'navy' }
 // @ts-expect-error a parameter's value is a string
 const sized: SlideLayouts['cover'] = { titleSize: 120 }
-void [titled, libSection, sized]
+// a parameter whose doc block lists its values ({a|b}) takes those alone: the library's (overlay's
+// position: nine places, not a CSS place-content any more) and the project's (callout's align)
+// @ts-expect-error position is one of nine places
+const placed: SlideLayouts['overlay'] = { position: 'end start' }
+// @ts-expect-error callout's align is start or center
+const aligned: SlideLayouts['callout'] = { align: 'end' }
+void [titled, libSection, sized, placed, aligned]
 
 // the zones each layout places: the library's (generated from its doc blocks and CSS), the
 // project's (src/arao-layouts.d.ts: callout's @zone author and the source its CSS styles), a
