@@ -122,11 +122,11 @@ A `*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows 
 | `--ar-layout-grid-columns` | `columns` | balanced by the count | blocks per row, whatever their count |
 | `--ar-layout-grid-rows` | `rows` | none | how many rows, whatever the count: a row holds the count divided by it, rounded up (up to 24 blocks; `columns` wins) |
 | `--ar-layout-grid-max-columns` | `max-columns` | `5` | the most blocks in a row: 13 and more wrap there, no balanced row is wider |
-| `--ar-layout-grid-gap` | `gap` | `--ar-gap-sm` | the space between the blocks (the cards) |
+| `--ar-layout-grid-gap` | `gap` | `--ar-gap-sm` (x .75 from 11 blocks, x .5 from 12, x .4 from 16) | the space between the blocks (the cards) |
 | `--ar-layout-grid-align` | `align` | `center` | a block's content: `center` or `start` |
 | `--ar-layout-grid-cards` | `cards` | `none` | each block's background, making it a card (a colour, a gradient) |
-| `--ar-layout-grid-icon-size` | `icon-size` | `3em` (`2em` from 9 blocks) | the size of a block's leading picture or icon |
-| `--ar-layout-grid-text-size` | `text-size` | `--ar-text-small` | the size of a block's text, its `p`; `1em` keeps the slide's (columns of text) |
+| `--ar-layout-grid-icon-size` | `icon-size` | `3em` (`2em` from 9 blocks, `1.75em` from 11, `1.5em` from 12, `1.2em` from 16) | the size of a block's leading picture or icon |
+| `--ar-layout-grid-text-size` | `text-size` | `--ar-text-small` (x .9 from 11 blocks, x .82 from 12, x .72 from 16, the `h3` too) | the size of a block's text, its `p`; `1em` keeps the slide's (columns of text); given, it stays as given |
 | `--ar-layout-quote-size` | `size` | 0.8x `--ar-title` | the quote's size |
 | `--ar-layout-quote-mark` | `mark` | `'“'` | the decorative mark, a CSS string (quotes written: `mark="'«'"`) |
 | `--ar-layout-quote-mark-color` | `mark-color` | `--ar-accent` | its colour |

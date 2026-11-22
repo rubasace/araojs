@@ -363,8 +363,11 @@ export interface LibraryLayouts {
    * 7 as 4 + 3, 8 as 4 + 4, 9 as 3 + 3 + 3, 10 as 5 + 5, 11 as 4 + 4 + 3, 12 as 4 x 3; 13 and more
    * wrap at `max-columns`. `columns` fixes the count instead (4 with 9 blocks: 4 + 4 + 1), and
    * `rows` the rows (2 with 9 blocks: 5 + 4). With or without a title; the rows sit in the middle
-   * of the space left (a slide's `top` or `bottom` class moves them). Write each block as an
-   * element (a `div`) holding its content. Columns of text are blocks too: `align="start"`,
+   * of the space left (a slide's `top` or `bottom` class moves them). The more blocks, the smaller
+   * they get, so that the slide still fits: from 9 blocks the pictures, from 11, 12 and 16 also the
+   * padding, the gap and the text, step by step; up to 20 blocks (four rows of five) fit, each a
+   * title and a one-line description (a size or a gap given as a parameter stays as given). Write
+   * each block as an element (a `div`) holding its content. Columns of text are blocks too: `align="start"`,
    * `text-size="1em"` (the slide's text, not a caption's) and the slide's `top` class (under the
    * title): `Slide.top(layout="grid" align="start" text-size="1em")`.
    *
@@ -374,15 +377,16 @@ export interface LibraryLayouts {
    *   (`color-mix(in srgb, currentColor 8%, transparent)`; default `none`)
    * - `columns`: blocks per row, whatever their count (default: balanced by their count, as
    *   above)
-   * - `gap`: the space between the blocks, the cards with `cards` (default `--ar-gap-sm`)
+   * - `gap`: the space between the blocks, the cards with `cards` (default `--ar-gap-sm`;
+   *   smaller from 11 blocks)
    * - `icon-size`: the size of a block's leading picture or icon (default `3em`, three times the
-   *   text's size; `2em` with 9 blocks or more)
+   *   text's size; `2em` with 9 blocks or more, smaller from 11)
    * - `max-columns`: the most blocks in a row: 13 blocks and more wrap there, and no balanced
    *   row is wider (default `5`)
    * - `rows`: how many rows, whatever their count: a row holds the count divided by it, rounded
    *   up (counted up to 24 blocks; `columns` wins over it)
-   * - `text-size`: the size of a block's text, its `p` (default `--ar-text-small`, a caption's;
-   *   `1em` keeps the slide's)
+   * - `text-size`: the size of a block's text, its `p` (default `--ar-text-small`, a caption's,
+   *   smaller from 11 blocks; `1em` keeps the slide's)
    *
    * @example
    * ```pug
@@ -414,8 +418,11 @@ export interface LibraryLayouts {
      * 7 as 4 + 3, 8 as 4 + 4, 9 as 3 + 3 + 3, 10 as 5 + 5, 11 as 4 + 4 + 3, 12 as 4 x 3; 13 and more
      * wrap at `max-columns`. `columns` fixes the count instead (4 with 9 blocks: 4 + 4 + 1), and
      * `rows` the rows (2 with 9 blocks: 5 + 4). With or without a title; the rows sit in the middle
-     * of the space left (a slide's `top` or `bottom` class moves them). Write each block as an
-     * element (a `div`) holding its content. Columns of text are blocks too: `align="start"`,
+     * of the space left (a slide's `top` or `bottom` class moves them). The more blocks, the smaller
+     * they get, so that the slide still fits: from 9 blocks the pictures, from 11, 12 and 16 also the
+     * padding, the gap and the text, step by step; up to 20 blocks (four rows of five) fit, each a
+     * title and a one-line description (a size or a gap given as a parameter stays as given). Write
+     * each block as an element (a `div`) holding its content. Columns of text are blocks too: `align="start"`,
      * `text-size="1em"` (the slide's text, not a caption's) and the slide's `top` class (under the
      * title): `Slide.top(layout="grid" align="start" text-size="1em")`.
      *
@@ -425,15 +432,16 @@ export interface LibraryLayouts {
      *   (`color-mix(in srgb, currentColor 8%, transparent)`; default `none`)
      * - `columns`: blocks per row, whatever their count (default: balanced by their count, as
      *   above)
-     * - `gap`: the space between the blocks, the cards with `cards` (default `--ar-gap-sm`)
+     * - `gap`: the space between the blocks, the cards with `cards` (default `--ar-gap-sm`;
+     *   smaller from 11 blocks)
      * - `icon-size`: the size of a block's leading picture or icon (default `3em`, three times the
-     *   text's size; `2em` with 9 blocks or more)
+     *   text's size; `2em` with 9 blocks or more, smaller from 11)
      * - `max-columns`: the most blocks in a row: 13 blocks and more wrap there, and no balanced
      *   row is wider (default `5`)
      * - `rows`: how many rows, whatever their count: a row holds the count divided by it, rounded
      *   up (counted up to 24 blocks; `columns` wins over it)
-     * - `text-size`: the size of a block's text, its `p` (default `--ar-text-small`, a caption's;
-     *   `1em` keeps the slide's)
+     * - `text-size`: the size of a block's text, its `p` (default `--ar-text-small`, a caption's,
+     *   smaller from 11 blocks; `1em` keeps the slide's)
      *
      * @example
      * ```pug
@@ -474,14 +482,15 @@ export interface LibraryLayouts {
      */
     columns?: string
     /**
-     * the space between the blocks, the cards with `cards` (default `--ar-gap-sm`)
+     * the space between the blocks, the cards with `cards` (default `--ar-gap-sm`; smaller from 11
+     * blocks)
      *
      * `--ar-layout-grid-gap`
      */
     gap?: string
     /**
      * the size of a block's leading picture or icon (default `3em`, three times the text's size;
-     * `2em` with 9 blocks or more)
+     * `2em` with 9 blocks or more, smaller from 11)
      *
      * `--ar-layout-grid-icon-size`
      */
@@ -501,8 +510,8 @@ export interface LibraryLayouts {
      */
     rows?: string
     /**
-     * the size of a block's text, its `p` (default `--ar-text-small`, a caption's; `1em` keeps the
-     * slide's)
+     * the size of a block's text, its `p` (default `--ar-text-small`, a caption's, smaller from 11
+     * blocks; `1em` keeps the slide's)
      *
      * `--ar-layout-grid-text-size`
      */

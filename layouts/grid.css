@@ -8,8 +8,11 @@
  * 7 as 4 + 3, 8 as 4 + 4, 9 as 3 + 3 + 3, 10 as 5 + 5, 11 as 4 + 4 + 3, 12 as 4 x 3; 13 and more
  * wrap at `max-columns`. `columns` fixes the count instead (4 with 9 blocks: 4 + 4 + 1), and
  * `rows` the rows (2 with 9 blocks: 5 + 4). With or without a title; the rows sit in the middle
- * of the space left (a slide's `top` or `bottom` class moves them). Write each block as an
- * element (a `div`) holding its content. Columns of text are blocks too: `align="start"`,
+ * of the space left (a slide's `top` or `bottom` class moves them). The more blocks, the smaller
+ * they get, so that the slide still fits: from 9 blocks the pictures, from 11, 12 and 16 also the
+ * padding, the gap and the text, step by step; up to 20 blocks (four rows of five) fit, each a
+ * title and a one-line description (a size or a gap given as a parameter stays as given). Write
+ * each block as an element (a `div`) holding its content. Columns of text are blocks too: `align="start"`,
  * `text-size="1em"` (the slide's text, not a caption's) and the slide's `top` class (under the
  * title): `Slide.top(layout="grid" align="start" text-size="1em")`.
  * @example
@@ -34,14 +37,14 @@
  * @param max-columns  the most blocks in a row: 13 blocks and more wrap there, and no balanced
  *                     row is wider (default `5`)
  * @param gap          the space between the blocks, the cards with `cards` (default
- *                     `--ar-gap-sm`)
+ *                     `--ar-gap-sm`; smaller from 11 blocks)
  * @param align        a block's content: `center` or `start` (default `center`)
  * @param cards        each block's background, which makes it a card: a colour, a gradient
  *                     (`color-mix(in srgb, currentColor 8%, transparent)`; default `none`)
  * @param icon-size    the size of a block's leading picture or icon (default `3em`, three times
- *                     the text's size; `2em` with 9 blocks or more)
+ *                     the text's size; `2em` with 9 blocks or more, smaller from 11)
  * @param text-size    the size of a block's text, its `p` (default `--ar-text-small`, a
- *                     caption's; `1em` keeps the slide's)
+ *                     caption's, smaller from 11 blocks; `1em` keeps the slide's)
  */
 
 /* Its tokens, --ar-layout-grid-<thing>, each a @param above (a theme, the project's :root or one
@@ -50,36 +53,52 @@
    The body is a row that wraps, its rows centred (justify-content: the last one, when short,
    centred too) and placed by --ar-body-align (centre by default here: a slide's top, center or
    bottom class still says). A block's width is its row's share: (the body's width, less the
-   gaps) / columns. The columns (and the pictures' size, smaller from 9 blocks on unless
-   icon-size says) are worked out on the body, which knows how many children it has up to 24 (a
-   quantity query per count: the n-th child that is also the last one): --_ar-grid-columns is
+   gaps) / columns. The columns (and the staircase of sizes, below) are worked out on the body,
+   which knows how many children it has up to 24 (a quantity query per count: the n-th child that
+   is also the last one; for the sizes, the n-th child, there or not last): --_ar-grid-columns is
    --ar-layout-grid-columns when given, else the count divided by --ar-layout-grid-rows, rounded
    up, when that is given (an undefined token makes the division invalid, and the fallback
    follows), else the balanced count, never more than --ar-layout-grid-max-columns (the count
    for 13 and more). Pure CSS: nothing counts in script. A hidden child is no block and
    does not count (:not([hidden]): a Background's anchor, Background.vue).
-   A block is padded (.6em) and the body pulled out by as much on every side (a negative margin),
-   so that its content lines up with the title's edge, card or not; a card is that padding and
-   its background (--ar-layout-grid-cards, rounded as --ar-radius). */
+   A block is padded (--_ar-grid-pad: .6em, less with many blocks) and the body pulled out by as
+   much on every side (a negative margin), so that its content lines up with the title's edge,
+   card or not; a card is that padding and its background (--ar-layout-grid-cards, rounded as
+   --ar-radius). Both are in the body's em: a block keeps the body's font-size (its text's size
+   is its h3's and its p's own). */
 :where(.layout-grid) {
   --_ar-grid-max: var(--ar-layout-grid-max-columns, 5);
-  --_ar-grid-gap: var(--ar-layout-grid-gap, var(--ar-gap-sm));
   --_ar-grid-align: var(--ar-layout-grid-align, center);
   --_ar-grid-cards: var(--ar-layout-grid-cards, none);
-  --_ar-grid-text: var(--ar-layout-grid-text-size, var(--ar-text-small));
   --ar-body-align: center;
 }
 
+/* What the count makes smaller, so that a crowded grid still fits the slide (a staircase of
+   quantity queries, below): the pictures' size, the blocks' padding, the gap between them and the
+   size of their text (h3 and p, by --_ar-grid-step), each the default unless its parameter says:
+   a picture's size given (icon-size), a gap (gap) or a text size (text-size) stays as given.
+     blocks    pictures  padding  gap          text   (rows of one-line blocks, default columns)
+     1 to 8    3em       .6em     --ar-gap-sm  1      (one or two rows)
+     9 and 10  2em       .5em     --ar-gap-sm  1      (three rows of 3, two of 5)
+     11        1.75em    .45em    x .75        .9     (three rows of 4)
+     12 to 15  1.5em     .4em     x .5         .82    (three rows of 4 or 5)
+     16 to 20  1.2em     .3em     x .4         .72    (four rows of 5)
+   21 and more make five rows: they do not fit, unless their text is very short. */
 .layout-grid > .ar-body {
   --_ar-grid-balanced: var(--_ar-grid-max);
   --_ar-grid-by-rows: round(up, var(--_ar-grid-count) / var(--ar-layout-grid-rows));
   --_ar-grid-columns: var(--ar-layout-grid-columns, var(--_ar-grid-by-rows, min(var(--_ar-grid-balanced), var(--_ar-grid-max))));
   --_ar-grid-icon-auto: 3em;
   --_ar-grid-icon: var(--ar-layout-grid-icon-size, var(--_ar-grid-icon-auto));
+  --_ar-grid-pad: .6em;
+  --_ar-grid-gap-auto: var(--ar-gap-sm);
+  --_ar-grid-gap: var(--ar-layout-grid-gap, var(--_ar-grid-gap-auto));
+  --_ar-grid-step: 1;
+  --_ar-grid-text: var(--ar-layout-grid-text-size, calc(var(--ar-text-small) * var(--_ar-grid-step)));
   flex-direction: row; flex-wrap: wrap;
   justify-content: center; align-content: safe var(--ar-body-align);
   gap: var(--_ar-grid-gap);
-  margin: -.6em;
+  margin: calc(-1 * var(--_ar-grid-pad));
 }
 /* the number of blocks (up to 24, for rows), and the balanced count (13 and more: max-columns) */
 .layout-grid > .ar-body:has(> :nth-child(1 of :not([hidden])):nth-last-child(1 of :not([hidden]))) { --_ar-grid-count: 1; --_ar-grid-balanced: 1; }
@@ -106,8 +125,18 @@
 .layout-grid > .ar-body:has(> :nth-child(22 of :not([hidden])):nth-last-child(1 of :not([hidden]))) { --_ar-grid-count: 22; }
 .layout-grid > .ar-body:has(> :nth-child(23 of :not([hidden])):nth-last-child(1 of :not([hidden]))) { --_ar-grid-count: 23; }
 .layout-grid > .ar-body:has(> :nth-child(24 of :not([hidden])):nth-last-child(1 of :not([hidden]))) { --_ar-grid-count: 24; }
-/* 9 blocks or more (three rows, or rows of five): smaller pictures, so that they fit */
-.layout-grid > .ar-body:has(> :nth-child(9 of :not([hidden]))) { --_ar-grid-icon-auto: 2em; }
+/* the staircase (the table above): 9 blocks or more (three rows, or rows of five), 11 or more,
+   12 or more, 16 or more */
+.layout-grid > .ar-body:has(> :nth-child(9 of :not([hidden]))) { --_ar-grid-icon-auto: 2em; --_ar-grid-pad: .5em; }
+.layout-grid > .ar-body:has(> :nth-child(11 of :not([hidden]))) {
+  --_ar-grid-icon-auto: 1.75em; --_ar-grid-pad: .45em; --_ar-grid-gap-auto: calc(var(--ar-gap-sm) * .75); --_ar-grid-step: .9;
+}
+.layout-grid > .ar-body:has(> :nth-child(12 of :not([hidden]))) {
+  --_ar-grid-icon-auto: 1.5em; --_ar-grid-pad: .4em; --_ar-grid-gap-auto: calc(var(--ar-gap-sm) * .5); --_ar-grid-step: .82;
+}
+.layout-grid > .ar-body:has(> :nth-child(16 of :not([hidden]))) {
+  --_ar-grid-icon-auto: 1.2em; --_ar-grid-pad: .3em; --_ar-grid-gap-auto: calc(var(--ar-gap-sm) * .4); --_ar-grid-step: .72;
+}
 
 /* a block: its row's share, its content in a column */
 .layout-grid > .ar-body > :not([hidden]) {
@@ -115,7 +144,7 @@
   box-sizing: border-box; min-width: 0;
   display: flex; flex-direction: column;
   align-items: var(--_ar-grid-align); text-align: var(--_ar-grid-align);
-  padding: .6em;
+  padding: var(--_ar-grid-pad);
   background: var(--_ar-grid-cards);
   border-radius: var(--ar-radius);
 }
@@ -134,6 +163,6 @@
   object-fit: contain;
 }
 /* its heading and its text, wherever they are in it */
-.layout-grid > .ar-body > :not([hidden]) h3 { margin: 0 0 .2em; font-size: 1.05em; line-height: 1.2; }
+.layout-grid > .ar-body > :not([hidden]) h3 { margin: 0 0 .2em; font-size: calc(1.05em * var(--_ar-grid-step)); line-height: 1.2; }
 .layout-grid > .ar-body > :not([hidden]) p { margin: 0; font-size: var(--_ar-grid-text); line-height: 1.35; color: var(--ar-muted); }
 .layout-grid > .ar-body > :not([hidden]) p + p { margin-top: .4em; }
