@@ -164,9 +164,15 @@ const subtitleHeadings = await page.evaluate(() => [...document.querySelectorAll
 const hash = () => page.evaluate(() => location.hash)
 const parse = (h) => (h.match(/^#\/(\d+)\/(\d+)/) || []).slice(1).map(Number)
 const steps = {}
-// each state: wait for the slide transition to end (and for Arao to measure it: its overflow
-// warning comes a moment after the slide settles), then take a screenshot
+// each state: wait for what the slide on screen is still loading (data-ar-busy: a picture, a
+// snippet; 15 s at most), then for the slide transition to end and for Arao to measure it (its
+// overflow warning comes a moment after the slide settles, and not at all once the deck has moved
+// on), then take a screenshot
 const visit = async () => {
+  await page.waitForFunction(() => {
+    const shown = [...document.querySelectorAll('.ar-slide')].find((e) => getComputedStyle(e).display !== 'none')
+    return !shown?.querySelector('[data-ar-busy]')
+  }, null, { timeout: 15000, polling: 100 }).catch(() => {})
   await page.waitForTimeout(900)
   const [s, st] = parse(await hash())
   steps[s] = Math.max(steps[s] || 0, st)
