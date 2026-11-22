@@ -14,10 +14,11 @@
 // its own in src/themes (THEME, in a file of another name: the plugin names it by its selector;
 // and THEME-extra, in a partial that file @import-s), ROOM in src/venues, IMPORTED in a theme
 // package it depends on (vendor/, its CSS in the folder its package.json names), the playground's decks, images,
-// snippets, layouts (src/layouts) and slides (src/slides: a component wrapping Slide) as content, and five tiny decks of its own (so that the project has several and /
+// snippets, layouts (src/layouts) and slides (src/slides: a component wrapping Slide) as content, and six decks of its own (so that the project has several and /
 // lists them; the second has a duration and lists its themes, the third neither: it gets every
 // theme there is; the fourth a file name and a cover heading far too long for its card, and THEME
-// first; the fifth lists first IMPORTED, the theme package's; the sixth opens on its Agenda).
+// first; the fifth lists first IMPORTED, the theme package's; the sixth opens on its Agenda; the
+// seventh, DENSE, holds crowded slides that must fit).
 // Then, in order:
 //   1. npm install
 //   2. vite build                      must pass, and write dist/404.html, a copy of index.html,
@@ -97,6 +98,12 @@
 //      an even veil for center); scrim 0 draws nothing, none no scrim, 1 is black at the text's
 //      side; a value that is no position (end start) is the default, bottom-left; and a position
 //      set at :root, as a theme does, reaches the slide
+//   4f. crowded slides, under both servers, on DENSE, in every built-in theme, at 1600x900: each
+//      slide stayed on long enough for the engine to measure it, and nothing warns (in dev an
+//      overflow would: "[arao] overflow"); measured here too, the body's text inside the slide's
+//      padding: grids of 11, 12 and 13 blocks fit; Slide.fit's list, which does not fit without
+//      the class, fits with it (--_ar-fit on the body, from .6 to 1); Slide.scale-80's body is
+//      .8 of the slide's text
 //   5. useDeck()'s face, under the dev server, on the second deck: frozen, its refs read-only all
 //      the way down, setTheme refuses a name the deck has not (one [arao] warning), and in the
 //      presenter view's preview no function acts
@@ -145,7 +152,12 @@
 //   8. a deck's window beside the list, under the dev server: /<second>#/2/1 keeps its hash and
 //      its timer while / is opened, and reloaded, in another window of the same browser
 //   9. createDeckApp's other cases, under the dev server (vite.config.js and src/main.js rewritten
-//      for each, and then put back). On a decks folder holding the second deck alone: it opens at
+//      for each, and then put back). On a decks folder holding OVERFLOWING, at 1600x900: one
+//      [arao] overflow warning at step 2 of its first slide and one at step 3, naming the deck,
+//      the slide, its title, its step, the px (the same at both) and the fixes; none at step 1,
+//      none again on coming back, none for its second slide (past its box by design); on its
+//      third and fourth, two Slide.fit, a block too wide in px and a paragraph pulled past the left:
+//      the body left whole, and the warning's fix says why (fit cannot shrink it; placed, not pushed). On a decks folder holding the second deck alone: it opens at
 //      / and at its path, and windows at / and /<second> move together, either way, / staying /
 //      ("p" at / opens /<second>?presenter); createDeckApp({ deckList: 'always' }) lists it at /,
 //      with its cover; createDeckApp({ deckList: 'sometimes' }) opens it, with one [arao]
@@ -162,7 +174,8 @@
 //                                      (exports/<deck>.pdf); each PDF must have (its pages counted
 //                                      in the file itself) as many pages as its summary line says
 //                                      and as the walk counted steps (per step is the default), and
-//                                      a total line all the decks; the fifth deck's says IMPORTED
+//                                      a total line all the decks; the fifth deck's says IMPORTED;
+//                                      nothing said not to fit (DENSE's slides included)
 //  11. <bin> export --deck <name> --per-slide   the one PDF (exports/<deck>-slides.pdf), with as
 //                                      many pages as slides
 //  12. <bin> export --url <a deck's URL>, against vite preview: a warning naming the base meant,
@@ -181,7 +194,11 @@
 //        fell back; --theme no deck lists: exit 1 and no PDF; a deck that throws at runtime: the
 //        others exported, exit 1; decks that resolve to one file (Alpha in THEME and
 //        alpha-THEME, Beta and beta): the first kept, the second failed, a warning on the case;
-//        --theme IMPORTED (the theme package's) over a deck that lists it
+//        --theme IMPORTED (the theme package's) over a deck that lists it;
+//        OVERFLOWING: its PDF written, exit 0, and at the end three slides listed as not fitting:
+//        the first, steps 2-3 on one line, at the px the dev server said; the third and the fourth
+//        with their own fix on their line; the usual fix once, last (the second slide not
+//        listed); with --strict, the same and exit 1
 // The package name and the CLI's name are read from package.json: nothing here names them.
 //
 // Environment:
@@ -259,7 +276,7 @@ const LINKED_PKG = '@smoke/linked-themes'
 const THEME_SOURCES = `themes: ['src/themes', 'src/venues', '${HALL_PKG}', '${LINKED_PKG}']`
 const DURATION = 15 * 60000
 // utility classes arao layouts --json must list (src/styles/utilities.css): one of each group
-const UTILITY_CLASSES = ['cols', 'cols-2', 'rows', 'stack', 'row', 'middle', 'gap-sm', 'grow', 'text-lg', 'accent', 'highlight', 'no-footer']
+const UTILITY_CLASSES = ['cols', 'cols-2', 'rows', 'stack', 'row', 'middle', 'gap-sm', 'grow', 'text-lg', 'scale-80', 'accent', 'highlight', 'no-footer', 'fit']
 // Its cover has a parameter of its layout, bound to a ref the page can change (window.__bar), the
 // colour of its .bar (--ar-layout-cover-bar: BAR), and an attribute that is none (data-smoke)
 const BAR = ['rgb(1, 2, 3)', 'rgb(4, 5, 6)']
@@ -340,6 +357,75 @@ Deck
 `]
 const OUTLINE_ITEMS = 'Part one:current, Part two:upcoming'
 
+// a seventh deck of the smoke project only, crowded slides that must fit (DENSE_SLIDES, by title):
+// grids of 11, 12 and 13 blocks (an icon, a title and a one-line description each: the grid's
+// own sizes step down with the count), a Slide.fit whose list does not fit at the body's size
+// (fitted), and a Slide.scale-80. No theme listed: it is checked in every built-in one (4e)
+const DENSE_BLOCKS = [
+  ['lucide:file-code', 'One Vue file', 'Slides as components'], ['lucide:monitor', 'Any screen', 'One canvas, scaled'],
+  ['lucide:printer', 'And a PDF', 'Every step a page'], ['lucide:palette', 'Themes', 'Tokens, not CSS'],
+  ['lucide:presentation', 'Presenter', 'Notes and timer'], ['lucide:code', 'Snippets', 'Lit up by step'],
+  ['lucide:image', 'Pictures', 'Fitted to their box'], ['lucide:layout-grid', 'Layouts', 'One CSS file each'],
+  ['lucide:footprints', 'Steps', 'Reveal one by one'], ['lucide:keyboard', 'Shortcuts', 'Keys of your own'],
+  ['lucide:languages', 'Languages', 'The UI in yours'], ['lucide:share-2', 'Sync', 'Windows in step'],
+  ['lucide:timer', 'Timer', 'The talk on time'],
+]
+const DENSE_SLIDES = { grids: ['11 blocks', '12 blocks', '13 blocks'], fit: 'Fitted to the slide', scaled: 'A step down' }
+const DENSE = ['Dense.vue', `<template lang="pug">
+Deck
+  Slide(v-for="n in [11, 12, 13]" :key="n" layout="grid")
+    h2 {{ n }} blocks
+    div(v-for="b in blocks.slice(0, n)" :key="b[1]")
+      Icon(:name="b[0]")
+      h3 {{ b[1] }}
+      p {{ b[2] }}
+  Slide.fit
+    h2 ${DENSE_SLIDES.fit}
+    ul
+      li(v-for="i in 15" :key="i") Item {{ i }}, on a line of its own
+  Slide.scale-80
+    h2 ${DENSE_SLIDES.scaled}
+    p Its body at 80% of its size
+</template>
+
+<script setup>
+const blocks = ${JSON.stringify(DENSE_BLOCKS).replace(/"/g, "'")}
+</script>
+`]
+
+// a deck of a decks folder of its own (src/overflowing), for the overflow warnings: a footer, and
+// a list too long for its slide from step 2 on, alike at step 3 (what step 3 brings changes no
+// size: a word inside the first item); its second slide reaches past its box only by design (a
+// Background, an element positioned absolutely, one marked data-ar-bleed), and is no overflow; its
+// third, a Slide.fit, holds a block too wide in px (shrinking the text does not help: fit leaves it
+// whole, and says so); its fourth, a Slide.fit too, a paragraph pulled past the left edge (placed,
+// not pushed: fit does nothing, the fix is to mark it or move it)
+const OVERFLOWING = ['Overflowing.vue', `<template lang="pug">
+Deck
+  template(#footer)
+    span Overflowing
+  Slide
+    h2 Too long from step 2
+    ul
+      li Item 1 #[span(v-step="3") and a word at step 3]
+      li(v-for="i in 5" :key="i") Item {{ i + 1 }}
+      li(v-for="i in 9" :key="'more' + i" v-step="2") More {{ i }}
+  Slide
+    Background(src="shapes.svg" opacity="0.2")
+    h2 Past its box by design
+    div(style="position: absolute; right: -300px; top: -200px; width: 600px; height: 600px; border-radius: 50%; background: currentColor; opacity: .1")
+    div(data-ar-bleed style="margin: 0 -400px; height: 40px; background: currentColor; opacity: .2")
+    p A decoration reaches past the edge on purpose.
+  Slide.fit
+    h2 Too wide for fit
+    div(style="width: 2200px; height: 40px; background: currentColor; opacity: .2")
+  Slide.fit
+    h2 Pulled to the left
+    p(style="margin-left: -300px") Past the left edge
+</template>
+`]
+const OVERFLOW_TITLE = 'Too long from step 2'
+
 // the first theme each deck's cover wears in the list, by deck name, and its canvas's background
 // (SAMPLE's, HALL's; null: default's, whatever it is)
 const COVER_THEMES = { [basename(LONG[0], '.vue')]: [THEME, SAMPLE.bg], Venue: [IMPORTED, HALL.bg] }
@@ -353,6 +439,7 @@ const TITLES = {
   Untimed: 'Untimed',
   Venue: 'Venue',
   Outline: 'Outline',
+  Dense: 'Dense',
   [basename(LONG[0], '.vue')]: 'The Deck Whose File Name is so long that no card of the list could ever hold it on one line',
 }
 
@@ -455,6 +542,7 @@ try {
   await writeFile(join(project, 'src', 'decks', LONG[0]), LONG[1])
   await writeFile(join(project, 'src', 'decks', VENUE[0]), VENUE[1])
   await writeFile(join(project, 'src', 'decks', OUTLINE[0]), OUTLINE[1])
+  await writeFile(join(project, 'src', 'decks', DENSE[0]), DENSE[1])
   const decks = (await readdir(join(project, 'src', 'decks'))).filter((f) => f.endsWith('.vue')).map((f) => basename(f, '.vue'))
   if (decks.length < 2) throw new Error('the project needs two decks or more to test the selector')
   log(`decks: ${decks.join(', ')}`)
@@ -1440,6 +1528,74 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
     for (const c of complaints) fail(`${mode} utility classes: ${c}`)
   }
 
+  // crowded slides that fit (header, 4f), on the dense deck, in every built-in theme: each slide
+  // stayed on long enough for the engine to measure it (in dev it would warn, "[arao] overflow",
+  // and nothing may warn), and measured here too, on its own terms: the text of its body (each
+  // h3, p and li, each icon) inside the slide's padding, the safe area. The grids of 11, 12 and 13
+  // blocks fit as they are; Slide.fit's list does not at its body's size (seen with the class
+  // taken off for a moment) and fits fitted (--_ar-fit on its body, from .6 to 1); Slide.scale-80's
+  // body is .8 of the slide's text
+  async function fits(base, mode, themes) {
+    const complaints = []
+    for (const theme of themes) {
+      const page = await browser.newPage({ viewport: { width: 1600, height: 900 } })
+      page.on('console', (m) => ['warning', 'error'].includes(m.type()) && complaints.push(`${theme}: console ${m.type()}: ${m.text()}`))
+      page.on('pageerror', (e) => complaints.push(`${theme}: page error: ${e.message}`))
+      try {
+        await page.goto(new URL(`dense?theme=${theme}#/1/1`, base).href)
+        await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
+        const titles = await page.evaluate(() => [...document.querySelectorAll('.ar-slide')].map((s) => s.querySelector('.ar-title')?.textContent.trim()))
+        for (const title of [...DENSE_SLIDES.grids, DENSE_SLIDES.fit, DENSE_SLIDES.scaled]) {
+          const n = titles.indexOf(title) + 1
+          if (!n) {
+            complaints.push(`${theme}: no slide "${title}"`)
+            continue
+          }
+          await page.evaluate((h) => { location.hash = h }, `#/${n}/1`)
+          await page.waitForFunction((h) => location.hash === h, `#/${n}/1`, { timeout: 5_000 }).catch(() => {})
+          await page.waitForFunction(() => !document.querySelector('[data-ar-busy]') && document.fonts.status === 'loaded', null, { timeout: 15_000 }).catch(() => {})
+          await pause(1200) // the slide's fade, then the engine's own measure, a moment after
+          const got = await page.evaluate((i) => {
+            const s = document.querySelectorAll('.ar-slide')[i]
+            const body = s.querySelector(':scope > .ar-body')
+            const k = s.getBoundingClientRect().width / s.offsetWidth
+            const sr = s.getBoundingClientRect()
+            const cs = getComputedStyle(s)
+            const area = { t: sr.top + parseFloat(cs.paddingTop) * k, r: sr.right - parseFloat(cs.paddingRight) * k, b: sr.bottom - parseFloat(cs.paddingBottom) * k, l: sr.left + parseFloat(cs.paddingLeft) * k }
+            // how far the body's text reaches past the safe area, canvas px (0: inside)
+            const out = () => Math.max(0, ...[...body.querySelectorAll('h3, p, li, .ar-icon')].map((e) => {
+              const r = e.getBoundingClientRect()
+              return Math.max(r.bottom - area.b, r.right - area.r, area.l - r.left, area.t - r.top) / k
+            }))
+            const fitted = s.classList.contains('fit')
+            let unfitted = null
+            if (fitted) {
+              s.classList.remove('fit')
+              unfitted = out()
+              s.classList.add('fit')
+            }
+            return {
+              out: out(),
+              unfitted,
+              fit: parseFloat(body.style.getPropertyValue('--_ar-fit')) || 1,
+              scale: parseFloat(getComputedStyle(body).fontSize) / parseFloat(getComputedStyle(s).fontSize),
+            }
+          }, n - 1)
+          if (got.out > 2) complaints.push(`${theme}: "${title}" reaches ${got.out.toFixed(1)}px past the slide's padding`)
+          if (title === DENSE_SLIDES.fit) {
+            if (!(got.unfitted > 2)) complaints.push(`${theme}: "${title}" fits without Slide.fit (${got.unfitted?.toFixed(1)}px past): it tests nothing`)
+            if (!(got.fit >= 0.6 && got.fit < 1)) complaints.push(`${theme}: "${title}" has --_ar-fit ${got.fit}, not from .6 to 1`)
+          } else if (got.fit !== 1) complaints.push(`${theme}: "${title}", no .fit, has --_ar-fit ${got.fit}`)
+          if (title === DENSE_SLIDES.scaled && Math.abs(got.scale - 0.8) > 0.005) complaints.push(`${theme}: "${title}"'s body is ${got.scale.toFixed(3)} of the slide's text, not .8`)
+        }
+      } finally {
+        await page.context().close()
+      }
+    }
+    console.log(`  ${mode} crowded slides: ${complaints.length ? 'problems below' : `grids of 11, 12 and 13 blocks, Slide.fit and Slide.scale-80 fit in ${themes.join(', ')}`}`)
+    for (const c of complaints) fail(`${mode} crowded slides: ${c}`)
+  }
+
   // the overlay layout's positions and scrim (layouts/overlay.css reads its tokens with container
   // style queries), on the playground's overlay slide (header, 4e)
   async function overlay(base, mode) {
@@ -2312,6 +2468,7 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
       await deckSlides(base, mode)
       await utilities(base, mode)
       await overlay(base, mode)
+      await fits(base, mode, builtin)
       if (mode === 'dev') {
         await face(base)
         await themes(base)
@@ -2474,6 +2631,54 @@ Deck
     for (const c of complaints) fail(`dev ${variant.name}: ${c}`)
   }
 
+  // A slide that does not fit warns in development, once per step it overflows at, naming the
+  // deck, the slide, its title and step, what overflows and by how many px, and the fixes; the
+  // same overflow said once (back at a step already said: nothing); a slide that reaches past its
+  // box by design says nothing. In a window of another size than the canvas (1600x900): measured
+  // on the canvas all the same, the px the export says too (overflowPx, the CLI's case below).
+  let overflowPx = null
+  async function overflowWarnings(base, variant) {
+    const page = await browser.newPage({ viewport: { width: 1600, height: 900 } })
+    const complaints = []
+    const warned = []
+    page.on('console', (m) => {
+      if (!['warning', 'error'].includes(m.type())) return
+      if (m.type() === 'warning' && m.text().startsWith('[arao] overflow: ')) warned.push(m.text())
+      else complaints.push(`console ${m.type()}: ${m.text()}`)
+    })
+    page.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
+    const at = async (hash) => {
+      await page.evaluate((h) => { location.hash = h }, hash)
+      await page.waitForFunction((h) => location.hash === h, hash, { timeout: 5_000 }).catch(() => complaints.push(`${hash} not reached`))
+      await pause(1500)
+    }
+    try {
+      await page.goto(new URL('overflowing#/1/1', base).href)
+      await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
+      await pause(1500)
+      if (warned.length) complaints.push(`a warning at step 1, where it fits: ${warned.join(' | ')}`)
+      for (const hash of ['#/1/2', '#/1/3', '#/1/2', '#/2/1', '#/1/3']) await at(hash)
+      // the third and fourth slides: Slide.fit left whole (a block in px, a paragraph pulled out)
+      const fitted = []
+      for (const hash of ['#/3/1', '#/4/1']) {
+        await at(hash)
+        fitted.push(await page.evaluate(() => [...document.querySelectorAll('.ar-slide')].find((e) => getComputedStyle(e).display !== 'none')?.querySelector(':scope > .ar-body')?.style.getPropertyValue('--_ar-fit') || '1'))
+      }
+      if (fitted.some((v) => v !== '1')) complaints.push(`Slide.fit shrank a body it cannot help (--_ar-fit ${fitted.join(', ')} on slides 3 and 4, not 1)`)
+      const said = (step) => new RegExp(`^\\[arao\\] overflow: deck "Overflowing", slide 1 "${OVERFLOW_TITLE}", step ${step} of 3: the body overflows by (\\d+)px at the bottom, (under the footer|past the slide's edge \\(cut off\\))\\. To fit it: Slide\\.fit \\(.*\\), a \\.scale-90, \\.scale-80 or \\.scale-70 class on the slide or on a block, or fewer blocks\\.$`)
+      const stuck = /^\[arao\] overflow: deck "Overflowing", slide 3 "Too wide for fit": the body overflows by \d+px at the right\. Slide\.fit cannot shrink it \(it is sized in px, or transformed\): make it smaller, or fewer blocks\.$/
+      const placed = /^\[arao\] overflow: deck "Overflowing", slide 4 "Pulled to the left": the body overflows by \d+px at the left\. Past the top or the left it is placed, not pushed .*position: absolute or data-ar-bleed.*\.$/
+      const [two, three] = [said(2).exec(warned[0] ?? ''), said(3).exec(warned[1] ?? '')]
+      if (warned.length !== 4 || !two || !three || !stuck.test(warned[2]) || !placed.test(warned[3])) complaints.push(`not one warning for step 2 and one for step 3 of slide 1 (${said(2)}), then one for slide 3 (${stuck}) and one for slide 4 (${placed}), but ${warned.length}: ${warned.join(' | ') || 'none'}`)
+      else if (two[1] !== three[1]) complaints.push(`steps 2 and 3 overflow alike, and the warnings say ${two[1]}px and ${three[1]}px`)
+      else overflowPx = Number(two[1])
+      console.log(`  dev ${variant.name}: ${complaints.length ? 'problems below' : `one warning at step 2, one at step 3 (${overflowPx}px), none again, none for a slide past its box by design; fit left whole where it cannot help, its fix said (px, placed)`}`)
+    } finally {
+      await page.context().close()
+    }
+    for (const c of complaints) fail(`dev ${variant.name}: ${c}`)
+  }
+
   // a layout parameter given a value its doc block does not list: one [arao] warning per layout,
   // parameter and value, saying what it takes, however many slides give it and however often
   // they are drawn; none for a value it lists (a word, a number in its range)
@@ -2516,7 +2721,10 @@ Deck
     for (const c of complaints) fail(`dev ${variant.name}: ${c}`)
   }
 
+  const overflowing = 'src/overflowing' // a decks folder holding OVERFLOWING
   const variants = [
+    { name: 'a deck that overflows', files: { 'vite.config.js': asIs['vite.config.js'].replace('arao({', `arao({ decks: '${overflowing}',`) },
+      checks: [overflowWarnings] },
     { name: 'one deck', files: { 'vite.config.js': alone },
       visits: [{ path: '', deck: true }, { path: second, deck: true }], checks: [together] },
     { name: `one deck, createDeckApp({ deckList: 'always' })`, files: { 'vite.config.js': alone, 'src/main.js': withOptions(`{ deckList: 'always' }`) },
@@ -2582,6 +2790,8 @@ Deck
   for (const [name, text] of Object.entries(crowded)) await writeFile(join(project, crowd, name), text)
   await mkdir(join(project, listed), { recursive: true })
   for (const [name, text] of Object.entries(LISTED)) await writeFile(join(project, listed, name), text)
+  await mkdir(join(project, overflowing), { recursive: true })
+  await writeFile(join(project, overflowing, OVERFLOWING[0]), OVERFLOWING[1])
   await mkdir(join(project, valued), { recursive: true })
   for (const [name, text] of Object.entries(VALUED)) await writeFile(join(project, valued, name), text)
   try {
@@ -2600,6 +2810,7 @@ Deck
     await rm(join(project, solo), { recursive: true, force: true })
     await rm(join(project, crowd), { recursive: true, force: true })
     await rm(join(project, listed), { recursive: true, force: true })
+    await rm(join(project, overflowing), { recursive: true, force: true })
     await rm(join(project, valued), { recursive: true, force: true })
   }
 
@@ -2620,7 +2831,11 @@ Deck
   log(`${BIN} export (every deck, per step)`)
   let said = null
   try {
-    said = await run('npx', ['--no-install', BIN, 'export'], project)
+    // every page fits (the dense deck's crowded slides too): no overflow said at the end
+    const { code, out, err } = await exec('npx', ['--no-install', BIN, 'export'], project)
+    if (code !== 0) throw new Error(`exited with ${code}`)
+    if (/not fit/.test(err)) fail(`export of every deck: it says a slide does not fit: ${err.slice(err.search(/\n.*not fit/))}`)
+    said = out
   } catch (e) {
     fail(`export of every deck: ${e.message}`)
   }
@@ -2745,6 +2960,26 @@ Deck
       files: { 'Gamma.vue': tiny('Gamma', ['default', IMPORTED]), 'Second.vue': tiny('Second', ['default']) },
       code: 0, pdfs: { [`gamma-${IMPORTED}.pdf`]: 3, 'second.pdf': 3 },
       lines: [new RegExp(`^imported/gamma-${IMPORTED}\\.pdf: .*theme ${IMPORTED}$`, 'm'), /^2 of 2 decks exported, 6 pages$/m] },
+    // the slides that do not fit: listed at the end (the first one's steps 2 and 3, alike, on one
+    // line, with the px the dev server's warning said: overflowPx), the usual fix once at the end,
+    // the others on their line (fit that cannot shrink a block in px, a paragraph placed past the
+    // left); exit 0, the PDF written. The slide that reaches past its box by design is not listed
+    { name: 'overflow', args: [],
+      files: { [OVERFLOWING[0]]: OVERFLOWING[1] },
+      code: 0, pdfs: { 'overflowing.pdf': 6 },
+      lines: [/^overflow\/overflowing\.pdf: 6 pages \(4 slides, 6 steps\)/m],
+      errs: [/^3 slides do not fit \(a warning: --strict makes it an error\):$/m,
+        new RegExp(`^  Overflowing, slide 1 "${OVERFLOW_TITLE}", steps 2-3 of 3: the body overflows by (\\d+)px at the bottom, (under the footer|past the slide's edge \\(cut off\\))$`, 'm'),
+        /^  Overflowing, slide 3 "Too wide for fit": the body overflows by \d+px at the right\. Slide\.fit cannot shrink it \(it is sized in px, or transformed\): make it smaller, or fewer blocks$/m,
+        /^  Overflowing, slide 4 "Pulled to the left": the body overflows by \d+px at the left\. Past the top or the left it is placed, not pushed .*data-ar-bleed.*$/m,
+        /^  To fit it: Slide\.fit \(.*\), a \.scale-90, \.scale-80 or \.scale-70 class on the slide or on a block, or fewer blocks\.$/m],
+      notErrs: [/slide 2/, /To fit it[^]*To fit it/],
+      px: true },
+    // --strict: the same, exit 1, the PDF written all the same
+    { name: 'strict', args: ['--strict'],
+      files: { [OVERFLOWING[0]]: OVERFLOWING[1] },
+      code: 1, pdfs: { 'overflowing.pdf': 6 },
+      errs: [/^3 slides do not fit \(--strict: exit 1\):$/m, new RegExp(`^  Overflowing, slide 1 "${OVERFLOW_TITLE}", steps 2-3 of 3: `, 'm')] },
   ]
   try {
     for (const c of cases) {
@@ -2782,6 +3017,9 @@ Deck
       if (made.length) fail(`${what}: unexpected files in ${c.name}/: ${made.join(', ')}`)
       for (const re of c.lines ?? []) if (!re.test(out)) fail(`${what}: no line matching ${re} in its output`)
       for (const re of c.errs ?? []) if (!re.test(err)) fail(`${what}: no message matching ${re} on its stderr`)
+      for (const re of c.notErrs ?? []) if (re.test(err)) fail(`${what}: a message matching ${re} on its stderr`)
+      // the export's px are the dev server's: the canvas's, whatever the window
+      if (c.px && overflowPx != null && !err.includes(`overflows by ${overflowPx}px`)) fail(`${what}: its overflow is not the ${overflowPx}px the dev server said`)
     }
   } finally {
     await writeFile(join(project, 'vite.config.js'), asIs['vite.config.js'])

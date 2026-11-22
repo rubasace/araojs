@@ -11,7 +11,7 @@ mental model in SKILL.md). Every prop and slot: `docs/reference/components.md`; 
 - Bullet reveal, step variants, reusable steps
 - Code walkthrough, inline code
 - Image + text, background image, plain colour
-- Two columns, three columns, grids; inside a block: utility classes
+- Two columns, three columns, grids; inside a block: utility classes; a crowded slide that must fit
 - Icons
 - Speaker notes
 - Body placement
@@ -192,8 +192,29 @@ Slide(layout="split")
 `.row` (side by side, centred on the line), `.stack` (one under another), `.cols` (a column per
 child; uneven with `--ar-cols`), `.cols-2` / `-3` / `-4` (filled row by row), `.rows`; `.top`,
 `.middle`, `.bottom`, `.center`; `.gap-sm`, `.gap`, `.gap-lg`; `.grow`; `.text-sm`, `.text-lg`,
-`.text-xl`; `.accent`, `.muted`, `.highlight`, `.upper`. Each is as tall as its content: a
-`Snippet` inside needs `.grow` on the columns. `npx arao layouts` describes every one.
+`.text-xl`; `.scale-90`, `.scale-80`, `.scale-70`; `.accent`, `.muted`, `.highlight`, `.upper`.
+Each is as tall as its content: a `Snippet` inside needs `.grow` on the columns. `npx arao
+layouts` describes every one.
+
+## A crowded slide that must fit
+```pug
+//- its body's text shrinks just enough to fit (down to 60%), only when it overflows
+Slide.fit
+  h2 Everything we shipped
+  ul
+    li(v-for="item in shipped") {{ item }}
+
+//- a fixed step down, on one block (or on the slide: Slide.scale-80)
+Slide(layout="split")
+  h2 Before and after
+  div.scale-80
+    ul
+      li …
+  div
+    p …
+```
+Cut first (fewer blocks, two slides); `fit` and the scales shrink what is in em (most text), not
+sizes in px. `npm run export` and the dev console say which slides still overflow.
 
 ## Icons (in text: as tall as the text; alone: `size` px)
 ```pug

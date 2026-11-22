@@ -119,6 +119,94 @@ Each one, and the classes of a `Slide` itself (`top`, `middle`, `center`, `botto
   trade-off, for names an author can type and an agent can guess; outside the slides (the
   presenter view, the list of decks) nothing is touched.
 
+## When it does not fit
+
+The canvas has a fixed size, so too much on a slide does not scroll: it is cut off at the bottom,
+hidden under the footer, or pushed past the side. Arao measures what each slide shows, on the
+1920x1080 canvas (whatever the size of the window), and says what overflows:
+
+- **In development** (`npm run dev`), a console warning for the slide on screen, a moment after it
+  settles, at each step you show: the deck, the slide's number and title, its step, what overflows
+  and by how many px, and how to fix it.
+
+  ```
+  [arao] overflow: deck "mytalk", slide 7 "Twelve pillars", step 3 of 4: the body overflows by
+  46px at the bottom, under the footer. To fit it: Slide.fit (shrinks the body's text just
+  enough), a .scale-90, .scale-80 or .scale-70 class on the slide or on a block, or fewer blocks.
+  ```
+
+  Once per slide and step: the same overflow is not said again; a different one (after an edit)
+  is.
+- **In `arao export`**, every page (every step, or with `--per-slide` each slide at its last
+  step) is measured as it is printed, and the slides that overflow are listed at the end of the
+  run, with the same words. A warning: the PDF is written and the exit code stays 0, unless
+  `--strict` ([CLI](../reference/cli.md#arao-export)).
+- The Arao skill's headless check (its `check-deck` script) walks every step and reports the same
+  warnings. It reads them from the dev server's page: run it against `npm run dev`, not against a
+  production build, which says nothing (below).
+
+What is measured: the slide's header, body and zones against the space they have (the body, under
+the title, above the footer's band), each block of a layout (a side of `split`, a block of `grid`,
+a paragraph too wide) against its own box, and whatever clips (the columns of `.cols`) against its
+own. What is meant to reach past its box is not: a `Background`, an element positioned absolutely
+(a decoration placed by hand), the inside of an `Img`, a `Snippet` or an `Icon`, a step not shown
+yet, and anything marked `data-ar-bleed` (a picture you pull out to the slide's edge with negative
+margins):
+
+```pug
+Img(file="skyline.jpg" data-ar-bleed style="margin: 0 calc(-1 * var(--ar-pad-x))")
+```
+
+In a production build (the site you host, `npm run build`) nothing is measured: only `Slide.fit`
+works there, on the slides that have it.
+
+The fix the warning gives follows where it overflows. Past the bottom or the right, the content is
+too much for the slide: fit it, scale it, or cut. Past the top or the left alone, it was put there
+(a negative margin, a transform): shrinking does not bring it back, and the warning says to mark it
+(`position: absolute`, `data-ar-bleed`) if it is meant to reach out, or to move it back in.
+(Centred content too wide spills on both sides: that is too much, like the bottom and the right.)
+
+The fixes, from the least to the most:
+
+- **`Slide.fit`**: the body's text shrinks just enough to fit, and everything in it sized in `em`
+  with it (a list's gaps, a grid's pictures); the layout reflows, nothing is stretched. Down to
+  60% of its size: past that it stays at 60% and the warning says so (split the slide). It fits
+  what spills at the bottom and on the right, and only as far as shrinking helps: content sized in
+  px (a block 2200px wide) or transformed does not shrink with the text, so for it the body stays
+  whole and the warning says that `fit` cannot shrink it. It is measured again whenever the
+  content, the step, the theme or the window changes, and in the export before each page is taken.
+  A slide without `fit` is never resized. With `v-step.collapse`
+  each step is fitted as it shows, so the text gets smaller as steps add to it; `v-step` keeps the
+  space of what is still to come, and the text the same size at every step.
+- **`.scale-90`, `.scale-80`, `.scale-70`**: a fixed step down, on the slide (its body) or on one
+  block (a side of `split`, a card), when you would rather choose the size.
+- **Fewer blocks**, less text, or two slides.
+
+```pug
+Slide.fit
+  h2 Everything we shipped this year
+  ul
+    li(v-for="item in shipped") {{ item }}
+
+Slide(layout="split")
+  h2 Before and after
+  div.scale-80
+    ul
+      li …
+  div
+    p …
+```
+
+Sizes in px, and those taken from the title's tokens (a side of `split`'s heading, an `h2` in the
+body), do not follow `fit` or a scale: only what is in `em`, which is most of what a slide shows.
+On a slide, `fit` and the scales set the body's font-size from the slide's: a font-size a layout
+of your own sets on `.ar-body` gives way to them. A layout that wants another text size sets it on
+the slide (`.layout-x { font-size: 1.1em }`): the body inherits it, and `fit` and the scales start
+from it.
+A `grid` makes its blocks smaller by itself as they grow in number (pictures, padding, gap and
+text step down from 9, 11, 12 and 16 blocks), so that up to 20 fit with a title and a one-line
+description each.
+
 ## From Cols, Rows, Grid and Center
 
 These four components are gone: a slide's columns are a layout, and what was inside a block is a

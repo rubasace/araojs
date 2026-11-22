@@ -12,7 +12,8 @@ Arao way and how to check them.
 **Version:** this skill describes araojs 0.5.0 or later (theme sources, fetched web fonts,
 `src/shortcuts.ts`, `Background`, layouts as CSS files, `Slide` with `layout` as its only prop and
 its layout's tokens as attributes, self-documented layouts and `arao layouts`, utility classes
-instead of `Cols`, `Rows`, `Grid` and `Center`).
+instead of `Cols`, `Rows`, `Grid` and `Center`, overflow warnings in dev and in the export,
+`Slide.fit` and `.scale-*`).
 With an older araojs in the project, upgrade it (`npm install araojs@latest`, then fix the deck:
 [troubleshooting.md](references/troubleshooting.md#decks-written-for-an-older-arao)) or check its
 own `node_modules/araojs/docs/`.
@@ -118,6 +119,16 @@ Do:
   ([recipes.md](references/recipes.md), `docs/guide/slides-and-layouts.md#its-doc-block`).
 - Write tables as plain `table` / `thead` / `tbody`: the theme styles them.
 - One idea per slide. Reveal with steps instead of cramming.
+- Make every slide fit. Arao measures what each slide shows: `npm run export` lists, at the end
+  of its run, every slide whose content does not fit (cut off at the bottom, under the footer,
+  wider than its box), with what overflows, by how many px and the fix; the dev server says the
+  same as a console warning (`[arao] overflow: …`), which `check-deck.mjs` reports. **Read those
+  lines after every export and fix each slide** before calling the deck done: fewer blocks or
+  less text first (one idea per slide), else `Slide.fit` (its body's text shrinks just enough,
+  down to 60%) or a fixed step down, `.scale-90` / `.scale-80` / `.scale-70`, on the slide or on
+  one block. A warning that `fit` stayed at 60% means split the slide. Not done until the export
+  says nothing about overflow (`--strict` makes it fail instead). A decoration meant to reach
+  past its box: `position: absolute`, or `data-ar-bleed` on it.
 - Name files, never import them: `Snippet(file="App.java")` from `src/snippets/`,
   `Img(file="team.jpg")` / `Background(src="team.jpg")` from `src/images/` (subfolders ok,
   case-sensitive).

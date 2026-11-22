@@ -91,8 +91,10 @@ size, then its `h3` and a muted `p`), in rows balanced by how many there are (4 
 `rows="2"` the rows, `cards` gives each block a background, `align="start"` lines their content
 up on the left. A block's parts are found at any depth in it (a link around them, a component of
 your own), its picture when it comes first. Past
-eight blocks, keep each short (an icon and a title): the pictures get smaller from nine on, but
-three rows of three lines each fill a slide.
+eight blocks, keep each short (an icon, a title and a one-line description): the blocks get
+smaller as they grow in number (the pictures from nine on; the padding, the gap and the text too
+from 11, 12 and 16), so that up to 20 fit, in four rows of five. A grid that still does not fit is
+said in development and in the export ([When it does not fit](composition.md#when-it-does-not-fit)).
 
 <!-- example:features -->
 

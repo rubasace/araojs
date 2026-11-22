@@ -94,7 +94,7 @@ export function createSlide({ el, layer, layout }: { el: Readonly<Ref<HTMLElemen
 
   // the Deck's #footer slot as it is now, or undefined (the slots object is updated in place)
   const footer = inject(FOOTER, () => undefined)
-  return { id, index, active, drawn, step, still, total: stage.view.total, footer }
+  return { id, index, active, drawn, step, steps, still, role: stage.role, total: stage.view.total, footer }
 }
 
 // For components inside a <Slide> that change *within* the slide (highlight, dim, count…)

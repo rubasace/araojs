@@ -227,7 +227,8 @@ there, as in Keynote; or press `g` to search the slides by title and see where y
 
 **PDF export**
 
-One command, one PDF: a page per step (or per slide), text kept as text.
+One command, one PDF: a page per step (or per slide), text kept as text. Every page is measured:
+a slide that does not fit is listed, with by how much.
 
 [Export](docs/guide/export.md)
 

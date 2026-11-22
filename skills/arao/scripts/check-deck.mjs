@@ -5,8 +5,10 @@
 // Run it from the slides project (it imports playwright-core, a dependency of araojs). Chromium
 // once: npx playwright-core install chromium.
 // Prints: console warnings/errors and page errors, the slide count, the highest step reached on
-// each slide, slides whose content overflows, Slide API that is gone (a removed prop is no error
-// in Vue: it lands on the slide as a plain HTML attribute and does nothing), components that are
+// each slide, the slides whose content overflows (the warnings Arao itself gives in development,
+// "[arao] overflow: …", one per slide and step: what overflows, by how many px, and how to fix
+// it; the script waits on every step, so each is measured), Slide API that is gone (a removed
+// prop is no error in Vue: it lands on the slide as a plain HTML attribute and does nothing), components that are
 // gone (Cols, Rows, Grid: Vue renders an element of that name that lays nothing out), each with its
 // replacement, and saves a screenshot of every step in outDir (default ./deck-check), named
 // s<slide>-<step>.png. Exit code 1 if any warning, error, overflow, removed Slide API or
@@ -63,8 +65,11 @@ const zonesOf = (() => {
 const browser = await chromium.launch()
 const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
 const problems = []
+// what does not fit, as Arao says it in development (one warning per slide and step)
+const overflow = new Set()
 page.on('console', (m) => {
-  if (m.type() === 'warning' || m.type() === 'error') problems.push(`${m.type()}: ${m.text().split('\n')[0]}`)
+  if (m.type() === 'warning' && m.text().startsWith('[arao] overflow: ')) overflow.add(m.text().slice('[arao] overflow: '.length))
+  else if (m.type() === 'warning' || m.type() === 'error') problems.push(`${m.type()}: ${m.text().split('\n')[0]}`)
 })
 page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`))
 
@@ -159,17 +164,18 @@ const subtitleHeadings = await page.evaluate(() => [...document.querySelectorAll
 const hash = () => page.evaluate(() => location.hash)
 const parse = (h) => (h.match(/^#\/(\d+)\/(\d+)/) || []).slice(1).map(Number)
 const steps = {}
-const overflow = new Set()
-// each state: wait for the slide transition to end, then check overflow and take a screenshot
+// each state: wait for what the slide on screen is still loading (data-ar-busy: a picture, a
+// snippet; 15 s at most), then for the slide transition to end and for Arao to measure it (its
+// overflow warning comes a moment after the slide settles, and not at all once the deck has moved
+// on), then take a screenshot
 const visit = async () => {
-  await page.waitForTimeout(700)
+  await page.waitForFunction(() => {
+    const shown = [...document.querySelectorAll('.ar-slide')].find((e) => getComputedStyle(e).display !== 'none')
+    return !shown?.querySelector('[data-ar-busy]')
+  }, null, { timeout: 15000, polling: 100 }).catch(() => {})
+  await page.waitForTimeout(900)
   const [s, st] = parse(await hash())
   steps[s] = Math.max(steps[s] || 0, st)
-  const over = await page.evaluate(() => {
-    const el = [...document.querySelectorAll('.ar-slide')].find((e) => getComputedStyle(e).display !== 'none')
-    return el ? el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1 : false
-  })
-  if (over) overflow.add(s)
   await page.screenshot({ path: join(outDir, `s${s}-${st}.png`) })
 }
 
@@ -181,11 +187,12 @@ for (let guard = 0; guard < 2000; guard++) {
   if ((await hash()) === before) break
   await visit()
 }
+await page.waitForTimeout(1500) // the last state's overflow warning, if any
 await browser.close()
 
 console.log(`slides: ${slides}`)
 console.log(`steps per slide: ${Object.entries(steps).map(([k, v]) => `${k}:${v}`).join(' ')}`)
-if (overflow.size) console.log(`overflow on slides: ${[...overflow].join(', ')}`)
+if (overflow.size) console.log(`content that does not fit (${overflow.size}: each says how to fix it; npm run export lists the same):\n  ${[...overflow].join('\n  ')}`)
 if (removed.length) console.log(`removed Slide API (${removed.length} slides):\n  ${removed.join('\n  ')}`)
 if (gone.length) console.log(`removed components (${gone.length} slides; troubleshooting.md, decks written for an older Arao):\n  ${gone.join('\n  ')}`)
 if (maybeGone.length) console.log(`warning: maybe removed, maybe the deck's own (${maybeGone.length} slides; troubleshooting.md, decks written for an older Arao):\n  ${maybeGone.join('\n  ')}`)

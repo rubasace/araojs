@@ -13,7 +13,7 @@ Prints decks to PDF. With `"export": "arao export"` in the project's scripts, `n
 (`npx arao export …` works too). A walkthrough: [Export to PDF](../guide/export.md).
 
 ```
-arao export [--deck <name>] [--theme <name>] [--per-slide | --per-step] [--notes] [--out <path>] [--url <url>]
+arao export [--deck <name>] [--theme <name>] [--per-slide | --per-step] [--notes] [--out <path>] [--url <url>] [--strict]
 ```
 
 | Option | Meaning |
@@ -25,6 +25,7 @@ arao export [--deck <name>] [--theme <name>] [--per-slide | --per-step] [--notes
 | `--notes` | a page with the speaker notes after each slide that has them |
 | `--out <path>` | output file or folder (default `exports/<deck>[-<theme>][-slides][-notes].pdf`); with several decks always a folder (a path ending in `.pdf` is an error) |
 | `--url <url>` | print from a running server instead of building: the site's URL, its base (`http://127.0.0.1:5173/`, or `…/talks/` under a base) |
+| `--strict` | exit with code 1 when a slide's content does not fit it (the PDFs are written all the same); without it, a warning |
 | `-h`, `--help` | print the usage and exit; an unknown option prints the error and the usage, and exits with code 1 |
 
 ### Behaviour
@@ -52,6 +53,18 @@ line says so and their file name has no theme); a theme no deck lists is an erro
 written; with `--deck`, a theme the deck does not list is an error. Chromium:
 `npx playwright-core install chromium`, or `ARAO_CHROMIUM=/path/to/chrome`. Missing pictures
 print as placeholders and are listed.
+
+Every page is measured as it is printed, `Slide.fit` settled first: the slides whose content does
+not fit (cut off at the bottom, under the footer, wider than a box) are listed at the end of the
+run, after the total, on stderr: `<n> slides do not fit (…):`, then a line per slide (its steps
+that overflow alike together), `<deck>, slide <n> "<title>"[, steps <a>-<b> of <s>]: <what
+overflows, by how many px>`, and the fix: the usual one (`To fit it: Slide.fit …`) once, at the
+end; any other on its slide's line (`fit` at 60% and still too much, `fit` that cannot shrink it,
+content past the top or the left: mark it with `data-ar-bleed` or `position: absolute`, or move it
+back in). The wording is the page's, the one the dev server's
+warning uses ([When it does not fit](../guide/composition.md#when-it-does-not-fit)). It changes
+nothing else: exit code 0, unless `--strict`, which makes it 1 (after writing every PDF; a deck
+that fails makes it 1 either way).
 
 - `--url <url>`: no build and no server of its own; prints from the server already running at
   that URL, the site's base (`npm run dev`: `http://127.0.0.1:5173/`; under a base,

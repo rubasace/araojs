@@ -58,6 +58,10 @@
        Slide(style="background: #1d2b4a; --ar-slide-bg-image: none")
      Classes and styles on a Slide go on its section, as a layout's own do (a parameter's token
      is set after the slide's style, so it wins over the same token there).
+     What does not fit: the slide on screen is measured (composables/useOverflow.ts,
+     core/overflow.ts). With the class fit, its body's text shrinks just enough to fit (down to
+     60%), in every drawing; in development, what overflows is a console warning (the export
+     measures every page itself). A slide without fit is never resized.
      The slide's name in the jump menu, the presenter view and the notes pages is the text of its
      first heading outside the background and the footer (state/stage.ts).
      Speaker notes: Notes anywhere inside the slide (notes.ts); only the presenter view shows them. -->
@@ -175,8 +179,9 @@ export type SlideComponent = new <L extends keyof SlideLayouts = 'default'>(prop
 import { Comment, Fragment, Text, camelize, cloneVNode, h, onMounted, onUpdated, ref, shallowRef, useAttrs, useSlots, watch, type FunctionalComponent, type PropType, type StyleValue, type VNode } from 'vue'
 import { layoutTokens } from 'virtual:arao/layout-tokens'
 import { checkLayoutParam } from '../core/layout-values'
-import { useDeck } from '../state/deck'
+import { useDeck, useDeckName } from '../state/deck'
 import { createSlide } from '../state/slide'
+import { useOverflow } from '../composables/useOverflow'
 import Notes from './Notes.vue'
 import Background from './Background.vue'
 
@@ -218,7 +223,12 @@ const el = ref<HTMLElement | null>(null)
 const layer = shallowRef<HTMLElement | null>(null)
 // its place in the stage (with its layout, for useDeck().slides), its step; still: export mode or
 // a thumbnail, no transition; drawn: whether its content is (state/slide.ts)
-const { id, index, active, drawn, step, still, total, footer: footerSlot } = createSlide({ el, layer, layout: () => props.layout })
+const { id, index, active, drawn, step, steps, still, role, total, footer: footerSlot } = createSlide({ el, layer, layout: () => props.layout })
+
+// ---- what does not fit ---------------------------------------------------------------------------
+// Slide.fit (the class fit: its body's text shrunk until it fits) and, in development, a warning
+// when what is on screen overflows (composables/useOverflow.ts; the export checks every page)
+useOverflow({ el, active, step, steps, index, role, theme: deck.theme, deck: useDeckName() })
 
 // ---- zones: header, body, a zone per named slot -----------------------------------------------
 // Slot content rendered by this component's own render (VNodes only places it), so a change in

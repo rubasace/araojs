@@ -9,7 +9,7 @@ this: [the docs](index.md) are their manual, [the Arao skill](../skills/arao/) t
 |---|---|---|
 | `state/` | what there is | the deck, its stages, its slides, its theme and the talk's timer: reactive state, made by a `create…` and read by a `use…` (the pair shares a provide/inject key private to its file) |
 | `composables/` | effects | small internal composables, one per file, that tie the state to the browser: the URL, other windows, keys, touch, the mouse, fullscreen |
-| `core/` | the pure how | plain modules with no Vue component state: sync, exporter, flip, image, icons |
+| `core/` | the pure how | plain modules with no Vue component state: sync, exporter, flip, image, icons, overflow |
 | `views/` | full screens | what a window shows: the deck's `AudienceView`, `PresenterView` and `ExportView`, and `DeckSelectorView`, the list of decks `createDeckApp` shows at `/` |
 | `components/` | what deck authors write | `Deck`, `Slide`, `Background`, `Img`, `Icon`, `Snippet`, `Notes`, `Agenda`; `internal/` holds the engine's own components, which no author names: `Stage` (the scaled canvas), `Controls`, `PresenterBar`, `Thumbnail` (a deck drawn as its cover) and `DeckCover` (a cover in the list); `directives/` holds `v-step` and `v-step-from` |
 | `addons/` | drawn over every slide | `ProgressBar`, `SlideNumber` |
@@ -133,6 +133,7 @@ exposes anything, and `Deck` holds no ref to its view. `v-step` finds its slide 
 | `useTouchGestures(el, { tap, swipe })` | taps, by zone (left quarter, right quarter, middle), and swipes, from pointer events: touch and pen (VueUse's `useSwipe` reads touch events only, so the pen would lose its swipes). Used by `useShortcuts` (edges, swipes) and `useAutoHide` (the middle) |
 | `useAutoHide({ after, tap })` | `visible`: shown on a mouse move, hidden after `after` ms without one; optionally a tap in the middle shows it for `tap` ms or hides it; ignores a tap's echo mousemove. The controls' auto-hide and the audience view's cursor (VueUse's `useIdle` counts keys too, with a fixed timeout and no tap) |
 | `useFullscreen(el)` | `fullscreen` is true while anything in the window is fullscreen; `toggle()` leaves it if so, else makes the element fullscreen; the standard API only (VueUse's `useFullscreen` counts only its own element and falls back to prefixed APIs) |
+| `useOverflow({ el, active, step, … })` | called by `Slide.vue`, for the slide on screen: `Slide.fit` (core/overflow.ts `fitSlide`) at once when it arrives, at each step, theme or render, on the next frame when a box resizes, a font loads or the window changes, and once more when its animations stop; in development, in the audience's window, a console warning when what it shows does not fit (`measureSlide`), once per slide, step and overflow. Nothing at all, observers included, for a slide off screen, nor in a production build for one without `.fit`. The export measures each page itself (core/exporter.ts) |
 
 VueUse (`@vueuse/core`, a dependency, external in the build, prebundled by the Vite plugin) also
 gives `useEventListener`, which every composable here listens with.

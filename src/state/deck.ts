@@ -86,6 +86,12 @@ export function provideThumbnail(cover: { title?: Ref<string> }) {
   provide(THUMBNAIL, cover)
 }
 
+// the name of the deck the app picked (provideDeckRoute), or null without one: for what a slide
+// says of itself (its overflow warning, composables/useOverflow.ts)
+export function useDeckName(): string | null {
+  return inject(ROUTE, null)?.name ?? null
+}
+
 export function createDeck(props: DeckProps) {
   // a thumbnail reads nothing of the URL: the page it is drawn in is not its own
   const thumbnail = inject(THUMBNAIL, null)
