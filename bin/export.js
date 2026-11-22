@@ -45,7 +45,8 @@ import { projectPlugin } from './project.js'
 /**
  * What the export page reports (src/core/exporter.ts, ExportView.vue): window.__araoReady.
  * overflow: the pages whose slide does not fit, said by the page (src/core/overflow.ts).
- * @typedef {{ slide: number, step: number, steps: number, title: string, what: string, fix: string }} OverflowPage
+ * @typedef {{ kind: 'usual' | 'floor' | 'stuck' | 'placed', text: string }} Fix
+ * @typedef {{ slide: number, step: number, steps: number, title: string, what: string, fixes: Fix[] }} OverflowPage
  * @typedef {{ deck?: string | null, error?: string, code?: string, themes?: string[], theme?: string,
  *   pages: number, slides: number, steps: number, width: number, height: number,
  *   missing: string[], stalled?: string[], overflow?: OverflowPage[] }} Ready
@@ -387,32 +388,35 @@ let total = 0
 const overflowing = [] // the decks written whose pages do not all fit, in the order written
 
 // The slides that do not fit, after everything else: one line per slide (its steps that overflow
-// alike put together: steps 2-4 of 5), what overflows as the page said it, and how to fix it: the
-// usual fix once at the end, any other (Slide.fit at its floor) on its slide's line. Returns how
-// many slides.
+// alike put together: steps 2-4 of 5), what overflows as the page said it, and how to fix it, by
+// the fix's kind (the page's): the usual one (Slide.fit, the scales, fewer blocks) once at the end,
+// any other (fit at its floor, fit that cannot shrink it, content placed past the top or the left)
+// on its slide's line. Returns how many slides.
 function reportOverflow() {
-  /** @type {{ head: string, steps: number, from: number, to: number, what: string, fix: string }[]} */
+  /** @type {{ head: string, steps: number, from: number, to: number, what: string, fixes: Fix[] }[]} */
   const lines = []
+  /** @param {Fix[]} fixes */
+  const key = (fixes) => fixes.map((f) => f.kind).join()
   for (const { deck, pages } of overflowing) {
     for (const p of pages) {
       const head = `${deck}, slide ${p.slide}${p.title ? ` "${p.title}"` : ''}`
       const last = lines.at(-1)
       // the next step of the last line's slide, overflowing alike: that line, one step longer
-      if (last && last.head === head && last.what === p.what && last.to === p.step - 1) last.to = p.step
-      else lines.push({ head, steps: p.steps, from: p.step, to: p.step, what: p.what, fix: p.fix })
+      if (last && last.head === head && last.what === p.what && key(last.fixes) === key(p.fixes) && last.to === p.step - 1) last.to = p.step
+      else lines.push({ head, steps: p.steps, from: p.step, to: p.step, what: p.what, fixes: p.fixes })
     }
   }
   if (!lines.length) return 0
   /** @param {typeof lines[number]} l */
   const where = (l) => (l.steps <= 1 ? l.head : `${l.head}, ${l.from === l.to ? `step ${l.from}` : `steps ${l.from}-${l.to}`} of ${l.steps}`)
   /** @param {string} s */
-  const sentence = (s) => `${s[0].toUpperCase()}${s.slice(1)}`
+  const cap = (s) => `${s[0].toUpperCase()}${s.slice(1)}`
   const slides = new Set(lines.map((l) => l.head)).size
-  // the usual fix, said once; any other on its line
-  const usual = lines.map((l) => l.fix).find((f) => /^to fit it/.test(f))
+  // the usual fix (Slide.fit, the scales, fewer blocks) said once, at the end; any other on its line
+  const usual = lines.flatMap((l) => l.fixes).find((f) => f.kind === 'usual')
   console.warn(`\n${slides} ${slides === 1 ? 'slide does' : 'slides do'} not fit (${args.strict ? '--strict: exit 1' : 'a warning: --strict makes it an error'}):`)
-  for (const l of lines) console.warn(`  ${where(l)}: ${l.what}${l.fix === usual ? '' : `. ${sentence(l.fix)}`}`)
-  if (usual) console.warn(`  ${sentence(usual)}.`)
+  for (const l of lines) console.warn(`  ${where(l)}: ${l.what}${l.fixes.filter((f) => f.kind !== 'usual').map((f) => `. ${cap(f.text)}`).join('')}`)
+  if (usual) console.warn(`  ${cap(usual.text)}.`)
   return slides
 }
 try {

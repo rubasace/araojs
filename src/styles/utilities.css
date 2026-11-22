@@ -135,7 +135,8 @@
  * text a layout sizes itself (a block of grid's `p`). With a `text-*` class on the same element,
  * both apply: `p.text-sm.scale-80` is 80% of a small text. A size in px, or one taken from the
  * title's tokens (a side of split's heading), does not follow. `Slide.fit` (On a Slide) finds the
- * size for you.
+ * size for you. On a `Slide` they set its body's font-size from the slide's: one a layout of your
+ * own sets on `.ar-body` gives way to them (set it on the slide instead, and they start from it).
  * @example
  * p.text-xl.accent 3x
  * p.text-sm.muted faster builds, measured on our CI
@@ -216,8 +217,11 @@
  * @class fit          its body's text shrunk just enough to fit, when it overflows (what is in em
  *                     shrinks with it, the layout reflows), down to 60% of its size; measured
  *                     again when its content, its step, the theme or the window change. In
- *                     development and in the export, a warning when even 60% does not fit. A
- *                     slide without it is never resized
+ *                     development and in the export, a warning when even 60% does not fit, or
+ *                     when shrinking does not help (what is sized in px, or transformed). Only
+ *                     what spills at the bottom or on the right is fitted. It sets the body's
+ *                     font-size from the slide's: one a layout of your own sets on `.ar-body`
+ *                     gives way. A slide without it is never resized
  */
 .ar-slide.top { --ar-body-align: start; }
 .ar-slide.middle { --ar-body-align: center; }

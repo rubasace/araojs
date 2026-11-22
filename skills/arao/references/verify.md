@@ -87,9 +87,12 @@ Fix every one, then export again, until no such lines are left. In order of pref
 (fewer blocks, shorter text, two slides: one idea per slide); `Slide.fit` on the slide (its
 body's text shrinks just enough, down to 60%); `.scale-90` / `.scale-80` / `.scale-70` on the
 slide or on the block that overflows. "Slide.fit shrank its body to 60%, its floor" means it
-cannot fit: split it. What is meant to reach past its box (a decoration): `position: absolute`,
-or `data-ar-bleed` on it. The export's exit code stays 0 with overflow; `--strict` makes it 1
-(for CI).
+cannot fit: split it. "Slide.fit cannot shrink it" means what overflows is sized in px or
+transformed: make it smaller. Overflow at the top or the left was put there (a negative margin, a
+transform): if it is meant to reach past its box (a decoration), `position: absolute` or
+`data-ar-bleed` on it; else move it back in. The export's exit code stays 0 with overflow;
+`--strict` makes it 1 (for CI). The check-deck script reports overflow only against the dev
+server (`npm run dev`): a production build does not measure.
 
 ## 4. Build
 

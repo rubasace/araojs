@@ -1,7 +1,7 @@
 import { nextTick } from 'vue'
 import { t } from '../i18n/i18n'
 import type { Stage } from '../state/stage'
-import { describeOverflow, fitSlide, measureSlide, overflowFix } from './overflow'
+import { describeOverflow, fitSlide, measureSlide, overflowFixes, type Fix } from './overflow'
 
 declare global {
   // what the export page reports, read by the CLI (bin/export.js)
@@ -44,8 +44,9 @@ export interface ExportOptions { perStep: boolean; notes: boolean }
 // none). missing: names of pictures shown as placeholders (they failed). stalled: what was still
 // on its way when printed (it neither loaded nor failed in time), printed as it stood.
 // overflow: the pages whose slide does not fit, as the CLI prints them (core/overflow.ts),
-// { slide, step, steps, title, what, fix }: the slide's number (1-based) and its step (of steps),
-// its title, what overflows and by how much, how to fix it. Each page's slide is fitted first
+// { slide, step, steps, title, what, fixes }: the slide's number (1-based) and its step (of
+// steps), its title, what overflows and by how much, and how to fix it, each fix { kind, text }
+// (kind: usual, floor, stuck or placed: core/overflow.ts FixKind). Each page's slide is fitted first
 // (Slide.fit, on a slide with the class fit), then measured, then copied.
 // Content that arrives late marks itself with the attribute data-ar-busy while it does (Snippet
 // until its colours are in, Img until its picture has loaded or failed); a page is copied once
@@ -420,7 +421,7 @@ async function pictures(book: Element, stalled: Set<string>) {
 //   notes    an element holding the notes of the slide on screen, or null for no notes pages
 //   title(i) the title of slide i, for the notes pages
 // a page whose slide does not fit (Ready's overflow, above)
-export interface OverflowPage { slide: number; step: number; steps: number; title: string; what: string; fix: string }
+export interface OverflowPage { slide: number; step: number; steps: number; title: string; what: string; fixes: Fix[] }
 export interface BookOptions {
   stage: Stage
   canvas: HTMLElement
@@ -460,7 +461,7 @@ export async function buildBook({ stage, canvas, book, notes, title, perStep, wi
       // Slide.fit settled before the page is taken, then what still does not fit
       const fit = fitSlide(slide)
       const found = measureSlide(slide)
-      if (found.length) overflow.push({ slide: i + 1, step: s, steps: total, title: title(i), what: describeOverflow(found), fix: overflowFix(fit) })
+      if (found.length) overflow.push({ slide: i + 1, step: s, steps: total, title: title(i), what: describeOverflow(found), fixes: overflowFixes(found, fit) })
       const copy = page(width, height, 'ar-page', copyCanvas(canvas, slide))
       book.append(copy)
       await printableShadows(copy, drawn)

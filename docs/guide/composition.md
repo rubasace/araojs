@@ -142,7 +142,8 @@ hidden under the footer, or pushed past the side. Arao measures what each slide 
   run, with the same words. A warning: the PDF is written and the exit code stays 0, unless
   `--strict` ([CLI](../reference/cli.md#arao-export)).
 - The Arao skill's headless check (its `check-deck` script) walks every step and reports the same
-  warnings.
+  warnings. It reads them from the dev server's page: run it against `npm run dev`, not against a
+  production build, which says nothing (below).
 
 What is measured: the slide's header, body and zones against the space they have (the body, under
 the title, above the footer's band), each block of a layout (a side of `split`, a block of `grid`,
@@ -159,13 +160,22 @@ Img(file="skyline.jpg" data-ar-bleed style="margin: 0 calc(-1 * var(--ar-pad-x))
 In a production build (the site you host, `npm run build`) nothing is measured: only `Slide.fit`
 works there, on the slides that have it.
 
+The fix the warning gives follows where it overflows. Past the bottom or the right, the content is
+too much for the slide: fit it, scale it, or cut. Past the top or the left alone, it was put there
+(a negative margin, a transform): shrinking does not bring it back, and the warning says to mark it
+(`position: absolute`, `data-ar-bleed`) if it is meant to reach out, or to move it back in.
+(Centred content too wide spills on both sides: that is too much, like the bottom and the right.)
+
 The fixes, from the least to the most:
 
 - **`Slide.fit`**: the body's text shrinks just enough to fit, and everything in it sized in `em`
   with it (a list's gaps, a grid's pictures); the layout reflows, nothing is stretched. Down to
-  60% of its size: past that it stays at 60% and the warning says so (split the slide). It is
-  measured again whenever the content, the step, the theme or the window changes, and in the
-  export before each page is taken. A slide without `fit` is never resized. With `v-step.collapse`
+  60% of its size: past that it stays at 60% and the warning says so (split the slide). It fits
+  what spills at the bottom and on the right, and only as far as shrinking helps: content sized in
+  px (a block 2200px wide) or transformed does not shrink with the text, so for it the body stays
+  whole and the warning says that `fit` cannot shrink it. It is measured again whenever the
+  content, the step, the theme or the window changes, and in the export before each page is taken.
+  A slide without `fit` is never resized. With `v-step.collapse`
   each step is fitted as it shows, so the text gets smaller as steps add to it; `v-step` keeps the
   space of what is still to come, and the text the same size at every step.
 - **`.scale-90`, `.scale-80`, `.scale-70`**: a fixed step down, on the slide (its body) or on one
@@ -189,6 +199,10 @@ Slide(layout="split")
 
 Sizes in px, and those taken from the title's tokens (a side of `split`'s heading, an `h2` in the
 body), do not follow `fit` or a scale: only what is in `em`, which is most of what a slide shows.
+On a slide, `fit` and the scales set the body's font-size from the slide's: a font-size a layout
+of your own sets on `.ar-body` gives way to them. A layout that wants another text size sets it on
+the slide (`.layout-x { font-size: 1.1em }`): the body inherits it, and `fit` and the scales start
+from it.
 A `grid` makes its blocks smaller by itself as they grow in number (pictures, padding, gap and
 text step down from 9, 11, 12 and 16 blocks), so that up to 20 fit with a title and a one-line
 description each.

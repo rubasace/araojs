@@ -1,6 +1,6 @@
 import { onBeforeUnmount, onMounted, onUpdated, shallowRef, watch, type Ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
-import { describeOverflow, fitSlide, measureSlide, overflowFix } from '../core/overflow'
+import { describeOverflow, fitSlide, measureSlide, overflowFixes, sayFixes } from '../core/overflow'
 import { titleIn, type Role } from '../state/stage'
 
 // A slide's watch over its own size (core/overflow.ts), in Slide.vue, for the slide on screen:
@@ -105,13 +105,12 @@ export function useOverflow({ el, active, step, steps, index, role, theme, deck 
     if (!warns) return
     const found = measureSlide(slide)
     if (!found.length) return void warned.delete(at)
-    const what = describeOverflow(found)
+    const what = `${describeOverflow(found)}. ${sayFixes(overflowFixes(found, done))}`
     if (warned.get(at) === what) return
     warned.set(at, what)
     const title = titleIn(slide)
     const where = [`deck ${deck ? `"${deck}"` : `at ${location.pathname}`}`, `slide ${index.value + 1}${title ? ` "${title}"` : ''}`, steps.value > 1 ? `step ${at} of ${steps.value}` : '']
-    const fix = overflowFix(done)
-    console.warn(`[arao] overflow: ${where.filter(Boolean).join(', ')}: ${what}. ${fix[0].toUpperCase()}${fix.slice(1)}.`)
+    console.warn(`[arao] overflow: ${where.filter(Boolean).join(', ')}: ${what}`)
   }
 
   // the observers, while the slide is on screen and has something to watch for

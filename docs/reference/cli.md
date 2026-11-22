@@ -58,8 +58,10 @@ Every page is measured as it is printed, `Slide.fit` settled first: the slides w
 not fit (cut off at the bottom, under the footer, wider than a box) are listed at the end of the
 run, after the total, on stderr: `<n> slides do not fit (…):`, then a line per slide (its steps
 that overflow alike together), `<deck>, slide <n> "<title>"[, steps <a>-<b> of <s>]: <what
-overflows, by how many px>`, and the fix (`To fit it: Slide.fit …`; a slide that `fit` could not
-fit at 60% says what to do on its own line). The wording is the page's, the one the dev server's
+overflows, by how many px>`, and the fix: the usual one (`To fit it: Slide.fit …`) once, at the
+end; any other on its slide's line (`fit` at 60% and still too much, `fit` that cannot shrink it,
+content past the top or the left: mark it with `data-ar-bleed` or `position: absolute`, or move it
+back in). The wording is the page's, the one the dev server's
 warning uses ([When it does not fit](../guide/composition.md#when-it-does-not-fit)). It changes
 nothing else: exit code 0, unless `--strict`, which makes it 1 (after writing every PDF; a deck
 that fails makes it 1 either way).

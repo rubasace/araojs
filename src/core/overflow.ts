@@ -9,7 +9,8 @@
 //                                  FIT_MIN of its size (null for a slide without .fit, whose body
 //                                  is left as it is)
 //   describeOverflow(found)        what measureSlide found, in words (the warnings say it)
-//   overflowFix(fit)               how to fix it, in words
+//   overflowFixes(found, fit)      how to fix it, by kind ({ kind, text }: what overflows where,
+//                                  and what fitSlide did); sayFixes(fixes) in words
 //
 // What is checked: what shows against the box it has.
 //   - the slide's zones (its header, its body, each zone .ar-zone-<name>): what shows in them past
@@ -60,8 +61,9 @@ type Box = { l: number; t: number; r: number; b: number }
 const OPAQUE = '.ar-img, .ar-snippet, .ar-icon, img, svg, picture, video, audio, canvas, iframe, object, embed, math, input, button, select, textarea'
 const SIDES: Side[] = ['top', 'right', 'bottom', 'left']
 const px = (v: string) => parseFloat(v) || 0
-// a computed colour with nothing in it: transparent, or of alpha 0
-const clear = (c: string) => c === 'transparent' || /(?:,|\/)\s*0\s*\)$/.test(c)
+// a computed colour with nothing in it: transparent, or of alpha 0 (rgba(r, g, b, 0), or a colour
+// function's "/ 0"); rgb(r, g, 0) is blue-less, not see-through
+const clear = (c: string) => c === 'transparent' || /^rgba\((?:[^,]*,){3}\s*0\s*\)$/.test(c) || /\/\s*0\s*\)$/.test(c)
 
 const union = (a: Box | null, b: Box | null): Box | null =>
   !a ? b : !b ? a : { l: Math.min(a.l, b.l), t: Math.min(a.t, b.t), r: Math.max(a.r, b.r), b: Math.max(a.b, b.b) }
@@ -227,14 +229,35 @@ export function measureSlide(slide: HTMLElement, only?: 'body', tol = TOLERANCE)
 }
 
 /**
+ * What Slide.fit did: the factor applied (1: whole), whether the body fits at it, and whether
+ * shrinking helped with all of what overflows at the bottom and on the right (false: some of it is
+ * sized in px, or transformed, and does not shrink with the text).
+ */
+export interface FitResult { scale: number; fits: boolean; helps: boolean }
+// what Slide.fit acts on: what spills past the body's room at the bottom and on the right. At the
+// top and on the left, content is placed there (a negative margin, a transform): shrinking the
+// text does not bring it back
+type Shrinks = 'bottom' | 'right'
+const SHRINKS: readonly Shrinks[] = ['bottom', 'right']
+const shrinks = (side: Side): side is Shrinks => side === 'bottom' || side === 'right'
+// how far what shows in the body spills on those sides, canvas px (0: it does not)
+function spill(slide: HTMLElement): Record<Shrinks, number> {
+  const s = { bottom: 0, right: 0 }
+  for (const o of measureSlide(slide, 'body', FIT_TOLERANCE)) if (shrinks(o.side)) s[o.side] = Math.max(s[o.side], o.px)
+  return s
+}
+
+/**
  * Slide.fit: on a slide with the class fit, the body's text (its font-size, which what is in em
  * follows) shrunk just enough for the body to fit, down to FIT_MIN, as --_ar-fit on the body
  * (utilities.css). Measured from the size it would have, so it grows back when there is room
  * again. A slide without .fit is never touched (its --_ar-fit, if a .fit it had left one, goes).
- * → null for a slide without .fit (or without a body); else { scale, fits }: the factor applied,
- * and whether the body fits at it (false: at FIT_MIN, and still overflowing).
+ * Only what spills at the bottom and on the right counts, and only where shrinking helps: if at
+ * FIT_MIN a side spills no less than at full size (a block sized in px, a transform), that side is
+ * not fitted, and if no side gets better, the body stays whole (helps: false, a warning says so).
+ * → null for a slide without .fit (or without a body); else what it did (FitResult).
  */
-export function fitSlide(slide: HTMLElement): { scale: number; fits: boolean } | null {
+export function fitSlide(slide: HTMLElement): FitResult | null {
   const body = slide.querySelector<HTMLElement>(':scope > .ar-body')
   if (!body) return null
   const was = parseFloat(body.style.getPropertyValue('--_ar-fit')) || 1
@@ -243,31 +266,40 @@ export function fitSlide(slide: HTMLElement): { scale: number; fits: boolean } |
     if (was !== 1) set(1)
     return null
   }
-  if (!slide.offsetWidth) return { scale: was, fits: true } // not drawn: nothing to measure
-  const fits = () => !measureSlide(slide, 'body', FIT_TOLERANCE).length
-  // as it is already, if it fits and a little more would not (or it is whole): nothing to change
-  if (fits()) {
-    if (was >= 1) return { scale: 1, fits: true }
-    set(Math.min(1, was + 0.01))
-    const more = fits()
-    set(was)
-    if (!more) return { scale: was, fits: true }
+  if (!slide.offsetWidth) return { scale: was, fits: true, helps: true } // not drawn: nothing to measure
+  const at = (v: number) => {
+    set(v)
+    return spill(slide)
   }
-  set(1)
-  if (fits()) return { scale: 1, fits: true }
-  set(FIT_MIN)
-  if (!fits()) return { scale: FIT_MIN, fits: false }
-  // the largest factor that fits, to within 1 %
+  const clean = (s: Record<Shrinks, number>, sides: readonly Shrinks[]) => sides.every((side) => !s[side])
+  // as it is already, if nothing spills and a little more would (or it is whole): nothing to change
+  if (clean(spill(slide), SHRINKS)) {
+    if (was >= 1) return { scale: 1, fits: true, helps: true }
+    const more = clean(at(Math.min(1, was + 0.01)), SHRINKS)
+    set(was)
+    if (!more) return { scale: was, fits: true, helps: true }
+  }
+  const whole = at(1)
+  if (clean(whole, SHRINKS)) return { scale: 1, fits: true, helps: true }
+  const least = at(FIT_MIN)
+  // the sides shrinking helps with: those that spill less at FIT_MIN than whole
+  const helped = SHRINKS.filter((side) => whole[side] > 0 && least[side] < whole[side] - 1)
+  const stuck = SHRINKS.some((side) => whole[side] > 0 && !helped.includes(side))
+  if (!helped.length) {
+    set(1)
+    return { scale: 1, fits: false, helps: false }
+  }
+  if (!clean(least, helped)) return { scale: FIT_MIN, fits: false, helps: !stuck }
+  // the largest factor at which what shrinking helps with no longer spills, to within 1 %
   let lo = FIT_MIN
   let hi = 1
   while (hi - lo > 0.01) {
     const mid = (lo + hi) / 2
-    set(mid)
-    if (fits()) lo = mid
+    if (clean(at(mid), helped)) lo = mid
     else hi = mid
   }
   set(lo)
-  return { scale: Number(lo.toFixed(3)), fits: true }
+  return { scale: Number(lo.toFixed(3)), fits: !stuck, helps: !stuck }
 }
 
 // one side of a box's overflow in words: "by 46px at the bottom, under the footer"
@@ -291,8 +323,34 @@ export function describeOverflow(found: readonly Overflow[]) {
   return [...boxes].map(([box, sides]) => `${box} overflows ${sides.map(say).join(', and ')}`).join('; ')
 }
 
-/** How to fix it, given what fitSlide did (null: no .fit on the slide). */
-export function overflowFix(fit: { scale: number; fits: boolean } | null) {
-  if (fit && !fit.fits) return `Slide.fit shrank its body to ${Math.round(FIT_MIN * 100)}%, its floor, and it still does not fit: fewer blocks, less text, or two slides`
-  return 'to fit it: Slide.fit (shrinks the body\'s text just enough), a .scale-90, .scale-80 or .scale-70 class on the slide or on a block, or fewer blocks'
+/**
+ * A way to fix an overflow, and which: usual, the fit, the scales or fewer blocks (too much at the
+ * bottom or on the right); floor, Slide.fit at FIT_MIN and still too much; stuck, Slide.fit could
+ * not shrink it (sized in px, transformed); placed, past the top or the left (and not past the
+ * bottom or the right too, as centred content too big is), where content is put, not pushed.
+ */
+export type FixKind = 'usual' | 'floor' | 'stuck' | 'placed'
+export interface Fix { kind: FixKind; text: string }
+const FIXES: Record<FixKind, string> = {
+  usual: 'to fit it: Slide.fit (shrinks the body\'s text just enough), a .scale-90, .scale-80 or .scale-70 class on the slide or on a block, or fewer blocks',
+  floor: `Slide.fit shrank its body to ${Math.round(FIT_MIN * 100)}%, its floor, and it still does not fit: fewer blocks, less text, or two slides`,
+  stuck: 'Slide.fit cannot shrink it (it is sized in px, or transformed): make it smaller, or fewer blocks',
+  placed: 'past the top or the left it is placed, not pushed (a negative margin, a transform): if it is meant to reach out (a decoration), give it position: absolute or data-ar-bleed; else move it back in',
 }
+
+/** How to fix what measureSlide found, given what fitSlide did (null: no .fit on the slide). */
+export function overflowFixes(found: readonly Overflow[], fit: FitResult | null): Fix[] {
+  const fixes: Fix[] = []
+  if (found.some((o) => shrinks(o.side))) {
+    const kind: FixKind = fit && !fit.helps ? 'stuck' : fit && !fit.fits ? 'floor' : 'usual'
+    fixes.push({ kind, text: FIXES[kind] })
+  }
+  // past the top or the left, and not past the bottom or the right as well (centred content too big
+  // spills on both sides: that one is too much, not placed)
+  const opposite = { top: 'bottom', left: 'right', bottom: 'top', right: 'left' } as const
+  if (found.some((o) => !shrinks(o.side) && !found.some((p) => p.box === o.box && p.side === opposite[o.side]))) fixes.push({ kind: 'placed', text: FIXES.placed })
+  return fixes
+}
+
+/** Fixes as sentences: "To fit it: …. Past the top …." */
+export const sayFixes = (fixes: readonly Fix[]) => fixes.map((f) => `${f.text[0].toUpperCase()}${f.text.slice(1)}.`).join(' ')

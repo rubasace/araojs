@@ -61,9 +61,11 @@ A named value (Img uses its URL) is given up on once, for all later pages; an em
 waited for on every page. When done, `window.__araoReady` is
 `{ pages, slides, steps, width, height, missing, stalled, overflow, theme }` or `{ error }`; for a
 theme the deck does not list, `{ error, code: 'theme-not-listed', themes }`. `overflow` lists the
-pages whose slide does not fit, each `{ slide, step, steps, title, what, fix }` (the slide's
-number from 1, its step of `steps`, its title, what overflows and by how much, how to fix it): what
-the CLI prints.
+pages whose slide does not fit, each `{ slide, step, steps, title, what, fixes }` (the slide's
+number from 1, its step of `steps`, its title, what overflows and by how much, and how to fix it):
+what the CLI prints. Each fix is `{ kind, text }`, its kind `usual` (`Slide.fit`, a scale, fewer
+blocks), `floor` (`fit` at 60% and still too much), `stuck` (`fit` cannot shrink it: sized in px,
+or transformed) or `placed` (past the top or the left: mark it, or move it back in).
 
 ## Printing
 

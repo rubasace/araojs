@@ -128,7 +128,16 @@ wins over the same token there), and the classes the engine knows:
 What a slide shows is measured: in development, a slide on screen whose content does not fit (cut
 off at the bottom, under the footer, wider than its box) gets a console warning, and `arao export`
 lists the slides that overflow at the end of its run
-([When it does not fit](../guide/composition.md#when-it-does-not-fit)).
+([When it does not fit](../guide/composition.md#when-it-does-not-fit)). `.fit` and the scales set
+the body's font-size from the slide's: a font-size a layout of your own sets on `.ar-body` gives
+way to them (set it on the slide instead).
+
+Attributes the engine reads on any element inside a slide:
+
+| Attribute | Effect |
+|---|---|
+| `data-ar-bleed` | the element is meant to reach past its box (a picture pulled out to the slide's edge with negative margins): the overflow check skips it and what is inside it |
+| `data-ar-busy` | the element is still loading: the export waits for it before taking the page, and the overflow check before measuring ([Late content](../guide/export.md#late-content)) |
 
 ### Layouts
 
