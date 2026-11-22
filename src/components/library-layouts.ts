@@ -688,11 +688,11 @@ export interface LibraryLayouts {
    * - `color`: the text's colour, its title's and its footer's (default `#fff`)
    * - `position`: one of `top-left`, `top`, `top-right`, `left`, `center`, `right`,
    *   `bottom-left`, `bottom`, `bottom-right`: where the text sits, in a corner, in the middle
-   *   of a side or in the centre, its lines aligned to that side (default `bottom-left`, which
-   *   any other value is too)
-   * - `scrim`: how dark the scrim behind the text is, a number from `0` (none; `none` too) to
-   *   `1` (default `.6`). It follows `position`, darkest at that corner or side and fading away
-   *   from it, or even over the whole picture for `center`
+   *   of a side or in the centre, its title and its paragraphs aligned to that side (default
+   *   `bottom-left`, which any other value is too)
+   * - `scrim`: a number from `0` to `1`, or `none`: how dark the scrim behind the text is
+   *   (default `.6`; `0` or `none` for none). It follows `position`, darkest at that corner or
+   *   side and fading away from it, or even over the whole picture for `center`
    *
    * @example
    * ```pug
@@ -715,11 +715,11 @@ export interface LibraryLayouts {
      * - `color`: the text's colour, its title's and its footer's (default `#fff`)
      * - `position`: one of `top-left`, `top`, `top-right`, `left`, `center`, `right`,
      *   `bottom-left`, `bottom`, `bottom-right`: where the text sits, in a corner, in the middle
-     *   of a side or in the centre, its lines aligned to that side (default `bottom-left`, which
-     *   any other value is too)
-     * - `scrim`: how dark the scrim behind the text is, a number from `0` (none; `none` too) to
-     *   `1` (default `.6`). It follows `position`, darkest at that corner or side and fading away
-     *   from it, or even over the whole picture for `center`
+     *   of a side or in the centre, its title and its paragraphs aligned to that side (default
+     *   `bottom-left`, which any other value is too)
+     * - `scrim`: a number from `0` to `1`, or `none`: how dark the scrim behind the text is
+     *   (default `.6`; `0` or `none` for none). It follows `position`, darkest at that corner or
+     *   side and fading away from it, or even over the whole picture for `center`
      *
      * @example
      * ```pug
@@ -739,19 +739,20 @@ export interface LibraryLayouts {
     /**
      * one of `top-left`, `top`, `top-right`, `left`, `center`, `right`, `bottom-left`, `bottom`,
      * `bottom-right`: where the text sits, in a corner, in the middle of a side or in the centre,
-     * its lines aligned to that side (default `bottom-left`, which any other value is too)
+     * its title and its paragraphs aligned to that side (default `bottom-left`, which any other
+     * value is too)
      *
      * `--ar-layout-overlay-position`
      */
     position?: 'top-left' | 'top' | 'top-right' | 'left' | 'center' | 'right' | 'bottom-left' | 'bottom' | 'bottom-right'
     /**
-     * how dark the scrim behind the text is, a number from `0` (none; `none` too) to `1` (default
-     * `.6`). It follows `position`, darkest at that corner or side and fading away from it, or
-     * even over the whole picture for `center`
+     * a number from `0` to `1`, or `none`: how dark the scrim behind the text is (default `.6`;
+     * `0` or `none` for none). It follows `position`, darkest at that corner or side and fading
+     * away from it, or even over the whole picture for `center`
      *
      * `--ar-layout-overlay-scrim`
      */
-    scrim?: string
+    scrim?: `${number}` | 'none'
   }
   /**
    * One quotation, big, its author under it.

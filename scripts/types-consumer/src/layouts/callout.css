@@ -6,14 +6,15 @@
  *   template(#author)
  *     p Kent Beck
  * @zone author     who said it
- * @param size        the callout's size
+ * @param size        {string} the callout's size
  * @param mark-color  the opening mark's colour
  * @param align       {start|center} where the quote sits
  */
 
 /* a project layout: the plugin adds "callout" to the layouts Slide's layout accepts, with its
    parameters, the tokens it reads (src/arao-layouts.d.ts): size, mark-color (markColor) and align
-   ('start' | 'center', the values its doc block lists); its --ar-layout-callout-title is none
+   ('start' | 'center', the values its doc block lists); size stays a string: its {string}, a
+   JSDoc type, is no list of values, and the plugin warns; its --ar-layout-callout-title is none
    (title is an HTML attribute), and the plugin warns. Its zones: author (its doc block's @zone)
    and source (a .ar-zone-source it styles) */
 :where(.layout-callout) {

@@ -248,7 +248,8 @@ what it writes) with the project's over them (`ProjectLayouts`), which the plugi
 augments in a declaration file it writes into the project (`src/arao-layouts.d.ts`, rewritten
 as layout files and their tokens change). A file starts with a doc block saying what the layout
 is for, an example, its zones (`@zone`) and its parameters (`@param`, which only describes a
-token the CSS reads, and may list the words it takes, `{a|b}`, which its type becomes);
+token the CSS reads, and may list the values it takes, `{a|b|0..1}`, which its type becomes
+and Slide checks in development);
 `vite/layout-docs.js` alone reads it (and the zones: those `@zone` names, then any
 `.ar-zone-<name>` the CSS styles), for the types and for `arao layouts`, which asks the
 plugin (`api.layouts()`, as `arao export` asks it for the decks: `bin/project.js` loads the

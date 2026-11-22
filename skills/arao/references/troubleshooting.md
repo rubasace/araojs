@@ -70,11 +70,19 @@
     that should fill) inside `.cols` needs `.grow` on them.
 - **`overlay`'s `position` names a place now** (BREAKING): `top-left`, `top`, `top-right`,
   `left`, `center`, `right`, `bottom-left` (the default), `bottom` or `bottom-right`, not a CSS
-  `place-content`. An old value (`position="start end"`, `"end start"`) puts the text at the bottom
-  left, with no warning (`vue-tsc` turns it down): `start end` → `top-right`, `start start` →
-  `top-left`, `end end` → `bottom-right`, `center` stays `center`. `scrim` is the scrim's
-  strength now, `0` to `1` (default `.6`; `none` still none): it follows the position by itself,
-  and a CSS background given there draws no scrim (drop it, or give a number).
+  `place-content`. An old value puts the text at the bottom left (in development the console
+  says so, `[arao] Slide(layout="overlay") position="start end": it takes one of …`, and
+  `vue-tsc` turns it down). Old → new (`place-content` is block, then inline; one value is both):
+  - `start`, `start start` → `top-left`; `start center` → `top`; `start end` → `top-right`
+  - `center start` → `left`; `center` → `center`; `center end` → `right`
+  - `end start` → `bottom-left` (the default: drop it); `end center` → `bottom`; `end`,
+    `end end` → `bottom-right`
+
+  Its title and its paragraphs now align to that side (right-aligned at the right, centred in
+  the middle column); a list, code or a table in it keeps its own alignment. `scrim` is the
+  scrim's strength now, `0` to `1` (default `.6`; `none` still none): it follows the position by
+  itself, and a CSS background given there draws no scrim (drop it, or give a number; in
+  development the console says so).
 - **`.small` is `.text-sm` now** (BREAKING): `.small` does nothing. With it come `.text-lg` and
   `.text-xl`, and `.middle` on a slide or a block (centred top to bottom, the text as it is).
 - **`split` has no `#left`/`#right` now** (they render below the body, and fail `vue-tsc`): its

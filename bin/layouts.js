@@ -31,8 +31,8 @@ const HELP = `Usage: arao layouts [--json]     (in a project: npx arao layouts)
               source, file, replaces, validName, documented, summary, description, example,
               zones: [{ name, description }], params: [{ name, token, description, values }],
               problems }], "classGroups": [{ name, summary, description, example,
-              classes: [{ name, description }] }] }; a parameter's values are the words it
-              takes, [] when it takes any value
+              classes: [{ name, description }] }] }; a parameter's values are what it takes
+              (words, and ranges of numbers from..to), [] when it takes any value
   -h, --help  this help
 
 Run it in the slides project: its folder is the current directory, its layouts the ones its Vite
@@ -41,7 +41,7 @@ default), one of which replaces the library's of its name.
 What each layout says of itself is the /** … */ doc block its CSS file starts with: a line saying
 what it is for, more lines if need be, then @example (a slide of it, in Pug), @zone <name>
 <description> per named template it places and @param <thing> <description> per token it reads
-(@param <thing> {a|b|c} <description> for one that takes only those words).
+(@param <thing> {a|b|0..1} <description> for one that takes only those words, or numbers).
 After the layouts: the utility classes, the library's classes a deck writes on an element of a
 slide (p.muted, .cols), by group, as their stylesheet says them.`
 

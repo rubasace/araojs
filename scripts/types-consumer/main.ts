@@ -59,7 +59,13 @@ const sized: SlideLayouts['cover'] = { titleSize: 120 }
 const placed: SlideLayouts['overlay'] = { position: 'end start' }
 // @ts-expect-error callout's align is start or center
 const aligned: SlideLayouts['callout'] = { align: 'end' }
-void [titled, libSection, sized, placed, aligned]
+// a range of numbers ({0..1|none}) takes a number written as a string, or its words
+const veiled: SlideLayouts['overlay'][] = [{ scrim: '0' }, { scrim: '.75' }, { scrim: 'none' }]
+// @ts-expect-error scrim is a number from 0 to 1, or none
+const unveiled: SlideLayouts['overlay'] = { scrim: 'lots' }
+// a {string} in a doc block (a JSDoc type) lists no values: callout's size takes any string
+const anySize: SlideLayouts['callout'] = { size: '2em' }
+void [titled, libSection, sized, placed, aligned, veiled, unveiled, anySize]
 
 // the zones each layout places: the library's (generated from its doc blocks and CSS), the
 // project's (src/arao-layouts.d.ts: callout's @zone author and the source its CSS styles), a

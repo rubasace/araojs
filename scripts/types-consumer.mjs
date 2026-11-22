@@ -12,7 +12,8 @@
 // The project is scripts/types-consumer/, copied to a temporary folder with the tarball and the
 // type checkers installed. First a vite build with the plugin (its vite.config.js), which must
 // write src/arao-layouts.d.ts from its src/layouts, and warn about the token of one that is no
-// attribute; then the type checks, which include it.
+// attribute and about a doc block that lists a JSDoc type ({string}) as values; then the type
+// checks, which include it.
 import { cpSync, existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -43,6 +44,10 @@ try {
   if (built.status !== 0) throw new Error(`vite build exited with ${built.status}`)
   if (!existsSync(join(dir, 'src/arao-layouts.d.ts'))) {
     console.error('types-consumer: vite build wrote no src/arao-layouts.d.ts')
+    failed = true
+  }
+  if (!/\[arao\] src\/layouts\/callout\.css: @param size \{string\}: string is a type, no value/.test(built.stdout + built.stderr)) {
+    console.error('types-consumer: vite build did not warn that callout.css\'s @param size {string} lists no values (a JSDoc type)')
     failed = true
   }
   if (!/\[arao\] src\/layouts\/callout\.css: --ar-layout-callout-title is no attribute of Slide/.test(built.stdout + built.stderr)) {

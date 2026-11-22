@@ -28,11 +28,18 @@
 //   - @param <thing> <description>: describes the parameter <thing>, the token
 //     --ar-layout-<name>-<thing>. The parameters are the tokens the CSS reads, whatever the block
 //     says: @param only describes one, and one naming no token is a problem. A parameter that
-//     takes only some words says which, in braces, before its description:
+//     takes only some values says which, in braces, before its description:
 //       @param position {top|center|bottom}  where the text sits (default `bottom`)
-//     each a word of letters, digits, -, _, . or % (a CSS keyword, a number), separated by |: its
-//     type is then those words (position?: 'top' | 'center' | 'bottom'), not any string, and
-//     what describes it lists them; braces that hold anything else are a problem.
+//       @param strength {0..1|none}          how strong (default `.6`)
+//     separated by |, each a word (letters, digits, -, _, . and %, a letter or a digit among
+//     them: a CSS keyword, a number) or a range of numbers, a..b (any number from a to b); two
+//     or more of them, or a range alone. Its type is then those words, and a number written as
+//     a string for a range (position?: 'top' | 'center' | 'bottom', strength?: `${number}` |
+//     'none'), not any string; what describes it lists them (takes(), paramText()), and the
+//     Vite plugin gives them to Slide, which warns in development about a value it does not
+//     take (src/core/layout-values.ts). Braces that hold anything else are a problem: one word
+//     alone, a type's name as JSDoc writes it ({string}: without braces a parameter takes any
+//     value), a word twice, a range from more to less.
 // A file with no doc block is a layout all the same, with nothing said of it.
 // Its zones: those its @zone tags name, in their order, then any other its CSS styles,
 // .ar-zone-<name> (in its code: not in a comment or a string), by name: in a selector that names
@@ -47,8 +54,8 @@ import { camelize, cssCode, layoutParams, scanCss } from './layout-params.js'
 /**
  * @typedef {{ name: string, description: string }} ZoneDoc
  * @typedef {{ thing: string, values: string[], description: string }} ParamDoc
- * A parameter's values are the words it takes (its doc block's {a|b}), none when it takes any
- * string.
+ * A parameter's values are what it takes as its doc block writes them ({a|b|0..1}: words and
+ * ranges), none when it takes any value.
  * @typedef {{ summary: string, description: string, example: string, zones: ZoneDoc[],
  *   params: ParamDoc[], problems: string[] }} DocBlock
  * What a layout is: whether its file has a doc block (documented), what that says, its zones, its
@@ -181,14 +188,38 @@ function readDoc(block) {
   return doc
 }
 
-// a parameter's values: braces its description starts with, {a|b|c}; each value a word
+// a parameter's values: braces its description starts with, {a|b|0..1}; each one a word
+// (letters, digits, -, _, . and %, a letter or a digit among them) or a range of numbers, a..b
 const VALUES = /^\{([^}]*)\}\s*/
-const VALUE = /^[\w.%-]+$/
+const WORD = /^[\w.%-]*[A-Za-z0-9][\w.%-]*$/
+const NUMBER = '[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)'
+const RANGE = new RegExp(`^(${NUMBER})\\.\\.(${NUMBER})$`)
+// what JSDoc writes in braces, a type ({string}), which is no value a parameter takes
+const TYPES = ['string', 'number', 'boolean', 'bigint', 'symbol', 'object', 'function', 'array', 'any', 'unknown', 'never', 'void', 'null', 'undefined']
 
 /**
- * A parameter's tag read, its thing and its text: its values (the words in the braces its text
- * starts with, when it does), and its description (the rest). Braces that are no list of words
- * are a problem, and give no values.
+ * A parameter's values, as its doc block writes them, read: its words, and its ranges of numbers
+ * ([from, to]).
+ * @param {string[]} values
+ * @returns {{ words: string[], ranges: [number, number][] }}
+ */
+export function valueSpec(values) {
+  /** @type {string[]} */
+  const words = []
+  /** @type {[number, number][]} */
+  const ranges = []
+  for (const v of values) {
+    const range = v.match(RANGE)
+    if (range) ranges.push([Number(range[1]), Number(range[2])])
+    else words.push(v)
+  }
+  return { words, ranges }
+}
+
+/**
+ * A parameter's tag read, its thing and its text: its values (what the braces its text starts
+ * with list, when it does), and its description (the rest). Braces that list no values (see the
+ * top) are a problem, and give none.
  * @param {string} thing
  * @param {string} text
  * @param {string[]} problems
@@ -199,21 +230,52 @@ function paramDoc(thing, text, problems) {
   if (!braces) return { thing, values: [], description: text }
   const description = text.slice(braces[0].length)
   const values = braces[1].split('|').map((v) => v.trim())
-  if (values.some((v) => !VALUE.test(v)) || new Set(values).size < values.length) {
-    problems.push(`@param ${thing} {${braces[1]}}: its values are words (letters, digits, -, _, . and %), each once, separated by |`)
-    return { thing, values: [], description }
-  }
-  return { thing, values, description }
+  const { ranges } = valueSpec(values)
+  const type = values.find((v) => TYPES.includes(v.toLowerCase()))
+  const wrong = type != null ? `${type} is a type, no value: without braces a parameter takes any value`
+    : values.some((v) => !RANGE.test(v) && !WORD.test(v)) ? 'each value is a word (letters, digits, -, _, . and %, a letter or a digit among them) or a range of numbers (0..1)'
+      : new Set(values).size < values.length ? 'a value is there twice'
+        : ranges.some(([from, to]) => from > to) ? 'a range goes from less to more (0..1)'
+          : values.length < 2 && !ranges.length ? 'braces list two values or more (or a range of numbers, 0..1)'
+            : null
+  if (!wrong) return { thing, values, description }
+  problems.push(`@param ${thing} {${braces[1]}}: ${wrong}`)
+  return { thing, values: [], description }
 }
 
 /**
- * What describes a parameter, its values first when it takes only some: "one of `a`, `b`: …".
+ * What a parameter that lists its values takes, in words: "one of a, b", "a number from 0 to 1,
+ * or none"; '' for one that takes any value. code: how a value is written (backticks in a doc).
+ * @param {{ values: string[] }} param
+ * @param {(value: string) => string} [code]
+ */
+export function takes({ values }, code = (v) => v) {
+  const { words, ranges } = valueSpec(values)
+  const numbers = ranges.map(([from, to]) => `a number from ${code(String(from))} to ${code(String(to))}`)
+  const list = words.length > 1 ? `one of ${words.map(code).join(', ')}` : words.map(code).join('')
+  return [...numbers, list].filter(Boolean).join(', or ')
+}
+
+/**
+ * What describes a parameter, what it takes first when it lists its values: "one of `a`, `b`: …".
  * @param {ParamDoc} param
  */
-export function paramText({ values, description }) {
-  if (!values.length) return description
-  const list = `one of ${values.map((v) => `\`${v}\``).join(', ')}`
-  return description ? `${list}: ${description}` : list
+export function paramText(param) {
+  const list = takes(param, (v) => `\`${v}\``)
+  if (!list) return param.description
+  return param.description ? `${list}: ${param.description}` : list
+}
+
+/**
+ * A parameter's type in TypeScript: the union of what it lists (a word as itself, a range as a
+ * number written as a string, `${number}`), or string when it lists nothing.
+ * @param {{ values: string[] }} param
+ */
+export function paramType({ values }) {
+  const { words, ranges } = valueSpec(values)
+  // a value is a word (paramDoc): no quote to escape
+  const union = [...(ranges.length ? ['`${number}`'] : []), ...words.map((w) => `'${w}'`)]
+  return union.length ? union.join(' | ') : 'string'
 }
 
 /**
@@ -363,8 +425,8 @@ function layoutDoc(info) {
  * comment, and its members: layout, its name, with the same doc comment (what an editor shows on
  * hovering layout="…" on a slide: a string has no doc of its own), and one optional member per
  * parameter, under its camelCase name (Volar checks an attribute written footer-bg as footerBg, as
- * it does any prop's): a string, or the union of its values when it takes only some
- * ('top' | 'bottom'), its description and its token as its doc. indent: the entry's.
+ * it does any prop's): a string, or the union of what it takes when it lists its values
+ * ('top' | 'bottom', paramType), its description and its token as its doc. indent: the entry's.
  * @param {LayoutInfo} info
  * @param {string} indent
  */
@@ -375,9 +437,7 @@ export function layoutEntry(info, indent) {
     ...info.params.map((p) => {
       const token = `--ar-layout-${info.name}-${p.thing}`
       const text = paramText(p)
-      // a value is a word (paramDoc): no quote to escape
-      const type = p.values.length ? p.values.map((v) => `'${v}'`).join(' | ') : 'string'
-      return `${jsdoc(text ? [...wrap(text, DOC_WIDTH), '', `\`${token}\``] : [token], `${indent}  `)}${indent}  ${camelize(p.thing)}?: ${type}\n`
+      return `${jsdoc(text ? [...wrap(text, DOC_WIDTH), '', `\`${token}\``] : [token], `${indent}  `)}${indent}  ${camelize(p.thing)}?: ${paramType(p)}\n`
     }),
   ]
   return `${jsdoc(doc, indent)}${indent}${layoutKey(info.name)}: {\n${members.join('')}${indent}}\n`

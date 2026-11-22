@@ -11,11 +11,11 @@
  *   p Twelve teams, one platform.
  * @param position {top-left|top|top-right|left|center|right|bottom-left|bottom|bottom-right}
  *                 where the text sits, in a corner, in the middle of a side or in the centre,
- *                 its lines aligned to that side (default `bottom-left`, which any other value
- *                 is too)
- * @param scrim    how dark the scrim behind the text is, a number from `0` (none; `none` too)
- *                 to `1` (default `.6`). It follows `position`, darkest at that corner or side
- *                 and fading away from it, or even over the whole picture for `center`
+ *                 its title and its paragraphs aligned to that side (default `bottom-left`,
+ *                 which any other value is too)
+ * @param scrim    {0..1|none} how dark the scrim behind the text is (default `.6`; `0` or `none`
+ *                 for none). It follows `position`, darkest at that corner or side and fading
+ *                 away from it, or even over the whole picture for `center`
  * @param color    the text's colour, its title's and its footer's (default `#fff`)
  */
 
@@ -132,13 +132,16 @@
 }
 
 /* the header and the body in the place's column, each as wide as its content, at that side of
-   it, their text aligned to it; the header in the place's first row, the body in its second */
+   it; the header in the place's first row, the body in its second. Their own lines align to that
+   side: the header's (its title, its subtitle) and the body's paragraphs and headings; what
+   lays its text out itself (a list, code, a table) keeps its alignment */
 .layout-overlay > :is(.ar-header, .ar-body) {
   grid-column: var(--_ar-overlay-x);
   justify-self: var(--_ar-overlay-x);
-  text-align: var(--_ar-overlay-x);
   max-width: 100%;
 }
+.layout-overlay > .ar-header,
+.layout-overlay > .ar-body > :is(p, h1, h2, h3, h4, h5, h6) { text-align: var(--_ar-overlay-x); }
 .layout-overlay > .ar-header { grid-row: 1 var(--_ar-overlay-y); }
 .layout-overlay > .ar-body { grid-row: 2 var(--_ar-overlay-y); }
 .layout-overlay > .ar-header > .ar-title { max-width: 18em; }

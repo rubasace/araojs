@@ -34,7 +34,7 @@
 //      line starting with @ kept in its example), and one warning for its @param naming no token;
 //      with those files, <bin> layouts --json (the config printing as it loads: on stderr) gives
 //      the araojs version and lists default, the library's but cover (each documented in full;
-//      overlay's position with its nine values),
+//      overlay's position with its nine values, its scrim 0..1 and none),
 //      then every project file (cover replacing the library's, as its doc block says, its /**
 //      comment after its code a problem; epigraph, the playground's, documented; plain, with no doc
 //      block and its problem; "bad name", which no slide can name), then the utility classes by
@@ -93,7 +93,7 @@
 //      queries), on the playground's overlay slide: position="top-right" is its token, not an
 //      attribute, and puts the text top right; each of the nine positions, set as the token,
 //      puts the text in that corner, side or centre of the slide's padding box, its title aligned
-//      to that side, over its scrim (a radial ramp from the corner, a linear one from the side,
+//      to that side (a list in its body keeping its own alignment), over its scrim (a radial ramp from the corner, a linear one from the side,
 //      an even veil for center); scrim 0 draws nothing, none no scrim, 1 is black at the text's
 //      side; a value that is no position (end start) is the default, bottom-left; and a position
 //      set at :root, as a theme does, reaches the slide
@@ -155,7 +155,9 @@
 //      decks, at 390x844: the
 //      covers far below the screen are not drawn until scrolled to; a deck that throws as it is
 //      drawn says "No preview" (one [arao] warning); /café is shown as such, not
-//      percent-encoded
+//      percent-encoded. On a decks folder holding a deck whose overlay slides give position and
+//      scrim values they take and values they do not (one twice, a number out of its range): one
+//      [arao] warning per value not taken, saying what it takes, none for the others
 //  10. <bin> export                    no --deck: every deck, one PDF each, at its default name
 //                                      (exports/<deck>.pdf); each PDF must have (its pages counted
 //                                      in the file itself) as many pages as its summary line says
@@ -761,6 +763,8 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
         }
         const position = by.overlay?.params.find((p) => p.name === 'position')
         if (position?.values.join(' ') !== 'top-left top top-right left center right bottom-left bottom bottom-right') complaints.push(`overlay's position takes ${JSON.stringify(position?.values)}, not its nine places`)
+        const scrim = by.overlay?.params.find((p) => p.name === 'scrim')
+        if (JSON.stringify(scrim?.values) !== JSON.stringify(['0..1', 'none'])) complaints.push(`overlay's scrim takes ${JSON.stringify(scrim?.values)}, not 0..1 and none`)
         if (names(by['image-right']?.zones ?? []) !== 'image' || !by['image-right'].zones[0].description) complaints.push(`image-right's zones are ${names(by['image-right']?.zones ?? [])}, not image, described`)
         if ((by.split?.zones ?? []).length) complaints.push(`split's zones are ${names(by.split.zones)}, not none (its sides are its body's children)`)
         const q = by.epigraph
@@ -1486,9 +1490,14 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
             : bg.startsWith('radial-gradient(') ? `radial ${bg.match(/at ([\d.]+%) ([\d.]+%)/)?.slice(1).join(' ')}`
               : !bg.startsWith('linear-gradient(') ? bg
                 : alphas.length === 2 && alphas[0] === alphas[1] ? 'even' : `linear ${bg.match(/^linear-gradient\((to [a-z]+),/)?.[1] ?? 'to bottom'}`
+          // a list in the body: it keeps its own alignment, whatever the position's
+          const list = s.querySelector(':scope > .ar-body').appendChild(document.createElement('ul'))
+          const listAlign = getComputedStyle(list).textAlign
+          list.remove()
           return {
             place: `${across} ${down} ${kind}`,
             align: getComputedStyle(s.querySelector('.ar-title')).textAlign,
+            listAlign,
             dark: alphas.length ? Math.max(...alphas) : 0,
             token: s.style.getPropertyValue('--ar-layout-overlay-position').trim(),
             // but its own and a scoped style's (data-v-…, the deck's)
@@ -1505,6 +1514,7 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
           const across = want.split(' ')[0]
           if (got.place !== want) complaints.push(`position ${position}: "${got.place}", not "${want}"`)
           else if (got.align !== across) complaints.push(`position ${position}: its title aligned ${got.align}, not ${across}`)
+          else if (got.listAlign !== 'start') complaints.push(`position ${position}: a list in its body aligned ${got.listAlign}, not start (its own)`)
           else if (got.dark < 0.4) complaints.push(`position ${position}: its scrim's darkest is ${got.dark}, at the default strength`)
         }
         // the strength: 0 draws nothing, none no scrim at all, 1 black at the text's side
@@ -1522,7 +1532,7 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
         if (got.place !== POSITIONS.top) complaints.push(`position top at :root: "${got.place}", not "${POSITIONS.top}"`)
         await read({}, { [POSITION]: null })
       }
-      console.log(`  ${mode} overlay: ${complaints.length ? 'problems below' : 'nine positions, each its place, alignment and scrim; scrim 0, none and 1; any other value the default; from :root too'}`)
+      console.log(`  ${mode} overlay: ${complaints.length ? 'problems below' : 'nine positions, each its place, alignment (not a list\'s) and scrim; scrim 0, none and 1; any other value the default; from :root too'}`)
     } finally {
       await page.context().close()
     }
@@ -2358,6 +2368,21 @@ throw new Error('smoke: this deck throws as it is drawn')
   const asIs = { 'src/main.js': files['src/main.js'], 'vite.config.js': files['vite.config.js'] }
   const alone = asIs['vite.config.js'].replace('arao({', `arao({ decks: '${solo}',`)
   const withOptions = (o) => asIs['src/main.js'].replace('createDeckApp()', `createDeckApp(${o})`)
+  // a decks folder holding a deck whose overlay slides give its parameters values: some it takes
+  // (a position, a number in its range, a word of its scrim's), some it does not (twice one)
+  const valued = 'src/valued'
+  const VALUED = { 'Valued.vue': `<template lang="pug">
+Deck
+  Slide(layout="overlay" position="top-right" scrim=".4")
+    h2 Taken
+  Slide(layout="overlay" position="nowhere" scrim="lots")
+    h2 Not taken
+  Slide(layout="overlay" position="nowhere" scrim="2")
+    h2 Again, and out of its range
+  Slide(layout="overlay" scrim="none")
+    h2 A word its scrim takes
+</template>
+` }
   const crowded = { 'Broken.vue': tiny('Broken', ['default'], THROWS_DRAWN), 'Café.vue': tiny('Café', ['default']) }
   for (let i = 1; i <= 12; i++) crowded[`Deck${String(i).padStart(2, '0')}.vue`] = tiny(`Deck ${i}`, ['default'])
 
@@ -2449,6 +2474,48 @@ throw new Error('smoke: this deck throws as it is drawn')
     for (const c of complaints) fail(`dev ${variant.name}: ${c}`)
   }
 
+  // a layout parameter given a value its doc block does not list: one [arao] warning per layout,
+  // parameter and value, saying what it takes, however many slides give it and however often
+  // they are drawn; none for a value it lists (a word, a number in its range)
+  async function valueWarnings(base, variant) {
+    const context = await browser.newContext({ viewport: { width: 1920, height: 1080 } })
+    const page = await context.newPage()
+    const complaints = []
+    const warned = []
+    const PREFIX = '[arao] Slide(layout="overlay") '
+    page.on('console', (m) => {
+      if (m.type() === 'warning' && m.text().startsWith(PREFIX)) warned.push(m.text().slice(PREFIX.length))
+      else if (['warning', 'error'].includes(m.type())) complaints.push(`console ${m.type()}: ${m.text()}`)
+    })
+    page.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
+    const WANTED = [
+      'position="nowhere": it takes one of top-left, top, top-right, left, center, right, bottom-left, bottom, bottom-right',
+      'scrim="lots": it takes a number from 0 to 1, or none',
+      'scrim="2": it takes a number from 0 to 1, or none',
+    ]
+    try {
+      await page.goto(base)
+      const opened = await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 }).then(() => true, () => false)
+      if (!opened) complaints.push('the deck did not open')
+      // every slide drawn again as the deck moves
+      for (let k = 0; k < 3; k++) {
+        await page.keyboard.press('ArrowRight')
+        await pause(200)
+      }
+      await pause(500)
+      for (const w of WANTED) {
+        const n = warned.filter((t) => t.startsWith(w)).length
+        if (n !== 1) complaints.push(`${n} warnings "${PREFIX}${w}…", not 1`)
+      }
+      const others = warned.filter((t) => !WANTED.some((w) => t.startsWith(w)))
+      if (others.length) complaints.push(`warnings for values it takes: ${others.join(' / ')}`)
+      console.log(`  dev ${variant.name}: ${complaints.length ? 'problems below' : 'one warning per value it does not take (position, scrim), saying what it takes; none for a word or a number in range'}`)
+    } finally {
+      await context.close()
+    }
+    for (const c of complaints) fail(`dev ${variant.name}: ${c}`)
+  }
+
   const variants = [
     { name: 'one deck', files: { 'vite.config.js': alone },
       visits: [{ path: '', deck: true }, { path: second, deck: true }], checks: [together] },
@@ -2458,6 +2525,8 @@ throw new Error('smoke: this deck throws as it is drawn')
       visits: [{ path: '', deck: true, warns: 'deckList' }] },
     { name: 'a long list', files: { 'vite.config.js': asIs['vite.config.js'].replace('arao({', `arao({ decks: '${crowd}',`) },
       checks: [lazy] },
+    { name: 'layout parameters given values they do not take', files: { 'vite.config.js': asIs['vite.config.js'].replace('arao({', `arao({ decks: '${valued}',`) },
+      checks: [valueWarnings] },
     { name: `Deck(:themes="['nosuch', '${THEME}']") and Deck(:themes="['nosuch']")`, files: { 'vite.config.js': asIs['vite.config.js'].replace('arao({', `arao({ decks: '${listed}',`) },
       visits: [{ path: '', list: 2, covers: { listed: THEME, nameless: 'default' } },
         { path: 'listed', deck: true, theme: THEME, warns: '"nosuch"' }, { path: 'nameless', deck: true, theme: 'default', warns: '"nosuch"' }] },
@@ -2513,6 +2582,8 @@ throw new Error('smoke: this deck throws as it is drawn')
   for (const [name, text] of Object.entries(crowded)) await writeFile(join(project, crowd, name), text)
   await mkdir(join(project, listed), { recursive: true })
   for (const [name, text] of Object.entries(LISTED)) await writeFile(join(project, listed, name), text)
+  await mkdir(join(project, valued), { recursive: true })
+  for (const [name, text] of Object.entries(VALUED)) await writeFile(join(project, valued, name), text)
   try {
     for (const variant of variants) {
       for (const [name, text] of Object.entries({ ...asIs, ...variant.files })) await writeFile(join(project, name), text)
@@ -2529,6 +2600,7 @@ throw new Error('smoke: this deck throws as it is drawn')
     await rm(join(project, solo), { recursive: true, force: true })
     await rm(join(project, crowd), { recursive: true, force: true })
     await rm(join(project, listed), { recursive: true, force: true })
+    await rm(join(project, valued), { recursive: true, force: true })
   }
 
   // the summary line of a PDF: "<path>: <pages> pages (<slides> slides, <steps> steps), …"
