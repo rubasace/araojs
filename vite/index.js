@@ -77,10 +77,13 @@
 // attribute <thing> of Slide(layout="<name>"), set as that token on the slide (layout-params.js
 // says which tokens are; Slide.vue sets them). The engine has them from
 // virtual:arao/layout-tokens (by layout, its parameters: the library's loaded and the project's,
-// one of the project's replacing the library's of its name). A token of a project file that is
+// one of the project's replacing the library's of its name), and what each takes, for those its
+// doc block lists values for ({a|b}, {0..1}: layout-docs.js), which Slide warns about in
+// development (src/core/layout-values.ts). A token of a project file that is
 // no attribute (its name is one HTML, Vue or Slide already gives a meaning, as title or id, or it
 // is not lower-case kebab-case) still works in style or a theme, and Vite warns, once.
-// A layout file added, removed or edited so that the parameters change reloads the page.
+// A layout file added, removed or edited so that the parameters (or what they take) change
+// reloads the page.
 // Their names and parameters, for the editor and vue-tsc: Slide is typed with SlideLayouts, the
 // library's layouts (its types, generated from its layouts/) with the project's over them,
 // ProjectLayouts, which the plugin fills in a declaration file, src/arao-layouts.d.ts (where a
@@ -114,7 +117,7 @@ import vue from '@vitejs/plugin-vue'
 import { normalizePath, searchForWorkspaceRoot } from 'vite'
 import { fonts } from './fonts.js'
 import { createIcons, forced } from './icons.js'
-import { DEFAULT_LAYOUT, describeLayout, layoutEntry, zonesEntry } from './layout-docs.js'
+import { DEFAULT_LAYOUT, describeLayout, layoutEntry, takes, valueSpec, zonesEntry } from './layout-docs.js'
 import { cssCode } from './layout-params.js'
 import shortcuts from './shortcuts.js'
 
@@ -489,6 +492,22 @@ function paramsOf(layouts) {
   for (const [n, l] of Object.entries(layouts)) if (l.validName) params[n] = l.params.map((p) => p.thing)
   return params
 }
+// What the parameters that list their values take, by layout, then by parameter: its words, its
+// ranges of numbers ([from, to]) and that in words, for Slide's warning (src/core/layout-values.ts)
+/** @param {Record<string, ProjectLayout>} layouts */
+function valuesOf(layouts) {
+  /** @type {Record<string, Record<string, { words: string[], ranges: [number, number][], takes: string }>>} */
+  const values = Object.create(null)
+  for (const [n, l] of Object.entries(layouts)) {
+    const listed = l.validName ? l.params.filter((p) => p.values.length) : []
+    if (listed.length) values[n] = Object.fromEntries(listed.map((p) => [p.thing, { ...valueSpec(p.values), takes: takes(p) }]))
+  }
+  return values
+}
+// The tokens module's data, as it is served (and compared, to know when it changed): the
+// parameters, and what they take
+/** @param {Record<string, ProjectLayout>} layouts */
+const tokensData = (layouts) => JSON.stringify([paramsOf(layouts), valuesOf(layouts)])
 // The declaration file's text: the project's layouts (valid names: what no slide can name stays
 // out), each with what it says of itself, its parameters and its zones, as members of the
 // library's ProjectLayouts and ProjectLayoutZones, by module augmentation (export {} makes the
@@ -606,7 +625,7 @@ export default function arao(options = {}) {
   /** @param {string} file */
   const inBuiltinLayouts = (file) => file.endsWith('.css') && relative(real(BUILTIN_LAYOUTS), file) === basename(file)
   /** @type {string | null} */
-  let paramsLoaded = null // the parameters the tokens module was last loaded with
+  let paramsLoaded = null // the parameters (and what they take) the tokens module was last loaded with
   /** @type {Set<string>} */
   let saidProblems = new Set() // the project's layouts' problems, as last said
   /** @type {ReturnType<typeof setTimeout> | undefined} */
@@ -823,7 +842,7 @@ export default function arao(options = {}) {
         const tokens = graph.getModuleById(resolved('layout-tokens'))
         const stale = [
           styles && JSON.stringify(loaded) !== layoutsLoaded ? styles : null,
-          tokens && JSON.stringify(paramsOf(layoutsInfo(layoutsDir()))) !== paramsLoaded ? tokens : null,
+          tokens && tokensData(layoutsInfo(layoutsDir())) !== paramsLoaded ? tokens : null,
         ].filter((m) => m != null)
         if (stale.length) {
           for (const m of stale) graph.invalidateModule(m)
@@ -878,12 +897,17 @@ export const themeSources = ${JSON.stringify(themeSources.map((t) => t.label))}`
         return [pick ? cssGlob(root, real(BUILTIN_LAYOUTS), pick) : '', cssGlob(root, layoutsDir(), '*')].filter(Boolean).join('\n')
       }
       // the layouts' parameters, by layout (no prototype, and parsed: a layout named __proto__ is
-      // one more key), for Slide to set them
+      // one more key), for Slide to set them; and what those that list their values take, for it
+      // to warn about another
       if (id === resolved('layout-tokens')) {
         const layouts = layoutsInfo(layoutsDir())
         sayProblems(layouts)
-        paramsLoaded = JSON.stringify(paramsOf(layouts))
-        return `export const layoutTokens = Object.assign(Object.create(null), JSON.parse(${JSON.stringify(paramsLoaded)}))`
+        paramsLoaded = tokensData(layouts)
+        return [
+          `const [tokens, values] = JSON.parse(${JSON.stringify(paramsLoaded)})`,
+          'export const layoutTokens = Object.assign(Object.create(null), tokens)',
+          'export const layoutValues = Object.assign(Object.create(null), values)',
+        ].join('\n')
       }
       const name = names.find((n) => id === resolved(n))
       if (!name) return null

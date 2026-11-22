@@ -6,19 +6,22 @@
  *   template(#author)
  *     p Kent Beck
  * @zone author     who said it
- * @param size        the callout's size
+ * @param size        {string} the callout's size
  * @param mark-color  the opening mark's colour
+ * @param align       {start|center} where the quote sits
  */
 
 /* a project layout: the plugin adds "callout" to the layouts Slide's layout accepts, with its
-   parameters, the tokens it reads (src/arao-layouts.d.ts): size and mark-color (markColor); its
-   --ar-layout-callout-title is none (title is an HTML attribute), and the plugin warns. Its zones:
-   author (its doc block's @zone) and source (a .ar-zone-source it styles) */
+   parameters, the tokens it reads (src/arao-layouts.d.ts): size, mark-color (markColor) and align
+   ('start' | 'center', the values its doc block lists); size stays a string: its {string}, a
+   JSDoc type, is no list of values, and the plugin warns; its --ar-layout-callout-title is none
+   (title is an HTML attribute), and the plugin warns. Its zones: author (its doc block's @zone)
+   and source (a .ar-zone-source it styles) */
 :where(.layout-callout) {
   --_ar-callout-size: var(--ar-layout-callout-size, 64px);
   --_ar-callout-title: var(--ar-layout-callout-title, 1em);
 }
-.layout-callout { justify-content: safe center; font-size: var(--_ar-callout-size); }
+.layout-callout { justify-content: safe var(--ar-layout-callout-align, center); font-size: var(--_ar-callout-size); }
 .layout-callout h2 { font-size: var(--_ar-callout-title); }
 .layout-callout blockquote::before { content: '“'; color: var(--ar-layout-callout-mark-color, currentColor); }
 .layout-callout > .ar-zone-source { font-size: .5em; }

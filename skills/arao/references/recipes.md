@@ -328,7 +328,9 @@ has as an attribute (`title`, `id`, `hidden`, `lang`, `class`, `style`, `key`, `
 layout replaces its parameters too.
 It starts with its doc block (always): the first line says what the layout is for, then
 `@example` (a slide of it, in Pug), `@zone <name> <description>` per named template it places
-(`.ar-zone-<name>`), `@param <thing> <description>` per token, its default said. `npx arao layouts`
+(`.ar-zone-<name>`), `@param <thing> <description>` per token, its default said (`@param <thing>
+{a|b|c} <description>` when it takes only those words, two or more, or `{0..1}` a range of
+numbers: they become its type, and another value warns in development). `npx arao layouts`
 prints it back, with any problem (a `@param` naming no token…); full rules:
 `docs/guide/slides-and-layouts.md#its-doc-block`.
 ```css

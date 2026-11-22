@@ -688,20 +688,24 @@ export interface LibraryLayouts {
   /**
    * Text over a full-slide picture: a `Background`, the title and a line over it.
    *
-   * Meant for a slide with a `Background`: its title and its text sit in a corner (the bottom left
-   * by default), white, over a dark gradient that keeps them legible on any picture. The title is
-   * an `h2`, the text a `p` (or an `h3` subtitle) after it.
+   * Meant for a slide with a `Background`: its title and its text sit in a corner, in the middle of
+   * a side or in the centre (the bottom left by default), white, over a scrim that darkens the
+   * picture from where the text is, which keeps them legible on any picture. The title is an `h2`,
+   * the text a `p` (or an `h3` subtitle) after it.
    *
    * Parameters (attributes):
    * - `color`: the text's colour, its title's and its footer's (default `#fff`)
-   * - `position`: where the text sits, as CSS `place-content`: block then inline (`end start`,
-   *   the bottom left, by default; `start end` the top right, `center` the middle)
-   * - `scrim`: what is drawn between the picture and the text, as a CSS background (default a
-   *   dark gradient rising from the bottom; give one that follows `position`, or `none`)
+   * - `position`: one of `top-left`, `top`, `top-right`, `left`, `center`, `right`,
+   *   `bottom-left`, `bottom`, `bottom-right`: where the text sits, in a corner, in the middle
+   *   of a side or in the centre, its title and its paragraphs aligned to that side (default
+   *   `bottom-left`, which any other value is too)
+   * - `scrim`: a number from `0` to `1`, or `none`: how dark the scrim behind the text is
+   *   (default `.6`; `0` or `none` for none). It follows `position`, darkest at that corner or
+   *   side and fading away from it, or even over the whole picture for `center`
    *
    * @example
    * ```pug
-   * Slide(layout="overlay")
+   * Slide(layout="overlay" position="top-right")
    *   Background(src="city.jpg")
    *   h2 Built for the city
    *   p Twelve teams, one platform.
@@ -711,20 +715,24 @@ export interface LibraryLayouts {
     /**
      * Text over a full-slide picture: a `Background`, the title and a line over it.
      *
-     * Meant for a slide with a `Background`: its title and its text sit in a corner (the bottom left
-     * by default), white, over a dark gradient that keeps them legible on any picture. The title is
-     * an `h2`, the text a `p` (or an `h3` subtitle) after it.
+     * Meant for a slide with a `Background`: its title and its text sit in a corner, in the middle of
+     * a side or in the centre (the bottom left by default), white, over a scrim that darkens the
+     * picture from where the text is, which keeps them legible on any picture. The title is an `h2`,
+     * the text a `p` (or an `h3` subtitle) after it.
      *
      * Parameters (attributes):
      * - `color`: the text's colour, its title's and its footer's (default `#fff`)
-     * - `position`: where the text sits, as CSS `place-content`: block then inline (`end start`,
-     *   the bottom left, by default; `start end` the top right, `center` the middle)
-     * - `scrim`: what is drawn between the picture and the text, as a CSS background (default a
-     *   dark gradient rising from the bottom; give one that follows `position`, or `none`)
+     * - `position`: one of `top-left`, `top`, `top-right`, `left`, `center`, `right`,
+     *   `bottom-left`, `bottom`, `bottom-right`: where the text sits, in a corner, in the middle
+     *   of a side or in the centre, its title and its paragraphs aligned to that side (default
+     *   `bottom-left`, which any other value is too)
+     * - `scrim`: a number from `0` to `1`, or `none`: how dark the scrim behind the text is
+     *   (default `.6`; `0` or `none` for none). It follows `position`, darkest at that corner or
+     *   side and fading away from it, or even over the whole picture for `center`
      *
      * @example
      * ```pug
-     * Slide(layout="overlay")
+     * Slide(layout="overlay" position="top-right")
      *   Background(src="city.jpg")
      *   h2 Built for the city
      *   p Twelve teams, one platform.
@@ -738,19 +746,22 @@ export interface LibraryLayouts {
      */
     color?: string
     /**
-     * where the text sits, as CSS `place-content`: block then inline (`end start`, the bottom
-     * left, by default; `start end` the top right, `center` the middle)
+     * one of `top-left`, `top`, `top-right`, `left`, `center`, `right`, `bottom-left`, `bottom`,
+     * `bottom-right`: where the text sits, in a corner, in the middle of a side or in the centre,
+     * its title and its paragraphs aligned to that side (default `bottom-left`, which any other
+     * value is too)
      *
      * `--ar-layout-overlay-position`
      */
-    position?: string
+    position?: 'top-left' | 'top' | 'top-right' | 'left' | 'center' | 'right' | 'bottom-left' | 'bottom' | 'bottom-right'
     /**
-     * what is drawn between the picture and the text, as a CSS background (default a dark gradient
-     * rising from the bottom; give one that follows `position`, or `none`)
+     * a number from `0` to `1`, or `none`: how dark the scrim behind the text is (default `.6`;
+     * `0` or `none` for none). It follows `position`, darkest at that corner or side and fading
+     * away from it, or even over the whole picture for `center`
      *
      * `--ar-layout-overlay-scrim`
      */
-    scrim?: string
+    scrim?: `${number}` | 'none'
   }
   /**
    * One quotation, big, its author under it.

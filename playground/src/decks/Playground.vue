@@ -64,10 +64,10 @@ Deck
     h2 90 %
     p of the slides of a talk are a title and three points
 
-  Slide(layout="overlay")
+  Slide(layout="overlay" position="top-right")
     Background(src="cies.svg")
     h2 Text over a picture
-    p The overlay layout: a Background, a scrim, the text in a corner.
+    p Nine places for the text, each with its own scrim.
 
   Slide(layout="caption")
     h2 A picture and its caption

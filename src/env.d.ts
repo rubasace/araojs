@@ -24,6 +24,13 @@ declare module 'virtual:arao/shortcuts' {
 declare module 'virtual:arao/layout-tokens' {
   // by layout, the <thing> of each of its parameters, --ar-layout-<layout>-<thing> (vite/layout-params.js)
   export const layoutTokens: Readonly<Record<string, readonly string[]>>
+  // by layout, then by <thing>, what a parameter whose doc block lists its values takes: its
+  // words, its ranges of numbers ([from, to]), and that in words (vite/layout-docs.js)
+  export const layoutValues: Readonly<Record<string, Readonly<Record<string, {
+    readonly words: readonly string[]
+    readonly ranges: readonly (readonly [number, number])[]
+    readonly takes: string
+  }>>>>
 }
 declare module 'virtual:arao/layout-styles'
 declare module 'virtual:arao/theme-styles'

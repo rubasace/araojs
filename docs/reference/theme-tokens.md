@@ -134,8 +134,8 @@ A `*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows 
 | `--ar-layout-statement-size` | `size` | 1.5x `--ar-title` | the statement's size |
 | `--ar-layout-statement-color` | `color` | `--ar-accent` | its colour |
 | `--ar-layout-statement-align` | `align` | `center` | `center` or `start` |
-| `--ar-layout-overlay-position` | `position` | `end start` | where the text sits, as CSS `place-content` (`end start`: the bottom left) |
-| `--ar-layout-overlay-scrim` | `scrim` | a dark gradient from the bottom | what is drawn between the picture and the text, a CSS background (`none` for nothing) |
+| `--ar-layout-overlay-position` | `position` | `bottom-left` | where the text sits, its lines aligned to that side: `top-left`, `top`, `top-right`, `left`, `center`, `right`, `bottom-left`, `bottom` or `bottom-right` (any other value is the default) |
+| `--ar-layout-overlay-scrim` | `scrim` | `.6` | how dark the scrim between the picture and the text is, `0` (none; `none` too) to `1`: darkest at the corner or side the text is at and fading away from it, an even veil for `center` |
 | `--ar-layout-overlay-color` | `color` | `#fff` | the text's colour, its title's and its footer's |
 | `--ar-layout-caption-caption-size` | `caption-size` | `--ar-text-small` | the caption's size |
 | `--ar-layout-caption-caption-align` | `caption-align` | `center` | the caption's alignment |
@@ -179,8 +179,8 @@ A `*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows 
 | `--ar-code-hl` | `--ar-accent` | highlight colour: the line numbers of highlighted lines, and the highlight background unless `--ar-code-hl-bg` says |
 | `--ar-code-hl-bg` | `--ar-code-hl` at 14 % (a line) or 22 % (a word) | background of highlighted lines and words; a pale colour keeps the code's colours legible on a light window (the tint of a dark highlight colour lowers their contrast) |
 | `--ar-code-radius` | `14px` | window corner radius |
-| `--ar-code-shadow` | `0 12px 32px rgba(0,0,0,.16), 0 2px 6px rgba(0,0,0,.1), inset 0 0 0 1px rgba(0,0,0,.06)` | the window's shadow |
-| `--ar-code-shadow-room` | `40px` | room kept on each side of the window in a column, cell or zone (they clip what is wider than them), so its shadow is not cut: keep it at least the shadow's horizontal reach |
+| `--ar-code-shadow` | `0 30px 70px rgba(0,0,0,.35), 0 8px 20px rgba(0,0,0,.2), inset 0 0 0 1px rgba(255,255,255,.06)` | the window's shadow |
+| `--ar-code-shadow-room` | `70px` | room kept on each side of the window in a column of `.cols`, `.cols-*` or `.rows`, a side of `split` or a zone (they clip what is wider than them), so its shadow is not cut: keep it at least the shadow's sideways reach, its blur + spread + x offset (the widest of its shadows; `aurora` sets `90px`, `carbon` `80px`). Only sideways: they clip no height |
 | `--ar-code-light-1` / `-2` / `-3` | `#ff5f57` / `#febc2e` / `#28c840` | the title bar's three lights, left to right |
 | `--ar-code-duration` | `.3s` | lines and words dimming and lighting up between steps |
 

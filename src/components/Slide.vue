@@ -178,6 +178,7 @@ export type SlideComponent = new <L extends keyof SlideLayouts = 'default'>(prop
 <script setup lang="ts">
 import { Comment, Fragment, Text, camelize, cloneVNode, h, onMounted, onUpdated, ref, shallowRef, useAttrs, useSlots, watch, type FunctionalComponent, type PropType, type StyleValue, type VNode } from 'vue'
 import { layoutTokens } from 'virtual:arao/layout-tokens'
+import { checkLayoutParam } from '../core/layout-values'
 import { useDeck, useDeckName } from '../state/deck'
 import { createSlide } from '../state/slide'
 import { useOverflow } from '../composables/useOverflow'
@@ -197,9 +198,10 @@ const attrs = useAttrs()
 // The slide's attributes, for its section: each one named as a parameter of its layout (a token
 // its CSS reads, --ar-layout-<layout>-<thing>: <thing>, or <thing> in camelCase, the form a
 // template may also write) becomes that token in the style, its value as it is, after the slide's
-// own style (the same token there loses); one empty sets nothing (the layout's default stays).
-// The rest go on as they are. Called by the render, so a change in the attributes or the layout
-// applies at once.
+// own style (the same token there loses); one empty sets nothing (the layout's default stays);
+// one its layout does not take (its doc block lists what it does) warns in development
+// (core/layout-values.ts). The rest go on as they are. Called by the render, so a change in the
+// attributes or the layout applies at once.
 function params() {
   const things = layoutTokens[props.layout] ?? []
   const tokens: Record<string, string> = {}
@@ -207,7 +209,10 @@ function params() {
   for (const [key, value] of Object.entries(attrs)) {
     const thing = things.find((t) => t === key || camelize(t) === key)
     if (thing === undefined) rest[key] = value
-    else if (value != null && value !== false && value !== '') tokens[`--ar-layout-${props.layout}-${thing}`] = String(value)
+    else if (value != null && value !== false && value !== '') {
+      tokens[`--ar-layout-${props.layout}-${thing}`] = String(value)
+      checkLayoutParam(props.layout, thing, String(value))
+    }
   }
   return { ...rest, style: [rest.style as StyleValue, tokens] }
 }
