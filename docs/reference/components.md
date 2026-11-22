@@ -122,6 +122,13 @@ wins over the same token there), and the classes the engine knows:
 | `.bottom` | the body at the bottom |
 | `.no-footer` | no deck footer on this slide, whatever its layout says |
 | `.with-footer` | the deck footer on this slide, whatever its layout says |
+| `.fit` | its body's text shrunk just enough to fit when it overflows, down to 60% of its size ([When it does not fit](../guide/composition.md#when-it-does-not-fit)) |
+| `.scale-90`, `.scale-80`, `.scale-70` | its body's text at 90, 80, 70% of its size |
+
+What a slide shows is measured: in development, a slide on screen whose content does not fit (cut
+off at the bottom, under the footer, wider than its box) gets a console warning, and `arao export`
+lists the slides that overflow at the end of its run
+([When it does not fit](../guide/composition.md#when-it-does-not-fit)).
 
 ### Layouts
 
@@ -136,7 +143,7 @@ file of the same name replaces it.
 | `cover` | the header and the body as one group, centred vertically, left-aligned; its title (an `h1`) at 1.25x `--ar-title`, in the text colour; a `.bar` element draws a short bar in the accent; no footer | default, `#title` |
 | `section` | everything centred both ways, on `--ar-accent` in `--ar-accent-fg` (the title, its subtitle and the footer too); its title (an `h1`) at 1.4x `--ar-title`; no footer | default, `#title` |
 | `split` | the header across the top, then the body's two children side by side, its two sides, filling the rest; a side may start with an `h3`, its heading (`columns="2fr 1fr"`, `gap`, `divider="2px solid …"`; default `1fr 1fr`, no divider) | default, `#title` |
-| `grid` | each child of the body a block (a leading `Icon`/`Img`/`img`/`svg` at one size, an `h3`, a muted `p`), in rows balanced by their count (1-3 in a row, 4: 2+2, 5: 3+2, 6: 3+3, 7: 4+3, 8: 4+4, 9: 3+3+3, 10: 5+5, 11: 4+4+3, 12: 4x3, 13 and more at `max-columns`), the last one centred; a block's parts found at any depth in it (`columns`, `rows`, `max-columns`, `gap`, `align`, `cards`, `icon-size`) | default, `#title` |
+| `grid` | each child of the body a block (a leading `Icon`/`Img`/`img`/`svg` at one size, an `h3`, a muted `p`), in rows balanced by their count (1-3 in a row, 4: 2+2, 5: 3+2, 6: 3+3, 7: 4+3, 8: 4+4, 9: 3+3+3, 10: 5+5, 11: 4+4+3, 12: 4x3, 13 and more at `max-columns`), the last one centred; the more blocks, the smaller their pictures, padding, gap and text (from 9, 11, 12 and 16 blocks), so that up to 20 fit, each a title and a one-line description; a block's parts found at any depth in it (`columns`, `rows`, `max-columns`, `gap`, `align`, `cards`, `icon-size`, `text-size`) | default, `#title` |
 | `quote` | a `blockquote` opened by a big mark, and its `cite` (small, muted), in the middle; also two `p` (`size`, `mark`, `mark-color`, `align`); the footer shown | default, `#title` |
 | `statement` | its title (an `h2`) huge in the accent, the rest small under it, in the middle; also a `p` first (`size`, `color`, `align`) | default, `#title` |
 | `overlay` | for a slide with a `Background`: the title and the text in a corner (bottom left), white, over a dark gradient (`position`, `scrim`, `color`) | default, `#title` |
@@ -222,6 +229,7 @@ default); in a `.stack`, its children.
 | `.gap-sm`, `.gap`, `.gap-lg` | the gap between the children of a block that lays them out: `--ar-gap-sm`, `--ar-gap-md` (the placement classes' own), `--ar-gap-lg` |
 | `.grow` | fills the space left in its container, which lays out in a column or a row (the body, a side of `split`, a zone, a `.stack`, a `.row`) |
 | `.text-sm`, `.text-lg`, `.text-xl` | smaller, larger, much larger text: `--ar-text-small` (`.75em`), `--ar-text-large` (`1.25em`), `--ar-text-xlarge` (`1.6em`) |
+| `.scale-90`, `.scale-80`, `.scale-70` | its text at 90, 80, 70% of the size it inherits, and with it everything inside sized in em: on a block (a side of `split`, a block of `grid`, a card), that block; on a `Slide`, its body. With a `.text-*` on the same element, both: `p.text-sm.scale-80` is 80% of a small text |
 | `.accent`, `.muted` | text (an `Icon` too) in `--ar-accent`, in `--ar-muted` |
 | `.highlight` | a marker behind inline text: `--ar-highlight` (default the accent, light) |
 | `.upper` | text in capitals |
@@ -233,6 +241,8 @@ default); in a `.stack`, its children.
 | `.top`, `.middle`, `.bottom` | its body from the top (the default), centred top to bottom, at the bottom ([Placing the body](../guide/slides-and-layouts.md#placing-the-body)) |
 | `.center` | its body centred both ways, its text too (the title's) |
 | `.no-footer`, `.with-footer` | the deck's footer hidden, shown on it, whatever its layout says |
+| `.fit` | its body's text shrunk just enough to fit, when it overflows, down to 60% of its size; a warning when even that does not fit ([When it does not fit](../guide/composition.md#when-it-does-not-fit)) |
+| `.scale-90`, `.scale-80`, `.scale-70` | its body's text at 90, 80, 70% (the title stays) |
 
 `.bar` inside a `cover` slide draws the accent bar (the cover's own class).
 
@@ -264,7 +274,9 @@ Slide(layout="split")
 - Sizes, colours, the marker and `.upper` are `!important`: they win over what a layout or a
   theme sets on the same element (`p.accent` in a block of `grid`, whose text is muted, is the
   accent) and over an inline `style="color: …"` on it; children get them by inheritance, so a
-  child's own colour still shows. A theme restyles them through their tokens (`--ar-accent`,
+  child's own colour still shows. So a `.scale-*` sets its element's size from the one it
+  inherits, whatever a layout gave that element: put it on the block, not on text a layout sizes
+  (a block of `grid`'s `p` is a caption, `.75em`; `.scale-80` on it would be `.8em`). A theme restyles them through their tokens (`--ar-accent`,
   `--ar-muted`, `--ar-text-small`/`-large`/`-xlarge`, `--ar-highlight`). Placement, alignment
   and spacing are not `!important`, so a layout keeps its own blocks and `v-step.collapse` still
   hides.

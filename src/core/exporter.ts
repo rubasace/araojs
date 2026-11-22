@@ -1,6 +1,7 @@
 import { nextTick } from 'vue'
 import { t } from '../i18n/i18n'
 import type { Stage } from '../state/stage'
+import { describeOverflow, fitSlide, measureSlide, overflowFix } from './overflow'
 
 declare global {
   // what the export page reports, read by the CLI (bin/export.js)
@@ -36,12 +37,16 @@ export interface ExportOptions { perStep: boolean; notes: boolean }
 //     Chromium blurs only what is inside the clip, and the edge of the blur shows.
 // A blurred text-shadow stays a soft mask: see docs/guide/export.md, Printing.
 //
-// Ready: window.__araoReady = { pages, slides, steps, width, height, missing, stalled } once
-// every page is in the book with its fonts and pictures loaded; { error } if the export cannot be
-// made (with code: 'theme-not-listed' and the deck's themes when the theme is not one of them).
-// The export view adds deck to each: the name of the deck printed (null when the app named none).
-// missing: names of pictures shown as placeholders (they failed). stalled: what was still on its
-// way when printed (it neither loaded nor failed in time), printed as it stood.
+// Ready: window.__araoReady = { pages, slides, steps, width, height, missing, stalled, overflow }
+// once every page is in the book with its fonts and pictures loaded; { error } if the export
+// cannot be made (with code: 'theme-not-listed' and the deck's themes when the theme is not one of
+// them). The export view adds deck to each: the name of the deck printed (null when the app named
+// none). missing: names of pictures shown as placeholders (they failed). stalled: what was still
+// on its way when printed (it neither loaded nor failed in time), printed as it stood.
+// overflow: the pages whose slide does not fit, as the CLI prints them (core/overflow.ts),
+// { slide, step, steps, title, what, fix }: the slide's number (1-based) and its step (of steps),
+// its title, what overflows and by how much, how to fix it. Each page's slide is fitted first
+// (Slide.fit, on a slide with the class fit), then measured, then copied.
 // Content that arrives late marks itself with the attribute data-ar-busy while it does (Snippet
 // until its colours are in, Img until its picture has loaded or failed); a page is copied once
 // its slide and the addons have none left. Any component may do the same:
@@ -414,6 +419,8 @@ async function pictures(book: Element, stalled: Set<string>) {
 //   canvas   its .ar-canvas element
 //   notes    an element holding the notes of the slide on screen, or null for no notes pages
 //   title(i) the title of slide i, for the notes pages
+// a page whose slide does not fit (Ready's overflow, above)
+export interface OverflowPage { slide: number; step: number; steps: number; title: string; what: string; fix: string }
 export interface BookOptions {
   stage: Stage
   canvas: HTMLElement
@@ -433,6 +440,7 @@ export async function buildBook({ stage, canvas, book, notes, title, perStep, wi
   await document.fonts.ready
   let pages = 0
   let steps = 0
+  const overflow: OverflowPage[] = []
   const stalled = new Set<string>() // what a page gave up on, by the name in its data-ar-busy
   const drawn = new Map<string, Promise<Picture | string | null>>() // printableShadows and printableFilters: the pictures they have made
   for (let i = 0; i < stage.list.length; i++) {
@@ -449,6 +457,10 @@ export async function buildBook({ stage, canvas, book, notes, title, perStep, wi
         console.warn(`[arao] export: slide ${i + 1}, step ${s} still loading after ${BUSY_MS / 1000} s${what}: printed as it is`)
       }
       await document.fonts.ready
+      // Slide.fit settled before the page is taken, then what still does not fit
+      const fit = fitSlide(slide)
+      const found = measureSlide(slide)
+      if (found.length) overflow.push({ slide: i + 1, step: s, steps: total, title: title(i), what: describeOverflow(found), fix: overflowFix(fit) })
       const copy = page(width, height, 'ar-page', copyCanvas(canvas, slide))
       book.append(copy)
       await printableShadows(copy, drawn)
@@ -470,5 +482,5 @@ export async function buildBook({ stage, canvas, book, notes, title, perStep, wi
   await pictures(book, stalled)
   await document.fonts.ready
   const missing = [...new Set([...book.querySelectorAll('.ar-img-missing .ar-img-file')].map((el) => el.textContent ?? ''))]
-  return { pages, slides: stage.list.length, steps, width, height, missing, stalled: [...stalled] }
+  return { pages, slides: stage.list.length, steps, width, height, missing, stalled: [...stalled], overflow }
 }

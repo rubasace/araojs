@@ -1,5 +1,5 @@
 // arao export: PDFs of a project's decks, run in a slides project (the current directory):
-//   arao export [--deck framework] [--theme dark] [--per-slide] [--notes] [--out exports/]
+//   arao export [--deck framework] [--theme dark] [--per-slide] [--notes] [--out exports/] [--strict]
 //   (npm run export -- …, when the project's "export" script is "arao export")
 // Run by bin/arao.js: its options are what follows the command.
 // Without --deck it exports every deck of the project, one PDF each, one after the other; with
@@ -25,6 +25,10 @@
 // their first theme, after them (their summary line says so, and their file name has no theme);
 // a theme no deck lists is an error, and nothing is written. With --deck, a theme the deck does
 // not list is an error.
+// Every page is measured as it is printed (src/core/overflow.ts, Slide.fit settled first): the
+// slides whose content does not fit are listed at the end of the run, after the total, each with
+// what overflows and by how many px (said by the page), and how to fix it. A warning: the exit
+// code stays 0 unless --strict, which makes it 1 (the PDFs are written all the same).
 // Stopped (Ctrl-C, SIGTERM, SIGHUP), it closes the browser and the server and removes its
 // temporary build.
 //
@@ -40,9 +44,11 @@ import { projectPlugin } from './project.js'
 
 /**
  * What the export page reports (src/core/exporter.ts, ExportView.vue): window.__araoReady.
+ * overflow: the pages whose slide does not fit, said by the page (src/core/overflow.ts).
+ * @typedef {{ slide: number, step: number, steps: number, title: string, what: string, fix: string }} OverflowPage
  * @typedef {{ deck?: string | null, error?: string, code?: string, themes?: string[], theme?: string,
  *   pages: number, slides: number, steps: number, width: number, height: number,
- *   missing: string[], stalled?: string[] }} Ready
+ *   missing: string[], stalled?: string[], overflow?: OverflowPage[] }} Ready
  */
 
 const HELP = `Usage: arao export [options]     (in a project: npm run export -- [options])
@@ -60,6 +66,8 @@ const HELP = `Usage: arao export [options]     (in a project: npm run export -- 
   --url <url>     print from a server already running instead of building the site: the
                   site's URL, its base (npm run dev: http://127.0.0.1:5173/; under a base,
                   http://127.0.0.1:5173/talks/), not a deck's; each deck opens at <url><deck>
+  --strict        exit with 1 when a slide's content does not fit it (the PDFs are written all
+                  the same); without it the overflow is a warning
   -h, --help      this help
 
 Run it in the slides project: its folder is the current directory, its decks folder the one its
@@ -69,6 +77,9 @@ everything revealed, the last highlight of its snippets; what only shows at an e
 (v-step.only) is not on it.
 Prints one line per PDF and, with several decks, a total. A build error stops the run; a deck
 that fails after it is reported and the others go on; exits with 1 if any deck failed.
+Every page is checked for content that does not fit its slide (cut off at the bottom, under the
+footer, too wide): the slides that overflow are listed at the end, each with what overflows and
+by how much, and how to fix it; a warning (exit 0), unless --strict.
 Chromium: npx playwright-core install chromium, or ARAO_CHROMIUM=/path/to/chrome.`
 
 const root = process.cwd()
@@ -86,7 +97,7 @@ const usage = (msg) => {
   process.exit(1)
 }
 
-/** @type {{ deck?: string, theme?: string, 'per-slide': boolean, 'per-step': boolean, notes: boolean, out?: string, url?: string, help: boolean }} */
+/** @type {{ deck?: string, theme?: string, 'per-slide': boolean, 'per-step': boolean, notes: boolean, out?: string, url?: string, strict: boolean, help: boolean }} */
 let args
 try {
   args = parseArgs({
@@ -99,6 +110,7 @@ try {
       notes: { type: 'boolean', default: false },
       out: { type: 'string' },
       url: { type: 'string' },
+      strict: { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h', default: false },
     },
   }).values
@@ -360,6 +372,7 @@ async function exportDeck(base, deck, { theme, fallback = false } = {}) {
   }
   written.set(out, deck)
 
+  if (ready.overflow?.length) overflowing.push({ deck, pages: ready.overflow })
   if (ready.missing.length) console.warn(`  ${ready.missing.length} pictures missing, printed as placeholders: ${ready.missing.join(', ')}`)
   if (stalled.length) console.warn(`  ${stalled.length} still loading when printed (no answer in time), printed as they stood: ${stalled.join(', ')}`)
   const said = fallback ? ` (it does not list ${args.theme}: its first theme)` : ''
@@ -370,6 +383,38 @@ async function exportDeck(base, deck, { theme, fallback = false } = {}) {
 /** @type {[string, string][]} */
 const failed = [] // [deck, message]
 let total = 0
+/** @type {{ deck: string, pages: OverflowPage[] }[]} */
+const overflowing = [] // the decks written whose pages do not all fit, in the order written
+
+// The slides that do not fit, after everything else: one line per slide (its steps that overflow
+// alike put together: steps 2-4 of 5), what overflows as the page said it, and how to fix it: the
+// usual fix once at the end, any other (Slide.fit at its floor) on its slide's line. Returns how
+// many slides.
+function reportOverflow() {
+  /** @type {{ head: string, steps: number, from: number, to: number, what: string, fix: string }[]} */
+  const lines = []
+  for (const { deck, pages } of overflowing) {
+    for (const p of pages) {
+      const head = `${deck}, slide ${p.slide}${p.title ? ` "${p.title}"` : ''}`
+      const last = lines.at(-1)
+      // the next step of the last line's slide, overflowing alike: that line, one step longer
+      if (last && last.head === head && last.what === p.what && last.to === p.step - 1) last.to = p.step
+      else lines.push({ head, steps: p.steps, from: p.step, to: p.step, what: p.what, fix: p.fix })
+    }
+  }
+  if (!lines.length) return 0
+  /** @param {typeof lines[number]} l */
+  const where = (l) => (l.steps <= 1 ? l.head : `${l.head}, ${l.from === l.to ? `step ${l.from}` : `steps ${l.from}-${l.to}`} of ${l.steps}`)
+  /** @param {string} s */
+  const sentence = (s) => `${s[0].toUpperCase()}${s.slice(1)}`
+  const slides = new Set(lines.map((l) => l.head)).size
+  // the usual fix, said once; any other on its line
+  const usual = lines.map((l) => l.fix).find((f) => /^to fit it/.test(f))
+  console.warn(`\n${slides} ${slides === 1 ? 'slide does' : 'slides do'} not fit (${args.strict ? '--strict: exit 1' : 'a warning: --strict makes it an error'}):`)
+  for (const l of lines) console.warn(`  ${where(l)}: ${l.what}${l.fix === usual ? '' : `. ${sentence(l.fix)}`}`)
+  if (usual) console.warn(`  ${sentence(usual)}.`)
+  return slides
+}
 try {
   // first the browser: without one, there is no point in building
   const { chromium } = await import('playwright-core')
@@ -443,7 +488,9 @@ try {
     const done = decks.length - failed.length
     console.log(`${done} of ${decks.length} decks exported, ${total} pages${failed.length ? `; failed: ${failed.map(([d]) => d).join(', ')}` : ''}`)
   }
-  if (failed.length) process.exitCode = 1
+  // what does not fit, last, so that it is what the run ends on
+  const overflow = stopping ? 0 : reportOverflow()
+  if (failed.length || (overflow && args.strict)) process.exitCode = 1
 } catch (e) {
   // stopping: what broke is what the signal handler is closing, nothing to report
   if (!stopping) console.error(`export: ${e instanceof ExportError ? e.message : /** @type {Error} */ (e).stack}`)

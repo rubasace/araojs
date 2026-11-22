@@ -191,6 +191,9 @@
 | `[arao] src/layouts/x.css: @param y names no token …` (or another doc block problem) | the layout's doc block describes a token its CSS does not read, has an unknown tag, a zone twice, or no first line | fix the doc block (or the token's name); `npx arao layouts` lists each layout's problems |
 | `Property 'image' does not exist on type '{ default?: SlideSlot …` (`vue-tsc`, the editor) | a named template that is not a zone of the slide's layout | use the layout's zones (`npx arao layouts`); in a project layout, declare it in its doc block (`@zone image …`); a zone a theme or the deck's CSS places on a library layout: declare it in a `.d.ts` of the project, the layout's own zones restated: `declare module 'araojs' { interface ProjectLayoutZones { split: { left: true; right: true; caption: true } } }` |
 | `[arao] src/shortcuts.ts: …` (Vite stops) | reserved key, unknown command or duplicate key | see [shortcuts.md](shortcuts.md) |
+| `[arao] overflow: deck "x", slide 7 "…", step 3 of 4: the body overflows by 46px at the bottom, under the footer…` (also listed at the end of `npm run export`) | the slide holds more than it has room for: cut off at the bottom, under the footer, or a block (a side of `split`, a block of `grid`, a column) wider than its box | fewer blocks or less text (two slides); else `Slide.fit`, or `.scale-90` / `.scale-80` / `.scale-70` on the slide or the block ([verify.md](verify.md#3-export)) |
+| `… Slide.fit shrank its body to 60%, its floor, and it still does not fit` | far too much for one slide | split it in two, or cut |
+| an overflow warning for a decoration meant to reach past its box | an in-flow element pulled past the edge (negative margins) | `data-ar-bleed` on it (or `position: absolute`): not measured |
 
 Don't edit `node_modules/araojs` to make a deck look right: an engine change belongs in Arao's
 own repository.
