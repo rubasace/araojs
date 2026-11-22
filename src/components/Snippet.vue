@@ -286,7 +286,8 @@ const vars = computed(() => {
 .ar-snippet-body { flex: 1; min-height: 0; padding: 36px 48px 40px 28px; overflow: hidden; }
 /* in the columns or rows of the utility classes (.cols, .cols-*, .rows), or in a zone (they clip
    what is wider than them: styles/utilities.css, Slide.vue) the window keeps room beside it for
-   its shadow, so the shadow is never cut at the column's edge */
+   its shadow, so the shadow is never cut at the column's edge. Only sideways: they clip no height.
+   A layout that clips its own blocks keeps the same room in them, in its own CSS. */
 :where(.cols, .cols-2, .cols-3, .cols-4, .rows, .ar-zone) .ar-snippet { box-sizing: border-box; padding-inline: var(--ar-code-shadow-room); }
 .ar-snippet.fit { --sn-w: min(100cqw, var(--ar-code-width)); --sn-h: 100cqh; }
 .ar-snippet.fit .ar-snippet-window { width: auto; height: auto; max-width: 100%; max-height: 100%; }

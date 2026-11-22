@@ -106,10 +106,12 @@
   --ar-code-title: #3b4048;          /* the file name in the title bar */
   --ar-code-title-size: 34px;
   --ar-code-radius: 14px;
-  --ar-code-shadow: 0 12px 32px rgba(0, 0, 0, .16), 0 2px 6px rgba(0, 0, 0, .1),
-    inset 0 0 0 1px rgba(0, 0, 0, .06);
-  --ar-code-shadow-room: 40px;       /* room kept beside the window in a column or zone (which clip
-                                        what is wider than them): at least the shadow's reach */
+  --ar-code-shadow: 0 30px 70px rgba(0, 0, 0, .35), 0 8px 20px rgba(0, 0, 0, .2),
+    inset 0 0 0 1px rgba(255, 255, 255, .06);
+  --ar-code-shadow-room: 70px;       /* room kept beside the window in a column, a side of split or
+                                        a zone (which clip what is wider than them): at least the
+                                        shadow's sideways reach, its blur + spread + x offset (the
+                                        widest of its shadows) */
   --ar-code-light-1: #ff5f57;        /* the title bar's three lights, left to right */
   --ar-code-light-2: #febc2e;
   --ar-code-light-3: #28c840;
