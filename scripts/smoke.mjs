@@ -155,7 +155,9 @@
 //      for each, and then put back). On a decks folder holding OVERFLOWING, at 1600x900: one
 //      [arao] overflow warning at step 2 of its first slide and one at step 3, naming the deck,
 //      the slide, its title, its step, the px (the same at both) and the fixes; none at step 1,
-//      none again on coming back, none for its second slide (past its box by design). On a decks folder holding the second deck alone: it opens at
+//      none again on coming back, none for its second slide (past its box by design); on its
+//      third and fourth, two Slide.fit, a block too wide in px and a paragraph pulled past the left:
+//      the body left whole, and the warning's fix says why (fit cannot shrink it; placed, not pushed). On a decks folder holding the second deck alone: it opens at
 //      / and at its path, and windows at / and /<second> move together, either way, / staying /
 //      ("p" at / opens /<second>?presenter); createDeckApp({ deckList: 'always' }) lists it at /,
 //      with its cover; createDeckApp({ deckList: 'sometimes' }) opens it, with one [arao]
@@ -193,9 +195,10 @@
 //        others exported, exit 1; decks that resolve to one file (Alpha in THEME and
 //        alpha-THEME, Beta and beta): the first kept, the second failed, a warning on the case;
 //        --theme IMPORTED (the theme package's) over a deck that lists it;
-//        OVERFLOWING: its PDF written, exit 0, and at the end its first slide listed as not
-//        fitting, steps 2-3 on one line, at the px the dev server said, with the fix (its second
-//        slide not listed); with --strict, the same and exit 1
+//        OVERFLOWING: its PDF written, exit 0, and at the end three slides listed as not fitting:
+//        the first, steps 2-3 on one line, at the px the dev server said; the third and the fourth
+//        with their own fix on their line; the usual fix once, last (the second slide not
+//        listed); with --strict, the same and exit 1
 // The package name and the CLI's name are read from package.json: nothing here names them.
 //
 // Environment:
@@ -393,7 +396,10 @@ const blocks = ${JSON.stringify(DENSE_BLOCKS).replace(/"/g, "'")}
 // a deck of a decks folder of its own (src/overflowing), for the overflow warnings: a footer, and
 // a list too long for its slide from step 2 on, alike at step 3 (what step 3 brings changes no
 // size: a word inside the first item); its second slide reaches past its box only by design (a
-// Background, an element positioned absolutely, one marked data-ar-bleed), and is no overflow
+// Background, an element positioned absolutely, one marked data-ar-bleed), and is no overflow; its
+// third, a Slide.fit, holds a block too wide in px (shrinking the text does not help: fit leaves it
+// whole, and says so); its fourth, a Slide.fit too, a paragraph pulled past the left edge (placed,
+// not pushed: fit does nothing, the fix is to mark it or move it)
 const OVERFLOWING = ['Overflowing.vue', `<template lang="pug">
 Deck
   template(#footer)
@@ -410,6 +416,12 @@ Deck
     div(style="position: absolute; right: -300px; top: -200px; width: 600px; height: 600px; border-radius: 50%; background: currentColor; opacity: .1")
     div(data-ar-bleed style="margin: 0 -400px; height: 40px; background: currentColor; opacity: .2")
     p A decoration reaches past the edge on purpose.
+  Slide.fit
+    h2 Too wide for fit
+    div(style="width: 2200px; height: 40px; background: currentColor; opacity: .2")
+  Slide.fit
+    h2 Pulled to the left
+    p(style="margin-left: -300px") Past the left edge
 </template>
 `]
 const OVERFLOW_TITLE = 'Too long from step 2'
@@ -2646,12 +2658,21 @@ Deck
       await pause(1500)
       if (warned.length) complaints.push(`a warning at step 1, where it fits: ${warned.join(' | ')}`)
       for (const hash of ['#/1/2', '#/1/3', '#/1/2', '#/2/1', '#/1/3']) await at(hash)
+      // the third and fourth slides: Slide.fit left whole (a block in px, a paragraph pulled out)
+      const fitted = []
+      for (const hash of ['#/3/1', '#/4/1']) {
+        await at(hash)
+        fitted.push(await page.evaluate(() => [...document.querySelectorAll('.ar-slide')].find((e) => getComputedStyle(e).display !== 'none')?.querySelector(':scope > .ar-body')?.style.getPropertyValue('--_ar-fit') || '1'))
+      }
+      if (fitted.some((v) => v !== '1')) complaints.push(`Slide.fit shrank a body it cannot help (--_ar-fit ${fitted.join(', ')} on slides 3 and 4, not 1)`)
       const said = (step) => new RegExp(`^\\[arao\\] overflow: deck "Overflowing", slide 1 "${OVERFLOW_TITLE}", step ${step} of 3: the body overflows by (\\d+)px at the bottom, (under the footer|past the slide's edge \\(cut off\\))\\. To fit it: Slide\\.fit \\(.*\\), a \\.scale-90, \\.scale-80 or \\.scale-70 class on the slide or on a block, or fewer blocks\\.$`)
+      const stuck = /^\[arao\] overflow: deck "Overflowing", slide 3 "Too wide for fit": the body overflows by \d+px at the right\. Slide\.fit cannot shrink it \(it is sized in px, or transformed\): make it smaller, or fewer blocks\.$/
+      const placed = /^\[arao\] overflow: deck "Overflowing", slide 4 "Pulled to the left": the body overflows by \d+px at the left\. Past the top or the left it is placed, not pushed .*position: absolute or data-ar-bleed.*\.$/
       const [two, three] = [said(2).exec(warned[0] ?? ''), said(3).exec(warned[1] ?? '')]
-      if (warned.length !== 2 || !two || !three) complaints.push(`not one warning for step 2 and one for step 3 of slide 1, as expected (${said(2)}), but ${warned.length}: ${warned.join(' | ') || 'none'}`)
+      if (warned.length !== 4 || !two || !three || !stuck.test(warned[2]) || !placed.test(warned[3])) complaints.push(`not one warning for step 2 and one for step 3 of slide 1 (${said(2)}), then one for slide 3 (${stuck}) and one for slide 4 (${placed}), but ${warned.length}: ${warned.join(' | ') || 'none'}`)
       else if (two[1] !== three[1]) complaints.push(`steps 2 and 3 overflow alike, and the warnings say ${two[1]}px and ${three[1]}px`)
       else overflowPx = Number(two[1])
-      console.log(`  dev ${variant.name}: ${complaints.length ? 'problems below' : `one warning at step 2, one at step 3 (${overflowPx}px), none again, none for a slide past its box by design`}`)
+      console.log(`  dev ${variant.name}: ${complaints.length ? 'problems below' : `one warning at step 2, one at step 3 (${overflowPx}px), none again, none for a slide past its box by design; fit left whole where it cannot help, its fix said (px, placed)`}`)
     } finally {
       await page.context().close()
     }
@@ -2939,23 +2960,26 @@ Deck
       files: { 'Gamma.vue': tiny('Gamma', ['default', IMPORTED]), 'Second.vue': tiny('Second', ['default']) },
       code: 0, pdfs: { [`gamma-${IMPORTED}.pdf`]: 3, 'second.pdf': 3 },
       lines: [new RegExp(`^imported/gamma-${IMPORTED}\\.pdf: .*theme ${IMPORTED}$`, 'm'), /^2 of 2 decks exported, 6 pages$/m] },
-    // a slide that does not fit: listed at the end (its steps 2 and 3, alike, on one line), with
-    // the px the dev server's warning said (overflowPx), and the fix; exit 0, the PDF written. Its
-    // slide that reaches past its box by design is not listed
+    // the slides that do not fit: listed at the end (the first one's steps 2 and 3, alike, on one
+    // line, with the px the dev server's warning said: overflowPx), the usual fix once at the end,
+    // the others on their line (fit that cannot shrink a block in px, a paragraph placed past the
+    // left); exit 0, the PDF written. The slide that reaches past its box by design is not listed
     { name: 'overflow', args: [],
       files: { [OVERFLOWING[0]]: OVERFLOWING[1] },
-      code: 0, pdfs: { 'overflowing.pdf': 4 },
-      lines: [/^overflow\/overflowing\.pdf: 4 pages \(2 slides, 4 steps\)/m],
-      errs: [/^1 slide does not fit \(a warning: --strict makes it an error\):$/m,
+      code: 0, pdfs: { 'overflowing.pdf': 6 },
+      lines: [/^overflow\/overflowing\.pdf: 6 pages \(4 slides, 6 steps\)/m],
+      errs: [/^3 slides do not fit \(a warning: --strict makes it an error\):$/m,
         new RegExp(`^  Overflowing, slide 1 "${OVERFLOW_TITLE}", steps 2-3 of 3: the body overflows by (\\d+)px at the bottom, (under the footer|past the slide's edge \\(cut off\\))$`, 'm'),
+        /^  Overflowing, slide 3 "Too wide for fit": the body overflows by \d+px at the right\. Slide\.fit cannot shrink it \(it is sized in px, or transformed\): make it smaller, or fewer blocks$/m,
+        /^  Overflowing, slide 4 "Pulled to the left": the body overflows by \d+px at the left\. Past the top or the left it is placed, not pushed .*data-ar-bleed.*$/m,
         /^  To fit it: Slide\.fit \(.*\), a \.scale-90, \.scale-80 or \.scale-70 class on the slide or on a block, or fewer blocks\.$/m],
-      notErrs: [/slide 2/],
+      notErrs: [/slide 2/, /To fit it[^]*To fit it/],
       px: true },
     // --strict: the same, exit 1, the PDF written all the same
     { name: 'strict', args: ['--strict'],
       files: { [OVERFLOWING[0]]: OVERFLOWING[1] },
-      code: 1, pdfs: { 'overflowing.pdf': 4 },
-      errs: [/^1 slide does not fit \(--strict: exit 1\):$/m, new RegExp(`^  Overflowing, slide 1 "${OVERFLOW_TITLE}", steps 2-3 of 3: `, 'm')] },
+      code: 1, pdfs: { 'overflowing.pdf': 6 },
+      errs: [/^3 slides do not fit \(--strict: exit 1\):$/m, new RegExp(`^  Overflowing, slide 1 "${OVERFLOW_TITLE}", steps 2-3 of 3: `, 'm')] },
   ]
   try {
     for (const c of cases) {
