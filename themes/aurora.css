@@ -35,7 +35,8 @@
   --ar-code-title: #cdd6f4;
   --ar-code-hl: #ff2aa8;
   --ar-code-radius: 22px;
-  --ar-code-shadow: 0 14px 36px rgb(4 2 20 / .55), 0 0 36px rgb(168 85 247 / .2), inset 0 0 0 1px rgb(255 255 255 / .08);
+  --ar-code-shadow: 0 30px 80px rgb(4 2 20 / .6), 0 0 90px rgb(168 85 247 / .22), inset 0 0 0 1px rgb(255 255 255 / .08);
+  --ar-code-shadow-room: 90px;       /* the glow reaches 90px sideways */
 }
 [data-theme="aurora"] .layout-cover {
   --ar-slide-bg-image:

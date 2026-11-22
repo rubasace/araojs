@@ -49,6 +49,13 @@
   margin-left: calc(var(--_ar-split-gap) / -2);
   padding-left: calc(var(--_ar-split-gap) / 2);
 }
+/* a Snippet in a side, or that is a side, keeps room beside its window for the window's shadow,
+   which the side's edge would cut (--ar-code-shadow-room, as in the utility classes' columns:
+   Snippet.vue); on a right-hand side that is one, after the padding the divider takes */
+:where(.layout-split > .ar-body) .ar-snippet { box-sizing: border-box; padding-inline: var(--ar-code-shadow-room); }
+.layout-split > .ar-body > .ar-snippet:nth-child(2n of :not([hidden])) {
+  padding-left: calc(var(--_ar-split-gap) / 2 + var(--ar-code-shadow-room));
+}
 /* a side's heading: an h3 its content starts with */
 .layout-split > .ar-body > :not([hidden]) > h3:first-child {
   margin: 0 0 .5em;
