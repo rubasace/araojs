@@ -162,7 +162,8 @@
   color: var(--ar-accent);
   object-fit: contain;
 }
-/* its heading and its text, wherever they are in it */
-.layout-grid > .ar-body > :not([hidden]) h3 { margin: 0 0 .2em; font-size: calc(1.05em * var(--_ar-grid-step)); line-height: 1.2; }
+/* its heading and its text, wherever they are in it; the heading never smaller than the text (a
+   text-size given stays as given, while the heading steps down with the count) */
+.layout-grid > .ar-body > :not([hidden]) h3 { margin: 0 0 .2em; font-size: max(calc(1.05em * var(--_ar-grid-step)), var(--_ar-grid-text)); line-height: 1.2; }
 .layout-grid > .ar-body > :not([hidden]) p { margin: 0; font-size: var(--_ar-grid-text); line-height: 1.35; color: var(--ar-muted); }
 .layout-grid > .ar-body > :not([hidden]) p + p { margin-top: .4em; }
