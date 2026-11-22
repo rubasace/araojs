@@ -134,8 +134,8 @@ A `*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows 
 | `--ar-layout-statement-size` | `size` | 1.5x `--ar-title` | the statement's size |
 | `--ar-layout-statement-color` | `color` | `--ar-accent` | its colour |
 | `--ar-layout-statement-align` | `align` | `center` | `center` or `start` |
-| `--ar-layout-overlay-position` | `position` | `end start` | where the text sits, as CSS `place-content` (`end start`: the bottom left) |
-| `--ar-layout-overlay-scrim` | `scrim` | a dark gradient from the bottom | what is drawn between the picture and the text, a CSS background (`none` for nothing) |
+| `--ar-layout-overlay-position` | `position` | `bottom-left` | where the text sits, its lines aligned to that side: `top-left`, `top`, `top-right`, `left`, `center`, `right`, `bottom-left`, `bottom` or `bottom-right` (any other value is the default) |
+| `--ar-layout-overlay-scrim` | `scrim` | `.6` | how dark the scrim between the picture and the text is, `0` (none; `none` too) to `1`: darkest at the corner or side the text is at and fading away from it, an even veil for `center` |
 | `--ar-layout-overlay-color` | `color` | `#fff` | the text's colour, its title's and its footer's |
 | `--ar-layout-caption-caption-size` | `caption-size` | `--ar-text-small` | the caption's size |
 | `--ar-layout-caption-caption-align` | `caption-align` | `center` | the caption's alignment |

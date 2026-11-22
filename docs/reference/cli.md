@@ -144,5 +144,5 @@ name repeats); and `layouts` a member per layout in the same order as above:
 | `summary`, `description` | its first line, and the lines after it (line breaks kept); `""` when none |
 | `example` | its `@example`, Pug, as written; `""` when none |
 | `zones` | `[{ "name", "description" }]`: its named templates, `template(#<name>)` |
-| `params` | `[{ "name", "token", "description" }]`: its attributes (`name`, as written in a template) and the token each sets |
+| `params` | `[{ "name", "token", "description", "values" }]`: its attributes (`name`, as written in a template), the token each sets, and what it takes as its doc block lists it (`{a\|b\|0..1}`: words, and ranges of numbers written `from..to`; `overlay`'s `position` takes its nine places, its `scrim` `["0..1", "none"]`), `[]` when it takes any value |
 | `problems` | strings, what its file gets wrong (a project layout's) |

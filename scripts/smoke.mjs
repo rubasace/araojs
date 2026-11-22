@@ -26,13 +26,15 @@
 //      not in the build), and a layout file whose name is no layout's, or that names no
 //      .layout-<name>, warns and is loaded; each build writes src/arao-layouts.d.ts, the project's
 //      layouts' valid names (for the editor and vue-tsc), each with its parameters (the tokens it
-//      reads: the playground's epigraph's), the project's cover's replacing the library's, and its
-//      token named as an HTML attribute (--ar-layout-cover-title) none, with one warning; with the
+//      reads: the playground's epigraph's), the project's cover's replacing the library's (its
+//      tone typed as the values its doc block gives it, 'light' | 'dark'), and its token named as
+//      an HTML attribute (--ar-layout-cover-title) none, with one warning; with the
 //      zones each places (the cover's doc block's @zone, then the .ar-zone-<name> its CSS styles
 //      under .layout-cover, not a rule of split's) and its doc (read after a licence header, a Pug
 //      line starting with @ kept in its example), and one warning for its @param naming no token;
 //      with those files, <bin> layouts --json (the config printing as it loads: on stderr) gives
-//      the araojs version and lists default, the library's but cover (each documented in full),
+//      the araojs version and lists default, the library's but cover (each documented in full;
+//      overlay's position with its nine values, its scrim 0..1 and none),
 //      then every project file (cover replacing the library's, as its doc block says, its /**
 //      comment after its code a problem; epigraph, the playground's, documented; plain, with no doc
 //      block and its problem; "bad name", which no slide can name), then the utility classes by
@@ -87,6 +89,14 @@
 //      each one in its column, .grow fills; .row is a centred row, .stack a column, .gap-sm the
 //      small gap; .text-lg and .text-sm are 1.25 and .75 times the text; .accent is the accent and
 //      .highlight has a background of its own
+//   4e. the overlay layout, under both servers (the build's CSS keeps its container style
+//      queries), on the playground's overlay slide: position="top-right" is its token, not an
+//      attribute, and puts the text top right; each of the nine positions, set as the token,
+//      puts the text in that corner, side or centre of the slide's padding box, its title aligned
+//      to that side (a list in its body keeping its own alignment), over its scrim (a radial ramp from the corner, a linear one from the side,
+//      an even veil for center); scrim 0 draws nothing, none no scrim, 1 is black at the text's
+//      side; a value that is no position (end start) is the default, bottom-left; and a position
+//      set at :root, as a theme does, reaches the slide
 //   5. useDeck()'s face, under the dev server, on the second deck: frozen, its refs read-only all
 //      the way down, setTheme refuses a name the deck has not (one [arao] warning), and in the
 //      presenter view's preview no function acts
@@ -145,7 +155,9 @@
 //      decks, at 390x844: the
 //      covers far below the screen are not drawn until scrolled to; a deck that throws as it is
 //      drawn says "No preview" (one [arao] warning); /café is shown as such, not
-//      percent-encoded
+//      percent-encoded. On a decks folder holding a deck whose overlay slides give position and
+//      scrim values they take and values they do not (one twice, a number out of its range): one
+//      [arao] warning per value not taken, saying what it takes, none for the others
 //  10. <bin> export                    no --deck: every deck, one PDF each, at its default name
 //                                      (exports/<deck>.pdf); each PDF must have (its pages counted
 //                                      in the file itself) as many pages as its summary line says
@@ -616,10 +628,13 @@ try {
     const body = await typedInterface('ProjectLayouts')
     return body == null ? null : [...body.matchAll(/^ {4}'([^']+)': /gm)].map((m) => m[1]).join(', ')
   }
-  // and the parameters it typed for one of them (camelCase, as written there); null when none
+  // and the parameters it typed for one of them (camelCase, as written there), each followed by
+  // its type in brackets when it is not a string (its values: tone ('light' | 'dark')); null when
+  // none
   const typedParams = async (name) => {
     const entry = typedEntry(await typedInterface('ProjectLayouts'), name)
-    return entry == null ? null : [...entry.matchAll(/^ {6}(\w+)\?: string$/gm)].map((m) => m[1]).join(', ')
+    return entry == null ? null : [...entry.matchAll(/^ {6}(\w+)\?: (.+)$/gm)]
+      .filter((m) => m[1] !== 'layout').map((m) => (m[2] === 'string' ? m[1] : `${m[1]} (${m[2]})`)).join(', ')
   }
   // and the zones it typed for one of them (ProjectLayoutZones); '' for none, null when not typed
   const typedZones = async (name) => {
@@ -662,7 +677,7 @@ try {
     // (badge): its zones are both, not caption (a rule of split's); its example keeps a Pug line
     // starting with @; its @param nope names no token, with a warning, and a /** comment after its
     // code is no doc block, with a problem
-    const COVER_DOC = ['The smoke project\'s own cover.', 'Slide(layout="cover" pad="20px")\n  h1 Hello\n  button(\n    @click="next"\n  ) Next', 'a note beside the title', 'the slide\'s padding']
+    const COVER_DOC = ['The smoke project\'s own cover.', 'Slide(layout="cover" pad="20px")\n  h1 Hello\n  button(\n    @click="next"\n  ) Next', 'a note beside the title', 'the slide\'s padding', 'its colours']
     const added = {
       'cover.css': `/* smoke licence header */
 /**
@@ -671,9 +686,10 @@ try {
 ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
  * @zone aside  ${COVER_DOC[2]}
  * @param pad   ${COVER_DOC[3]}
+ * @param tone  {light|dark} ${COVER_DOC[4]}
  * @param nope  no token of the layout
  */
-.layout-cover { --smoke-own-cover: 1; padding: var(--ar-layout-cover-pad, 0); color: var(--ar-layout-cover-title, inherit); }
+.layout-cover { --smoke-own-cover: 1; padding: var(--ar-layout-cover-pad, 0); --smoke-tone: var(--ar-layout-cover-tone, light); color: var(--ar-layout-cover-title, inherit); }
 .layout-cover > .ar-zone-badge { order: -1; }
 .layout-split .ar-zone-caption { order: 1; }
 /** not read */
@@ -696,13 +712,13 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
       else if (!/\[arao\] src\/layouts\/plain\.css: it names no \.layout-plain/.test(said)) fail(`${what}: no warning about plain.css`)
       else if (!/\[arao\] src\/layouts\/cover\.css: --ar-layout-cover-title is no attribute of Slide\(layout="cover"\): "title" is an HTML attribute/.test(said)) fail(`${what}: no warning that --ar-layout-cover-title is no attribute`)
       else if (said.match(/--ar-layout-cover-title is no attribute/g).length !== 1) fail(`${what}: the warning about --ar-layout-cover-title is given ${said.match(/--ar-layout-cover-title is no attribute/g).length} times, not once`)
-      else if ((typed = await typedParams('cover')) !== 'pad') fail(`${what}: src/arao-layouts.d.ts types cover's parameters as ${typed ?? 'nothing'}, not pad (the project's, which replace the library's)`)
+      else if ((typed = await typedParams('cover')) !== "pad, tone ('light' | 'dark')") fail(`${what}: src/arao-layouts.d.ts types cover's parameters as ${typed ?? 'nothing'}, not pad and tone, 'light' | 'dark' (the project's, which replace the library's; tone's values its doc block's {light|dark})`)
       else if ((typed = await typedZones('cover')) !== 'aside, badge') fail(`${what}: src/arao-layouts.d.ts types cover's zones as ${typed ?? 'nothing'}, not aside, badge (its @zone, then what its CSS styles)`)
       else if (!typedEntry(await typedInterface('ProjectLayouts'), 'cover')?.includes(COVER_DOC[0])) fail(`${what}: src/arao-layouts.d.ts does not carry cover's doc ("${COVER_DOC[0]}")`)
       else if (said.match(/\[arao\] src\/layouts\/cover\.css: @param nope names no token of the layout/g)?.length !== 1) fail(`${what}: the warning that cover.css's @param nope names no token is given ${said.match(/@param nope names no token/g)?.length ?? 0} times, not once`)
       else if (!['--smoke-own-cover', '--smoke-bad', '--smoke-plain'].every((t) => css.includes(t))) fail(`${what}: the project's files are not all in the build`)
       else if (css.includes('--_ar-cover-bar')) fail(`${what}: the library's cover.css is in the build`)
-      else console.log('  layouts: a project cover replaces the library\'s, saying so, its parameters too, its zones and its doc typed; a token named as an HTML attribute and a @param naming no token warn once; a file with a bad name, and one naming no layout, warn and load; the valid names are typed')
+      else console.log('  layouts: a project cover replaces the library\'s, saying so, its parameters too (one typed as its values), its zones and its doc typed; a token named as an HTML attribute and a @param naming no token warn once; a file with a bad name, and one naming no layout, warn and load; the valid names are typed')
 
       // arao layouts, with those files: every layout the project has, each with its doc. As JSON
       // (the config printing a line as it loads: on stderr, the JSON alone on stdout), with the
@@ -743,8 +759,12 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
         if (by.default?.source !== 'engine' || by.default.file !== null) complaints.push('default is not the engine\'s, with no file')
         for (const l of fromLibrary) {
           if (!l.documented || !l.summary || !l.example.startsWith(`Slide(layout="${l.name}"`)) complaints.push(`the library's ${l.name} has no summary or no example of itself`)
-          if (!l.params.length || l.params.some((p) => !p.description || p.token !== `--ar-layout-${l.name}-${p.name}`)) complaints.push(`the library's ${l.name}: its parameters are not each described, with their token`)
+          if (!l.params.length || l.params.some((p) => !p.description || p.token !== `--ar-layout-${l.name}-${p.name}` || !Array.isArray(p.values))) complaints.push(`the library's ${l.name}: its parameters are not each described, with their token and their values`)
         }
+        const position = by.overlay?.params.find((p) => p.name === 'position')
+        if (position?.values.join(' ') !== 'top-left top top-right left center right bottom-left bottom bottom-right') complaints.push(`overlay's position takes ${JSON.stringify(position?.values)}, not its nine places`)
+        const scrim = by.overlay?.params.find((p) => p.name === 'scrim')
+        if (JSON.stringify(scrim?.values) !== JSON.stringify(['0..1', 'none'])) complaints.push(`overlay's scrim takes ${JSON.stringify(scrim?.values)}, not 0..1 and none`)
         if (names(by['image-right']?.zones ?? []) !== 'image' || !by['image-right'].zones[0].description) complaints.push(`image-right's zones are ${names(by['image-right']?.zones ?? [])}, not image, described`)
         if ((by.split?.zones ?? []).length) complaints.push(`split's zones are ${names(by.split.zones)}, not none (its sides are its body's children)`)
         const q = by.epigraph
@@ -755,7 +775,7 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
         else {
           if (c.summary !== COVER_DOC[0] || c.example !== COVER_DOC[1]) complaints.push(`cover's summary and example are ${JSON.stringify([c.summary, c.example])}, not its doc block's`)
           if (JSON.stringify(c.zones) !== JSON.stringify([{ name: 'aside', description: COVER_DOC[2] }, { name: 'badge', description: '' }])) complaints.push(`cover's zones are ${JSON.stringify(c.zones)}, not aside (described) and badge`)
-          if (JSON.stringify(c.params) !== JSON.stringify([{ name: 'pad', token: '--ar-layout-cover-pad', description: COVER_DOC[3] }])) complaints.push(`cover's parameters are ${JSON.stringify(c.params)}, not pad, described`)
+          if (JSON.stringify(c.params) !== JSON.stringify([{ name: 'pad', token: '--ar-layout-cover-pad', description: COVER_DOC[3], values: [] }, { name: 'tone', token: '--ar-layout-cover-tone', description: COVER_DOC[4], values: ['light', 'dark'] }])) complaints.push(`cover's parameters are ${JSON.stringify(c.params)}, not pad and tone (light or dark), described`)
           if (![/@param nope names no token/, /--ar-layout-cover-title is no attribute/, /the \/\*\* comment at line \d+ is not its doc block/].every((re) => c.problems.some((p) => re.test(p)))) complaints.push(`cover's problems are ${JSON.stringify(c.problems)}: not its @param nope, its title token and its /** comment after its code`)
         }
         if (by.plain?.documented !== false || !by.plain.problems.some((p) => /names no \.layout-plain/.test(p))) complaints.push('plain is not listed with no doc block and its problem (it names no .layout-plain)')
@@ -1418,6 +1438,105 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
       await page.context().close()
     }
     for (const c of complaints) fail(`${mode} utility classes: ${c}`)
+  }
+
+  // the overlay layout's positions and scrim (layouts/overlay.css reads its tokens with container
+  // style queries), on the playground's overlay slide (header, 4e)
+  async function overlay(base, mode) {
+    const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
+    const complaints = []
+    page.on('console', (m) => ['warning', 'error'].includes(m.type()) && complaints.push(`console ${m.type()}: ${m.text()}`))
+    page.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
+    // each position: where its text sits across and down the slide's padding box (its lines
+    // aligned across too), and its scrim: a radial ramp from its corner, a linear one from its
+    // side, an even veil in the centre
+    const POSITIONS = {
+      'top-left': 'left top radial 0% 0%', top: 'center top linear to bottom', 'top-right': 'right top radial 100% 0%',
+      left: 'left center linear to right', center: 'center center even', right: 'right center linear to left',
+      'bottom-left': 'left bottom radial 0% 100%', bottom: 'center bottom linear to top', 'bottom-right': 'right bottom radial 100% 100%',
+    }
+    const POSITION = '--ar-layout-overlay-position'
+    const SCRIM = '--ar-layout-overlay-scrim'
+    try {
+      await page.goto(new URL('playground#/1/1', base).href)
+      await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
+      const n = await page.evaluate(() => [...document.querySelectorAll('.ar-viewport .ar-slide')].findIndex((s) => s.classList.contains('layout-overlay')) + 1)
+      if (!n) complaints.push('no overlay slide in the playground')
+      else {
+        await page.goto(new URL(`playground#/${n}/1`, base).href)
+        await page.waitForFunction((h) => location.hash === h, `#/${n}/1`, { timeout: 5_000 }).catch(() => {})
+        await pause(500)
+        // the slide with these tokens set in its style and at :root (null: removed): where its
+        // text sits ("<across> <down>"), its title's alignment, its scrim's kind and its darkest
+        // alpha, and the slide's attributes
+        const read = (slide = {}, root = {}) => page.evaluate(({ i, slide, root }) => {
+          const s = document.querySelectorAll('.ar-viewport .ar-slide')[i]
+          const set = (el, tokens) => Object.entries(tokens).forEach(([k, v]) => (v == null ? el.style.removeProperty(k) : el.style.setProperty(k, v)))
+          set(s, slide)
+          set(document.documentElement, root)
+          const cs = getComputedStyle(s)
+          const r = s.getBoundingClientRect()
+          const k = r.width / s.offsetWidth
+          const box = { l: r.left + parseFloat(cs.paddingLeft) * k, r: r.right - parseFloat(cs.paddingRight) * k, t: r.top + parseFloat(cs.paddingTop) * k, b: r.bottom - parseFloat(cs.paddingBottom) * k }
+          const head = s.querySelector(':scope > .ar-header').getBoundingClientRect()
+          const body = s.querySelector(':scope > .ar-body').getBoundingClientRect()
+          const text = { l: Math.min(head.left, body.left), r: Math.max(head.right, body.right), t: head.top, b: body.bottom }
+          const near = (a, b) => Math.abs(a - b) < 2 * k + 0.5
+          const across = near(text.l, box.l) ? 'left' : near(text.r, box.r) ? 'right' : near(text.l + text.r, box.l + box.r) ? 'center' : `at ${Math.round((text.l - box.l) / k)}px`
+          const down = near(text.t, box.t) ? 'top' : near(text.b, box.b) ? 'bottom' : near(text.t + text.b, box.t + box.b) ? 'center' : `at ${Math.round((text.t - box.t) / k)}px`
+          const bg = getComputedStyle(s.querySelector('.ar-slide-bg'), '::after').backgroundImage
+          const alphas = [...bg.matchAll(/rgba?\(([^)]*)\)/g)].map((m) => { const c = m[1].split(','); return c.length === 4 ? parseFloat(c[3]) : 1 })
+          const kind = bg === 'none' ? 'none'
+            : bg.startsWith('radial-gradient(') ? `radial ${bg.match(/at ([\d.]+%) ([\d.]+%)/)?.slice(1).join(' ')}`
+              : !bg.startsWith('linear-gradient(') ? bg
+                : alphas.length === 2 && alphas[0] === alphas[1] ? 'even' : `linear ${bg.match(/^linear-gradient\((to [a-z]+),/)?.[1] ?? 'to bottom'}`
+          // a list in the body: it keeps its own alignment, whatever the position's
+          const list = s.querySelector(':scope > .ar-body').appendChild(document.createElement('ul'))
+          const listAlign = getComputedStyle(list).textAlign
+          list.remove()
+          return {
+            place: `${across} ${down} ${kind}`,
+            align: getComputedStyle(s.querySelector('.ar-title')).textAlign,
+            listAlign,
+            dark: alphas.length ? Math.max(...alphas) : 0,
+            token: s.style.getPropertyValue('--ar-layout-overlay-position').trim(),
+            // but its own and a scoped style's (data-v-…, the deck's)
+            attrs: [...s.attributes].map((a) => a.name).filter((a) => !['class', 'style', 'data-ar-slide'].includes(a) && !a.startsWith('data-v-')),
+          }
+        }, { i: n - 1, slide, root })
+        // as written: position="top-right", a token in its style, no attribute on the section
+        let got = await read()
+        if (got.token !== 'top-right') complaints.push(`the playground's overlay: ${POSITION} "${got.token}", not top-right (its position attribute)`)
+        if (got.attrs.length) complaints.push(`the playground's overlay: its section has attributes ${got.attrs.join(', ')}`)
+        if (got.place !== POSITIONS['top-right']) complaints.push(`position="top-right": "${got.place}", not "${POSITIONS['top-right']}"`)
+        for (const [position, want] of Object.entries(POSITIONS)) {
+          got = await read({ [POSITION]: position })
+          const across = want.split(' ')[0]
+          if (got.place !== want) complaints.push(`position ${position}: "${got.place}", not "${want}"`)
+          else if (got.align !== across) complaints.push(`position ${position}: its title aligned ${got.align}, not ${across}`)
+          else if (got.listAlign !== 'start') complaints.push(`position ${position}: a list in its body aligned ${got.listAlign}, not start (its own)`)
+          else if (got.dark < 0.4) complaints.push(`position ${position}: its scrim's darkest is ${got.dark}, at the default strength`)
+        }
+        // the strength: 0 draws nothing, none no scrim at all, 1 black at the text's side
+        got = await read({ [POSITION]: 'bottom-right', [SCRIM]: '0' })
+        if (got.dark !== 0) complaints.push(`scrim 0: its darkest is ${got.dark}, not 0`)
+        got = await read({ [SCRIM]: 'none' })
+        if (!got.place.endsWith(' none')) complaints.push(`scrim none: "${got.place}", no scrim expected`)
+        got = await read({ [SCRIM]: '1' })
+        if (got.dark !== 1) complaints.push(`scrim 1: its darkest is ${got.dark}, not 1`)
+        // a value that is no position (the old place-content) is the default, bottom-left
+        got = await read({ [SCRIM]: null, [POSITION]: 'end start' })
+        if (got.place !== POSITIONS['bottom-left']) complaints.push(`position "end start": "${got.place}", not the default's "${POSITIONS['bottom-left']}"`)
+        // set where a theme sets it, inherited by the slide
+        got = await read({ [POSITION]: null }, { [POSITION]: 'top' })
+        if (got.place !== POSITIONS.top) complaints.push(`position top at :root: "${got.place}", not "${POSITIONS.top}"`)
+        await read({}, { [POSITION]: null })
+      }
+      console.log(`  ${mode} overlay: ${complaints.length ? 'problems below' : 'nine positions, each its place, alignment (not a list\'s) and scrim; scrim 0, none and 1; any other value the default; from :root too'}`)
+    } finally {
+      await page.context().close()
+    }
+    for (const c of complaints) fail(`${mode} overlay: ${c}`)
   }
 
   // the layouts' names while the dev server runs (src/arao-layouts.d.ts): a layout file added is
@@ -2192,6 +2311,7 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
       await layoutParams(base, mode)
       await deckSlides(base, mode)
       await utilities(base, mode)
+      await overlay(base, mode)
       if (mode === 'dev') {
         await face(base)
         await themes(base)
@@ -2248,6 +2368,21 @@ throw new Error('smoke: this deck throws as it is drawn')
   const asIs = { 'src/main.js': files['src/main.js'], 'vite.config.js': files['vite.config.js'] }
   const alone = asIs['vite.config.js'].replace('arao({', `arao({ decks: '${solo}',`)
   const withOptions = (o) => asIs['src/main.js'].replace('createDeckApp()', `createDeckApp(${o})`)
+  // a decks folder holding a deck whose overlay slides give its parameters values: some it takes
+  // (a position, a number in its range, a word of its scrim's), some it does not (twice one)
+  const valued = 'src/valued'
+  const VALUED = { 'Valued.vue': `<template lang="pug">
+Deck
+  Slide(layout="overlay" position="top-right" scrim=".4")
+    h2 Taken
+  Slide(layout="overlay" position="nowhere" scrim="lots")
+    h2 Not taken
+  Slide(layout="overlay" position="nowhere" scrim="2")
+    h2 Again, and out of its range
+  Slide(layout="overlay" scrim="none")
+    h2 A word its scrim takes
+</template>
+` }
   const crowded = { 'Broken.vue': tiny('Broken', ['default'], THROWS_DRAWN), 'Café.vue': tiny('Café', ['default']) }
   for (let i = 1; i <= 12; i++) crowded[`Deck${String(i).padStart(2, '0')}.vue`] = tiny(`Deck ${i}`, ['default'])
 
@@ -2339,6 +2474,48 @@ throw new Error('smoke: this deck throws as it is drawn')
     for (const c of complaints) fail(`dev ${variant.name}: ${c}`)
   }
 
+  // a layout parameter given a value its doc block does not list: one [arao] warning per layout,
+  // parameter and value, saying what it takes, however many slides give it and however often
+  // they are drawn; none for a value it lists (a word, a number in its range)
+  async function valueWarnings(base, variant) {
+    const context = await browser.newContext({ viewport: { width: 1920, height: 1080 } })
+    const page = await context.newPage()
+    const complaints = []
+    const warned = []
+    const PREFIX = '[arao] Slide(layout="overlay") '
+    page.on('console', (m) => {
+      if (m.type() === 'warning' && m.text().startsWith(PREFIX)) warned.push(m.text().slice(PREFIX.length))
+      else if (['warning', 'error'].includes(m.type())) complaints.push(`console ${m.type()}: ${m.text()}`)
+    })
+    page.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
+    const WANTED = [
+      'position="nowhere": it takes one of top-left, top, top-right, left, center, right, bottom-left, bottom, bottom-right',
+      'scrim="lots": it takes a number from 0 to 1, or none',
+      'scrim="2": it takes a number from 0 to 1, or none',
+    ]
+    try {
+      await page.goto(base)
+      const opened = await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 }).then(() => true, () => false)
+      if (!opened) complaints.push('the deck did not open')
+      // every slide drawn again as the deck moves
+      for (let k = 0; k < 3; k++) {
+        await page.keyboard.press('ArrowRight')
+        await pause(200)
+      }
+      await pause(500)
+      for (const w of WANTED) {
+        const n = warned.filter((t) => t.startsWith(w)).length
+        if (n !== 1) complaints.push(`${n} warnings "${PREFIX}${w}…", not 1`)
+      }
+      const others = warned.filter((t) => !WANTED.some((w) => t.startsWith(w)))
+      if (others.length) complaints.push(`warnings for values it takes: ${others.join(' / ')}`)
+      console.log(`  dev ${variant.name}: ${complaints.length ? 'problems below' : 'one warning per value it does not take (position, scrim), saying what it takes; none for a word or a number in range'}`)
+    } finally {
+      await context.close()
+    }
+    for (const c of complaints) fail(`dev ${variant.name}: ${c}`)
+  }
+
   const variants = [
     { name: 'one deck', files: { 'vite.config.js': alone },
       visits: [{ path: '', deck: true }, { path: second, deck: true }], checks: [together] },
@@ -2348,6 +2525,8 @@ throw new Error('smoke: this deck throws as it is drawn')
       visits: [{ path: '', deck: true, warns: 'deckList' }] },
     { name: 'a long list', files: { 'vite.config.js': asIs['vite.config.js'].replace('arao({', `arao({ decks: '${crowd}',`) },
       checks: [lazy] },
+    { name: 'layout parameters given values they do not take', files: { 'vite.config.js': asIs['vite.config.js'].replace('arao({', `arao({ decks: '${valued}',`) },
+      checks: [valueWarnings] },
     { name: `Deck(:themes="['nosuch', '${THEME}']") and Deck(:themes="['nosuch']")`, files: { 'vite.config.js': asIs['vite.config.js'].replace('arao({', `arao({ decks: '${listed}',`) },
       visits: [{ path: '', list: 2, covers: { listed: THEME, nameless: 'default' } },
         { path: 'listed', deck: true, theme: THEME, warns: '"nosuch"' }, { path: 'nameless', deck: true, theme: 'default', warns: '"nosuch"' }] },
@@ -2403,6 +2582,8 @@ throw new Error('smoke: this deck throws as it is drawn')
   for (const [name, text] of Object.entries(crowded)) await writeFile(join(project, crowd, name), text)
   await mkdir(join(project, listed), { recursive: true })
   for (const [name, text] of Object.entries(LISTED)) await writeFile(join(project, listed, name), text)
+  await mkdir(join(project, valued), { recursive: true })
+  for (const [name, text] of Object.entries(VALUED)) await writeFile(join(project, valued, name), text)
   try {
     for (const variant of variants) {
       for (const [name, text] of Object.entries({ ...asIs, ...variant.files })) await writeFile(join(project, name), text)
@@ -2419,6 +2600,7 @@ throw new Error('smoke: this deck throws as it is drawn')
     await rm(join(project, solo), { recursive: true, force: true })
     await rm(join(project, crowd), { recursive: true, force: true })
     await rm(join(project, listed), { recursive: true, force: true })
+    await rm(join(project, valued), { recursive: true, force: true })
   }
 
   // the summary line of a PDF: "<path>: <pages> pages (<slides> slides, <steps> steps), …"
