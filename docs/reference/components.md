@@ -381,7 +381,7 @@ slot.
 | Prop | Type | Default | |
 |---|---|---|---|
 | `highlight` | Boolean | `true` | `false` (`:highlight="false"`, bound in Pug too) draws the plain list: no state class, no `aria-current` |
-| `current` | Number or String | none | the section shown as current, whatever the slide: its place among the sections, 1-based (`:current="2"`, or `current="2"`), or its title (`current="How it works"`, matched as `useDeck().slides` gives it, whitespace collapsed); done and upcoming follow from it. One that names no section warns in development, and the slide's own rule applies |
+| `current` | Number or String | none | the section shown as current, whatever the slide: its place among the sections, 1-based (`:current="2"`, or `current="2"`), or its title (`current="How it works"`, matched as `useDeck().slides` gives it, whitespace collapsed); done and upcoming follow from it. A title is tried before a number, and the first section with that title wins (pick another by its number). One that names no section warns in development, and the slide's own rule applies. With `:highlight="false"` it has no effect |
 
 Each item (`li.ar-agenda-item`) carries one state, as seen from the slide the `Agenda` is on.
 The section the talk is in is the last section slide at or before that slide (the slide itself,
