@@ -89,7 +89,10 @@
  * `row`: each child in its track or on the line (their default: columns stretch each child to the
  * row's height). In a `stack`: its children. `center` is `middle` with the text centred, and the
  * children centred across too. On a block of grid only top to bottom: across, it follows grid's
- * own `align`.
+ * own `align`. Placed straight in something that stacks its children top to bottom (the body,
+ * a side of split, a zone, a `stack`), a block with one of them fills the height left there, so
+ * it has room to place its content: `.cols.middle` in the body is centred in the space under the
+ * title, with no `grow` needed.
  * @example
  * .cols.middle
  *   Img(file="chart.svg")
@@ -109,6 +112,9 @@
 .ar-slide :is(.cols, .cols-2, .cols-3, .cols-4, .rows, .row).top { align-items: start; }
 .ar-slide :is(.cols, .cols-2, .cols-3, .cols-4, .rows, .row):is(.middle, .center) { align-items: center; }
 .ar-slide :is(.cols, .cols-2, .cols-3, .cols-4, .rows, .row).bottom { align-items: end; }
+/* straight in a container that stacks top to bottom, a placed block fills the height left: it
+   measures its content otherwise, and would have no room to place it in */
+.ar-slide :is(.ar-body, .ar-zone, .stack) > :is(.top, .middle, .bottom, .center) { flex: 1 1 auto; min-height: 0; }
 
 /**
  * Spacing: the gap between the children of a block, from the theme's gap tokens.
