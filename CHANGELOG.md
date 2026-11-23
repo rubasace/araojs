@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.1](https://github.com/rubasace/araojs/compare/0.5.0...0.5.1) (2026-11-23)
+
+
+### Documentation
+
+* **changelog:** [@zone](https://github.com/zone) in backticks, so GitHub doesn't read it as a user mention ([d11c276](https://github.com/rubasace/araojs/commit/d11c276658ba66f0b653687e6866203d06090907))
+* **changelog:** [@zone](https://github.com/zone) in backticks, so GitHub doesn't read it as a user mention ([0fbcaf9](https://github.com/rubasace/araojs/commit/0fbcaf98dc61ae42306c3f665d891e759b0c5f57))
+
 ## [0.5.0](https://github.com/rubasace/araojs/compare/0.4.0...0.5.0) (2026-11-23)
 
 
