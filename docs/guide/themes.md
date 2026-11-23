@@ -1,11 +1,11 @@
 # Themes
 
 Every token the engine reads has a default ([Theme tokens](../reference/theme-tokens.md), declared in
-`styles/tokens.css`), and the defaults are the `default` theme: a light page, Georgia, a blue
-accent, a light code window. The library ships it with five more, each with a character of its
-own (dark, light, editorial, vivid, terminal): [Built-in themes](built-in-themes.md). Every deck
-can wear them (`arao({ builtinThemes })` turns them off, all or some), and `default` is always
-there.
+`styles/tokens.css`), and the defaults are the `default` theme: a light page, Gelasio (a web font
+with Georgia's metrics), a blue accent, a light code window. The library ships it with five more,
+each with a character of its own (dark, light, editorial, vivid, terminal):
+[Built-in themes](built-in-themes.md). Every deck can wear them (`arao({ builtinThemes })` turns
+them off, all or some), and `default` is always there.
 
 A project theme declares only what it changes. This one is the examples' (`docs/examples/themes/`;
 in a slides project, `src/themes/ocean.css`), with a deck that wears it:
@@ -218,13 +218,18 @@ Gill Sans, Palatino, Trebuchet MS, SF Pro… in `vite/fonts.js`). Generic names 
 - **The build asks the providers.** Each family name goes to Google, Bunny, Fontshare and
   Fontsource at build time (the deck's viewers never contact them: the files are served with the
   deck). Turn it off for a family, or altogether, below.
+- **The defaults name one too**: Gelasio, `default`'s text font, is in the engine's own CSS, so
+  every build fetches and ships it, whatever the themes: six files (a variable font, upright and
+  italic, in three subsets), about 180 KB. `fonts: false`, or
+  `fonts: { families: [{ name: 'Gelasio', provider: 'none' }] }`, leaves it out, and the text falls
+  back to Georgia (or the system's serif).
 - **The built-in themes name fonts too**, thirteen families between them: with all of them loaded
   (the default), every build fetches and ships them, about 140 files, some 2.6 MB in
   `assets/_fonts` (a viewer's browser downloads only the files of the theme on screen). A project
-  with system fonts only goes from no font file to those; offline, its build takes longer and
-  warns for each family the providers do not answer. `arao({ builtinThemes: false })`, or the
-  list of the ones the decks wear, keeps the others' fonts out; `fonts: false` fetches none, and
-  the built-in themes fall back to system fonts.
+  whose own themes use system fonts only goes from Gelasio's files alone to those; offline, its
+  build takes longer and warns for each family the providers do not answer.
+  `arao({ builtinThemes: false })`, or the list of the ones the decks wear, keeps the others'
+  fonts out; `fonts: false` fetches none, and the built-in themes fall back to system fonts.
 - **Network at build time.** The files are cached in `node_modules/.cache/fontless`, but the
   providers' catalogues are cached for a week only (and again on a new version), and a fresh
   install (`npm ci` in CI) starts empty. Offline, or with a provider that does not answer (a

@@ -115,6 +115,8 @@ package) and serves it with the deck, with matched fallbacks:
 
 - No `@font-face`, no font files, no `<link>` for a font a provider has.
 - System fonts (Georgia, Arial, Helvetica, Menlo…) and generic names are never fetched.
+- The defaults' text font is Gelasio (Georgia's metrics), fetched by every build; with
+  `fonts: false` or offline, Georgia.
 - Weights 400, 600 and 700, upright and italic, are fetched by default.
 - The first build needs the network; the catalogue cache lasts a week, and `npm ci` starts empty.
   Offline or on a provider timeout the build still passes with an `[arao] fonts:` warning and the

@@ -16,7 +16,7 @@ How themes are written, found and applied: [Themes](../guide/themes.md).
 | `--ar-accent` | `#2a7de1` | `h2`, cover bar, section background (their layouts' defaults), progress, highlights |
 | `--ar-accent-fg` | `#fff` | text on accent (section slides) |
 | `--ar-letterbox` | `#1b2a3a` | around the canvas when the window shape differs |
-| `--ar-font-sans` | `Georgia, "Times New Roman", serif` | text font; a web font named here is fetched at build time ([Fonts](../guide/themes.md#fonts)) |
+| `--ar-font-sans` | `"Gelasio", Georgia, serif` | text font; a web font named here is fetched at build time ([Fonts](../guide/themes.md#fonts)), as `default`'s Gelasio is (Georgia's metrics; Georgia where it cannot be fetched) |
 | `--ar-font-mono` | `ui-monospace, Menlo, monospace` | code font; a web font named here is fetched at build time |
 | `--ar-font-heading` | none: the font around the heading (the text font) | the headings' font (`h1`–`h6` in a slide, the cover's and the section's titles included); a web font named here is fetched at build time |
 | `--ar-text-base` | `42px` | base font size of a slide |
