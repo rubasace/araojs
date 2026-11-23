@@ -150,6 +150,7 @@ Slide                           //- the section slides' titles, done / current /
   Agenda                        //- no layout: its look is its own (by hand: ol.agenda)
 //- current: the last section slide at or before it (none on the opening slides: all upcoming).
 //- Agenda(:current="2") or Agenda(current="How it works") forces it (a "coming up" slide);
+//- Agenda(:current="false") keeps the seen ones marked, no current highlighted;
 //- Agenda(:highlight="false") marks no state
 ```
 
