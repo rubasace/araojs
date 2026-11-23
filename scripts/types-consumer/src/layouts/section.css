@@ -1,3 +1,4 @@
 /* a project layout named like a library one: it replaces the library's section, and its
-   parameters too (tone, and none of the library's bg, fg…) */
-.layout-section { background: var(--ar-layout-section-tone, black); }
+   parameters too (tone, and none of the library's bg, fg…); its default is a literal colour, no
+   theme token, and the plugin warns (vite/layout-literals.js) */
+.layout-section { background: var(--ar-layout-section-tone, #000); }

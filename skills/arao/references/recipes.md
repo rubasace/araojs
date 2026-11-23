@@ -333,6 +333,15 @@ It starts with its doc block (always): the first line says what the layout is fo
 numbers: they become its type, and another value warns in development). `npx arao layouts`
 prints it back, with any problem (a `@param` naming no token…); full rules:
 `docs/guide/slides-and-layouts.md#its-doc-block`.
+Its colours and sizes are the theme's tokens, never literals, in every declaration (defaults,
+private `--_ar-…`, rules): a colour is `var(--ar-…)`, `currentColor`, `transparent`, `inherit`
+or a `color-mix()` of them (or `rgb(var(--x-rgb) / .5)`: channels from tokens), never `#fff`,
+`rgb(0 0 0)`, `hsl()` of numbers or `white`, not even in a gradient, a `var()` fallback or a
+mask (a mask reads alpha only: `linear-gradient(currentColor, transparent)`); a length is
+a token or relative to one (`var(--ar-gap-md)`, `calc(var(--ar-title) * .45)`, `em`, `%`, `fr`),
+never `px`/`pt` (but `0`; a hairline too: `.05em`), `rem` or `vw`. Keywords, unitless
+numbers, `fr` tracks, strings, durations are fine. Vite warns about each literal and
+`npx arao layouts` lists it: fix it before you finish (`docs/guide/slides-and-layouts.md#its-values`).
 ```css
 /**
  * A slide that opens on an epigraph: a short quotation on the right, its source under it.

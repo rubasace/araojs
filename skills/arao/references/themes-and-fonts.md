@@ -60,6 +60,9 @@ A theme is a `[data-theme="<name>"] { --ar-…: …; }` block in a CSS file of `
   footer on every cover), `--ar-layout-image-right-footer-bg` (a backdrop that keeps the footer
   legible over photos)… Set them in the theme like any token; on one slide they are attributes
   too (`Slide(layout="section" bg="#0b3d2e")`).
+- Text over a picture and the shade behind it: `--ar-on-image` (white) and `--ar-scrim` (black),
+  the `overlay` layout's text colour and its scrim's; a theme for dark text on pale photos swaps
+  them.
 - A token whose default is another token follows it (`--ar-footer-color` defaults to
   `--ar-muted`): change the base one unless you mean to split them.
 - The library ships six themes: `default`, `aurora`, `carbon`, `folio`, `meridian`, `terminal`

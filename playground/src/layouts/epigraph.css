@@ -30,7 +30,7 @@
 .layout-epigraph > .ar-body > blockquote {
   align-self: flex-end; max-width: 60%; box-sizing: border-box;
   margin: 0; padding-left: .8em;
-  border-left: 6px solid var(--_ar-epigraph-mark);
+  border-left: .14em solid var(--_ar-epigraph-mark);
   font-size: var(--_ar-epigraph-size); font-style: italic; line-height: 1.3;
 }
 .layout-epigraph > .ar-body > blockquote + p {
