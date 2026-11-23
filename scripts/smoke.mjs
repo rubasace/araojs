@@ -84,11 +84,14 @@
 //      project's own (src/slides/WrappedSlide.vue, a component wrapping Slide) is a slide like the
 //      others: in its place, its heading its header's title and its name in the jump list, its
 //      two steps walked, a page per step in the export; and Agenda lists the deck's sections,
-//      each done, current (aria-current) or upcoming as seen from its slide, in the audience
-//      view, the presenter view (its slide and the preview's copy) and the export's book, each
-//      with its own look on a slide of the default layout (its CSS, in the package's arao.css);
-//      on the sixth deck, an Agenda on its first slide, in its window and in its thumbnail in the
-//      list, and a hand-written ol.agenda with the same look
+//      each done, current (aria-current) or upcoming as seen from its slide (the current one the
+//      last section at or before it: none before the first section, the second after the
+//      second), in the audience view, the presenter view (its slide and the preview's copy) and
+//      the export's book, each with its own look on a slide of the default layout (its CSS, in
+//      the package's arao.css); on the sixth deck, an Agenda on its first slide, none current,
+//      in its window and in its thumbnail in the list, its Agendas on and after its sections, one
+//      forced by its current prop (a title, a place as a string) and one with :highlight="false"
+//      (no state class, no aria-current), and a hand-written ol.agenda with the same look
 //   4d. the utility classes, under both servers (so the package's arao.css has them), on the
 //      playground's slide "Utility classes" at its last step: .cols lays its two children out in
 //      columns of 3 to 2 (style="--ar-cols: 3fr 2fr"), which they do not inherit; .middle centres
@@ -352,12 +355,16 @@ Deck(:themes="['${IMPORTED}', 'default']")
 `]
 
 // a sixth deck of the smoke project only: its first slide, of the default layout, holds an Agenda
-// (on the slide at place 0) that lists its sections, the first one current, in its window and in
-// the list's thumbnail, where the sections draw nothing but their titles (OUTLINE_ITEMS); its
-// second a hand-written ol.agenda, which looks like it, with no state; then its three sections,
-// each with an Agenda too, as a talk shows its progress on each (the second one's, done, current
-// and upcoming, legible in every built-in theme: OUTLINE_SECTION). No theme listed: it offers
-// every built-in one
+// (on the slide at place 0) that lists its sections, before the first of them: none current,
+// every one upcoming, in its window and in the list's thumbnail, where the sections draw nothing
+// but their titles (OUTLINE_ITEMS); its second a hand-written ol.agenda, which looks like it,
+// with no state; then two of its three sections, each with an Agenda too, as a talk shows its
+// progress on each (the second one's, done, current and upcoming, legible in every built-in theme:
+// OUTLINE_SECTION); after them, an Agenda on a slide after the second
+// section (done, current, upcoming), one whose current is forced by its title and one by its
+// place as Pug writes it (current="1", a string), one with :highlight="false" (no state); then
+// the third section. Each Agenda's states, in order, are OUTLINE_STATES. No theme listed: it
+// offers every built-in one
 const OUTLINE = ['Outline.vue', `<template lang="pug">
 Deck
   Slide
@@ -374,12 +381,29 @@ Deck
   Slide(layout="section")
     h1 #[Icon(name="lucide:rocket")] Part two
     Agenda
+  Slide
+    h2 Where we are
+    Agenda
+  Slide
+    h2 Coming up
+    Agenda(current="Part three")
+  Slide
+    h2 Back to the start
+    Agenda(current="1")
+  Slide
+    h2 The plain list
+    Agenda(:highlight="false")
   Slide(layout="section")
     h1 Part three
     Agenda
 </template>
 `]
-const OUTLINE_ITEMS = 'Part one:current, Part two:upcoming, Part three:upcoming'
+const OUTLINE_ITEMS = 'Part one:upcoming, Part two:upcoming, Part three:upcoming'
+// the states of the outline's Agendas, in order ('-' for an item with none)
+const OUTLINE_STATES = [
+  'upcoming upcoming upcoming', 'current upcoming upcoming', 'done current upcoming', 'done current upcoming',
+  'done done current', 'current upcoming upcoming', '- - -', 'done done current',
+]
 // the outline's section whose Agenda shows the three states (its number), and the contrast each
 // item's text and number must keep on it, against the background beside them: 3:1, large text's
 const OUTLINE_SECTION = 4
@@ -1440,11 +1464,14 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
   // before "Icons"), its heading the title of its header and its name in the jump list, at its
   // number; its two steps walked (#/n/1, #/n/2, then the next slide); a page per step in the
   // export's book. And Agenda (on the playground's two slides of the default layout that hold
-  // one) lists the titles of the deck's section slides, in order, each item marked as seen from
-  // its slide (done, current with aria-current, upcoming), in the audience view, the presenter
-  // view (its slide and the preview's copy) and the export's book; and wears its own look there,
-  // with no layout for it (big rows, numbered, the current one bold), as does a hand-written
-  // ol.agenda (the sixth deck's).
+  // one: before the first section, after the second) lists the titles of the deck's section
+  // slides, in order, each item marked as seen from its slide (done, current with aria-current,
+  // upcoming: the current one the last section at or before the slide, none before the first),
+  // in the audience view, the presenter view (its slide and the preview's copy) and the export's
+  // book; and wears its own look there, with no layout for it (big rows, numbered, the current one
+  // bold), as does a hand-written ol.agenda (the sixth deck's). On the sixth deck, every Agenda's
+  // states (OUTLINE_STATES): on the opening slide, on its sections, after one, forced by current
+  // (a title, a place written as a string) and with no state (:highlight="false").
   async function deckSlides(base, mode) {
     const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
     const complaints = []
@@ -1452,7 +1479,7 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
     page.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
     const TITLE = 'A slide in a component'
     const SECTIONS = ['Layouts', 'Building blocks', 'The end']
-    const STATES = ['current upcoming upcoming', 'done current upcoming']
+    const STATES = ['upcoming upcoming upcoming', 'done current upcoming']
     const open = async (path, ms = 500) => {
       await page.goto(new URL(path, base).href)
       await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
@@ -1467,13 +1494,15 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
         item: li.classList.contains('ar-agenda-item'),
         aria: li.getAttribute('aria-current'),
       })))), scope)
-    const checkAgendas = (what, found) => {
-      if (found.length !== STATES.length) return complaints.push(`${what}: ${found.length} Agendas, not ${STATES.length}`)
+    // the Agendas found, against the sections each lists and the states of each ('-' for an item
+    // with none)
+    const checkAgendas = (what, found, sections = SECTIONS, expected = STATES) => {
+      if (found.length !== expected.length) return complaints.push(`${what}: ${found.length} Agendas, not ${expected.length}`)
       found.forEach((items, k) => {
         const texts = items.map((i) => i.text).join(', ')
-        const states = items.map((i) => i.state).join(' ')
-        if (texts !== SECTIONS.join(', ')) complaints.push(`${what}: Agenda ${k + 1} lists ${texts}, not ${SECTIONS.join(', ')}`)
-        else if (states !== STATES[k]) complaints.push(`${what}: Agenda ${k + 1}'s states are ${states}, not ${STATES[k]}`)
+        const states = items.map((i) => i.state || '-').join(' ')
+        if (texts !== sections.join(', ')) complaints.push(`${what}: Agenda ${k + 1} lists ${texts}, not ${sections.join(', ')}`)
+        else if (states !== expected[k]) complaints.push(`${what}: Agenda ${k + 1}'s states are ${states}, not ${expected[k]}`)
         else if (items.some((i) => !i.item || (i.aria === 'step') !== (i.state === 'current'))) complaints.push(`${what}: Agenda ${k + 1}'s items are not each .ar-agenda-item, aria-current="step" on the current one alone`)
       })
     }
@@ -1545,23 +1574,24 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
       checkAgendas('export mode', book[0] ?? [])
       checkLooks('export mode', await looks('.ar-book'), STATES.length)
       // the sixth deck's Agenda, on its first slide: in its window (with the ol.agenda of its
-      // second and the Agendas of its three sections, five agendas with their look), and in its
-      // thumbnail in the list (where its sections draw their titles alone, and its second slide
-      // nothing). The items of the first Agenda in a part of the page
+      // second and its other Agendas, OUTLINE_STATES, each with its states, nine agendas with
+      // their look), and in its thumbnail in the list (where its sections draw their titles
+      // alone, and its other slides nothing). The items of the first Agenda in a part of the page
       const items = (scope) => page.evaluate((scope) => [...(document.querySelector(scope)?.querySelector('.ar-agenda')?.children ?? [])]
         .map((li) => `${li.textContent.trim()}:${['done', 'current', 'upcoming'].filter((s) => li.classList.contains(`ar-agenda-${s}`)).join(' ')}`).join(', '), scope)
       const outline = basename(OUTLINE[0], '.vue').toLowerCase()
       await open(`${outline}#/1/1`)
       let listed = await items('.ar-viewport > .ar-stage')
       if (listed !== OUTLINE_ITEMS) complaints.push(`/${outline}: its Agenda on its first slide lists ${listed || 'nothing'}, not ${OUTLINE_ITEMS}`)
-      checkLooks(`/${outline}`, await looks('.ar-viewport > .ar-stage'), 5)
+      checkAgendas(`/${outline}`, (await agendas('.ar-viewport > .ar-stage'))[0] ?? [], ['Part one', 'Part two', 'Part three'], OUTLINE_STATES)
+      checkLooks(`/${outline}`, await looks('.ar-viewport > .ar-stage'), OUTLINE_STATES.length + 1)
       await page.goto(base)
       const card = `.ar-decks-card:has(a[href$="/${outline}"]) .ar-thumb`
       await page.waitForFunction((card) => document.querySelector(`${card} .ar-agenda li`), card, { timeout: 30_000 }).catch(() => {})
       listed = await items(card)
       if (listed !== OUTLINE_ITEMS) complaints.push(`the list: /${outline}'s thumbnail shows an Agenda of ${listed || 'nothing'}, not ${OUTLINE_ITEMS}`)
       checkLooks(`the list: /${outline}'s thumbnail`, await looks(card), 1)
-      console.log(`  ${mode} slides of the deck: ${complaints.length ? 'problems below' : `"${TITLE}" (a component wrapping Slide) is slide ${n}, titled, in the jump list, two steps, two pages; Agenda's sections, states and look in audience, presenter (both copies) and export, and on a first slide, in its window and its thumbnail; an ol.agenda's look`}`)
+      console.log(`  ${mode} slides of the deck: ${complaints.length ? 'problems below' : `"${TITLE}" (a component wrapping Slide) is slide ${n}, titled, in the jump list, two steps, two pages; Agenda's sections, states and look in audience, presenter (both copies) and export, and on a first slide, in its window and its thumbnail; its states before, on and after a section, forced by current and with no highlight; an ol.agenda's look`}`)
     } finally {
       await page.context().close()
     }

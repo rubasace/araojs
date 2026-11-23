@@ -9,7 +9,15 @@
       <Img file="team.jpg" fit="cover" />
       <Icon name="lucide:rocket" />
       <Agenda />
+      <!-- the current section forced, by its place or its title; the plain list -->
+      <Agenda :current="2" />
+      <Agenda current="How it works" />
+      <Agenda :highlight="false" />
     </Slide>
+    <!-- @vue-expect-error highlight is a boolean: bound, :highlight="false" -->
+    <Agenda highlight="no" />
+    <!-- @vue-expect-error current is a section's place or its title -->
+    <Agenda :current="true" />
     <!-- @vue-expect-error width is a number -->
     <Deck :width="'wide'" />
     <!-- @vue-expect-error layout is a name, not a number -->

@@ -6,38 +6,58 @@
          Agenda
      Each item is marked with where the talk stands, seen from the slide the Agenda is on: its
      class ar-agenda-item, and one of
-       ar-agenda-done       a section before that slide
-       ar-agenda-current    the first section from that slide on (the slide itself, when it is a
-                            section: an Agenda on each section shows that section as current);
-                            it also carries aria-current="step"
-       ar-agenda-upcoming   the sections after that one
-     So the same Agenda written on several slides of the deck (after each section, say) shows the
-     talk's progress on each. Its look is its own, whatever the layout (the style below: its rows,
-     its numbers in the accent, a set of --ar-agenda-* tokens per state, which a theme or a slide
-     can make the same to show no state). A hand-written ol with the class agenda gets the same
-     rows and numbers, with no state.
+       ar-agenda-done       a section before the current one
+       ar-agenda-current    the section the talk is in: the last section slide at or before the
+                            Agenda's slide (the slide itself, when it is a section: an Agenda on
+                            each section shows that section as current); it also carries
+                            aria-current="step"
+       ar-agenda-upcoming   the sections after the current one
+     Before the first section (an Agenda on the opening slides) the talk is in none: no section is
+     current, and every one is upcoming. So the same Agenda written on several slides of the deck
+     (after each section slide, say) shows the talk's progress on each. Its props:
+       highlight   false (:highlight="false") draws the plain list: no state class, no
+                   aria-current (default true)
+       current     the section shown as current, whatever the slide: its place among the
+                   sections, 1-based (:current="2", or current="2" as Pug and HTML write it), or
+                   its title (current="How it works", as useDeck().slides gives it: whitespace
+                   collapsed); done and upcoming follow from it. One that names no section warns,
+                   in development, and the slide's own rule applies
+     Its look is its own, whatever the layout (the style below: its rows, its numbers in the
+     accent, a set of --ar-agenda-* tokens per state, which a theme or a slide can make the same to
+     show no state). A hand-written ol with the class agenda gets the same rows and numbers, with
+     no state, as does an Agenda with :highlight="false".
      Its titles are the sections' (state/stage.ts titleIn: their first heading), as useDeck().slides
      lists them, in every drawing of the deck: the audience's, the presenter's (current and
      preview: each seen from its own copy of the slide), the export, a thumbnail. Outside a slide it
      warns and draws nothing; in development, a deck with no section slide warns too (the list is
-     empty), once the deck has mounted, from the audience's or the presenter's copy only. -->
+     empty), once the deck has mounted, from the audience's or the presenter's copy only, and so
+     does a current that names no section. -->
 <template>
   <ol class="ar-agenda" v-if="inSlide">
     <li
       v-for="s in sections"
       :key="s.index"
-      :class="['ar-agenda-item', `ar-agenda-${s.state}`]"
+      :class="s.state ? ['ar-agenda-item', `ar-agenda-${s.state}`] : 'ar-agenda-item'"
       :aria-current="s.state === 'current' ? 'step' : undefined"
     >{{ s.title }}</li>
   </ol>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, nextTick, onMounted } from 'vue'
 import { useDeck } from '../state/deck'
 import { useSlideIndex } from '../state/slide'
+import type { DeckSlide } from '../state/stage'
 
 defineOptions({ name: 'Agenda' })
+
+const props = defineProps({
+  // false: the plain list, no state class and no aria-current on its items
+  highlight: { type: Boolean, default: true },
+  // the section shown as current, whatever the slide: its place among the sections (1-based) or
+  // its title
+  current: [Number, String],
+})
 
 const deck = useDeck()
 // the place of the slide it is on, in the drawing it is in
@@ -45,19 +65,48 @@ const here = useSlideIndex()
 const inSlide = !!here
 if (!inSlide) console.warn('[arao] Agenda used outside a <Slide>: it shows nowhere')
 
+// The section current names, by its place in the list: a number is its place, 1-based; a string
+// is a title first (whitespace collapsed, as titles are), else, when it is a whole number, its
+// place (current="2", as Pug and HTML write it). -1 for none: no prop, or one that names no
+// section (which warns, below)
+const named = (list: readonly DeckSlide[], current: number | string | undefined) => {
+  if (current == null || current === '') return -1
+  let place: number
+  if (typeof current === 'string') {
+    const title = current.replace(/\s+/g, ' ').trim()
+    const k = list.findIndex((s) => s.title === title)
+    if (k >= 0) return k
+    if (!/^\d+$/.test(title)) return -1
+    place = Number(title)
+  } else place = current
+  return Number.isInteger(place) && place >= 1 && place <= list.length ? place - 1 : -1
+}
+
 type State = 'done' | 'current' | 'upcoming'
-// the section slides, each with its state as seen from this slide
+const list = computed(() => deck.slides.value.filter((s) => s.layout === 'section'))
+const forced = computed(() => named(list.value, props.current))
+// the section slides, each with its state as seen from this slide (none with highlight off): the
+// current one is the one current names, else the last section at or before this slide (none
+// before the first section: every one upcoming); those before it done, those after it upcoming
 const sections = computed(() => {
+  const all = list.value
+  if (!props.highlight) return all.map((s) => ({ ...s, state: null }))
   const at = here?.value ?? -1
-  const list = deck.slides.value.filter((s) => s.layout === 'section')
-  const current = list.find((s) => s.index >= at)
-  return list.map((s) => ({ ...s, state: (s.index < at ? 'done' : s === current ? 'current' : 'upcoming') as State }))
+  const k = forced.value >= 0 ? forced.value : all.findLastIndex((s) => s.index <= at)
+  return all.map((s, i) => ({ ...s, state: (i < k ? 'done' : i === k ? 'current' : 'upcoming') as State }))
 })
-// no section to list: said once mounted (every slide of the deck has registered by then), in one
-// copy of the deck (not the presenter's preview, nor a thumbnail)
-onMounted(() => {
-  if (import.meta.env.DEV && inSlide && !sections.value.length && deck.role !== 'preview' && deck.role !== 'thumbnail')
+// said once mounted (every slide of the deck has registered by then), in one copy of the deck
+// (not the presenter's preview, nor a thumbnail): no section to list; and, once every slide has
+// read its title (each does when it mounts, after this), a current that names none of them
+onMounted(async () => {
+  if (!import.meta.env.DEV || !inSlide || deck.role === 'preview' || deck.role === 'thumbnail') return
+  if (!list.value.length) {
     console.warn('[arao] Agenda lists the deck\'s section slides, Slide(layout="section"), and the deck has none: it is empty')
+    return
+  }
+  await nextTick()
+  if (props.highlight && props.current != null && props.current !== '' && forced.value < 0)
+    console.warn(`[arao] Agenda's current="${props.current}" names no section: a place from 1 to ${list.value.length}, or the title of one (${list.value.map((s) => `"${s.title}"`).join(', ')}); it marks them as seen from its slide`)
 })
 </script>
 
@@ -74,11 +123,11 @@ onMounted(() => {
      --ar-agenda-done-number-color     its number's colour (its colour)
      --ar-agenda-done-opacity          its opacity (1)
      --ar-agenda-done-weight           its font weight (400)
-     --ar-agenda-current-color         the next part, the one this slide leads to (--ar-accent)
+     --ar-agenda-current-color         the part the talk is in (--ar-accent)
      --ar-agenda-current-number-color  its number's colour (--ar-agenda-number-color)
      --ar-agenda-current-opacity       its opacity (1)
      --ar-agenda-current-weight        its font weight (700)
-     --ar-agenda-upcoming-color        the parts after it (currentColor)
+     --ar-agenda-upcoming-color        the parts still to come (currentColor)
      --ar-agenda-upcoming-number-color their numbers' colour (--ar-agenda-number-color)
      --ar-agenda-upcoming-opacity      their opacity (1)
      --ar-agenda-upcoming-weight       their font weight (400)
@@ -86,13 +135,15 @@ onMounted(() => {
    it; their defaults are other tokens, resolved on the list (--_ar-agenda-…), so they follow the
    theme it is drawn in. A done part is dimmed by its colour, the muted one made lighter (not by
    its opacity: the default keeps 3:1 on every built-in theme, its number too). The same values for
-   the three states show no state at all:
+   the three states show no state at all, on every agenda they reach (a theme's, a slide's; for
+   one Agenda, :highlight="false" draws no state):
      --ar-agenda-done-color: currentColor;
      --ar-agenda-done-number-color: var(--ar-accent);
      --ar-agenda-current-color: currentColor;
      --ar-agenda-current-weight: 400;
    A section (layouts/section.css) sets them for its slides: there the accent is the background.
-   A hand-written ol.agenda shares the rows and the numbers (its items have no state). The rules
+   A hand-written ol.agenda shares the rows and the numbers (its items have no state, as an
+   Agenda's with :highlight="false" have none). The rules
    are under .ar-slide, (0,2,1) for the list: a rule for every list of a slide (.ar-slide ol,
    (0,1,1)) leaves the agenda as it is, but one as specific loaded after this file wins over it,
    a layout's, a theme's or the project's (.layout-x .ar-body ol, .ar-slide .ar-agenda).

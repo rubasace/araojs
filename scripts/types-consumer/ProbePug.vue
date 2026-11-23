@@ -19,6 +19,8 @@ Deck
   Slide(style="--ar-agenda-current-weight: 400")
     h2 Agenda
     Agenda
+    Agenda(current="2")
+    Agenda(:current="2" :highlight="false")
   Slide(layout="callout" size="80px")
     blockquote Make it work.
     template(#author) Kent Beck

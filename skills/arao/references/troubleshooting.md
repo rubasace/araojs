@@ -83,6 +83,14 @@
   scrim's strength now, `0` to `1` (default `.6`; `none` still none): it follows the position by
   itself, and a CSS background given there draws no scrim (drop it, or give a number; in
   development the console says so).
+- **`Agenda`'s current section is the one the talk is in** (BREAKING): the last section slide at
+  or before the `Agenda`'s slide, not the first one at or after it. An agenda on the opening
+  slides marks none current, every part upcoming (it used to mark the first current); one on a
+  slide after section 2 marks 1 done, 2 current, 3 upcoming (it used to mark 1 and 2 done, 3
+  current); one on a section slide is unchanged. An agenda that announces the part coming next
+  ("Coming up", on a slide before its section) forces it: `Agenda(:current="3")` or
+  `Agenda(current="<its title>")`. One that should mark nothing: `Agenda(:highlight="false")`
+  (bound, in Pug too).
 - **The `agenda` layout is gone** (BREAKING): `Agenda` has its own look now, in any slide.
   `Slide(layout="agenda")` → `Slide`, with its `h2` and `Agenda` as before (an `agenda` left
   there is a layout with no CSS, the default one: the `Agenda` still looks right, but the
@@ -210,6 +218,7 @@
 | `[arao] … not found` (image, snippet) | wrong file name or folder, or case | names are relative to `src/images/` / `src/snippets/`, case-sensitive |
 | `[arao]` icon warning, dashed box | icon name not written out, or set not installed | write the full name in the source; install `@iconify-json/<prefix>` |
 | `[arao] v-step outside a Slide` / `Notes outside a Slide` | directive or notes outside any `Slide` | move it inside the slide |
+| `[arao] Agenda's current="…" names no section …` | `current` is no section's place (1 to their count) nor any section's title | a place in range, or the title as the jump menu (`g`) shows it |
 | `[arao] Deck themes: no theme …` | theme name no source gives | fix the name or add its source |
 | `[arao] … duration …` | `Deck(duration)` not a length | `duration="30m"`, `"1h30"`, `"45:00"` |
 | `[arao] src/layouts/x.css: --ar-layout-x-title is no attribute of Slide…` | a layout token named as an attribute a slide already has (`title`, `id`…) or not lower-case kebab-case | rename it (`--ar-layout-x-title-size`); until then it works in `style` and themes only |

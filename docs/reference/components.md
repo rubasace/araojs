@@ -376,22 +376,33 @@ Slide
 The talk's agenda, inside a `Slide` of any layout (typically the default one): an `ol`
 (`.ar-agenda`) of the titles of the deck's `section` slides, in their order, kept up to date by
 the deck (a section added, moved or renamed is in it), in big rows numbered in the accent. No
-props, no slot.
+slot.
 
-Each item (`li.ar-agenda-item`) carries one state, as seen from the slide the `Agenda` is on:
+| Prop | Type | Default | |
+|---|---|---|---|
+| `highlight` | Boolean | `true` | `false` (`:highlight="false"`, bound in Pug too) draws the plain list: no state class, no `aria-current` |
+| `current` | Number or String | none | the section shown as current, whatever the slide: its place among the sections, 1-based (`:current="2"`, or `current="2"`), or its title (`current="How it works"`, matched as `useDeck().slides` gives it, whitespace collapsed); done and upcoming follow from it. One that names no section warns in development, and the slide's own rule applies |
+
+Each item (`li.ar-agenda-item`) carries one state, as seen from the slide the `Agenda` is on.
+The section the talk is in is the last section slide at or before that slide (the slide itself,
+when it is a section), or the one `current` names:
 
 | Class | Which sections |
 |---|---|
-| `ar-agenda-done` | those before the slide |
-| `ar-agenda-current` | the first one from the slide on (the slide itself, when it is a section); it also has `aria-current="step"` |
+| `ar-agenda-done` | those before the current one |
+| `ar-agenda-current` | the section the talk is in; it also has `aria-current="step"` |
 | `ar-agenda-upcoming` | those after the current one |
+
+Before the first section slide (an agenda on the opening slides) the talk is in none: no section
+is current, none is done, every one is upcoming. With `:highlight="false"`, an item carries
+`ar-agenda-item` alone.
 
 - Its look is its own, whatever the layout: big numbered rows; done dimmed, number and all,
   current in the accent and bold, upcoming as it is. The rows' size and gap, the numbers' colour,
   and a colour, a number colour, an opacity and a weight per state are tokens
   (`--ar-agenda-size`, `--ar-agenda-done-color`…: [Agenda tokens](theme-tokens.md#agenda)), set
   in a theme or on one slide (`Slide(style="--ar-agenda-done-opacity: 1")`). The same values for
-  the three states show no state.
+  the three states show no state on every agenda they reach; one agenda, `:highlight="false"`.
 - On a `section` slide, whose background is the accent, it takes the section's text colour, as
   the title does: the numbers and the current part in it (the current one bold), the parts
   already given that colour made lighter (at least 3:1 on every built-in theme). The section
@@ -408,18 +419,30 @@ Each item (`li.ar-agenda-item`) carries one state, as seen from the slide the `A
   (there, its size would be the text's). Past 60%: a smaller `--ar-agenda-size` (or
   `--ar-agenda-gap`), or fewer sections.
 - A hand-written `ol` with the class `agenda` (`ol.agenda`) gets the same rows and numbers, with
-  no state.
+  no state, as an `Agenda` with `:highlight="false"`.
 - The titles are the sections' first headings (their name in the jump menu), the same in the
   audience view, the presenter view (its slide and its preview, each seen from its own copy of
   the slide), the export and a deck's thumbnail.
-- Written on several slides (after each section, or on each section slide), each copy shows where
-  the talk stands there. `useDeck().slides` is the list it reads ([Composables](composables.md#usedeck)).
+- Written on several slides (after each section slide, or on each section slide), each copy
+  shows where the talk stands there. `useDeck().slides` is the list it reads ([Composables](composables.md#usedeck)).
 - Outside a `Slide` it warns and draws nothing.
 
 ```pug
 Slide
   h2 Agenda
-  Agenda
+  Agenda                         //- before the first section: every part upcoming
+Slide(layout="section")
+  h1 Why a framework
+Slide(layout="section")
+  h1 How it works
+Slide
+  h2 Where we are
+  Agenda                         //- 1 done, 2 current, 3 upcoming
+Slide
+  h2 Coming up
+  Agenda(current="What comes next")
+Slide(layout="section")
+  h1 What comes next
 ```
 
 ## Addons
