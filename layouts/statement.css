@@ -25,7 +25,11 @@
    with), or, on a slide with none, the body's first child that is not hidden (a Background's
    anchor is); a subtitle and the body's other children are the rest. The header and the body are
    one group, as tall as their content, in the middle of the slide (cover.css does the same);
-   no header band. */
+   no header band.
+   Slide.fit and the scales shrink a statement in the body too (styles/utilities.css): its size
+   is worked out here, at full size (registered: in em, the slide's text), and drawn there times
+   their factor (--_ar-zoom, 1 in the header, which they leave as it is), its gap with it. */
+@property --_ar-statement-size { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
 :where(.layout-statement) {
   --_ar-statement-size: var(--ar-layout-statement-size, calc(var(--ar-title) * 1.5));
   --_ar-statement-color: var(--ar-layout-statement-color, var(--ar-accent));
@@ -46,13 +50,13 @@
 .layout-statement:not(:has(> .ar-header)) > .ar-body > :nth-child(1 of :not([hidden])) {
   margin: 0;
   font-family: var(--ar-font-heading, inherit);
-  font-size: var(--_ar-statement-size);
+  font-size: calc(var(--_ar-statement-size) * var(--_ar-zoom, 1));
   font-weight: 700;
   line-height: 1.05;
   text-align: inherit;
   color: var(--_ar-statement-color);
 }
-.layout-statement:not(:has(> .ar-header)) > .ar-body > :nth-child(1 of :not([hidden])) { margin-bottom: var(--_ar-statement-gap); }
+.layout-statement:not(:has(> .ar-header)) > .ar-body > :nth-child(1 of :not([hidden])) { margin-bottom: calc(var(--_ar-statement-gap) * var(--_ar-zoom, 1)); }
 /* the rest: small, muted */
 .layout-statement > .ar-header > .ar-subtitle { text-align: inherit; }
 .layout-statement > .ar-body > :not(:nth-child(1 of :not([hidden]))),

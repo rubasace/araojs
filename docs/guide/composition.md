@@ -131,8 +131,8 @@ hidden under the footer, or pushed past the side. Arao measures what each slide 
 
   ```
   [arao] overflow: deck "mytalk", slide 7 "Twelve pillars", step 3 of 4: the body overflows by
-  46px at the bottom, under the footer. To fit it: Slide.fit (shrinks the body's text just
-  enough), a .scale-90, .scale-80 or .scale-70 class on the slide or on a block, or fewer blocks.
+  46px at the bottom, under the footer. To fit it: Slide.fit (shrinks the body just enough), a
+  .scale-90, .scale-80 or .scale-70 class on the slide or on a block, or fewer blocks.
   ```
 
   Once per slide and step: the same overflow is not said again; a different one (after an edit)
@@ -168,18 +168,22 @@ too much for the slide: fit it, scale it, or cut. Past the top or the left alone
 
 The fixes, from the least to the most:
 
-- **`Slide.fit`**: the body's text shrinks just enough to fit, and everything in it sized in `em`
-  with it (a list's gaps, a grid's pictures); the layout reflows, nothing is stretched. Down to
-  60% of its size: past that it stays at 60% and the warning says so (split the slide). It fits
-  what spills at the bottom and on the right, and only as far as shrinking helps: content sized in
-  px (a block 2200px wide) or transformed does not shrink with the text, so for it the body stays
-  whole and the warning says that `fit` cannot shrink it. It is measured again whenever the
-  content, the step, the theme or the window changes, and in the export before each page is taken.
-  A slide without `fit` is never resized. With `v-step.collapse`
-  each step is fitted as it shows, so the text gets smaller as steps add to it; `v-step` keeps the
-  space of what is still to come, and the text the same size at every step.
+- **`Slide.fit`**: the body shrinks just enough to fit, everything in it by the same factor: its
+  text and what is in `em` (a list's gaps), the headings sized from the title's tokens (an `h2`
+  in the body, a side of `split`'s heading), the gaps of the placement classes and of the layouts,
+  an `Agenda`, a layout's own sizes (a `quote`'s, a `statement`'s, a `grid`'s pictures, a size
+  given as a parameter too), an `Icon` given a size in px. The layout reflows, nothing is
+  stretched. Down to 60% of its size: past that it stays at 60% and the warning says so (split the
+  slide). It fits what spills at the bottom and on the right, and only as far as shrinking helps:
+  a size you write in px yourself (a block `style="width: 2200px"`) or a transform does not
+  shrink, so for it the body stays whole and the warning says that `fit` cannot shrink it. It is
+  measured again whenever the content, the step, the theme or the window changes, and in the
+  export before each page is taken. A slide without `fit` is never resized. With
+  `v-step.collapse` each step is fitted as it shows, so the text gets smaller as steps add to it;
+  `v-step` keeps the space of what is still to come, and the text the same size at every step.
 - **`.scale-90`, `.scale-80`, `.scale-70`**: a fixed step down, on the slide (its body) or on one
-  block (a side of `split`, a card), when you would rather choose the size.
+  block (a side of `split`, a card), when you would rather choose the size. They shrink what
+  `fit` shrinks, by their own factor (and with `fit` on the same slide, by both).
 - **Fewer blocks**, less text, or two slides.
 
 ```pug
@@ -197,8 +201,21 @@ Slide(layout="split")
     p …
 ```
 
-Sizes in px, and those taken from the title's tokens (a side of `split`'s heading, an `h2` in the
-body), do not follow `fit` or a scale: only what is in `em`, which is most of what a slide shows.
+How the rest follows the text: inside what they shrink, `fit` and the scales declare the theme's
+size tokens again at their factor (`--ar-title`, `--ar-gap-sm`, `-md`, `-lg`, `--ar-text-base`),
+so whatever reads them there shrinks too, the CSS of your own layouts and components included; the
+library's layouts and components draw their other sizes (a size worked out on the slide, an
+`Icon`'s px) at the same factor. What does not follow is a size in px written by hand, in a style
+or in your own CSS (write it in `em`, or from those tokens, and it does), a token you set on the
+very block that has the scale (taken as you gave it), and a `Snippet`, which fits itself to the
+room it is given. A layout of your own that works a size out from the tokens on the slide
+(`.layout-x { --x-size: calc(var(--ar-title) * .8) }`) has it at full size, as the slide has
+them: work it out on the body instead (`.layout-x > .ar-body { … }`), and it follows. A scale
+inside another shrinks everything by both (the text by every scale around it, the rest by two
+levels of them). Sizes in `em` given to a layout or to those tokens are worked out on the slide,
+in the slide's text ([Theme tokens](../reference/theme-tokens.md#spacing-and-shape)). A scale
+set on an element that a layout or a component sizes itself (a block of `grid`'s `p`, an
+`Agenda`) sets its size from the one it inherits: put it on a block around it, or on the slide.
 On a slide, `fit` and the scales set the body's font-size from the slide's: a font-size a layout
 of your own sets on `.ar-body` gives way to them. A layout that wants another text size sets it on
 the slide (`.layout-x { font-size: 1.1em }`): the body inherits it, and `fit` and the scales start

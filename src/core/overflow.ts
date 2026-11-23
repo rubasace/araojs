@@ -5,9 +5,9 @@
 //
 //   measureSlide(section)          [] when everything fits; else what overflows, by how much
 //   measureSlide(section, 'body')  the body's part alone: what Slide.fit looks at
-//   fitSlide(section)              Slide.fit: the body's text shrunk just enough to fit, down to
-//                                  FIT_MIN of its size (null for a slide without .fit, whose body
-//                                  is left as it is)
+//   fitSlide(section)              Slide.fit: the body shrunk just enough to fit, down to FIT_MIN
+//                                  of its size (null for a slide without .fit, whose body is left
+//                                  as it is)
 //   describeOverflow(found)        what measureSlide found, in words (the warnings say it)
 //   overflowFixes(found, fit)      how to fix it, by kind ({ kind, text }: what overflows where,
 //                                  and what fitSlide did); sayFixes(fixes) in words
@@ -231,7 +231,7 @@ export function measureSlide(slide: HTMLElement, only?: 'body', tol = TOLERANCE)
 /**
  * What Slide.fit did: the factor applied (1: whole), whether the body fits at it, and whether
  * shrinking helped with all of what overflows at the bottom and on the right (false: some of it is
- * sized in px, or transformed, and does not shrink with the text).
+ * sized in px by hand, or transformed, and does not shrink with the rest).
  */
 export interface FitResult { scale: number; fits: boolean; helps: boolean }
 // what Slide.fit acts on: what spills past the body's room at the bottom and on the right. At the
@@ -248,13 +248,16 @@ function spill(slide: HTMLElement): Record<Shrinks, number> {
 }
 
 /**
- * Slide.fit: on a slide with the class fit, the body's text (its font-size, which what is in em
- * follows) shrunk just enough for the body to fit, down to FIT_MIN, as --_ar-fit on the body
- * (utilities.css). Measured from the size it would have, so it grows back when there is room
+ * Slide.fit: on a slide with the class fit, the body shrunk just enough to fit, down to FIT_MIN,
+ * by one factor, --_ar-fit on the body. The CSS does the shrinking (utilities.css): the body's
+ * font-size, which what is in em follows, and by the same factor what is sized otherwise (the
+ * theme's size tokens, a layout's sizes, an Agenda, an Icon in px: --_ar-zoom); nothing here
+ * knows what is inside. Measured from the size it would have, so it grows back when there is room
  * again. A slide without .fit is never touched (its --_ar-fit, if a .fit it had left one, goes).
  * Only what spills at the bottom and on the right counts, and only where shrinking helps: if at
- * FIT_MIN a side spills no less than at full size (a block sized in px, a transform), that side is
- * not fitted, and if no side gets better, the body stays whole (helps: false, a warning says so).
+ * FIT_MIN a side spills no less than at full size (a block sized in px by hand, a transform), that
+ * side is not fitted, and if no side gets better, the body stays whole (helps: false, a warning
+ * says so).
  * → null for a slide without .fit (or without a body); else what it did (FitResult).
  */
 export function fitSlide(slide: HTMLElement): FitResult | null {
@@ -332,9 +335,9 @@ export function describeOverflow(found: readonly Overflow[]) {
 export type FixKind = 'usual' | 'floor' | 'stuck' | 'placed'
 export interface Fix { kind: FixKind; text: string }
 const FIXES: Record<FixKind, string> = {
-  usual: 'to fit it: Slide.fit (shrinks the body\'s text just enough), a .scale-90, .scale-80 or .scale-70 class on the slide or on a block, or fewer blocks',
+  usual: 'to fit it: Slide.fit (shrinks the body just enough), a .scale-90, .scale-80 or .scale-70 class on the slide or on a block, or fewer blocks',
   floor: `Slide.fit shrank its body to ${Math.round(FIT_MIN * 100)}%, its floor, and it still does not fit: fewer blocks, less text, or two slides`,
-  stuck: 'Slide.fit cannot shrink it (it is sized in px, or transformed): make it smaller, or fewer blocks',
+  stuck: 'Slide.fit cannot shrink it (it is sized in px by hand, or transformed): make it smaller, or fewer blocks',
   placed: 'past the top or the left it is placed, not pushed (a negative margin, a transform): if it is meant to reach out (a decoration), give it position: absolute or data-ar-bleed; else move it back in',
 }
 

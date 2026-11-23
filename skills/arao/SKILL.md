@@ -132,9 +132,10 @@ Do:
   wider than its box), with what overflows, by how many px and the fix; the dev server says the
   same as a console warning (`[arao] overflow: …`), which `check-deck.mjs` reports. **Read those
   lines after every export and fix each slide** before calling the deck done: fewer blocks or
-  less text first (one idea per slide), else `Slide.fit` (its body's text shrinks just enough,
-  down to 60%) or a fixed step down, `.scale-90` / `.scale-80` / `.scale-70`, on the slide or on
-  one block. A warning that `fit` stayed at 60% means split the slide. Not done until the export
+  less text first (one idea per slide), else `Slide.fit` (its body shrinks just enough, down to
+  60%: the text and everything inside, headings, gaps, an `Agenda`, a layout's sizes, icons) or a
+  fixed step down, `.scale-90` / `.scale-80` / `.scale-70`, on the slide or on one block. A
+  warning that `fit` stayed at 60% means split the slide. Not done until the export
   says nothing about overflow (`--strict` makes it fail instead). A decoration meant to reach
   past its box: `position: absolute`, or `data-ar-bleed` on it.
 - Name files, never import them: `Snippet(file="App.java")` from `src/snippets/`,

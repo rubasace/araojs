@@ -24,15 +24,20 @@
    The sides are the body's children (no named templates: what is written is what is read, in
    order, left side first), so the slide stays a column (its header, its body) and the body is
    the grid. A side is a column of its own, clipped at its edge (as a zone is, Slide.vue). A
-   hidden child is no side (:not([hidden]): a Background's anchor, Background.vue). */
+   hidden child is no side (:not([hidden]): a Background's anchor, Background.vue).
+   Slide.fit and the scales shrink it whole (styles/utilities.css): its gap is worked out here, at
+   full size (--_ar-split-gap-full, registered: in em, the slide's text), and drawn in the body
+   times their factor (--_ar-zoom), the divider's place and a Snippet's room with it. */
+@property --_ar-split-gap-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
 :where(.layout-split) {
   --_ar-split-columns: var(--ar-layout-split-columns, 1fr 1fr);
-  --_ar-split-gap: var(--ar-layout-split-gap, var(--ar-gap-lg));
+  --_ar-split-gap-full: var(--ar-layout-split-gap, var(--ar-gap-lg));
   --_ar-split-divider: var(--ar-layout-split-divider, none);
 }
 
 /* the body: two columns, its rows sharing its height (one side each: the full height) */
 .layout-split > .ar-body {
+  --_ar-split-gap: calc(var(--_ar-split-gap-full) * var(--_ar-zoom, 1));
   display: grid;
   grid-template-columns: var(--_ar-split-columns);
   grid-auto-rows: minmax(0, 1fr);

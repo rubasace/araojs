@@ -188,8 +188,9 @@ export interface LibraryLayouts {
    * of the space left (a slide's `top` or `bottom` class moves them). The more blocks, the smaller
    * they get, so that the slide still fits: from 9 blocks the pictures, from 11, 12 and 16 also the
    * padding, the gap and the text, step by step; up to 20 blocks (four rows of five) fit, each a
-   * title and a one-line description (a size or a gap given as a parameter stays as given). Write
-   * each block as an element (a `div`) holding its content. Columns of text are blocks too: `align="start"`,
+   * title and a one-line description (a size or a gap given as a parameter stays as given; on a
+   * `Slide.fit`, or with a scale, it shrinks with the rest). Write each block as an element (a
+   * `div`) holding its content. Columns of text are blocks too: `align="start"`,
    * `text-size="1em"` (the slide's text, not a caption's) and the slide's `top` class (under the
    * title): `Slide.top(layout="grid" align="start" text-size="1em")`.
    *
@@ -199,8 +200,9 @@ export interface LibraryLayouts {
    *   (`color-mix(in srgb, currentColor 8%, transparent)`; default `none`)
    * - `columns`: blocks per row, whatever their count (default: balanced by their count, as
    *   above)
-   * - `gap`: the space between the blocks, the cards with `cards` (default `--ar-gap-sm`;
-   *   smaller from 11 blocks)
+   * - `gap`: the space between the blocks, the cards with `cards`: a length, with its unit
+   *   (`0px`, not `0`; no keyword: the blocks' widths are worked out from it) (default
+   *   `--ar-gap-sm`; smaller from 11 blocks)
    * - `icon-size`: the size of a block's leading picture or icon (default `3em`, three times the
    *   text's size; `2em` with 9 blocks or more, smaller from 11)
    * - `max-columns`: the most blocks in a row: 13 blocks and more wrap there, and no balanced
@@ -243,8 +245,9 @@ export interface LibraryLayouts {
      * of the space left (a slide's `top` or `bottom` class moves them). The more blocks, the smaller
      * they get, so that the slide still fits: from 9 blocks the pictures, from 11, 12 and 16 also the
      * padding, the gap and the text, step by step; up to 20 blocks (four rows of five) fit, each a
-     * title and a one-line description (a size or a gap given as a parameter stays as given). Write
-     * each block as an element (a `div`) holding its content. Columns of text are blocks too: `align="start"`,
+     * title and a one-line description (a size or a gap given as a parameter stays as given; on a
+     * `Slide.fit`, or with a scale, it shrinks with the rest). Write each block as an element (a
+     * `div`) holding its content. Columns of text are blocks too: `align="start"`,
      * `text-size="1em"` (the slide's text, not a caption's) and the slide's `top` class (under the
      * title): `Slide.top(layout="grid" align="start" text-size="1em")`.
      *
@@ -254,8 +257,9 @@ export interface LibraryLayouts {
      *   (`color-mix(in srgb, currentColor 8%, transparent)`; default `none`)
      * - `columns`: blocks per row, whatever their count (default: balanced by their count, as
      *   above)
-     * - `gap`: the space between the blocks, the cards with `cards` (default `--ar-gap-sm`;
-     *   smaller from 11 blocks)
+     * - `gap`: the space between the blocks, the cards with `cards`: a length, with its unit
+     *   (`0px`, not `0`; no keyword: the blocks' widths are worked out from it) (default
+     *   `--ar-gap-sm`; smaller from 11 blocks)
      * - `icon-size`: the size of a block's leading picture or icon (default `3em`, three times the
      *   text's size; `2em` with 9 blocks or more, smaller from 11)
      * - `max-columns`: the most blocks in a row: 13 blocks and more wrap there, and no balanced
@@ -304,8 +308,9 @@ export interface LibraryLayouts {
      */
     columns?: string
     /**
-     * the space between the blocks, the cards with `cards` (default `--ar-gap-sm`; smaller from 11
-     * blocks)
+     * the space between the blocks, the cards with `cards`: a length, with its unit (`0px`, not
+     * `0`; no keyword: the blocks' widths are worked out from it) (default `--ar-gap-sm`; smaller
+     * from 11 blocks)
      *
      * `--ar-layout-grid-gap`
      */

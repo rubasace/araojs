@@ -27,7 +27,11 @@
    The semantic form, blockquote then cite; the plain one, a first p (the quote) and a p after it
    (its author): the quote is the body's first child that is not hidden (a Background's anchor
    is), its author what follows it. A title, if the slide has one, stays where every slide's is,
-   above. */
+   above.
+   Slide.fit and the scales shrink the quote too (styles/utilities.css): its size is worked out
+   here, at full size (registered: in em, the slide's text), and drawn times their factor
+   (--_ar-zoom); the mark and the author, in em, follow by themselves. */
+@property --_ar-quote-size { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
 :where(.layout-quote) {
   --_ar-quote-size: var(--ar-layout-quote-size, calc(var(--ar-title) * .8));
   --_ar-quote-mark: var(--ar-layout-quote-mark, "\201C");
@@ -47,7 +51,7 @@
   max-width: 24em;
   margin: 0 0 .6em;
   font-family: var(--ar-font-heading, inherit);
-  font-size: var(--_ar-quote-size);
+  font-size: calc(var(--_ar-quote-size) * var(--_ar-zoom, 1));
   line-height: 1.2;
 }
 .layout-quote > .ar-body > blockquote > :last-child { margin-bottom: 0; }

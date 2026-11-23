@@ -748,9 +748,18 @@ Slide(style="--ar-agenda-done-color: currentColor; --ar-agenda-done-number-color
 A theme does the same for every slide: the same four tokens in its `[data-theme="…"]` block
 ([Agenda tokens](../reference/theme-tokens.md#agenda)).
 
-Its size is `--ar-agenda-size`, a part of `--ar-title`: `Slide.fit` does not shrink it (an agenda
-too long for its slide is said to be one `Slide.fit` cannot shrink); a smaller size, or fewer
-sections, makes it fit.
+Its size is `--ar-agenda-size`, a part of `--ar-title`, and `Slide.fit` shrinks it with the rest
+of the body: an agenda of many sections fits on a `Slide.fit`, down to 60% of its size (past
+that, a smaller size, or fewer sections). The scales shrink it too, on the slide or on a block
+around it. A size you give it (px, `em`: the slide's text, or from the title's tokens) shrinks
+alike; it is read from the slide, so set it in a theme, at `:root` or on the `Slide`, not on the
+`Agenda` itself.
+
+```pug
+Slide.fit
+  h2 Agenda
+  Agenda
+```
 
 An agenda written by hand, an `ol` with the class `agenda`, gets the same rows and numbers, with
 no state:

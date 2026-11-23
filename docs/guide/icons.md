@@ -79,9 +79,11 @@ the next save of a file that uses it.
 The colour is `currentColor`: the icon takes the colour of the text, and is styled like
 text (`color: var(--ar-accent)`). Multicolour sets keep their own colours. It is `1em` tall by
 default, so it follows the font size where it sits (in a heading it is as tall as the heading's
-text; a class with `font-size` resizes it); `size` sets px. It sits on the text's baseline like a
-glyph and never shrinks in a flex row. Width and height are SVG attributes, so a CSS rule with
-`width`/`height` wins over them. Classes: `.ar-icon` (the `svg`), `.ar-icon-missing`.
+text; a class with `font-size` resizes it); `size` sets px, which `Slide.fit` and the scales
+shrink with the rest of what they shrink. It sits on the text's baseline like a glyph and never
+shrinks in a flex row. Width and height are SVG attributes (and, with `size`, a CSS rule of no
+specificity), so a CSS rule with `width`/`height` wins over them. Classes: `.ar-icon` (the
+`svg`), `.ar-icon-missing`.
 
 ## Missing icon
 

@@ -25,7 +25,7 @@ PDFs still written), for a CI that must not ship a slide cut off:
 ```
 1 slide does not fit (a warning: --strict makes it an error):
   mytalk, slide 7 "Twelve pillars", steps 3-4 of 4: the body overflows by 46px at the bottom, under the footer
-  To fit it: Slide.fit (shrinks the body's text just enough), a .scale-90, .scale-80 or .scale-70 class on the slide or on a block, or fewer blocks.
+  To fit it: Slide.fit (shrinks the body just enough), a .scale-90, .scale-80 or .scale-70 class on the slide or on a block, or fewer blocks.
 ```
 
 A slide with the class `fit` is fitted before its page is taken.
@@ -64,8 +64,8 @@ theme the deck does not list, `{ error, code: 'theme-not-listed', themes }`. `ov
 pages whose slide does not fit, each `{ slide, step, steps, title, what, fixes }` (the slide's
 number from 1, its step of `steps`, its title, what overflows and by how much, and how to fix it):
 what the CLI prints. Each fix is `{ kind, text }`, its kind `usual` (`Slide.fit`, a scale, fewer
-blocks), `floor` (`fit` at 60% and still too much), `stuck` (`fit` cannot shrink it: sized in px,
-or transformed) or `placed` (past the top or the left: mark it, or move it back in).
+blocks), `floor` (`fit` at 60% and still too much), `stuck` (`fit` cannot shrink it: sized in px
+by hand, or transformed) or `placed` (past the top or the left: mark it, or move it back in).
 
 ## Printing
 

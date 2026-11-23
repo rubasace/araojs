@@ -108,7 +108,9 @@
 //      overflow would: "[arao] overflow"); measured here too, the body's text inside the slide's
 //      padding: grids of 11, 12 and 13 blocks fit; Slide.fit's list, which does not fit without
 //      the class, fits with it (--_ar-fit on the body, from .6 to 1); Slide.scale-80's body is
-//      .8 of the slide's text
+//      .8 of the slide's text; so do, on Slide.fit, an Agenda of ten sections and a grid whose
+//      pictures are given 300px (icon-size), neither of which fits without the class, and fit
+//      shrinks what is not in em too: the Agenda's rows and the pictures are --_ar-fit of their size
 //   4g. an Agenda on a section slide, under both servers, on the sixth deck, in every built-in
 //      theme: done, current and upcoming, each item's text and number at 3:1 at least against
 //      the section's background (the accent it draws in elsewhere), measured on the pixels
@@ -386,7 +388,10 @@ const SECTION_CONTRAST = 3
 // a seventh deck of the smoke project only, crowded slides that must fit (DENSE_SLIDES, by title):
 // grids of 11, 12 and 13 blocks (an icon, a title and a one-line description each: the grid's
 // own sizes step down with the count), a Slide.fit whose list does not fit at the body's size
-// (fitted), and a Slide.scale-80. No theme listed: it is checked in every built-in one (4e)
+// (fitted), a Slide.scale-80, a Slide.fit holding an Agenda of its ten sections (DENSE_SECTIONS:
+// its rows are sized from the title's tokens, not from the body's text) and a Slide.fit of grid
+// whose pictures are given a size in px (icon-size, DENSE_ICON): neither fits whole, and fit
+// shrinks them too. No theme listed: it is checked in every built-in one (4f)
 const DENSE_BLOCKS = [
   ['lucide:file-code', 'One Vue file', 'Slides as components'], ['lucide:monitor', 'Any screen', 'One canvas, scaled'],
   ['lucide:printer', 'And a PDF', 'Every step a page'], ['lucide:palette', 'Themes', 'Tokens, not CSS'],
@@ -396,7 +401,13 @@ const DENSE_BLOCKS = [
   ['lucide:languages', 'Languages', 'The UI in yours'], ['lucide:share-2', 'Sync', 'Windows in step'],
   ['lucide:timer', 'Timer', 'The talk on time'],
 ]
-const DENSE_SLIDES = { grids: ['11 blocks', '12 blocks', '13 blocks'], fit: 'Fitted to the slide', scaled: 'A step down' }
+const DENSE_SLIDES = {
+  grids: ['11 blocks', '12 blocks', '13 blocks'], fit: 'Fitted to the slide', scaled: 'A step down',
+  agenda: 'The whole talk', icons: 'Pictures given a size',
+}
+const DENSE_SECTIONS = ['Why we started', 'The first prototype', 'What broke', 'Rewriting the core', 'Themes as tokens',
+  'Layouts in CSS', 'Measuring overflow', 'Exporting to PDF', 'What users asked for', 'What comes next']
+const DENSE_ICON = 300
 const DENSE = ['Dense.vue', `<template lang="pug">
 Deck
   Slide(v-for="n in [11, 12, 13]" :key="n" layout="grid")
@@ -412,10 +423,22 @@ Deck
   Slide.scale-80
     h2 ${DENSE_SLIDES.scaled}
     p Its body at 80% of its size
+  Slide.fit
+    h2 ${DENSE_SLIDES.agenda}
+    Agenda
+  Slide.fit(layout="grid" icon-size="${DENSE_ICON}px")
+    h2 ${DENSE_SLIDES.icons}
+    div(v-for="b in blocks.slice(0, 8)" :key="b[1]")
+      Icon(:name="b[0]")
+      h3 {{ b[1] }}
+      p {{ b[2] }}
+  Slide(v-for="t in sections" :key="t" layout="section")
+    h1 {{ t }}
 </template>
 
 <script setup>
 const blocks = ${JSON.stringify(DENSE_BLOCKS).replace(/"/g, "'")}
+const sections = ${JSON.stringify(DENSE_SECTIONS).replace(/"/g, "'")}
 </script>
 `]
 
@@ -1700,7 +1723,12 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
   // h3, p and li, each icon) inside the slide's padding, the safe area. The grids of 11, 12 and 13
   // blocks fit as they are; Slide.fit's list does not at its body's size (seen with the class
   // taken off for a moment) and fits fitted (--_ar-fit on its body, from .6 to 1); Slide.scale-80's
-  // body is .8 of the slide's text
+  // body is .8 of the slide's text. The Slide.fit of an Agenda of ten sections and the Slide.fit of
+  // grid whose pictures are DENSE_ICON px do not fit whole either, and fit fitted, everything in
+  // them shrunk by the same factor: the Agenda's rows (sized from the title's tokens) and the
+  // pictures (given in px) are --_ar-fit of their whole size. Fitted, a grid's text goes as far
+  // as fit lets it, the safe area grown by the body's negative margin (core/overflow.ts): that
+  // one is measured against it
   async function fits(base, mode, themes) {
     const complaints = []
     for (const theme of themes) {
@@ -1711,7 +1739,8 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
         await page.goto(new URL(`dense?theme=${theme}#/1/1`, base).href)
         await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
         const titles = await page.evaluate(() => [...document.querySelectorAll('.ar-slide')].map((s) => s.querySelector('.ar-title')?.textContent.trim()))
-        for (const title of [...DENSE_SLIDES.grids, DENSE_SLIDES.fit, DENSE_SLIDES.scaled]) {
+        const fittedTitles = [DENSE_SLIDES.fit, DENSE_SLIDES.agenda, DENSE_SLIDES.icons]
+        for (const title of [...DENSE_SLIDES.grids, DENSE_SLIDES.fit, DENSE_SLIDES.scaled, DENSE_SLIDES.agenda, DENSE_SLIDES.icons]) {
           const n = titles.indexOf(title) + 1
           if (!n) {
             complaints.push(`${theme}: no slide "${title}"`)
@@ -1721,44 +1750,66 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
           await page.waitForFunction((h) => location.hash === h, `#/${n}/1`, { timeout: 5_000 }).catch(() => {})
           await page.waitForFunction(() => !document.querySelector('[data-ar-busy]') && document.fonts.status === 'loaded', null, { timeout: 15_000 }).catch(() => {})
           await pause(1200) // the slide's fade, then the engine's own measure, a moment after
-          const got = await page.evaluate((i) => {
+          const got = await page.evaluate(([i, room]) => {
             const s = document.querySelectorAll('.ar-slide')[i]
             const body = s.querySelector(':scope > .ar-body')
             const k = s.getBoundingClientRect().width / s.offsetWidth
             const sr = s.getBoundingClientRect()
             const cs = getComputedStyle(s)
-            const area = { t: sr.top + parseFloat(cs.paddingTop) * k, r: sr.right - parseFloat(cs.paddingRight) * k, b: sr.bottom - parseFloat(cs.paddingBottom) * k, l: sr.left + parseFloat(cs.paddingLeft) * k }
+            // the safe area; with room, grown by as much as a negative margin pulls the body out (a
+            // grid's: what fit measures against, core/overflow.ts, and fills up to it)
+            const bcs = getComputedStyle(body)
+            const pull = (side) => (room ? Math.max(0, -parseFloat(bcs[`margin${side}`])) * k : 0)
+            const area = {
+              t: sr.top + parseFloat(cs.paddingTop) * k - pull('Top'), r: sr.right - parseFloat(cs.paddingRight) * k + pull('Right'),
+              b: sr.bottom - parseFloat(cs.paddingBottom) * k + pull('Bottom'), l: sr.left + parseFloat(cs.paddingLeft) * k - pull('Left'),
+            }
             // how far the body's text reaches past the safe area, canvas px (0: inside)
             const out = () => Math.max(0, ...[...body.querySelectorAll('h3, p, li, .ar-icon')].map((e) => {
               const r = e.getBoundingClientRect()
               return Math.max(r.bottom - area.b, r.right - area.r, area.l - r.left, area.t - r.top) / k
             }))
+            // the size of the Agenda's rows, and the height of the first picture (canvas px)
+            const sizes = () => ({
+              agenda: parseFloat(getComputedStyle(body.querySelector('.ar-agenda') ?? body).fontSize),
+              icon: (body.querySelector('.ar-icon')?.getBoundingClientRect().height ?? 0) / k,
+            })
             const fitted = s.classList.contains('fit')
             let unfitted = null
+            let whole = null
             if (fitted) {
               s.classList.remove('fit')
               unfitted = out()
+              whole = sizes()
               s.classList.add('fit')
             }
             return {
               out: out(),
               unfitted,
+              whole,
+              sizes: sizes(),
               fit: parseFloat(body.style.getPropertyValue('--_ar-fit')) || 1,
               scale: parseFloat(getComputedStyle(body).fontSize) / parseFloat(getComputedStyle(s).fontSize),
             }
-          }, n - 1)
-          if (got.out > 2) complaints.push(`${theme}: "${title}" reaches ${got.out.toFixed(1)}px past the slide's padding`)
-          if (title === DENSE_SLIDES.fit) {
+          }, [n - 1, title === DENSE_SLIDES.icons])
+          if (got.out > 2) complaints.push(`${theme}: "${title}" reaches ${got.out.toFixed(1)}px past the slide's padding${title === DENSE_SLIDES.icons ? ', and the body\'s margin' : ''}`)
+          if (fittedTitles.includes(title)) {
             if (!(got.unfitted > 2)) complaints.push(`${theme}: "${title}" fits without Slide.fit (${got.unfitted?.toFixed(1)}px past): it tests nothing`)
             if (!(got.fit >= 0.6 && got.fit < 1)) complaints.push(`${theme}: "${title}" has --_ar-fit ${got.fit}, not from .6 to 1`)
           } else if (got.fit !== 1) complaints.push(`${theme}: "${title}", no .fit, has --_ar-fit ${got.fit}`)
           if (title === DENSE_SLIDES.scaled && Math.abs(got.scale - 0.8) > 0.005) complaints.push(`${theme}: "${title}"'s body is ${got.scale.toFixed(3)} of the slide's text, not .8`)
+          if (title === DENSE_SLIDES.agenda && got.whole && Math.abs(got.sizes.agenda / got.whole.agenda - got.fit) > 0.005)
+            complaints.push(`${theme}: "${title}"'s Agenda is ${(got.sizes.agenda / got.whole.agenda).toFixed(3)} of its size, not --_ar-fit (${got.fit})`)
+          if (title === DENSE_SLIDES.icons && got.whole) {
+            if (Math.abs(got.whole.icon - DENSE_ICON) > 1) complaints.push(`${theme}: "${title}"'s pictures are ${got.whole.icon.toFixed(1)}px whole, not icon-size, ${DENSE_ICON}px`)
+            if (Math.abs(got.sizes.icon - DENSE_ICON * got.fit) > 1) complaints.push(`${theme}: "${title}"'s pictures are ${got.sizes.icon.toFixed(1)}px fitted, not ${DENSE_ICON}px x --_ar-fit (${got.fit})`)
+          }
         }
       } finally {
         await page.context().close()
       }
     }
-    console.log(`  ${mode} crowded slides: ${complaints.length ? 'problems below' : `grids of 11, 12 and 13 blocks, Slide.fit and Slide.scale-80 fit in ${themes.join(', ')}`}`)
+    console.log(`  ${mode} crowded slides: ${complaints.length ? 'problems below' : `grids of 11, 12 and 13 blocks, Slide.fit, Slide.scale-80, an Agenda of ten sections and pictures of ${DENSE_ICON}px on Slide.fit fit in ${themes.join(', ')}`}`)
     for (const c of complaints) fail(`${mode} crowded slides: ${c}`)
   }
 
@@ -2839,7 +2890,7 @@ Deck
       }
       if (fitted.some((v) => v !== '1')) complaints.push(`Slide.fit shrank a body it cannot help (--_ar-fit ${fitted.join(', ')} on slides 3 and 4, not 1)`)
       const said = (step) => new RegExp(`^\\[arao\\] overflow: deck "Overflowing", slide 1 "${OVERFLOW_TITLE}", step ${step} of 3: the body overflows by (\\d+)px at the bottom, (under the footer|past the slide's edge \\(cut off\\))\\. To fit it: Slide\\.fit \\(.*\\), a \\.scale-90, \\.scale-80 or \\.scale-70 class on the slide or on a block, or fewer blocks\\.$`)
-      const stuck = /^\[arao\] overflow: deck "Overflowing", slide 3 "Too wide for fit": the body overflows by \d+px at the right\. Slide\.fit cannot shrink it \(it is sized in px, or transformed\): make it smaller, or fewer blocks\.$/
+      const stuck = /^\[arao\] overflow: deck "Overflowing", slide 3 "Too wide for fit": the body overflows by \d+px at the right\. Slide\.fit cannot shrink it \(it is sized in px by hand, or transformed\): make it smaller, or fewer blocks\.$/
       const placed = /^\[arao\] overflow: deck "Overflowing", slide 4 "Pulled to the left": the body overflows by \d+px at the left\. Past the top or the left it is placed, not pushed .*position: absolute or data-ar-bleed.*\.$/
       const [two, three] = [said(2).exec(warned[0] ?? ''), said(3).exec(warned[1] ?? '')]
       if (warned.length !== 4 || !two || !three || !stuck.test(warned[2]) || !placed.test(warned[3])) complaints.push(`not one warning for step 2 and one for step 3 of slide 1 (${said(2)}), then one for slide 3 (${stuck}) and one for slide 4 (${placed}), but ${warned.length}: ${warned.join(' | ') || 'none'}`)
@@ -3143,7 +3194,7 @@ Deck
       lines: [/^overflow\/overflowing\.pdf: 6 pages \(4 slides, 6 steps\)/m],
       errs: [/^3 slides do not fit \(a warning: --strict makes it an error\):$/m,
         new RegExp(`^  Overflowing, slide 1 "${OVERFLOW_TITLE}", steps 2-3 of 3: the body overflows by (\\d+)px at the bottom, (under the footer|past the slide's edge \\(cut off\\))$`, 'm'),
-        /^  Overflowing, slide 3 "Too wide for fit": the body overflows by \d+px at the right\. Slide\.fit cannot shrink it \(it is sized in px, or transformed\): make it smaller, or fewer blocks$/m,
+        /^  Overflowing, slide 3 "Too wide for fit": the body overflows by \d+px at the right\. Slide\.fit cannot shrink it \(it is sized in px by hand, or transformed\): make it smaller, or fewer blocks$/m,
         /^  Overflowing, slide 4 "Pulled to the left": the body overflows by \d+px at the left\. Past the top or the left it is placed, not pushed .*data-ar-bleed.*$/m,
         /^  To fit it: Slide\.fit \(.*\), a \.scale-90, \.scale-80 or \.scale-70 class on the slide or on a block, or fewer blocks\.$/m],
       notErrs: [/slide 2/, /To fit it[^]*To fit it/],

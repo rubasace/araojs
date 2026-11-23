@@ -11,8 +11,9 @@
  * of the space left (a slide's `top` or `bottom` class moves them). The more blocks, the smaller
  * they get, so that the slide still fits: from 9 blocks the pictures, from 11, 12 and 16 also the
  * padding, the gap and the text, step by step; up to 20 blocks (four rows of five) fit, each a
- * title and a one-line description (a size or a gap given as a parameter stays as given). Write
- * each block as an element (a `div`) holding its content. Columns of text are blocks too: `align="start"`,
+ * title and a one-line description (a size or a gap given as a parameter stays as given; on a
+ * `Slide.fit`, or with a scale, it shrinks with the rest). Write each block as an element (a
+ * `div`) holding its content. Columns of text are blocks too: `align="start"`,
  * `text-size="1em"` (the slide's text, not a caption's) and the slide's `top` class (under the
  * title): `Slide.top(layout="grid" align="start" text-size="1em")`.
  * @example
@@ -36,8 +37,9 @@
  *                     rounded up (counted up to 24 blocks; `columns` wins over it)
  * @param max-columns  the most blocks in a row: 13 blocks and more wrap there, and no balanced
  *                     row is wider (default `5`)
- * @param gap          the space between the blocks, the cards with `cards` (default
- *                     `--ar-gap-sm`; smaller from 11 blocks)
+ * @param gap          the space between the blocks, the cards with `cards`: a length, with its
+ *                     unit (`0px`, not `0`; no keyword: the blocks' widths are worked out from
+ *                     it) (default `--ar-gap-sm`; smaller from 11 blocks)
  * @param align        a block's content: `center` or `start` (default `center`)
  * @param cards        each block's background, which makes it a card: a colour, a gradient
  *                     (`color-mix(in srgb, currentColor 8%, transparent)`; default `none`)
@@ -65,11 +67,23 @@
    much on every side (a negative margin), so that its content lines up with the title's edge,
    card or not; a card is that padding and its background (--ar-layout-grid-cards, rounded as
    --ar-radius). Both are in the body's em: a block keeps the body's font-size (its text's size
-   is its h3's and its p's own). */
+   is its h3's and its p's own).
+   Slide.fit and the scales shrink a grid whole (styles/utilities.css): its sizes in em with the
+   text, its default gap with --ar-gap-sm, and a size given as a parameter (icon-size, gap,
+   text-size) by their factor, --_ar-zoom: worked out here, on the slide, at full size
+   (--_ar-grid-…-full, registered: in em, the slide's text), and drawn times the factor in the
+   body (--_ar-grid-…-given, defined only when the parameter is: the 0 * <the parameter> adds
+   nothing, and makes it undefined when there is none, so the default follows). */
+@property --_ar-grid-icon-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
+@property --_ar-grid-gap-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
+@property --_ar-grid-text-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
 :where(.layout-grid) {
   --_ar-grid-max: var(--ar-layout-grid-max-columns, 5);
   --_ar-grid-align: var(--ar-layout-grid-align, center);
   --_ar-grid-cards: var(--ar-layout-grid-cards, none);
+  --_ar-grid-icon-full: var(--ar-layout-grid-icon-size, 0);
+  --_ar-grid-gap-full: var(--ar-layout-grid-gap, 0);
+  --_ar-grid-text-full: var(--ar-layout-grid-text-size, 0);
   --ar-body-align: center;
 }
 
@@ -89,12 +103,11 @@
   --_ar-grid-by-rows: round(up, var(--_ar-grid-count) / var(--ar-layout-grid-rows));
   --_ar-grid-columns: var(--ar-layout-grid-columns, var(--_ar-grid-by-rows, min(var(--_ar-grid-balanced), var(--_ar-grid-max))));
   --_ar-grid-icon-auto: 3em;
-  --_ar-grid-icon: var(--ar-layout-grid-icon-size, var(--_ar-grid-icon-auto));
   --_ar-grid-pad: .6em;
   --_ar-grid-gap-auto: var(--ar-gap-sm);
-  --_ar-grid-gap: var(--ar-layout-grid-gap, var(--_ar-grid-gap-auto));
+  --_ar-grid-gap-given: calc(var(--_ar-grid-gap-full) * var(--_ar-zoom, 1) + 0 * var(--ar-layout-grid-gap));
+  --_ar-grid-gap: var(--_ar-grid-gap-given, var(--_ar-grid-gap-auto));
   --_ar-grid-step: 1;
-  --_ar-grid-text: var(--ar-layout-grid-text-size, calc(var(--ar-text-small) * var(--_ar-grid-step)));
   flex-direction: row; flex-wrap: wrap;
   justify-content: center; align-content: safe var(--ar-body-align);
   gap: var(--_ar-grid-gap);
@@ -138,8 +151,13 @@
   --_ar-grid-icon-auto: 1.2em; --_ar-grid-pad: .3em; --_ar-grid-gap-auto: calc(var(--ar-gap-sm) * .4); --_ar-grid-step: .72;
 }
 
-/* a block: its row's share, its content in a column */
+/* a block: its row's share, its content in a column. Its picture's size and its text's are
+   worked out on it, so that a block with a scale draws a size given at its own factor */
 .layout-grid > .ar-body > :not([hidden]) {
+  --_ar-grid-icon-given: calc(var(--_ar-grid-icon-full) * var(--_ar-zoom, 1) + 0 * var(--ar-layout-grid-icon-size));
+  --_ar-grid-icon: var(--_ar-grid-icon-given, var(--_ar-grid-icon-auto));
+  --_ar-grid-text-given: calc(var(--_ar-grid-text-full) * var(--_ar-zoom, 1) + 0 * var(--ar-layout-grid-text-size));
+  --_ar-grid-text: var(--_ar-grid-text-given, calc(var(--ar-text-small) * var(--_ar-grid-step)));
   flex: 0 0 calc((100% - (var(--_ar-grid-columns) - 1) * var(--_ar-grid-gap)) / var(--_ar-grid-columns));
   box-sizing: border-box; min-width: 0;
   display: flex; flex-direction: column;
