@@ -27,11 +27,13 @@ arao({ dts: 42 })
 
 // the layouts a Slide can name: the library's, and the project's (src/arao-layouts.d.ts, which the
 // plugin wrote from src/layouts/callout.css before this check)
-const layouts: (keyof SlideLayouts)[] = ['default', 'cover', 'section', 'split', 'image-left', 'image-right', 'grid', 'quote', 'statement', 'overlay', 'caption', 'agenda', 'callout']
+const layouts: (keyof SlideLayouts)[] = ['default', 'cover', 'section', 'split', 'image-left', 'image-right', 'grid', 'quote', 'statement', 'overlay', 'caption', 'callout']
 void layouts
 // @ts-expect-error no layout of that name
 const unknownLayout: keyof SlideLayouts = 'nope'
-void unknownLayout
+// @ts-expect-error agenda is no layout any more: a Slide with an Agenda in it
+const agendaLayout: keyof SlideLayouts = 'agenda'
+void [unknownLayout, agendaLayout]
 // and the parameters each takes: the library's (from its layouts/), the project's (from its CSS:
 // a token that is an HTML attribute's name, callout.css's --ar-layout-callout-title, is none), a
 // project layout replacing the library's of its name (section.css) with its own
@@ -45,8 +47,7 @@ const quote: SlideLayouts['quote'] = { size: '80px', mark: "'«'", markColor: 'r
 const statement: SlideLayouts['statement'] = { size: '200px', color: 'red', align: 'center' }
 const overlay: SlideLayouts['overlay'] = { position: 'top-right', scrim: '.4', color: '#fff' }
 const caption: SlideLayouts['caption'] = { captionSize: '24px', captionAlign: 'start' }
-const agenda: SlideLayouts['agenda'] = { doneColor: 'currentColor', doneNumberColor: 'red', doneOpacity: '1', currentColor: 'currentColor', currentWeight: '400', upcomingColor: 'red' }
-void [own, cover, callout, section, grid, split, quote, statement, overlay, caption, agenda]
+void [own, cover, callout, section, grid, split, quote, statement, overlay, caption]
 // @ts-expect-error title is an HTML attribute: no parameter
 const titled: SlideLayouts['callout'] = { title: 'x' }
 // @ts-expect-error the project's section has none of the library's parameters

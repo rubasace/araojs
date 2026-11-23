@@ -31,7 +31,8 @@
     <Slide layout="split" divider="2px solid red" gap="96px" />
     <Slide layout="quote" mark="'«'" mark-color="red" />
     <Slide layout="caption" caption-size="24px" captionAlign="start" />
-    <Slide layout="agenda" done-opacity="1" current-weight="400" />
+    <!-- @vue-expect-error agenda is no layout any more: a Slide with an Agenda in it -->
+    <Slide layout="agenda" />
     <!-- @vue-expect-error icon-size is grid's parameter, not split's -->
     <Slide layout="split" icon-size="64px" />
     <Slide layout="section" tone="navy" />

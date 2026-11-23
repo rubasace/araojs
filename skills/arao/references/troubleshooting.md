@@ -83,6 +83,16 @@
   scrim's strength now, `0` to `1` (default `.6`; `none` still none): it follows the position by
   itself, and a CSS background given there draws no scrim (drop it, or give a number; in
   development the console says so).
+- **The `agenda` layout is gone** (BREAKING): `Agenda` has its own look now, in any slide.
+  `Slide(layout="agenda")` → `Slide`, with its `h2` and `Agenda` as before (an `agenda` left
+  there is a layout with no CSS, the default one: the `Agenda` still looks right, but the
+  layout's parameters do nothing, and `vue-tsc` turns the name down; `check-deck.mjs` reports
+  it as "removed Slide API", or only warns when a stylesheet styles `.layout-agenda`: a name
+  kept on purpose, as a hook for a theme's rules, is fine). Its parameters are `--ar-agenda-*` tokens, set in a theme or in the
+  slide's `style`: `done-opacity="1"` → `style="--ar-agenda-done-opacity: 1"`, and so on for
+  `size`, `gap`, `number-color` and each state's `-color`, `-number-color`, `-opacity` and
+  `-weight` (a theme's `--ar-layout-agenda-<thing>` is `--ar-agenda-<thing>`). A hand-written
+  `ol` on an `agenda` slide → `ol.agenda`, the same rows with no state.
 - **`.small` is `.text-sm` now** (BREAKING): `.small` does nothing. With it come `.text-lg` and
   `.text-xl`, and `.middle` on a slide or a block (centred top to bottom, the text as it is).
 - **`split` has no `#left`/`#right` now** (they render below the body, and fail `vue-tsc`): its

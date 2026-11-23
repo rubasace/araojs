@@ -10,10 +10,9 @@ slide's attributes too ([Layout parameters](#layout-parameters)). Every prop and
 
 `default` (a content slide), `cover`, `section`, `split` (two sides under the title), `grid`
 (blocks in balanced rows: features, pillars, logos), `quote`, `statement` (one phrase or figure,
-huge), `overlay` (text over a full-slide `Background`), `caption` (one picture and its caption),
-`agenda` (the talk's parts, with [`Agenda`](../reference/components.md#agenda)) and `image-left` /
-`image-right` (a full-height, edge-to-edge picture beside the text). Each is one CSS file of the
-library; the full table, and the tokens each one reads:
+huge), `overlay` (text over a full-slide `Background`), `caption` (one picture and its caption)
+and `image-left` / `image-right` (a full-height, edge-to-edge picture beside the text). Each is
+one CSS file of the library; the full table, and the tokens each one reads:
 [Layouts](../reference/components.md#layouts). A name with no CSS behind it is the `default`
 layout, its slides carrying the class `layout-<name>` for a theme or a deck to style. In a
 TypeScript project the editor completes the names there are, each layout's parameters and zones,
@@ -196,52 +195,6 @@ Deck
 
 ![The caption example](../assets/shots/caption.png)
 
-### The agenda
-
-`Agenda`, inside a slide, is an ordered list of the titles of the deck's `section` slides, kept
-up to date by the deck. On an `agenda` slide its rows are big and numbered, and each shows where
-the talk stands from that slide: the parts already given dimmed (`done`), the next one in the
-accent, bold (`current`), the ones after it as they are (`upcoming`). Write it once after each
-section, or on every section slide (the section itself is then the current one), and each copy
-shows the talk's progress; in the presenter view and the export too.
-
-<!-- example:agenda -->
-
-```vue
-<template lang="pug">
-Deck
-  Slide(layout="agenda")
-    h2 Agenda
-    Agenda
-  Slide(layout="section")
-    h1 Why a framework
-  Slide(layout="section")
-    h1 How it works
-  Slide(layout="section")
-    h1 What comes next
-</template>
-```
-
-<!-- /example -->
-
-![The agenda example](../assets/shots/agenda.png)
-
-Each item carries `ar-agenda-item` and one of `ar-agenda-done`, `ar-agenda-current` (with
-`aria-current="step"`) and `ar-agenda-upcoming`; `Agenda` draws no look of its own. The look is
-the layout's: a colour, a number colour, an opacity and a weight per state
-(`--ar-layout-agenda-done-color`, `--ar-layout-agenda-current-weight`… [Layout
-tokens](../reference/theme-tokens.md#layouts)), which a theme or one slide changes. A done part
-is dimmed by its colour, the muted one made lighter, number and all, which keeps it legible (at
-least 3:1 on every built-in theme). Give the three states the same values and the effect is gone:
-
-```pug
-Slide(layout="agenda" done-color="currentColor" done-number-color="var(--ar-accent)" current-color="currentColor" current-weight="400")
-  h2 Agenda
-  Agenda
-```
-
-An `agenda` slide styles a hand-written `ol` the same way, with no state.
-
 ### Layout parameters
 
 A layout's tokens tune it ([Layout tokens](../reference/theme-tokens.md#layouts)): in a theme, for
@@ -346,7 +299,7 @@ keep the plain heading styles. The convention, which the examples and the layout
 | Heading | Where |
 |---|---|
 | `h1` | the title of a `cover` or a `section` |
-| `h2` | a slide's title (the statement of a `statement`, the title of an `agenda`, an `overlay`…) |
+| `h2` | a slide's title (the statement of a `statement`, the title of an `overlay`…) |
 | `h3` | a subtitle (right after the title), or a heading inside: a side of `split`, a block of `grid` |
 
 ```pug
@@ -696,4 +649,71 @@ Slide
       tr
         td October
         td 59
+```
+
+### The agenda
+
+`Agenda`, inside a slide, is an ordered list of the titles of the deck's `section` slides, kept
+up to date by the deck, in big rows numbered in the accent. It needs no layout: its look is its
+own, on a slide of the default layout as on any other. Each row shows where the talk stands from
+that slide: the parts already given dimmed (`done`), the next one in the accent, bold
+(`current`), the ones after it as they are (`upcoming`). Write it once after each section, or on
+every section slide (the section itself is then the current one), and each copy shows the talk's
+progress; in the presenter view and the export too. On a section slide, whose background is the
+accent, it takes the section's text colour, as the title does: the current part bold, the ones
+already given lighter.
+
+<!-- example:agenda -->
+
+```vue
+<template lang="pug">
+Deck
+  Slide
+    h2 Agenda
+    Agenda
+  Slide(layout="section")
+    h1 Why a framework
+  Slide(layout="section")
+    h1 How it works
+  Slide(layout="section")
+    h1 What comes next
+</template>
+```
+
+<!-- /example -->
+
+![The agenda example](../assets/shots/agenda.png)
+
+Each item carries `ar-agenda-item` and one of `ar-agenda-done`, `ar-agenda-current` (with
+`aria-current="step"`) and `ar-agenda-upcoming`. The look is tokens: the rows' size and gap, the
+numbers' colour, and a colour, a number colour, an opacity and a weight per state
+(`--ar-agenda-size`, `--ar-agenda-done-color`, `--ar-agenda-current-weight`… [Agenda
+tokens](../reference/theme-tokens.md#agenda)), which a theme sets for every agenda, or one slide
+in its `style`. A done part is dimmed by its colour, the muted one made lighter, number and all,
+which keeps it legible (at least 3:1 on every built-in theme). Give the three states the same
+values and the effect is gone:
+
+```pug
+Slide(style="--ar-agenda-done-color: currentColor; --ar-agenda-done-number-color: var(--ar-accent); --ar-agenda-current-color: currentColor; --ar-agenda-current-weight: 400")
+  h2 Agenda
+  Agenda
+```
+
+A theme does the same for every slide: the same four tokens in its `[data-theme="…"]` block
+([Agenda tokens](../reference/theme-tokens.md#agenda)).
+
+Its size is `--ar-agenda-size`, a part of `--ar-title`: `Slide.fit` does not shrink it (an agenda
+too long for its slide is said to be one `Slide.fit` cannot shrink); a smaller size, or fewer
+sections, makes it fit.
+
+An agenda written by hand, an `ol` with the class `agenda`, gets the same rows and numbers, with
+no state:
+
+```pug
+Slide
+  h2 Today
+  ol.agenda
+    li Why a framework
+    li How it works
+    li What comes next
 ```

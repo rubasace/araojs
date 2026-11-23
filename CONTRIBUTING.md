@@ -47,7 +47,7 @@ src/
                     lists them), base.css (page, viewport, steps); every component brings its own
                     CSS in its .vue file
 themes/             the built-in themes, one CSS file each, named as the theme (default.css names the defaults): the library's theme source (arao({ builtinThemes }) says which load)
-layouts/            the slide layouts, one CSS file each, named as the layout (cover, section, split, grid, quote, statement, overlay, caption, agenda, image-left, image-right): Slide has no code for any of them; a project's src/layouts adds or replaces some
+layouts/            the slide layouts, one CSS file each, named as the layout (cover, section, split, grid, quote, statement, overlay, caption, image-left, image-right): Slide has no code for any of them; a project's src/layouts adds or replaces some
 vite/               the Vite plugin (araojs/vite; icons.js resolves the icons; layout-docs.js and
                     class-docs.js read the layouts' and the utility classes' doc comments)
 bin/                the arao command (arao export, arao layouts: the layouts, then the utility classes)

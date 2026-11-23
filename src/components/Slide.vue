@@ -2,7 +2,7 @@
      (layout-default without it), and CSS does the rest. The engine renders every slide the same
      way, whatever its layout, and has no code for any of them: a layout is one CSS file, named as
      the layout, in the library's layouts/ folder (cover, section, split, grid, quote, statement,
-     overlay, caption, agenda, image-left, image-right: each file starts with a doc block saying
+     overlay, caption, image-left, image-right: each file starts with a doc block saying
      what it is for, how to use it, its zones and its parameters: vite/layout-docs.js reads it) or
      the project's src/layouts (the Vite plugin loads both, the project's after; one of the same
      name replaces the library's). A name with no CSS is the default layout, below.

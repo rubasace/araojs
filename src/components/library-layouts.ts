@@ -44,186 +44,6 @@ export interface LibraryLayouts {
     layout?: 'default'
   }
   /**
-   * The talk's agenda: its parts, one big numbered row each.
-   *
-   * An `ol` under the title, its items in large rows numbered in the accent. With `Agenda` in it,
-   * the list is the deck's own (the titles of its `section` slides, kept up to date) and each row
-   * shows where the talk stands, seen from this slide: the parts already given dimmed, number and
-   * all (`done`), the next one in the accent, bold (`current`), the ones after it as they are
-   * (`upcoming`). Each state has its own tokens; give the three the same values to show no state.
-   * A hand-written `ol` is styled the same, with no state.
-   *
-   * Parameters (attributes):
-   * - `current-color`: the next part, the one this slide leads to: its colour (default
-   *   `--ar-accent`)
-   * - `current-number-color`: its number's colour (default `number-color`)
-   * - `current-opacity`: its opacity (default `1`)
-   * - `current-weight`: its font weight (default `700`)
-   * - `done-color`: a part already given: its colour (default `--ar-muted` at 80 %, at least 3:1
-   *   on every built-in theme)
-   * - `done-number-color`: its number's colour (default: its colour)
-   * - `done-opacity`: its opacity (default `1`)
-   * - `done-weight`: its font weight (default `400`)
-   * - `gap`: the space between rows (default `.35em`)
-   * - `number-color`: the numbers' colour (default `--ar-accent`)
-   * - `size`: the rows' size (default 0.65 x `--ar-title`)
-   * - `upcoming-color`: the parts after it: their colour (default `currentColor`)
-   * - `upcoming-number-color`: their numbers' colour (default `number-color`)
-   * - `upcoming-opacity`: their opacity (default `1`)
-   * - `upcoming-weight`: their font weight (default `400`)
-   *
-   * @example
-   * ```pug
-   * Slide(layout="agenda")
-   *   h2 Agenda
-   *   Agenda
-   *
-   * Slide(layout="agenda")
-   *   h2 Today
-   *   ol
-   *     li Why a framework
-   *     li How it works
-   *     li What comes next
-   * ```
-   */
-  'agenda': {
-    /**
-     * The talk's agenda: its parts, one big numbered row each.
-     *
-     * An `ol` under the title, its items in large rows numbered in the accent. With `Agenda` in it,
-     * the list is the deck's own (the titles of its `section` slides, kept up to date) and each row
-     * shows where the talk stands, seen from this slide: the parts already given dimmed, number and
-     * all (`done`), the next one in the accent, bold (`current`), the ones after it as they are
-     * (`upcoming`). Each state has its own tokens; give the three the same values to show no state.
-     * A hand-written `ol` is styled the same, with no state.
-     *
-     * Parameters (attributes):
-     * - `current-color`: the next part, the one this slide leads to: its colour (default
-     *   `--ar-accent`)
-     * - `current-number-color`: its number's colour (default `number-color`)
-     * - `current-opacity`: its opacity (default `1`)
-     * - `current-weight`: its font weight (default `700`)
-     * - `done-color`: a part already given: its colour (default `--ar-muted` at 80 %, at least 3:1
-     *   on every built-in theme)
-     * - `done-number-color`: its number's colour (default: its colour)
-     * - `done-opacity`: its opacity (default `1`)
-     * - `done-weight`: its font weight (default `400`)
-     * - `gap`: the space between rows (default `.35em`)
-     * - `number-color`: the numbers' colour (default `--ar-accent`)
-     * - `size`: the rows' size (default 0.65 x `--ar-title`)
-     * - `upcoming-color`: the parts after it: their colour (default `currentColor`)
-     * - `upcoming-number-color`: their numbers' colour (default `number-color`)
-     * - `upcoming-opacity`: their opacity (default `1`)
-     * - `upcoming-weight`: their font weight (default `400`)
-     *
-     * @example
-     * ```pug
-     * Slide(layout="agenda")
-     *   h2 Agenda
-     *   Agenda
-     *
-     * Slide(layout="agenda")
-     *   h2 Today
-     *   ol
-     *     li Why a framework
-     *     li How it works
-     *     li What comes next
-     * ```
-     */
-    layout?: 'agenda'
-    /**
-     * the next part, the one this slide leads to: its colour (default `--ar-accent`)
-     *
-     * `--ar-layout-agenda-current-color`
-     */
-    currentColor?: string
-    /**
-     * its number's colour (default `number-color`)
-     *
-     * `--ar-layout-agenda-current-number-color`
-     */
-    currentNumberColor?: string
-    /**
-     * its opacity (default `1`)
-     *
-     * `--ar-layout-agenda-current-opacity`
-     */
-    currentOpacity?: string
-    /**
-     * its font weight (default `700`)
-     *
-     * `--ar-layout-agenda-current-weight`
-     */
-    currentWeight?: string
-    /**
-     * a part already given: its colour (default `--ar-muted` at 80 %, at least 3:1 on every
-     * built-in theme)
-     *
-     * `--ar-layout-agenda-done-color`
-     */
-    doneColor?: string
-    /**
-     * its number's colour (default: its colour)
-     *
-     * `--ar-layout-agenda-done-number-color`
-     */
-    doneNumberColor?: string
-    /**
-     * its opacity (default `1`)
-     *
-     * `--ar-layout-agenda-done-opacity`
-     */
-    doneOpacity?: string
-    /**
-     * its font weight (default `400`)
-     *
-     * `--ar-layout-agenda-done-weight`
-     */
-    doneWeight?: string
-    /**
-     * the space between rows (default `.35em`)
-     *
-     * `--ar-layout-agenda-gap`
-     */
-    gap?: string
-    /**
-     * the numbers' colour (default `--ar-accent`)
-     *
-     * `--ar-layout-agenda-number-color`
-     */
-    numberColor?: string
-    /**
-     * the rows' size (default 0.65 x `--ar-title`)
-     *
-     * `--ar-layout-agenda-size`
-     */
-    size?: string
-    /**
-     * the parts after it: their colour (default `currentColor`)
-     *
-     * `--ar-layout-agenda-upcoming-color`
-     */
-    upcomingColor?: string
-    /**
-     * their numbers' colour (default `number-color`)
-     *
-     * `--ar-layout-agenda-upcoming-number-color`
-     */
-    upcomingNumberColor?: string
-    /**
-     * their opacity (default `1`)
-     *
-     * `--ar-layout-agenda-upcoming-opacity`
-     */
-    upcomingOpacity?: string
-    /**
-     * their font weight (default `400`)
-     *
-     * `--ar-layout-agenda-upcoming-weight`
-     */
-    upcomingWeight?: string
-  }
-  /**
    * One picture, as big as the slide allows, with a caption under it.
    *
    * The picture fills the space under the title (or the whole slide, with none), whole and
@@ -847,8 +667,8 @@ export interface LibraryLayouts {
    * A divider between the parts of a talk.
    *
    * Its content centred both ways, on the accent; its title larger; the deck's footer hidden. Its
-   * title, its subtitle and its footer take its text colour. Its title is an `h1` (an `h2` looks the
-   * same), a subtitle after it an `h2` or a plain `p`.
+   * title, its subtitle, its footer and an `Agenda` in it take its text colour. Its title is an `h1`
+   * (an `h2` looks the same), a subtitle after it an `h2` or a plain `p`.
    *
    * Parameters (attributes):
    * - `bg`: the slide's background (default `--ar-accent`); the theme's default background
@@ -868,8 +688,8 @@ export interface LibraryLayouts {
      * A divider between the parts of a talk.
      *
      * Its content centred both ways, on the accent; its title larger; the deck's footer hidden. Its
-     * title, its subtitle and its footer take its text colour. Its title is an `h1` (an `h2` looks the
-     * same), a subtitle after it an `h2` or a plain `p`.
+     * title, its subtitle, its footer and an `Agenda` in it take its text colour. Its title is an `h1`
+     * (an `h2` looks the same), a subtitle after it an `h2` or a plain `p`.
      *
      * Parameters (attributes):
      * - `bg`: the slide's background (default `--ar-accent`); the theme's default background
@@ -1057,7 +877,6 @@ export interface LibraryLayouts {
 
 export interface LibraryLayoutZones {
   'default': {}
-  'agenda': {}
   'caption': {}
   'cover': {}
   'grid': {}

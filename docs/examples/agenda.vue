@@ -1,6 +1,6 @@
 <template lang="pug">
 Deck
-  Slide(layout="agenda")
+  Slide
     h2 Agenda
     Agenda
   Slide(layout="section")

@@ -1,8 +1,8 @@
 /**
  * A divider between the parts of a talk.
  * Its content centred both ways, on the accent; its title larger; the deck's footer hidden. Its
- * title, its subtitle and its footer take its text colour. Its title is an `h1` (an `h2` looks the
- * same), a subtitle after it an `h2` or a plain `p`.
+ * title, its subtitle, its footer and an `Agenda` in it take its text colour. Its title is an `h1`
+ * (an `h2` looks the same), a subtitle after it an `h2` or a plain `p`.
  * @example
  * Slide(layout="section")
  *   h1 Why a framework?
@@ -16,8 +16,9 @@
 /* Its tokens, --ar-layout-section-<thing>, each a @param above (a theme, the project's :root or
    one slide sets them, a slide also as attributes: Slide(layout="section" bg="#0b3d2e"); why each
    is resolved on the slide: cover.css).
-   Its title, its subtitle and its footer take its text colour (--ar-title-color,
-   --ar-subtitle-color and --ar-footer-color, set for .layout-section in a theme, still win). Its
+   Its title, its subtitle, its footer and an Agenda in it take its text colour (--ar-title-color,
+   --ar-subtitle-color, --ar-footer-color and the --ar-agenda-* below, set for .layout-section
+   in a theme, still win). Its
    title (.ar-title, Slide.vue: an h1 or an h2, alike) is its own size, with its own leading, and
    the gap under it is in its size too (--ar-title-gap still wins). The theme's default
    background (--ar-slide-bg-image) is drawn over --ar-layout-section-bg, as on any slide: a
@@ -31,6 +32,14 @@
   --ar-title-color: currentColor;
   --ar-subtitle-color: currentColor;
   --ar-footer-color: currentColor;
+  /* an Agenda on it (one on each section shows that section as current) takes its text colour
+     too: the accent it is drawn in elsewhere is the section's background. The current part bold,
+     the parts already given that colour made lighter, their numbers with them (80 %: at least
+     3:1 on every built-in theme, where its text colour on its background is 4.1:1 at the least) */
+  --ar-agenda-number-color: currentColor;
+  --ar-agenda-current-color: currentColor;
+  --ar-agenda-done-color: color-mix(in srgb, currentColor 80%, transparent);
+  --ar-agenda-done-number-color: currentColor;
   /* no header band on a section: its title is part of the centred group */
   --ar-header-height: auto;
 }

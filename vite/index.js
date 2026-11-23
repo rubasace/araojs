@@ -64,7 +64,7 @@
 // Layouts are CSS, one file per layout, named as the layout: <name>.css styles the slides of
 // Slide(layout="<name>"), whose section carries the class layout-<name>; the engine has no code of
 // its own for any of them. First the library's own (its layouts/ folder: cover, section, split,
-// grid, quote, statement, overlay, caption, agenda, image-left, image-right), then the project's,
+// grid, quote, statement, overlay, caption, image-left, image-right), then the project's,
 // arao({ layouts }), one folder (default 'src/layouts'): every .css file directly in it. All of
 // them are loaded, with nothing to import (virtual:arao/layout-styles), after the engine's CSS and
 // before the themes' (so a theme's rule

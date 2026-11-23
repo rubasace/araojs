@@ -8,14 +8,16 @@
 // each slide, the slides whose content overflows (the warnings Arao itself gives in development,
 // "[arao] overflow: …", one per slide and step: what overflows, by how many px, and how to fix
 // it; the script waits on every step, so each is measured), Slide API that is gone (a removed
-// prop is no error in Vue: it lands on the slide as a plain HTML attribute and does nothing), components that are
+// prop is no error in Vue: it lands on the slide as a plain HTML attribute and does nothing; the
+// agenda layout, gone too, when neither araojs nor the project has one), components that are
 // gone (Cols, Rows, Grid: Vue renders an element of that name that lays nothing out), each with its
 // replacement, and saves a screenshot of every step in outDir (default ./deck-check), named
 // s<slide>-<step>.png. Exit code 1 if any warning, error, overflow, removed Slide API or
 // component, quirks mode (no <!doctype html>) or no slide rendered.
 // It warns, without failing, about what may be gone or may be the deck's own: a center element
-// (the Center component, or HTML's old <center>) and the class small (now text-sm, or a class of
-// the deck's). It also warns, without failing, about named templates that are no zone of their slide's layout
+// (the Center component, or HTML's old <center>), the class small (now text-sm, or a class of
+// the deck's) and layout="agenda" when a stylesheet styles .layout-agenda (a hook for a theme's
+// rules, or the removed layout). It also warns, without failing, about named templates that are no zone of their slide's layout
 // (the project's layouts and their zones from `arao layouts --json`, run in the project; not
 // checked when that fails, as with an older araojs): the layout's CSS does not place them, but a
 // theme or the deck's own CSS may (.ar-zone-<name>), and then the type check needs them declared
@@ -95,8 +97,15 @@ const slides = await page.locator('.ar-slide').count()
 
 // Slide API that is gone (araojs 0.5): its props fall through to the slide's section as plain
 // attributes, and template(#background) is a zone like any other (.ar-zone-background), as are
-// split's old #left and #right
-const removed = await page.evaluate(() => {
+// split's old #left and #right. And the agenda layout: a name with no CSS is the default layout,
+// where an Agenda looks the same (its look is its own), but the layout's parameters are plain
+// attributes and a hand-written ol is a plain list. Said only when the project's layouts are
+// known (arao layouts --json) and none is agenda: not its own src/layouts/agenda.css, nor the
+// library's of an older araojs. And only as a warning, which does not fail the check, when a
+// stylesheet of the page names .layout-agenda (a theme's [data-theme="x"] .layout-agenda h2, the
+// deck's own): the name may be kept on purpose, as a hook for those rules
+const agendaGone = zonesOf != null && !Object.hasOwn(zonesOf, 'agenda')
+const { removed, agendaHooks } = await page.evaluate((agendaGone) => {
   const now = {
     bg: 'Background(src="…") inside the slide, or style="background: …" for a colour',
     bgopacity: 'Background(opacity)', bgposition: 'Background(position)', bgblur: 'Background(blur)', bgfit: 'Background(fit)',
@@ -105,15 +114,30 @@ const removed = await page.evaluate(() => {
     footer: 'the classes no-footer, with-footer',
     title: "the slide's first heading, which names it",
   }
-  return [...document.querySelectorAll('.ar-slide')].flatMap((slide, i) => {
+  // a rule of a stylesheet of the page that names .layout-agenda (its cssText holds the rules
+  // nested in it, @media, @layer…; a sheet of another origin, unreadable, names nothing)
+  const styled = agendaGone && [...document.styleSheets].some((sheet) => {
+    try {
+      return [...sheet.cssRules].some((rule) => /\.layout-agenda(?![\w-])/.test(rule.cssText))
+    } catch {
+      return false
+    }
+  })
+  const agendaHooks = []
+  const removed = [...document.querySelectorAll('.ar-slide')].flatMap((slide, i) => {
     const found = [...slide.attributes].map((a) => a.name).filter((n) => now[n.replace(/-/g, '')])
       .map((n) => `${n} (now ${now[n.replace(/-/g, '')]})`)
     if (slide.querySelector(':scope > .ar-zone-background')) found.push('template(#background) (now Background inside the slide)')
     if (slide.matches('.layout-split') && slide.querySelector(':scope > :is(.ar-zone-left, .ar-zone-right)'))
       found.push('template(#left) / template(#right) on split (now its two sides are the body\'s two children, a div each)')
+    if (agendaGone && slide.matches('.layout-agenda')) {
+      if (styled) agendaHooks.push(`slide ${i + 1}`)
+      else found.push('layout="agenda" (now a Slide with Agenda in it, which has its own look; its parameters are --ar-agenda-* tokens, style="--ar-agenda-done-opacity: 1"; a hand-written ol is ol.agenda)')
+    }
     return found.length ? [`slide ${i + 1}: ${found.join('; ')}`] : []
   })
-})
+  return { removed, agendaHooks }
+}, agendaGone)
 
 // components and classes that are gone (araojs 0.5): Cols, Rows, Grid and Center are no
 // components (Vue warns once and renders an element of that name, cols, rows, grid, center, that
@@ -194,6 +218,7 @@ console.log(`slides: ${slides}`)
 console.log(`steps per slide: ${Object.entries(steps).map(([k, v]) => `${k}:${v}`).join(' ')}`)
 if (overflow.size) console.log(`content that does not fit (${overflow.size}: each says how to fix it; npm run export lists the same):\n  ${[...overflow].join('\n  ')}`)
 if (removed.length) console.log(`removed Slide API (${removed.length} slides):\n  ${removed.join('\n  ')}`)
+if (agendaHooks.length) console.log(`warning: layout="agenda" is no layout any more, but a stylesheet of the page styles .layout-agenda: kept as a hook for it? If not, a Slide with Agenda in it (its look is its own; the layout's parameters are --ar-agenda-* tokens; a hand-written ol is ol.agenda) (${agendaHooks.length} slides; troubleshooting.md, decks written for an older Arao):\n  ${agendaHooks.join(', ')}`)
 if (gone.length) console.log(`removed components (${gone.length} slides; troubleshooting.md, decks written for an older Arao):\n  ${gone.join('\n  ')}`)
 if (maybeGone.length) console.log(`warning: maybe removed, maybe the deck's own (${maybeGone.length} slides; troubleshooting.md, decks written for an older Arao):\n  ${maybeGone.join('\n  ')}`)
 if (zonesOf == null) console.log('zones: not checked (npx arao layouts --json failed)')
