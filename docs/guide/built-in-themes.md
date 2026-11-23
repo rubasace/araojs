@@ -159,6 +159,7 @@ What these numbers leave out:
   so once. A project's own `default` replaces the built-in one, which sets nothing: it refines the
   defaults while a deck wears it.
 - **The defaults**: a project's `:root { --ar-accent: … }` changes `default` (and every token a
-  theme leaves alone), not what a built-in theme sets.
+  theme leaves alone), not what a built-in theme sets; `:root, [data-theme] { … }` changes it in
+  every theme ([Overriding tokens](themes.md#overriding-tokens)).
 - **Only the project's themes**: `arao({ builtinThemes: false })` keeps the built-in ones out of the
   build; `Deck(:themes="['venue']")` keeps them out of one deck's list (they stay in the build).

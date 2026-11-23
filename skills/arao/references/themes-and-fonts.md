@@ -6,6 +6,7 @@ Full guide: `docs/guide/themes.md`; every token with its default: `docs/referenc
 ## Contents
 
 - Writing a theme
+- Overriding tokens
 - Choosing themes per deck
 - Where themes come from (folders, packages)
 - Fonts
@@ -68,6 +69,21 @@ A theme is a `[data-theme="<name>"] { --ar-…: …; }` block in a CSS file of `
 - A project theme named like a built-in one replaces it (the built-in file is not loaded; Vite says
   so). To start from one, copy `node_modules/araojs/themes/<name>.css` into `src/themes/`: same name
   to replace it, another name to offer both.
+
+## Overriding tokens
+
+From the project's own CSS, which must load after araojs's (a file imported in `src/main.js` after
+`araojs`, or a deck's `<style>`):
+
+```css
+:root, [data-theme] { --ar-accent: #e8590c; }                /* every theme */
+[data-theme="aurora"] { --ar-accent-fg: #fff; }               /* one theme */
+[data-theme] .layout-section { --ar-slide-bg-image: none; }   /* what a theme sets inside a layout */
+```
+
+- A plain `:root` reaches only `default` (and the tokens a theme leaves alone): a theme declares
+  its tokens on the deck's element, which beats what that element inherits from `:root`.
+- Layout tokens default to the design-system ones: change `--ar-accent`, not each layout's.
 
 ## Choosing themes per deck
 

@@ -135,6 +135,8 @@ one `[arao]` warning; a list left with no theme is `['default']`. `?theme=<name>
 (or the controls' picker) change the theme while presenting; `useDeck().themes` is the deck's
 list.
 
+## Overriding tokens
+
 Where tokens apply, from weakest to strongest:
 
 1. the defaults, declared at the root with zero specificity (`:where(:root)`): they reach
@@ -145,6 +147,29 @@ Where tokens apply, from weakest to strongest:
    presenter view, the export's book);
 4. a token set on any element inside (a layout, a slide, a table, `style="--ar-…"`).
 
+So a plain `:root` rule reaches `default`, and the tokens a theme leaves alone, but no further:
+each theme declares its tokens on the element that wears it (`[data-theme="aurora"]`), and an
+element's own declaration beats the value it inherits from `:root`. To change a token from the
+project's own CSS:
+
+- **in every theme**: `:root, [data-theme] { --ar-accent: … }`;
+- **in one theme**: `[data-theme="aurora"] { … }`;
+- **where a theme sets it inside a layout** (aurora, meridian and terminal give
+  `.layout-section` a background of their own): `[data-theme] .layout-section { … }`, scoped as
+  the theme scopes it.
+
+```css
+/* src/styles/brand.css, imported in src/main.js after araojs */
+:root, [data-theme] { --ar-accent: #e8590c; }                /* every theme */
+[data-theme="aurora"] { --ar-accent-fg: #fff; }               /* aurora only */
+[data-theme] .layout-section { --ar-slide-bg-image: none; }   /* sections, in every theme */
+```
+
+`[data-theme]` weighs the same as `[data-theme="aurora"]`, so these rules win over a theme's by
+coming later: the project's CSS must load after araojs's. It does where it usually goes, a file
+imported in `src/main.js` after `import … from 'araojs'`, or a deck's `<style>` block. A slide's
+own value (an attribute, `style="--ar-…"`) still wins over them.
+
 Layouts have tokens too, `--ar-layout-<layout>-<thing>` (the section's colours, the cover's title
 size, which layouts show the footer, the image layouts' proportions), set in a theme like any
 other: `[data-theme="venue"] { --ar-layout-section-bg: #0b3d2e; --ar-layout-cover-footer: flex; }`
@@ -152,6 +177,10 @@ other: `[data-theme="venue"] { --ar-layout-section-bg: #0b3d2e; --ar-layout-cove
 (`Slide(layout="section" bg="#0b3d2e")`: [Layout parameters](slides-and-layouts.md#layout-parameters)).
 So is where a slide's body sits:
 `--ar-body-align: center` centres every body, as decks used to by default.
+
+Their colours and sizes default to the design-system tokens above (the section's background is
+`--ar-accent`, the cover's title a multiple of `--ar-title`), so changing `--ar-accent` restyles
+every layout at once; set a layout's own token only to set it apart.
 
 A token whose default is another token (`--ar-footer-color` is `--ar-muted`, the slide title's
 colour is `--ar-accent`) follows that token wherever it is read: a theme that changes `--ar-muted`

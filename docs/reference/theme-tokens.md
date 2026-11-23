@@ -6,6 +6,19 @@ the interface's are window px.
 
 How themes are written, found and applied: [Themes](../guide/themes.md).
 
+To override a token from the project's own CSS ([Overriding tokens](../guide/themes.md#overriding-tokens)):
+
+- `:root, [data-theme] { --ar-accent: … }` in every theme. A plain `:root` reaches only `default`
+  (and the tokens a theme leaves alone): each theme declares its tokens on the deck's element
+  (`[data-theme="x"]`), and an element's own declaration beats what it inherits from `:root`.
+- `[data-theme="aurora"] { … }` in one theme.
+- `[data-theme] .layout-section { … }` for a token a theme sets inside a layout.
+- The project's CSS loads after araojs's, as it does from `src/main.js` (imported after `araojs`)
+  or a deck's `<style>`: at equal specificity, the later rule wins.
+
+The layouts' colours and sizes default to the tokens below, so `--ar-accent` restyles every
+layout at once.
+
 ## Colours and type
 
 | Token | Default | Meaning |
@@ -101,9 +114,9 @@ table.dense(style="--ar-table-pad: 12px 20px")
 ## Layouts
 
 Each layout's CSS file (the library's `layouts/`, the project's `src/layouts`) reads tokens of its
-own, `--ar-layout-<layout>-<thing>`. Set them in a theme, at the project's `:root`, or on one
-slide, where each is also an attribute of `Slide`, its `<thing>`
-(`Slide(layout="image-right" columns="3fr 2fr")`: [Layout parameters](../guide/slides-and-layouts.md#layout-parameters)).
+own, `--ar-layout-<layout>-<thing>`. Set them in a theme, in the project's CSS (as any token:
+`:root, [data-theme]`, above), or on one slide, where each is also an attribute of `Slide`, its
+`<thing>` (`Slide(layout="image-right" columns="3fr 2fr")`: [Layout parameters](../guide/slides-and-layouts.md#layout-parameters)).
 A `*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows it; a slide's
 `.no-footer` or `.with-footer` wins over it.
 
