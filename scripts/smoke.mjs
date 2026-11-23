@@ -49,12 +49,13 @@
 //      project theme named like a built-in one too, saying its left-out tokens are the built-in's),
 //      and a source named twice (the library's own package included) does not warn about itself;
 //      a project theme named like a built-in one replaces it (a message says so, and the built-in
-//      file's CSS is not in the build); and it writes the files and @font-face (400 and 700) of the
-//      web font THEME names (WEB_FONT; SKIPPED where the font provider is unreachable); with
-//      arao({ fonts: false }), no font files; with system fonts only and builtinThemes: false, no
-//      font files and no word about fonts; with one built-in theme (builtinThemes: [name]), no
-//      @font-face but for that theme's families; with a name that is no built-in theme, the build
-//      stops
+//      file's CSS is not in the build); and it writes the files and @font-face of the web font
+//      THEME names (WEB_FONT: 400 and 700) and of the defaults' (the engine's CSS: Gelasio, 400,
+//      600 and 700, upright and italic) (SKIPPED where the font provider is unreachable); with arao({ fonts: false }), no font files; with
+//      system fonts only and builtinThemes: false, no @font-face but for the defaults' families
+//      and no word about fonts; with one built-in theme (builtinThemes: [name]), no @font-face but
+//      for that theme's families and the defaults'; with a name that is no built-in theme, the
+//      build stops
 //   3. every deck of src/decks, under the dev server (Vue's own warnings only exist in dev) and
 //      under vite preview (the production build): opened at /<name>, walked with ArrowRight
 //      until the hash stops changing; any console warning/error or page error fails, and so does
@@ -616,13 +617,16 @@ try {
   const viteBin = join(dirname(viteJson), JSON.parse(await readFile(viteJson, 'utf8')).bin.vite)
   const { chromium } = need('playwright-core')
 
-  // the web font THEME names: its files in the build (assets/_fonts), its @font-face in the CSS.
-  // Only where the font provider can be reached (an offline machine builds without them: the
-  // check says SKIPPED). Then builds of their own (into dist-fonts, removed after): with
-  // arao({ fonts: false }), which writes no font files; with a themes folder whose fonts are all
-  // system fonts (SYSTEM) and builtinThemes: false, which writes no font files and says nothing
-  // about fonts; with that folder and one built-in theme (builtinThemes: [name]), whose CSS has no
-  // @font-face but for that theme's families; and with a name that is no built-in theme, which
+  // the web font THEME names, and the defaults' (the first family of each --ar-font-* token the
+  // engine's CSS names in quotes: tokens.css's Gelasio): their files in the build (assets/_fonts),
+  // their @font-face in the CSS (THEME's 400 and 700; the defaults' 400, 600 and 700, upright and
+  // italic). Only where the font provider can be reached (an offline machine
+  // builds without them: the check says SKIPPED). Then builds of their own (into dist-fonts,
+  // removed after): with arao({ fonts: false }), which writes no font files; with a themes folder
+  // whose fonts are all system fonts (SYSTEM) and builtinThemes: false, whose CSS has no
+  // @font-face but for the defaults' families and which says nothing about fonts (online); with
+  // that folder and one built-in theme (builtinThemes: [name]), whose CSS has no @font-face but for
+  // that theme's families and the defaults'; and with a name that is no built-in theme, which
   // stops
   async function webFonts() {
     const reachable = async () => {
@@ -634,16 +638,33 @@ try {
       return false
     }
     const fontFiles = async (dist) => (await readdir(join(project, dist, 'assets', '_fonts')).catch(() => [])).filter((f) => f.endsWith('.woff2'))
-    const assets = join(project, 'dist', 'assets')
-    if (!(await fontFiles('dist')).length) {
-      if (await reachable()) fail(`vite build: no web font files for "${WEB_FONT}" in dist/assets/_fonts`)
-      else log('web fonts: SKIPPED: no network (the font provider cannot be reached from here)')
-    } else {
-      const css = (await Promise.all((await readdir(assets)).filter((f) => f.endsWith('.css')).map((f) => readFile(join(assets, f), 'utf8')))).join('\n')
-      if (!new RegExp(`@font-face\\s*{[^}]*font-family:\\s*["']?${WEB_FONT}["']?\\s*;`).test(css)) fail(`vite build: no @font-face for "${WEB_FONT}" in the built CSS`)
-      for (const weight of [400, 700]) {
-        if (!new RegExp(`@font-face\\s*{[^}]*font-family:\\s*["']?${WEB_FONT}["']?\\s*;[^}]*font-weight:\\s*${weight}\\b`).test(css)) fail(`vite build: no ${weight} weight of "${WEB_FONT}" (bold would be faked)`)
+    const cssOf = async (dist) => (await Promise.all((await readdir(join(project, dist, 'assets'))).filter((f) => f.endsWith('.css')).map((f) => readFile(join(project, dist, 'assets', f), 'utf8')))).join('\n')
+    // the families a build's CSS gives an @font-face (not the fallbacks fontless adds)
+    const facesIn = async (dist) => new Set([...(await cssOf(dist)).matchAll(/@font-face\s*{[^}]*?font-family:\s*["']?([^;"']+)["']?\s*;/g)].map((m) => m[1].trim()).filter((f) => !/Fallback/.test(f)))
+    const quotedFamilies = (css) => [...css.matchAll(/--ar-font-[a-z]+:\s*"([^"]+)"/g)].map((m) => m[1])
+    const defaults = quotedFamilies(await readFile(join(project, 'node_modules', PKG, lib.exports['./style.css']), 'utf8'))
+    const online = (await fontFiles('dist')).length > 0 || (await reachable())
+    if (!online) log('web fonts: SKIPPED: no network (the font provider cannot be reached from here)')
+    else if (!(await fontFiles('dist')).length) fail(`vite build: no web font files for ${[WEB_FONT, ...defaults].join(', ')} in dist/assets/_fonts`)
+    else {
+      // each @font-face of the build: its family, the weights it covers (one, or a variable
+      // font's range) and its style (normal where unset)
+      const faces = [...(await cssOf('dist')).matchAll(/@font-face\s*{([^}]*)}/g)].map((m) => {
+        const prop = (name) => m[1].match(new RegExp(`(?:^|;)\\s*${name}\\s*:\\s*([^;]+)`))?.[1].trim()
+        const [lo, hi = lo] = (prop('font-weight') ?? '400').split(/\s+/).map(Number)
+        return { family: (prop('font-family') ?? '').replace(/^["']|["']$/g, ''), lo, hi, style: prop('font-style') ?? 'normal' }
+      })
+      const expect = (family, weights, styles) => {
+        if (!faces.some((f) => f.family === family)) return fail(`vite build: no @font-face for "${family}" in the built CSS`)
+        for (const weight of weights) {
+          for (const style of styles) {
+            if (!faces.some((f) => f.family === family && f.lo <= weight && weight <= f.hi && f.style === style)) fail(`vite build: no ${weight} ${style} face of "${family}" (the browser would fake it)`)
+          }
+        }
       }
+      expect(WEB_FONT, [400, 700], ['normal'])
+      // the defaults' fonts: every weight and style the plugin fetches (vite/fonts.js)
+      for (const family of defaults) expect(family, [400, 600, 700], ['normal', 'italic'])
     }
     const config = (options) => `import { defineConfig } from 'vite'\nimport arao from '${PKG}/vite'\n\nexport default defineConfig({ plugins: [arao(${options})], build: { outDir: 'dist-fonts' } })\n`
     await writeFile(join(project, 'vite.fonts.config.js'), config('{ fonts: false }'))
@@ -655,19 +676,22 @@ try {
     await writeFile(join(project, 'vite.fonts.config.js'), config(`{ themes: 'src/themes-system', builtinThemes: false }`))
     const { code, out, err } = await exec(process.execPath, [viteBin, 'build', '--config', 'vite.fonts.config.js'], project)
     if (code !== 0) fail(`vite build with system fonts only and builtinThemes: false exited with ${code}`)
-    if ((await fontFiles('dist-fonts')).length) fail('vite build with system fonts only and builtinThemes: false: font files in dist-fonts/assets/_fonts')
-    if (/\[fontless\]|\[arao\] fonts/.test(out + err)) fail(`vite build with system fonts only and builtinThemes: false: something said about fonts:\n${(out + err).split('\n').filter((l) => /\[fontless\]|\[arao\] fonts/.test(l)).join('\n')}`)
+    else {
+      const others = [...(await facesIn('dist-fonts'))].filter((f) => !defaults.includes(f))
+      if (others.length) fail(`vite build with system fonts only and builtinThemes: false: @font-face for ${others.join(', ')}, which neither the defaults nor the project's themes name as a web font`)
+    }
+    if (online && /\[fontless\]|\[arao\] fonts/.test(out + err)) fail(`vite build with system fonts only and builtinThemes: false: something said about fonts:\n${(out + err).split('\n').filter((l) => /\[fontless\]|\[arao\] fonts/.test(l)).join('\n')}`)
     // one built-in theme: no @font-face but for its families (the first of each of its --ar-font-*)
+    // and the defaults'
     const one = (await builtins())[1]
-    const families = [...(await readFile(join(project, 'node_modules', PKG, 'themes', `${one}.css`), 'utf8')).matchAll(/--ar-font-[a-z]+:\s*"([^"]+)"/g)].map((m) => m[1])
+    const families = [...quotedFamilies(await readFile(join(project, 'node_modules', PKG, 'themes', `${one}.css`), 'utf8')), ...defaults]
     await writeFile(join(project, 'vite.fonts.config.js'), config(`{ themes: 'src/themes-system', builtinThemes: [${JSON.stringify(one)}] }`))
     const subset = await exec(process.execPath, [viteBin, 'build', '--config', 'vite.fonts.config.js'], project)
     if (subset.code !== 0) fail(`vite build with builtinThemes: ["${one}"] exited with ${subset.code}`)
     else {
-      const css = (await Promise.all((await readdir(join(project, 'dist-fonts', 'assets'))).filter((f) => f.endsWith('.css')).map((f) => readFile(join(project, 'dist-fonts', 'assets', f), 'utf8')))).join('\n')
-      const faces = new Set([...css.matchAll(/@font-face\s*{[^}]*?font-family:\s*["']?([^;"']+)["']?\s*;/g)].map((m) => m[1].trim()).filter((f) => !/Fallback/.test(f)))
+      const faces = await facesIn('dist-fonts')
       const others = [...faces].filter((f) => !families.includes(f))
-      if (others.length) fail(`vite build with builtinThemes: ["${one}"]: @font-face for ${others.join(', ')}, which ${one} does not name`)
+      if (others.length) fail(`vite build with builtinThemes: ["${one}"]: @font-face for ${others.join(', ')}, which neither ${one} nor the defaults name`)
       else console.log(`  builtinThemes: ["${one}"]: @font-face for ${[...faces].join(', ') || 'nothing (no network)'} only`)
     }
     await writeFile(join(project, 'vite.fonts.config.js'), config(`{ builtinThemes: ['nosuch'] }`))

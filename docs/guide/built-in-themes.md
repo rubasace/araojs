@@ -31,9 +31,9 @@ arao({ builtinThemes: false })                // none but default
 A built-in theme left out is not in the build at all: no CSS, no fonts, no name in the picker.
 That matters for the fonts: together the five name thirteen families, and with all of them loaded
 every build fetches and ships them (about 140 files, some 2.6 MB in `assets/_fonts`; a viewer's
-browser downloads only the files of the theme on screen). A project whose decks wear their own
-themes, or a couple of these, can keep the rest out. A name that is no built-in theme stops the
-build.
+browser downloads only the files of the theme on screen), on top of `default`'s Gelasio, which
+every build ships. A project whose decks wear their own themes, or a couple of these, can keep the
+rest out. A name that is no built-in theme stops the build.
 
 Each sheet below is the same deck, `scripts/theme-sheets/Tour.vue`, in that theme: eleven slides
 (a cover, a footer and bullets, a section, code, a table, a picture, columns, cards, two zones, a
@@ -41,13 +41,14 @@ small code window, a closing cover) and, last, the presenter view.
 
 ## default
 
-The engine's defaults ([Theme tokens](../reference/theme-tokens.md)): a warm light page, Georgia, a
-blue accent, a light code window. Its file names it and sets nothing, so that a project's own
-`:root { --ar-accent: … }` still changes what `default` wears.
+The engine's defaults ([Theme tokens](../reference/theme-tokens.md)): a warm light page, Gelasio (a
+web font with Georgia's metrics, fetched by every build), a blue accent, a light code window. Its
+file names it and sets nothing, so that a project's own `:root { --ar-accent: … }` still changes
+what `default` wears.
 
 | Headings | Text | Code | Background | Text | Accent |
 |---|---|---|---|---|---|
-| Georgia | Georgia | the system's monospace (`github-light`) | `#f6f3ec` | `#1b2a3a` | `#2a7de1` |
+| Gelasio | Gelasio | the system's monospace (`github-light`) | `#f6f3ec` | `#1b2a3a` | `#2a7de1` |
 
 ![The tour deck in default](../assets/themes/default.png)
 
@@ -158,6 +159,7 @@ What these numbers leave out:
   so once. A project's own `default` replaces the built-in one, which sets nothing: it refines the
   defaults while a deck wears it.
 - **The defaults**: a project's `:root { --ar-accent: … }` changes `default` (and every token a
-  theme leaves alone), not what a built-in theme sets.
+  theme leaves alone), not what a built-in theme sets; `:root, [data-theme] { … }` changes it in
+  every theme ([Overriding tokens](themes.md#overriding-tokens)).
 - **Only the project's themes**: `arao({ builtinThemes: false })` keeps the built-in ones out of the
   build; `Deck(:themes="['venue']")` keeps them out of one deck's list (they stay in the build).

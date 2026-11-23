@@ -10,7 +10,9 @@
 // providers in turn (Google Fonts, Bunny Fonts, Fontshare, Fontsource; through unifont), puts its
 // files in the build (assets/_fonts), adds the @font-face rules, and fallbacks with matched
 // metrics (fontaine) so the text does not jump when the font arrives. The dev server serves the
-// same files.
+// same files. Only the first family of each declaration is fetched (the rest are its fallbacks):
+// the defaults' "Gelasio", Georgia, serif (src/styles/tokens.css) gets Gelasio, Georgia's metrics
+// on Google Fonts, in every build; Georgia itself is a system font, never fetched.
 //
 // Our defaults, over fontless's (each one replaced by the project's own value for that key):
 //   - weights 400, 600 and 700, each upright and italic (fontless takes 400 only: bold text
