@@ -62,3 +62,6 @@
   font-size: calc(var(--ar-title) * .45);
   line-height: 1.2;
 }
+/* a block placed with top / middle / bottom / center (utilities.css) straight in a side fills the
+   height left in it, as in the body, so it has room to place its content */
+.layout-split > .ar-body > :not([hidden]) > :is(.top, .middle, .bottom, .center) { flex: 1 1 auto; min-height: 0; }
