@@ -28,6 +28,8 @@ layout at once.
 | `--ar-muted` | `#5b6b7b` | secondary text (`.muted`, slide number, footer) |
 | `--ar-accent` | `#2a7de1` | `h2`, cover bar, section background (their layouts' defaults), progress, highlights |
 | `--ar-accent-fg` | `#fff` | text on accent (section slides) |
+| `--ar-on-image` | `#fff` | text over a picture: an `overlay` slide's text, its title and its footer (its layout's `color` default) |
+| `--ar-scrim` | `#000` | the shade laid over a picture to keep the text on it legible: the colour of `overlay`'s scrim, which the layout's `scrim` makes stronger or weaker |
 | `--ar-letterbox` | `#1b2a3a` | around the canvas when the window shape differs |
 | `--ar-font-sans` | `"Gelasio", Georgia, serif` | text font; a web font named here is fetched at build time ([Fonts](../guide/themes.md#fonts)), as `default`'s Gelasio is (Georgia's metrics; Georgia where it cannot be fetched) |
 | `--ar-font-mono` | `ui-monospace, Menlo, monospace` | code font; a web font named here is fetched at build time |
@@ -134,11 +136,14 @@ own, `--ar-layout-<layout>-<thing>`. Set them in a theme, in the project's CSS (
 `:root, [data-theme]`, above), or on one slide, where each is also an attribute of `Slide`, its
 `<thing>` (`Slide(layout="image-right" columns="3fr 2fr")`: [Layout parameters](../guide/slides-and-layouts.md#layout-parameters)).
 A `*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows it; a slide's
-`.no-footer` or `.with-footer` wins over it.
+`.no-footer` or `.with-footer` wins over it. Their defaults, and every colour and size a layout
+draws with, are the tokens above or proportions of them, never literals
+([Its values](../guide/slides-and-layouts.md#its-values)): a theme that changes `--ar-accent`,
+`--ar-title` or `--ar-on-image` changes the layouts with it.
 
 | Token | Attribute | Default | Meaning |
 |---|---|---|---|
-| `--ar-layout-cover-title-size` | `title-size` | 1.25x `--ar-title` | the cover's title size (its `h1`) |
+| `--ar-layout-cover-title-size` | `title-size` | 1.25x `--ar-title` | the cover's title size (its `h1`), and its `.bar`'s in proportion |
 | `--ar-layout-cover-bar` | `bar` | `--ar-accent` | the colour of its `.bar` |
 | `--ar-layout-cover-footer` | `footer` | `none` | the deck's footer on covers |
 | `--ar-layout-section-bg` | `bg` | `--ar-accent` | a section's background (the theme's `--ar-slide-bg-image` is drawn over it) |
@@ -164,8 +169,8 @@ A `*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows 
 | `--ar-layout-statement-color` | `color` | `--ar-accent` | its colour |
 | `--ar-layout-statement-align` | `align` | `center` | `center` or `start` |
 | `--ar-layout-overlay-position` | `position` | `bottom-left` | where the text sits, its lines aligned to that side: `top-left`, `top`, `top-right`, `left`, `center`, `right`, `bottom-left`, `bottom` or `bottom-right` (any other value is the default) |
-| `--ar-layout-overlay-scrim` | `scrim` | `.6` | how dark the scrim between the picture and the text is, `0` (none; `none` too) to `1`: darkest at the corner or side the text is at and fading away from it, an even veil for `center` |
-| `--ar-layout-overlay-color` | `color` | `#fff` | the text's colour, its title's and its footer's |
+| `--ar-layout-overlay-scrim` | `scrim` | `.6` | how dense the scrim (`--ar-scrim`) between the picture and the text is, `0` (none; `none` too) to `1`: darkest at the corner or side the text is at and fading away from it, an even veil for `center` |
+| `--ar-layout-overlay-color` | `color` | `--ar-on-image` | the text's colour, its title's and its footer's |
 | `--ar-layout-caption-caption-size` | `caption-size` | `--ar-text-small` | the caption's size |
 | `--ar-layout-caption-caption-align` | `caption-align` | `center` | the caption's alignment |
 | `--ar-layout-image-left-columns` / `--ar-layout-image-right-columns` | `columns` | `1fr 1fr` | the two sides' widths, left to right, as CSS grid columns (`3fr 2fr`, `1fr 720px`) |
@@ -176,7 +181,7 @@ A `*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows 
 ```css
 [data-theme="venue"] {
   --ar-layout-section-bg: #0b3d2e;
-  --ar-layout-image-right-footer-bg: linear-gradient(transparent, rgb(0 0 0 / .45));
+  --ar-layout-image-right-footer-bg: linear-gradient(transparent, color-mix(in srgb, var(--ar-scrim) 45%, transparent));
 }
 ```
 

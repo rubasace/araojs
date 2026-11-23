@@ -12,8 +12,9 @@
 // The project is scripts/types-consumer/, copied to a temporary folder with the tarball and the
 // type checkers installed. First a vite build with the plugin (its vite.config.js), which must
 // write src/arao-layouts.d.ts from its src/layouts, and warn about the token of one that is no
-// attribute and about a doc block that lists a JSDoc type ({string}) as values; then the type
-// checks, which include it.
+// attribute, about a doc block that lists a JSDoc type ({string}) as values, and about a literal
+// colour and a fixed length a layout writes instead of a theme token; then the type checks, which
+// include it.
 import { cpSync, existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -53,6 +54,18 @@ try {
   if (!/\[arao\] src\/layouts\/callout\.css: --ar-layout-callout-title is no attribute of Slide/.test(built.stdout + built.stderr)) {
     console.error('types-consumer: vite build did not warn that --ar-layout-callout-title (src/layouts/callout.css) is no attribute')
     failed = true
+  }
+  // a layout's colours and sizes are theme tokens (vite/layout-literals.js): section.css's #000 and
+  // callout.css's 64px are literals, which the plugin says, each once
+  for (const [file, re] of [
+    ['section.css', /\[arao\] src\/layouts\/section\.css: line \d+, background: #000 is a literal colour/g],
+    ['callout.css', /\[arao\] src\/layouts\/callout\.css: line \d+, --_ar-callout-size: 64px is a fixed length/g],
+  ]) {
+    const said = (built.stdout + built.stderr).match(re)?.length ?? 0
+    if (said !== 1) {
+      console.error(`types-consumer: vite build warned ${said} times, not once, about the literal in src/layouts/${file} (${re.source})`)
+      failed = true
+    }
   }
   for (const mode of ['bundler', 'nodenext']) {
     try {

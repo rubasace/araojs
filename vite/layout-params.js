@@ -50,34 +50,41 @@ export function notAnAttribute(thing) {
 /**
  * A stylesheet read in one pass: its code, with its comments and its strings ("…" or '…', escapes
  * included; one a line break ends unclosed, as CSS does) each turned into a space, so that a token
- * named in either is no token, and a /* in a string or a quote in a comment hides nothing; and its
- * comments, each where it starts and ends in the text (an unclosed one ends with it).
+ * named in either is no token, and a /* in a string or a quote in a comment hides nothing; the
+ * same blanked in place (masked: each of their characters a space but line breaks, so that an
+ * offset in it is one in the text, and a line its line); and its comments, each where it starts
+ * and ends in the text (an unclosed one ends with it).
  * @param {string} css
- * @returns {{ code: string, comments: { start: number, end: number }[] }}
+ * @returns {{ code: string, masked: string, comments: { start: number, end: number }[] }}
  */
 export function scanCss(css) {
   let out = ''
+  let masked = ''
   /** @type {{ start: number, end: number }[]} */
   const comments = []
+  const blank = (/** @type {string} */ text) => text.replace(/[^\n]/g, ' ')
   let i = 0
   while (i < css.length) {
     const c = css[i]
     if (c === '/' && css[i + 1] === '*') {
       const end = css.indexOf('*/', i + 2)
       comments.push({ start: i, end: end < 0 ? css.length : end + 2 })
+      masked += blank(css.slice(i, end < 0 ? css.length : end + 2))
       i = end < 0 ? css.length : end + 2
       out += ' '
     } else if (c === '"' || c === "'") {
       let j = i + 1
       while (j < css.length && css[j] !== c && css[j] !== '\n') j += css[j] === '\\' ? 2 : 1
+      masked += blank(css.slice(i, j + 1))
       i = j + 1
       out += ' '
     } else {
       out += c
+      masked += c
       i++
     }
   }
-  return { code: out, comments }
+  return { code: out, masked, comments }
 }
 
 /**

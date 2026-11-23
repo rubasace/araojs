@@ -159,7 +159,8 @@ Text over a picture, at the bottom left unless `position` names another of nine 
 `bottom-right`), over a scrim that darkens the picture from that corner or side (evenly for
 `center`), as strong as `scrim` says (`0` to `1`, default `.6`; `0` or `none` for none):
 `Slide(layout="overlay" position="top-right" scrim=".4")`. Its title and its paragraphs align to
-that side. On Firefox before 151 and Safari before 18 every position falls back to the bottom
+that side. Their colour is the theme's `--ar-on-image` (white by default) and the scrim's its
+`--ar-scrim` (black by default). On Firefox before 151 and Safari before 18 every position falls back to the bottom
 left. And one picture with its caption (an `Img` followed by a `p` works too):
 
 <!-- example:overlay -->
@@ -369,7 +370,8 @@ the folder, after the library's layouts and before the themes, with nothing to i
 The slide is already in its parts (`.ar-header`, `.ar-body`, an `.ar-zone-<name>` per named
 template, `.ar-footer`); the layout's CSS arranges them, under `.layout-<name>`. Its tokens follow
 the library's convention, `--ar-layout-<name>-<thing>`, each with its default, so that a theme
-can change them. A default that is another token (`--ar-accent`, `--ar-title`) must be resolved on
+can change them; its colours and sizes are the theme's tokens, never literals
+([Its values](#its-values)). A default that is another token (`--ar-accent`, `--ar-title`) must be resolved on
 the slide, not at `:root` (`var()` is resolved where it is declared: a theme's `--ar-accent` would
 never reach it), so the file resolves each public token into a private one in a
 `:where(.layout-<name>)` block, and its rules read the private ones. A layout that moves the
@@ -400,7 +402,7 @@ The file starts with its doc block, which says what the layout is for and how to
 }
 .layout-epigraph > .ar-body > blockquote {             /* on the right, a rule beside it */
   align-self: flex-end; max-width: 60%; margin: 0; padding-left: .8em;
-  border-left: 6px solid var(--_ar-epigraph-mark);
+  border-left: .14em solid var(--_ar-epigraph-mark);
   font-size: var(--_ar-epigraph-size); font-style: italic; line-height: 1.3;
 }
 .layout-epigraph > .ar-body > blockquote + p {          /* its source, under it */
@@ -496,6 +498,50 @@ plain `/* … */` comments (a licence header) may come before it.
 - What a block gets wrong (a `@param` naming no token, an unknown tag, a zone named twice, no
   first line, another `/**` comment in the file, which is not read) the Vite plugin warns about,
   once, naming the file, and `npx arao layouts` lists it with the layout. The library's own layouts are all documented this way.
+
+### Its values
+
+A layout's colours and sizes come from the design system, the theme's tokens
+([Theme tokens](../reference/theme-tokens.md)), so that a theme that changes its tokens changes
+the layout with them, and a layout written under one theme suits them all. That goes for every
+value its file writes: a parameter's default, a private `--_ar-…` it resolves, and any property
+of any rule.
+
+- A colour is a token, `var(--ar-…)` (or one of the project's own, which its theme declares), or
+  `currentColor`, `transparent`, `inherit`, and `color-mix()` over them
+  (`color-mix(in srgb, var(--ar-fg) 15%, transparent)`), or a colour function of tokens' channels
+  (`rgb(var(--brand-rgb) / .5)`, `hsl(var(--hue) 50% 50%)`). Never `#fff`, `rgb(0 0 0)`, `hsl()` of
+  numbers or a named colour (`white`): not inside a gradient, not as a `var()`'s fallback. A colour
+  the theme has no token for is a new theme token, not a literal: `overlay`'s text is
+  `--ar-on-image` and its scrim `--ar-scrim`. A mask counts too, though it reads only alpha:
+  `mask: linear-gradient(black, transparent)` is a literal, `linear-gradient(currentColor,
+  transparent)` does the same.
+- A length is a token, or relative to one or to the box: `var(--ar-gap-md)`,
+  `calc(var(--ar-title) * .45)`, `em`, `%`, `fr`. No `px`, `pt` or other absolute unit, but for
+  `0`; a 1px hairline is no exception (`.05em`, or a parameter whose default is a token). No `rem`
+  either (the page's root font, which no token sets), nor `vw` or `vh` (the window, not the
+  canvas).
+- Anything else is written as it is: keywords (`none`, `center`, `auto`), numbers without a unit
+  (an opacity, a strength, a weight, a line height, a count), `fr` track lists, strings (a quote's
+  mark), durations and angles.
+
+```css
+.layout-epigraph > .ar-body > blockquote {
+  border-left: 6px solid #2a7de1;                                /* two literals: warned */
+  border-left: .14em solid var(--_ar-epigraph-mark);             /* a length in em, a token */
+}
+```
+
+The Vite plugin warns about each declaration that writes a literal, once for its colours and once
+for its lengths, naming the file, its line and the values; the first line above gives two:
+
+```text
+[arao] src/layouts/epigraph.css: line 33, border-left: #2a7de1 is a literal colour; …
+[arao] src/layouts/epigraph.css: line 33, border-left: 6px is a fixed length; …
+```
+
+`npx arao layouts` lists them with the layout's problems. The library's own
+layouts are held to the same rule: their build stops on one.
 
 ### Layouts in the editor
 

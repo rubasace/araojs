@@ -99,7 +99,8 @@
 // styles) are the named templates Slide takes for it (ProjectLayoutZones, in the same file). The
 // arao layouts command prints all of it, for every layout the project has (api.layouts()). A
 // project file with no doc block is a layout all the same; what a doc block gets wrong (a @param
-// naming no token, an unknown tag…) Vite warns about, once.
+// naming no token, an unknown tag…) Vite warns about, once, and so it does about a colour or a
+// length the file writes as a literal instead of a token (layout-literals.js).
 //
 // Icons: <Icon name="lucide:rocket"> draws an icon of an installed Iconify set (@iconify-json/<prefix>),
 // resolved here, at build time: the source is read for the names it uses and only those go into

@@ -1,15 +1,15 @@
 /**
  * The deck's opening slide (and its closing one).
  * Its content, title and all, is one group centred vertically, left-aligned like any slide; its
- * title is larger, in the text colour; a `.bar` element draws a short bar in the accent; the
- * deck's footer is hidden. Its title is an `h1` (an `h2` looks the same), a subtitle after it an
- * `h2` or a plain `p`.
+ * title is larger, in the text colour; a `.bar` element draws a short bar in the accent, sized
+ * after the title; the deck's footer is hidden. Its title is an `h1` (an `h2` looks the same), a
+ * subtitle after it an `h2` or a plain `p`.
  * @example
  * Slide(layout="cover")
  *   .bar
  *   h1 Building a framework
  *   p.muted Jane Doe · DevConf 2026
- * @param title-size  the title's size (default 1.25 x `--ar-title`)
+ * @param title-size  the title's size, and its `.bar`'s in proportion (default 1.25 x `--ar-title`)
  * @param bar         the `.bar`'s colour (default `--ar-accent`)
  * @param footer      the deck's footer: `none` hides it, `flex` shows it (default `none`); a
  *                    slide's `with-footer` or `no-footer` class wins over it
@@ -73,9 +73,14 @@
   font-size: var(--_ar-subtitle-size); font-weight: 400; line-height: inherit; color: var(--_ar-subtitle-color);
   margin: var(--ar-subtitle-gap) 0 calc(var(--_ar-cover-gap) * var(--_ar-zoom, 1));
 }
+/* the bar, in proportion to the title it sits over (160 x 10 under the default 120px title, 48
+   above it), a pill. Its gap is the title's size too, not --ar-title-gap: a theme's gap of 0
+   would glue it to the title, and one in em would be read in the bar's own font size. In the
+   body, the title's size times the factor Slide.fit and the scales draw it at (--_ar-zoom) */
 .layout-cover .bar {
-  width: calc(160px * var(--_ar-zoom, 1)); height: calc(10px * var(--_ar-zoom, 1));
-  border-radius: calc(5px * var(--_ar-zoom, 1)); margin: 0 0 calc(48px * var(--_ar-zoom, 1));
+  --_ar-cover-bar-unit: calc(var(--_ar-cover-title) * var(--_ar-zoom, 1));
+  width: calc(var(--_ar-cover-bar-unit) * 4 / 3); height: calc(var(--_ar-cover-bar-unit) / 12);
+  border-radius: calc(var(--_ar-cover-bar-unit) / 24); margin: 0 0 calc(var(--_ar-cover-bar-unit) * .4);
   background: var(--_ar-cover-bar);
 }
 .layout-cover > .ar-footer { display: var(--_ar-cover-footer); }
