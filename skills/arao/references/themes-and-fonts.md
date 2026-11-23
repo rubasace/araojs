@@ -83,6 +83,7 @@ From the project's own CSS, which must load after araojs's (a file imported in `
 
 - A plain `:root` reaches only `default` (and the tokens a theme leaves alone): a theme declares
   its tokens on the deck's element, which beats what that element inherits from `:root`.
+- The theme picker's swatches follow: each shows what its theme wears. Don't exclude them.
 - Layout tokens default to the design-system ones: change `--ar-accent`, not each layout's.
 
 ## Choosing themes per deck

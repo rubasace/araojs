@@ -168,7 +168,9 @@ project's own CSS:
 `[data-theme]` weighs the same as `[data-theme="aurora"]`, so these rules win over a theme's by
 coming later: the project's CSS must load after araojs's. It does where it usually goes, a file
 imported in `src/main.js` after `import … from 'araojs'`, or a deck's `<style>` block. A slide's
-own value (an attribute, `style="--ar-…"`) still wins over them.
+own value (an attribute, `style="--ar-…"`) still wins over them. The theme picker's swatches
+follow too: each shows what its theme wears, so a colour overridden in every theme shows in all of
+them.
 
 Layouts have tokens too, `--ar-layout-<layout>-<thing>` (the section's colours, the cover's title
 size, which layouts show the footer, the image layouts' proportions), set in a theme like any
@@ -254,9 +256,9 @@ Gill Sans, Palatino, Trebuchet MS, SF Pro… in `vite/fonts.js`). Generic names 
   back to Georgia (or the system's serif).
 - **The built-in themes name fonts too**, thirteen families between them: with all of them loaded
   (the default), every build fetches and ships them, about 140 files, some 2.6 MB in
-  `assets/_fonts` (a viewer's browser downloads only the files of the theme on screen). A project
-  whose own themes use system fonts only goes from Gelasio's files alone to those; offline, its
-  build takes longer and warns for each family the providers do not answer.
+  `assets/_fonts` (a viewer's browser downloads only the files of the theme on screen). So even a
+  project whose own themes use only system fonts ships them, on top of Gelasio's six; offline,
+  its build takes longer and warns for each family the providers do not answer.
   `arao({ builtinThemes: false })`, or the list of the ones the decks wear, keeps the others'
   fonts out; `fonts: false` fetches none, and the built-in themes fall back to system fonts.
 - **Network at build time.** The files are cached in `node_modules/.cache/fontless`, but the

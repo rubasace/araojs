@@ -49,9 +49,9 @@
 //      project theme named like a built-in one too, saying its left-out tokens are the built-in's),
 //      and a source named twice (the library's own package included) does not warn about itself;
 //      a project theme named like a built-in one replaces it (a message says so, and the built-in
-//      file's CSS is not in the build); and it writes the files and @font-face (400 and 700) of the
-//      web font THEME names (WEB_FONT) and of the defaults' (the engine's CSS: Gelasio) (SKIPPED
-//      where the font provider is unreachable); with arao({ fonts: false }), no font files; with
+//      file's CSS is not in the build); and it writes the files and @font-face of the web font
+//      THEME names (WEB_FONT: 400 and 700) and of the defaults' (the engine's CSS: Gelasio, 400,
+//      600 and 700, upright and italic) (SKIPPED where the font provider is unreachable); with arao({ fonts: false }), no font files; with
 //      system fonts only and builtinThemes: false, no @font-face but for the defaults' families
 //      and no word about fonts; with one built-in theme (builtinThemes: [name]), no @font-face but
 //      for that theme's families and the defaults'; with a name that is no built-in theme, the
@@ -573,7 +573,8 @@ try {
 
   // the web font THEME names, and the defaults' (the first family of each --ar-font-* token the
   // engine's CSS names in quotes: tokens.css's Gelasio): their files in the build (assets/_fonts),
-  // their @font-face in the CSS. Only where the font provider can be reached (an offline machine
+  // their @font-face in the CSS (THEME's 400 and 700; the defaults' 400, 600 and 700, upright and
+  // italic). Only where the font provider can be reached (an offline machine
   // builds without them: the check says SKIPPED). Then builds of their own (into dist-fonts,
   // removed after): with arao({ fonts: false }), which writes no font files; with a themes folder
   // whose fonts are all system fonts (SYSTEM) and builtinThemes: false, whose CSS has no
@@ -600,13 +601,24 @@ try {
     if (!online) log('web fonts: SKIPPED: no network (the font provider cannot be reached from here)')
     else if (!(await fontFiles('dist')).length) fail(`vite build: no web font files for ${[WEB_FONT, ...defaults].join(', ')} in dist/assets/_fonts`)
     else {
-      const css = await cssOf('dist')
-      for (const family of [WEB_FONT, ...defaults]) {
-        if (!new RegExp(`@font-face\\s*{[^}]*font-family:\\s*["']?${family}["']?\\s*;`).test(css)) fail(`vite build: no @font-face for "${family}" in the built CSS`)
-        for (const weight of [400, 700]) {
-          if (!new RegExp(`@font-face\\s*{[^}]*font-family:\\s*["']?${family}["']?\\s*;[^}]*font-weight:\\s*${weight}\\b`).test(css)) fail(`vite build: no ${weight} weight of "${family}" (bold would be faked)`)
+      // each @font-face of the build: its family, the weights it covers (one, or a variable
+      // font's range) and its style (normal where unset)
+      const faces = [...(await cssOf('dist')).matchAll(/@font-face\s*{([^}]*)}/g)].map((m) => {
+        const prop = (name) => m[1].match(new RegExp(`(?:^|;)\\s*${name}\\s*:\\s*([^;]+)`))?.[1].trim()
+        const [lo, hi = lo] = (prop('font-weight') ?? '400').split(/\s+/).map(Number)
+        return { family: (prop('font-family') ?? '').replace(/^["']|["']$/g, ''), lo, hi, style: prop('font-style') ?? 'normal' }
+      })
+      const expect = (family, weights, styles) => {
+        if (!faces.some((f) => f.family === family)) return fail(`vite build: no @font-face for "${family}" in the built CSS`)
+        for (const weight of weights) {
+          for (const style of styles) {
+            if (!faces.some((f) => f.family === family && f.lo <= weight && weight <= f.hi && f.style === style)) fail(`vite build: no ${weight} ${style} face of "${family}" (the browser would fake it)`)
+          }
         }
       }
+      expect(WEB_FONT, [400, 700], ['normal'])
+      // the defaults' fonts: every weight and style the plugin fetches (vite/fonts.js)
+      for (const family of defaults) expect(family, [400, 600, 700], ['normal', 'italic'])
     }
     const config = (options) => `import { defineConfig } from 'vite'\nimport arao from '${PKG}/vite'\n\nexport default defineConfig({ plugins: [arao(${options})], build: { outDir: 'dist-fonts' } })\n`
     await writeFile(join(project, 'vite.fonts.config.js'), config('{ fonts: false }'))
