@@ -66,11 +66,12 @@
   font-size: var(--_ar-subtitle-size); font-weight: 400; line-height: inherit; color: var(--_ar-subtitle-color);
   margin: var(--ar-subtitle-gap) 0 var(--_ar-cover-gap);
 }
-/* the bar, in proportion to the title it sits over (160 x 10 under the default 120px title), a
-   pill, and as far from the title as the title is from what follows it */
+/* the bar, in proportion to the title it sits over (160 x 10 under the default 120px title, 48
+   above it), a pill. Its gap is the title's size too, not --ar-title-gap: a theme's gap of 0
+   would glue it to the title, and one in em would be read in the bar's own font size */
 .layout-cover .bar {
   width: calc(var(--_ar-cover-title) * 4 / 3); height: calc(var(--_ar-cover-title) / 12);
-  border-radius: calc(var(--_ar-cover-title) / 24); margin: 0 0 var(--_ar-cover-gap);
+  border-radius: calc(var(--_ar-cover-title) / 24); margin: 0 0 calc(var(--_ar-cover-title) * .4);
   background: var(--_ar-cover-bar);
 }
 .layout-cover > .ar-footer { display: var(--_ar-cover-footer); }

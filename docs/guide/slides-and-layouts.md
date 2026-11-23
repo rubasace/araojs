@@ -509,10 +509,13 @@ of any rule.
 
 - A colour is a token, `var(--ar-…)` (or one of the project's own, which its theme declares), or
   `currentColor`, `transparent`, `inherit`, and `color-mix()` over them
-  (`color-mix(in srgb, var(--ar-fg) 15%, transparent)`). Never `#fff`, `rgb()`, `hsl()` or a named
-  colour (`white`): not inside a gradient, not as a `var()`'s fallback. A colour the theme has no
-  token for is a new theme token, not a literal: `overlay`'s text is `--ar-on-image` and its scrim
-  `--ar-scrim`.
+  (`color-mix(in srgb, var(--ar-fg) 15%, transparent)`), or a colour function of tokens' channels
+  (`rgb(var(--brand-rgb) / .5)`, `hsl(var(--hue) 50% 50%)`). Never `#fff`, `rgb(0 0 0)`, `hsl()` of
+  numbers or a named colour (`white`): not inside a gradient, not as a `var()`'s fallback. A colour
+  the theme has no token for is a new theme token, not a literal: `overlay`'s text is
+  `--ar-on-image` and its scrim `--ar-scrim`. A mask counts too, though it reads only alpha:
+  `mask: linear-gradient(black, transparent)` is a literal, `linear-gradient(currentColor,
+  transparent)` does the same.
 - A length is a token, or relative to one or to the box: `var(--ar-gap-md)`,
   `calc(var(--ar-title) * .45)`, `em`, `%`, `fr`. No `px`, `pt` or other absolute unit, but for
   `0`; a 1px hairline is no exception (`.05em`, or a parameter whose default is a token). No `rem`
@@ -529,9 +532,15 @@ of any rule.
 }
 ```
 
-The Vite plugin warns about each declaration that writes a literal, once, naming the file, its
-line and the value (`[arao] src/layouts/epigraph.css: line 33, border-left: #2a7de1 is a literal
-colour; …`), and `npx arao layouts` lists it with the layout's problems. The library's own
+The Vite plugin warns about each declaration that writes a literal, once for its colours and once
+for its lengths, naming the file, its line and the values; the first line above gives two:
+
+```text
+[arao] src/layouts/epigraph.css: line 33, border-left: #2a7de1 is a literal colour; …
+[arao] src/layouts/epigraph.css: line 33, border-left: 6px is a fixed length; …
+```
+
+`npx arao layouts` lists them with the layout's problems. The library's own
 layouts are held to the same rule: their build stops on one.
 
 ### Layouts in the editor
