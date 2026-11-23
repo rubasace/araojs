@@ -311,4 +311,6 @@ Web fonts are the Vite plugin's too (`vite/fonts.js`): it includes fontless, whi
 families in the CSS the project loads (`font-family`, and the `--ar-font-*` tokens through
 `processCSSVariables: 'ar-font'`), fetches the ones that are not system fonts from the providers at
 build time, and writes them and their `@font-face` (with metric fallbacks) into the build. The
-engine itself knows nothing of it: a theme's tokens name families, and the CSS does the rest.
+engine itself knows nothing of it: a theme's tokens name families, and the CSS does the rest. The
+defaults' tokens too: `tokens.css` names Gelasio (Georgia's metrics; Georgia, a system font, no
+provider serves), so every build fetches it.

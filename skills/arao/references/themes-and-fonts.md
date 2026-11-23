@@ -6,6 +6,7 @@ Full guide: `docs/guide/themes.md`; every token with its default: `docs/referenc
 ## Contents
 
 - Writing a theme
+- Overriding tokens
 - Choosing themes per deck
 - Where themes come from (folders, packages)
 - Fonts
@@ -72,6 +73,22 @@ A theme is a `[data-theme="<name>"] { --ar-…: …; }` block in a CSS file of `
   so). To start from one, copy `node_modules/araojs/themes/<name>.css` into `src/themes/`: same name
   to replace it, another name to offer both.
 
+## Overriding tokens
+
+From the project's own CSS, which must load after araojs's (a file imported in `src/main.js` after
+`araojs`, or a deck's `<style>`):
+
+```css
+:root, [data-theme] { --ar-accent: #e8590c; }                /* every theme */
+[data-theme="aurora"] { --ar-accent-fg: #fff; }               /* one theme */
+[data-theme] .layout-section { --ar-slide-bg-image: none; }   /* what a theme sets inside a layout */
+```
+
+- A plain `:root` reaches only `default` (and the tokens a theme leaves alone): a theme declares
+  its tokens on the deck's element, which beats what that element inherits from `:root`.
+- The theme picker's swatches follow: each shows what its theme wears. Don't exclude them.
+- Layout tokens default to the design-system ones: change `--ar-accent`, not each layout's.
+
 ## Choosing themes per deck
 
 - A deck without `themes` offers every theme: `default` first, then the project's (each source's,
@@ -118,6 +135,8 @@ package) and serves it with the deck, with matched fallbacks:
 
 - No `@font-face`, no font files, no `<link>` for a font a provider has.
 - System fonts (Georgia, Arial, Helvetica, Menlo…) and generic names are never fetched.
+- The defaults' text font is Gelasio (Georgia's metrics), fetched by every build; with
+  `fonts: false` or offline, Georgia.
 - Weights 400, 600 and 700, upright and italic, are fetched by default.
 - The first build needs the network; the catalogue cache lasts a week, and `npm ci` starts empty.
   Offline or on a provider timeout the build still passes with an `[arao] fonts:` warning and the

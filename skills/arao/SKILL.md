@@ -65,6 +65,8 @@ at https://github.com/rubasace/araojs/tree/main/docs. Paths below like
   block saying all that, the HTML it reads (its semantic form, and the plain one it tolerates),
   which `npx arao layouts` prints: read it before using a layout.
 - Look comes from the theme (`--ar-*` tokens). Every token has a default; a theme changes some.
+  To override one in every theme from the project's CSS: `:root, [data-theme] { … }` (a plain
+  `:root` reaches only `default`: [themes-and-fonts.md](references/themes-and-fonts.md#overriding-tokens)).
 - **Two levels of layout, no CSS at either.** A slide's structure is its layout; inside one block
   (the body, a side of `split`, a block of `grid`, a zone) utility classes arrange and mark
   things: `.cols`, `.cols-3`, `.row`, `.stack`, `.middle`, `.gap-sm`, `.grow`, `.text-lg`,

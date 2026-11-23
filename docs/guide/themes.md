@@ -1,11 +1,11 @@
 # Themes
 
 Every token the engine reads has a default ([Theme tokens](../reference/theme-tokens.md), declared in
-`styles/tokens.css`), and the defaults are the `default` theme: a light page, Georgia, a blue
-accent, a light code window. The library ships it with five more, each with a character of its
-own (dark, light, editorial, vivid, terminal): [Built-in themes](built-in-themes.md). Every deck
-can wear them (`arao({ builtinThemes })` turns them off, all or some), and `default` is always
-there.
+`styles/tokens.css`), and the defaults are the `default` theme: a light page, Gelasio (a web font
+with Georgia's metrics), a blue accent, a light code window. The library ships it with five more,
+each with a character of its own (dark, light, editorial, vivid, terminal):
+[Built-in themes](built-in-themes.md). Every deck can wear them (`arao({ builtinThemes })` turns
+them off, all or some), and `default` is always there.
 
 A project theme declares only what it changes. This one is the examples' (`docs/examples/themes/`;
 in a slides project, `src/themes/ocean.css`), with a deck that wears it:
@@ -135,6 +135,8 @@ one `[arao]` warning; a list left with no theme is `['default']`. `?theme=<name>
 (or the controls' picker) change the theme while presenting; `useDeck().themes` is the deck's
 list.
 
+## Overriding tokens
+
 Where tokens apply, from weakest to strongest:
 
 1. the defaults, declared at the root with zero specificity (`:where(:root)`): they reach
@@ -145,6 +147,31 @@ Where tokens apply, from weakest to strongest:
    presenter view, the export's book);
 4. a token set on any element inside (a layout, a slide, a table, `style="--ar-…"`).
 
+So a plain `:root` rule reaches `default`, and the tokens a theme leaves alone, but no further:
+each theme declares its tokens on the element that wears it (`[data-theme="aurora"]`), and an
+element's own declaration beats the value it inherits from `:root`. To change a token from the
+project's own CSS:
+
+- **in every theme**: `:root, [data-theme] { --ar-accent: … }`;
+- **in one theme**: `[data-theme="aurora"] { … }`;
+- **where a theme sets it inside a layout** (aurora, meridian and terminal give
+  `.layout-section` a background of their own): `[data-theme] .layout-section { … }`, scoped as
+  the theme scopes it.
+
+```css
+/* src/styles/brand.css, imported in src/main.js after araojs */
+:root, [data-theme] { --ar-accent: #e8590c; }                /* every theme */
+[data-theme="aurora"] { --ar-accent-fg: #fff; }               /* aurora only */
+[data-theme] .layout-section { --ar-slide-bg-image: none; }   /* sections, in every theme */
+```
+
+`[data-theme]` weighs the same as `[data-theme="aurora"]`, so these rules win over a theme's by
+coming later: the project's CSS must load after araojs's. It does where it usually goes, a file
+imported in `src/main.js` after `import … from 'araojs'`, or a deck's `<style>` block. A slide's
+own value (an attribute, `style="--ar-…"`) still wins over them. The theme picker's swatches
+follow too: each shows what its theme wears, so a colour overridden in every theme shows in all of
+them.
+
 Layouts have tokens too, `--ar-layout-<layout>-<thing>` (the section's colours, the cover's title
 size, which layouts show the footer, the image layouts' proportions), set in a theme like any
 other: `[data-theme="venue"] { --ar-layout-section-bg: #0b3d2e; --ar-layout-cover-footer: flex; }`
@@ -152,6 +179,10 @@ other: `[data-theme="venue"] { --ar-layout-section-bg: #0b3d2e; --ar-layout-cove
 (`Slide(layout="section" bg="#0b3d2e")`: [Layout parameters](slides-and-layouts.md#layout-parameters)).
 So is where a slide's body sits:
 `--ar-body-align: center` centres every body, as decks used to by default.
+
+Their colours and sizes default to the design-system tokens above (the section's background is
+`--ar-accent`, the cover's title a multiple of `--ar-title`), so changing `--ar-accent` restyles
+every layout at once; set a layout's own token only to set it apart.
 
 A token whose default is another token (`--ar-footer-color` is `--ar-muted`, the slide title's
 colour is `--ar-accent`) follows that token wherever it is read: a theme that changes `--ar-muted`
@@ -218,13 +249,18 @@ Gill Sans, Palatino, Trebuchet MS, SF Pro… in `vite/fonts.js`). Generic names 
 - **The build asks the providers.** Each family name goes to Google, Bunny, Fontshare and
   Fontsource at build time (the deck's viewers never contact them: the files are served with the
   deck). Turn it off for a family, or altogether, below.
+- **The defaults name one too**: Gelasio, `default`'s text font, is in the engine's own CSS, so
+  every build fetches and ships it, whatever the themes: six files (a variable font, upright and
+  italic, in three subsets), about 180 KB. `fonts: false`, or
+  `fonts: { families: [{ name: 'Gelasio', provider: 'none' }] }`, leaves it out, and the text falls
+  back to Georgia (or the system's serif).
 - **The built-in themes name fonts too**, thirteen families between them: with all of them loaded
   (the default), every build fetches and ships them, about 140 files, some 2.6 MB in
-  `assets/_fonts` (a viewer's browser downloads only the files of the theme on screen). A project
-  with system fonts only goes from no font file to those; offline, its build takes longer and
-  warns for each family the providers do not answer. `arao({ builtinThemes: false })`, or the
-  list of the ones the decks wear, keeps the others' fonts out; `fonts: false` fetches none, and
-  the built-in themes fall back to system fonts.
+  `assets/_fonts` (a viewer's browser downloads only the files of the theme on screen). So even a
+  project whose own themes use only system fonts ships them, on top of Gelasio's six; offline,
+  its build takes longer and warns for each family the providers do not answer.
+  `arao({ builtinThemes: false })`, or the list of the ones the decks wear, keeps the others'
+  fonts out; `fonts: false` fetches none, and the built-in themes fall back to system fonts.
 - **Network at build time.** The files are cached in `node_modules/.cache/fontless`, but the
   providers' catalogues are cached for a week only (and again on a new version), and a fresh
   install (`npm ci` in CI) starts empty. Offline, or with a provider that does not answer (a
