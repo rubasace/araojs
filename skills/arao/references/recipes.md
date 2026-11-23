@@ -148,6 +148,9 @@ Slide(layout="caption")
 Slide                           //- the section slides' titles, done / current / upcoming
   h2 Agenda
   Agenda                        //- no layout: its look is its own (by hand: ol.agenda)
+//- current: the last section slide at or before it (none on the opening slides: all upcoming).
+//- Agenda(:current="2") or Agenda(current="How it works") forces it (a "coming up" slide);
+//- Agenda(:highlight="false") marks no state
 ```
 
 ## Three columns: the grid layout

@@ -702,10 +702,18 @@ Slide
 `Agenda`, inside a slide, is an ordered list of the titles of the deck's `section` slides, kept
 up to date by the deck, in big rows numbered in the accent. It needs no layout: its look is its
 own, on a slide of the default layout as on any other. Each row shows where the talk stands from
-that slide: the parts already given dimmed (`done`), the next one in the accent, bold
-(`current`), the ones after it as they are (`upcoming`). Write it once after each section, or on
-every section slide (the section itself is then the current one), and each copy shows the talk's
-progress; in the presenter view and the export too. On a section slide, whose background is the
+that slide: the part the talk is in, in the accent, bold (`current`), the ones before it dimmed
+(`done`), the ones after it as they are (`upcoming`). The part the talk is in is the last section
+slide at or before the agenda's slide:
+
+| Where the `Agenda` is | Current | Done | Upcoming |
+|---|---|---|---|
+| before the first section (the opening slides) | none | none | all of them |
+| on a section slide, or on a slide after it (section N) | N | those before N | those after N |
+
+So an agenda on the opening slides lists the talk with no part marked, and the same `Agenda`
+written again after each section slide (or on every section slide) shows the talk's progress
+there; in the presenter view and the export too. On a section slide, whose background is the
 accent, it takes the section's text colour, as the title does: the current part bold, the ones
 already given lighter.
 
@@ -730,14 +738,46 @@ Deck
 
 ![The agenda example](../assets/shots/agenda.png)
 
+On the opening slide, as here, no part is marked yet. Written again after the second section
+slide, the same `Agenda` marks the first part done, the second current and the third upcoming:
+
+```pug
+Slide(layout="section")
+  h1 How it works
+Slide
+  h2 Where we are
+  Agenda                       //- done, current, upcoming
+```
+
+Two props change that:
+
+- `current` forces the part shown as current, whatever the slide: its place among the sections,
+  1-based (`:current="2"`, or `current="2"` as Pug and HTML write it), or its title
+  (`current="How it works"`). The ones before it are done, the ones after it upcoming. An agenda
+  that announces the next part, on a slide before its section slide, is `Agenda(:current="2")`.
+  One that names no section warns in development, and the slide's own rule applies.
+- `:highlight="false"` draws the plain list: no part marked, no state class, no `aria-current`.
+  Write it bound, in Pug too (`Agenda(:highlight="false")`): Pug drops a bare `highlight=false`,
+  and `highlight="false"` is a string.
+
+```pug
+Slide
+  h2 Coming up
+  Agenda(current="How it works")
+Slide
+  h2 The talk
+  Agenda(:highlight="false")
+```
+
 Each item carries `ar-agenda-item` and one of `ar-agenda-done`, `ar-agenda-current` (with
-`aria-current="step"`) and `ar-agenda-upcoming`. The look is tokens: the rows' size and gap, the
-numbers' colour, and a colour, a number colour, an opacity and a weight per state
-(`--ar-agenda-size`, `--ar-agenda-done-color`, `--ar-agenda-current-weight`… [Agenda
-tokens](../reference/theme-tokens.md#agenda)), which a theme sets for every agenda, or one slide
-in its `style`. A done part is dimmed by its colour, the muted one made lighter, number and all,
-which keeps it legible (at least 3:1 on every built-in theme). Give the three states the same
-values and the effect is gone:
+`aria-current="step"`) and `ar-agenda-upcoming` (none of them with `:highlight="false"`). The
+look is tokens: the rows' size and gap, the numbers' colour, and a colour, a number colour, an
+opacity and a weight per state (`--ar-agenda-size`, `--ar-agenda-done-color`,
+`--ar-agenda-current-weight`… [Agenda tokens](../reference/theme-tokens.md#agenda)), which a
+theme sets for every agenda, or one slide in its `style`. A done part is dimmed by its colour, the
+muted one made lighter, number and all, which keeps it legible (at least 3:1 on every built-in
+theme). One agenda with no state is `:highlight="false"`; give the three states the same values
+and the effect is gone from every agenda the tokens reach:
 
 ```pug
 Slide(style="--ar-agenda-done-color: currentColor; --ar-agenda-done-number-color: var(--ar-accent); --ar-agenda-current-color: currentColor; --ar-agenda-current-weight: 400")

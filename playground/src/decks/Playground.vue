@@ -23,7 +23,7 @@ Deck
       p Notes show in the presenter view.
 
   //- the deck's sections, from the slides of layout section, each marked from here (Agenda, in
-  //- any slide: its look is its own)
+  //- any slide: its look is its own): before the first section, none current, all upcoming
   Slide
     h2 Agenda
     Agenda
@@ -82,12 +82,13 @@ Deck
     h2 A picture
     p It fills its side edge to edge, top to bottom; the footer stays, over it.
 
+  Slide(layout="section")
+    h1 Building blocks
+
+  //- after the second section: the first done, the second current, the third upcoming
   Slide
     h2 Where we are
     Agenda
-
-  Slide(layout="section")
-    h1 Building blocks
 
   Slide
     h2 A snippet

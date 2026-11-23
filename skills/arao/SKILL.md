@@ -100,9 +100,12 @@ Do:
   `#title` on any): another name is not placed, and fails `vue-tsc`. The other layouts read the
   body's children: `split`'s two sides, `grid`'s blocks, each a `div`.
 - The talk's agenda: a `Slide` (no layout) with `h2` and `Agenda`, which lists the `section`
-  slides' titles in big numbered rows, marked done / current / upcoming from where it is (its
-  look is its own, tuned by `--ar-agenda-*` tokens). A hand-written one: `ol.agenda`, the same
-  rows with no state.
+  slides' titles in big numbered rows, marked done / current / upcoming from where it is: current
+  is the last section slide at or before it, so on the opening slides none is (all upcoming), and
+  after section 2 it reads done, current, upcoming (its look is its own, tuned by
+  `--ar-agenda-*` tokens). `Agenda(:current="2")` or `Agenda(current="<title>")` forces the
+  current one (announcing the next part); `Agenda(:highlight="false")` marks none (bound: Pug
+  drops `highlight=false`). A hand-written one: `ol.agenda`, the same rows with no state.
 - Start every slide with its heading (`h2`): the first heading names the slide in the jump
   menu, presenter view and notes pages, and there is no other way to name it. Something before it
   (a kicker line) makes it body: use `template(#title)` for a richer header.

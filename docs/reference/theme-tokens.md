@@ -25,7 +25,7 @@ layout at once.
 |---|---|---|
 | `--ar-bg` | `#f6f3ec` | slide background colour |
 | `--ar-fg` | `#1b2a3a` | text colour |
-| `--ar-muted` | `#5b6b7b` | secondary text (`.muted`, slide number, footer) |
+| `--ar-muted` | `#5b6b7b` | secondary text (`.muted`, slide number, footer); on a `section`, its text colour at 85 %, on an `overlay` at 80 % (each layout sets it: their backgrounds are not `--ar-bg`) |
 | `--ar-accent` | `#2a7de1` | `h2`, cover bar, section background (their layouts' defaults), progress, highlights |
 | `--ar-accent-fg` | `#fff` | text on accent (section slides) |
 | `--ar-on-image` | `#fff` | text over a picture: an `overlay` slide's text, its title and its footer (its layout's `color` default) |
@@ -213,7 +213,8 @@ draws with, are the tokens above or proportions of them, never literals
 and numbers). Set them in a theme, at the project's `:root`, or on one slide, in its `style`
 (`Slide(style="--ar-agenda-done-opacity: 1")`). On a `section` slide, whose background is the
 accent, the section sets the colours to its text colour (`currentColor`; done at 80 % of it):
-change them for `.layout-section`, as `--ar-title-color`.
+change them for `.layout-section`, as `--ar-title-color`. An `Agenda` with `:highlight="false"`
+marks no state, whatever these say.
 
 | Token | Default | Meaning |
 |---|---|---|
@@ -221,8 +222,8 @@ change them for `.layout-section`, as `--ar-title-color`.
 | `--ar-agenda-gap` | `.35em` | the space between rows |
 | `--ar-agenda-number-color` | `--ar-accent` | the numbers' colour |
 | `--ar-agenda-done-color` / `-number-color` / `-opacity` / `-weight` | `--ar-muted` at 80 % / its colour / `1` / `400` | a part already given (`ar-agenda-done`): dimmed by its colour, at least 3:1 on every built-in theme |
-| `--ar-agenda-current-color` / `-number-color` / `-opacity` / `-weight` | `--ar-accent` / `--ar-agenda-number-color` / `1` / `700` | the next part (`ar-agenda-current`) |
-| `--ar-agenda-upcoming-color` / `-number-color` / `-opacity` / `-weight` | `currentColor` / `--ar-agenda-number-color` / `1` / `400` | the parts after it (`ar-agenda-upcoming`) |
+| `--ar-agenda-current-color` / `-number-color` / `-opacity` / `-weight` | `--ar-accent` / `--ar-agenda-number-color` / `1` / `700` | the part the talk is in (`ar-agenda-current`) |
+| `--ar-agenda-upcoming-color` / `-number-color` / `-opacity` / `-weight` | `currentColor` / `--ar-agenda-number-color` / `1` / `400` | the parts still to come (`ar-agenda-upcoming`): those after the current one, every one before the first section |
 
 ```css
 [data-theme="venue"] {
