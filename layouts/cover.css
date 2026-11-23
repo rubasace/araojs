@@ -32,7 +32,14 @@
    the footer's token (Slide.vue).
    Its title (.ar-title, Slide.vue: an h1 or an h2, alike) is its own size, in the text colour
    unless --ar-title-color says otherwise, with its own leading, and the gap under it is in its
-   size too (--ar-title-gap still wins). */
+   size too (--ar-title-gap still wins).
+   Slide.fit and the scales shrink everything in a slide's body (styles/utilities.css), a size a
+   layout works out on the slide too: worked out at full size (registered as a length: in em,
+   the slide's text, as the header has it), it is drawn in the body times their factor,
+   --_ar-zoom (1 in the header, which they leave as it is). Here, the title and its gap when they
+   are the body's, and the bar. */
+@property --_ar-cover-title { syntax: '<length-percentage>'; inherits: true; initial-value: 0px; }
+@property --_ar-cover-gap { syntax: '<length-percentage>'; inherits: true; initial-value: 0px; }
 :where(.layout-cover) {
   --_ar-cover-title: var(--ar-layout-cover-title-size, calc(var(--ar-title) * 1.25));
   --_ar-cover-title-color: var(--ar-title-color, currentColor);
@@ -56,18 +63,19 @@
 .layout-cover:not(:has(> .ar-header)) > .ar-body > :nth-child(1 of h1, h2),
 .layout-cover:not(:has(> .ar-header)) > .ar-body > h1:nth-child(1 of h1, h2) + h1,
 .layout-cover:not(:has(> .ar-header)) > .ar-body > h2:nth-child(1 of h1, h2) + h2 {
-  font-size: var(--_ar-cover-title); line-height: 1.05; color: var(--_ar-cover-title-color);
-  margin: 0 0 var(--_ar-cover-gap);
+  font-size: calc(var(--_ar-cover-title) * var(--_ar-zoom, 1)); line-height: 1.05; color: var(--_ar-cover-title-color);
+  margin: 0 0 calc(var(--_ar-cover-gap) * var(--_ar-zoom, 1));
 }
 .layout-cover > .ar-header > .ar-title { margin: 0; }
 .layout-cover:not(:has(> .ar-header)) > .ar-body > :nth-child(1 of h1, h2):has(+ :is(h1, h2, h3, h4, h5, h6)) { margin-bottom: 0; }
 .layout-cover:not(:has(> .ar-header)) > .ar-body > h1:nth-child(1 of h1, h2) + :is(h2, h3, h4, h5, h6),
 .layout-cover:not(:has(> .ar-header)) > .ar-body > h2:nth-child(1 of h1, h2) + :is(h1, h3, h4, h5, h6) {
   font-size: var(--_ar-subtitle-size); font-weight: 400; line-height: inherit; color: var(--_ar-subtitle-color);
-  margin: var(--ar-subtitle-gap) 0 var(--_ar-cover-gap);
+  margin: var(--ar-subtitle-gap) 0 calc(var(--_ar-cover-gap) * var(--_ar-zoom, 1));
 }
 .layout-cover .bar {
-  width: 160px; height: 10px; border-radius: 5px; margin: 0 0 48px;
+  width: calc(160px * var(--_ar-zoom, 1)); height: calc(10px * var(--_ar-zoom, 1));
+  border-radius: calc(5px * var(--_ar-zoom, 1)); margin: 0 0 calc(48px * var(--_ar-zoom, 1));
   background: var(--_ar-cover-bar);
 }
 .layout-cover > .ar-footer { display: var(--_ar-cover-footer); }

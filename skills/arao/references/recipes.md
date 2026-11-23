@@ -198,7 +198,8 @@ layouts` describes every one.
 
 ## A crowded slide that must fit
 ```pug
-//- its body's text shrinks just enough to fit (down to 60%), only when it overflows
+//- its body shrinks just enough to fit (down to 60%), only when it overflows: the text and
+//- everything inside with it (headings, gaps, an Agenda, icons)
 Slide.fit
   h2 Everything we shipped
   ul

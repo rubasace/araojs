@@ -83,15 +83,16 @@ the total, with what overflows and by how many px:
 2 slides do not fit (a warning: --strict makes it an error):
   mytalk, slide 7 "Twelve pillars", steps 3-4 of 4: the body overflows by 46px at the bottom, under the footer
   mytalk, slide 9 "The config": block 2 of the body (div) overflows by 120px at the right, cut off at its edge
-  To fit it: Slide.fit (shrinks the body's text just enough), a .scale-90, .scale-80 or .scale-70 class on the slide or on a block, or fewer blocks.
+  To fit it: Slide.fit (shrinks the body just enough), a .scale-90, .scale-80 or .scale-70 class on the slide or on a block, or fewer blocks.
 ```
 
 Fix every one, then export again, until no such lines are left. In order of preference: cut
 (fewer blocks, shorter text, two slides: one idea per slide); `Slide.fit` on the slide (its
-body's text shrinks just enough, down to 60%); `.scale-90` / `.scale-80` / `.scale-70` on the
-slide or on the block that overflows. "Slide.fit shrank its body to 60%, its floor" means it
-cannot fit: split it. "Slide.fit cannot shrink it" means what overflows is sized in px or
-transformed: make it smaller. Overflow at the top or the left was put there (a negative margin, a
+body shrinks just enough, down to 60%: the text and everything inside with it, headings, gaps,
+an `Agenda`, a layout's sizes, icons); `.scale-90` / `.scale-80` / `.scale-70` on the slide or on
+the block that overflows. "Slide.fit shrank its body to 60%, its floor" means it cannot fit:
+split it. "Slide.fit cannot shrink it" means what overflows is sized in px by hand (a width in a
+style) or transformed: make it smaller, or size it in em. Overflow at the top or the left was put there (a negative margin, a
 transform): if it is meant to reach past its box (a decoration), `position: absolute` or
 `data-ar-bleed` on it; else move it back in. The export's exit code stays 0 with overflow;
 `--strict` makes it 1 (for CI). The check-deck script reports overflow only against the dev

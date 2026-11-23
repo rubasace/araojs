@@ -23,7 +23,11 @@
    The body is a column (Slide.vue) that the picture fills: a figure, or the plain form's picture
    (an Img, an img, a video, an svg), takes the space its caption leaves; an Img is whole in it
    (contain, its default: fit="cover" still fills it, cropped), and so are an img and a video. The
-   caption: the figure's figcaption, or the plain form's p after the picture. */
+   caption: the figure's figcaption, or the plain form's p after the picture.
+   Slide.fit and the scales shrink the caption too (styles/utilities.css): its size is worked out
+   here, at full size (registered: in em, the slide's text), and drawn times their factor
+   (--_ar-zoom). */
+@property --_ar-caption-size { syntax: '<length-percentage>'; inherits: true; initial-value: 0px; }
 :where(.layout-caption) {
   --_ar-caption-size: var(--ar-layout-caption-caption-size, var(--ar-text-small));
   --_ar-caption-align: var(--ar-layout-caption-caption-align, center);
@@ -45,7 +49,7 @@
 .layout-caption > .ar-body > :is(.ar-img, img, video, svg, picture) ~ p {
   flex: none;
   margin: .6em 0 0;
-  font-size: var(--_ar-caption-size);
+  font-size: calc(var(--_ar-caption-size) * var(--_ar-zoom, 1));
   line-height: 1.3;
   text-align: var(--_ar-caption-align);
   color: var(--ar-muted);

@@ -65,7 +65,8 @@ onMounted(() => {
 /* Its look, in any slide: big rows, numbered in the accent, each state its own. Tokens,
    --ar-agenda-<thing>, each with its default (a theme sets them, the project's :root, one slide in
    its style: Slide(style="--ar-agenda-done-opacity: 1"), or the Agenda itself):
-     --ar-agenda-size                  the rows' size (0.65 x --ar-title)
+     --ar-agenda-size                  the rows' size (0.65 x --ar-title): px, or from the title's
+                                       tokens
      --ar-agenda-gap                   the space between rows (.35em)
      --ar-agenda-number-color          the numbers' colour (--ar-accent)
      --ar-agenda-done-color            a part already given: its colour (--ar-muted at 80 %)
@@ -94,11 +95,14 @@ onMounted(() => {
    are under .ar-slide, (0,2,1) for the list: a rule for every list of a slide (.ar-slide ol,
    (0,1,1)) leaves the agenda as it is, but one as specific loaded after this file wins over it,
    a layout's, a theme's or the project's (.layout-x .ar-body ol, .ar-slide .ar-agenda).
-   Its size is a token, a part of --ar-title, not of the body's text: Slide.fit does not shrink
-   it (an agenda that does not fit is said to be one Slide.fit cannot shrink: a smaller
-   --ar-agenda-size, or fewer sections). */
+   Its size is a token, a part of --ar-title, not of the body's text; Slide.fit and the scales
+   shrink it all the same, as they shrink everything inside (styles/utilities.css): its default
+   through --ar-title, which they shrink, and a size given (--_ar-agenda-given, defined only then)
+   times their factor, --_ar-zoom. So a size given is a length, in px or from the title's tokens:
+   one in em would be the text's already, and shrink twice. */
 :where(.ar-agenda, ol.agenda) {
-  --_ar-agenda-size: var(--ar-agenda-size, calc(var(--ar-title) * .65));
+  --_ar-agenda-given: calc(var(--ar-agenda-size) * var(--_ar-zoom, 1));
+  --_ar-agenda-size: var(--_ar-agenda-given, calc(var(--ar-title) * .65));
   --_ar-agenda-gap: var(--ar-agenda-gap, .35em);
   --_ar-agenda-number: var(--ar-agenda-number-color, var(--ar-accent));
   --_ar-agenda-done-color: var(--ar-agenda-done-color, color-mix(in srgb, var(--ar-muted) 80%, transparent));

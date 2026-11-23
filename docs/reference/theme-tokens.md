@@ -36,6 +36,13 @@ How themes are written, found and applied: [Themes](../guide/themes.md).
 | `--ar-radius` | `4px` | corner radius (`Img rounded`, placeholders) |
 | `--ar-gap-sm` / `-md` / `-lg` | `24px` / `48px` / `80px` | `.gap-sm`, `.gap`, `.gap-lg`; `md` is the gap of `.cols`, `.rows`, `.stack` and `.row`; `lg` between `split`'s sides; `sm` between `grid`'s blocks and the footer's children |
 
+Inside what `Slide.fit` and the scales shrink (the body of a slide with `.fit` or a `.scale-*`, a
+block with a `.scale-*`), `--ar-title`, `--ar-gap-sm`, `-md`, `-lg` and `--ar-text-base` are
+declared again at the factor they shrink it by, from the slide's own value: whatever reads them
+there shrinks with the text, a heading, a gap, an `Agenda`, the CSS of your own layouts too
+([When it does not fit](../guide/composition.md#when-it-does-not-fit)). Set them in a theme, at
+`:root` or on the slide; one set on the body or on that block is taken as given.
+
 ## Background, motion, addons
 
 | Token | Default | Meaning |
@@ -183,7 +190,7 @@ change them for `.layout-section`, as `--ar-title-color`.
 
 | Token | Default | Meaning |
 |---|---|---|
-| `--ar-agenda-size` | 0.65x `--ar-title` | the rows' size |
+| `--ar-agenda-size` | 0.65x `--ar-title` | the rows' size: a length in px or from the title's tokens, which `Slide.fit` and the scales shrink with the rest of the body |
 | `--ar-agenda-gap` | `.35em` | the space between rows |
 | `--ar-agenda-number-color` | `--ar-accent` | the numbers' colour |
 | `--ar-agenda-done-color` / `-number-color` / `-opacity` / `-weight` | `--ar-muted` at 80 % / its colour / `1` / `400` | a part already given (`ar-agenda-done`): dimmed by its colour, at least 3:1 on every built-in theme |

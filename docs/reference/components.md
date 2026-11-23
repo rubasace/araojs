@@ -122,8 +122,8 @@ wins over the same token there), and the classes the engine knows:
 | `.bottom` | the body at the bottom |
 | `.no-footer` | no deck footer on this slide, whatever its layout says |
 | `.with-footer` | the deck footer on this slide, whatever its layout says |
-| `.fit` | its body's text shrunk just enough to fit when it overflows, down to 60% of its size ([When it does not fit](../guide/composition.md#when-it-does-not-fit)) |
-| `.scale-90`, `.scale-80`, `.scale-70` | its body's text at 90, 80, 70% of its size |
+| `.fit` | its body shrunk just enough to fit when it overflows, down to 60% of its size: its text and everything inside with it ([When it does not fit](../guide/composition.md#when-it-does-not-fit)) |
+| `.scale-90`, `.scale-80`, `.scale-70` | its body at 90, 80, 70% of its size, everything inside with its text |
 
 What a slide shows is measured: in development, a slide on screen whose content does not fit (cut
 off at the bottom, under the footer, wider than its box) gets a console warning, and `arao export`
@@ -237,7 +237,7 @@ default); in a `.stack`, its children.
 | `.gap-sm`, `.gap`, `.gap-lg` | the gap between the children of a block that lays them out: `--ar-gap-sm`, `--ar-gap-md` (the placement classes' own), `--ar-gap-lg` |
 | `.grow` | fills the space left in its container, which lays out in a column or a row (the body, a side of `split`, a zone, a `.stack`, a `.row`) |
 | `.text-sm`, `.text-lg`, `.text-xl` | smaller, larger, much larger text: `--ar-text-small` (`.75em`), `--ar-text-large` (`1.25em`), `--ar-text-xlarge` (`1.6em`) |
-| `.scale-90`, `.scale-80`, `.scale-70` | its text at 90, 80, 70% of the size it inherits, and with it everything inside sized in em: on a block (a side of `split`, a block of `grid`, a card), that block; on a `Slide`, its body. With a `.text-*` on the same element, both: `p.text-sm.scale-80` is 80% of a small text |
+| `.scale-90`, `.scale-80`, `.scale-70` | everything in it at 90, 80, 70%: its text of the size it inherits, what is in em with it, and what the theme sizes in px (the headings from `--ar-title`, the gaps, an `Agenda`, a layout's own sizes, an `Icon` given a size): on a block (a side of `split`, a block of `grid`, a card), that block; on a `Slide`, its body. With a `.text-*` on the same element, both: `p.text-sm.scale-80` is 80% of a small text. A size in px written by hand does not follow ([When it does not fit](../guide/composition.md#when-it-does-not-fit)) |
 | `.accent`, `.muted` | text (an `Icon` too) in `--ar-accent`, in `--ar-muted` |
 | `.highlight` | a marker behind inline text: `--ar-highlight` (default the accent, light) |
 | `.upper` | text in capitals |
@@ -249,8 +249,8 @@ default); in a `.stack`, its children.
 | `.top`, `.middle`, `.bottom` | its body from the top (the default), centred top to bottom, at the bottom ([Placing the body](../guide/slides-and-layouts.md#placing-the-body)) |
 | `.center` | its body centred both ways, its text too (the title's) |
 | `.no-footer`, `.with-footer` | the deck's footer hidden, shown on it, whatever its layout says |
-| `.fit` | its body's text shrunk just enough to fit, when it overflows, down to 60% of its size; a warning when even that does not fit ([When it does not fit](../guide/composition.md#when-it-does-not-fit)) |
-| `.scale-90`, `.scale-80`, `.scale-70` | its body's text at 90, 80, 70% (the title stays) |
+| `.fit` | its body shrunk just enough to fit, when it overflows, down to 60% of its size: its text, and everything inside by the same factor (what is in em, the headings, the gaps, an `Agenda`, a layout's own sizes, an `Icon` given a size); a warning when even that does not fit ([When it does not fit](../guide/composition.md#when-it-does-not-fit)) |
+| `.scale-90`, `.scale-80`, `.scale-70` | its body at 90, 80, 70%, everything in it as `.fit` shrinks it (the title stays) |
 
 `.bar` inside a `cover` slide draws the accent bar (the cover's own class).
 
@@ -398,8 +398,12 @@ Each item (`li.ar-agenda-item`) carries one state, as seen from the slide the `A
   sets those tokens on its slides: a theme changes them for `.layout-section`
   (`[data-theme="x"] .layout-section { --ar-agenda-current-color: … }`), one slide in its
   `style`.
-- Its size is a token (a part of `--ar-title`), not the body's text: `Slide.fit` does not shrink
-  it, and an agenda too long for its slide is said to be one `Slide.fit` cannot shrink. A smaller
+- Its size is a token (a part of `--ar-title`), not the body's text; `Slide.fit` and the scales
+  shrink it all the same, with the rest of the body: an agenda too long for its slide fits with
+  `Slide.fit`, down to 60%. A size you give it (`--ar-agenda-size`) shrinks with them too: give
+  it in px or from the title's tokens (`calc(var(--ar-title) * .5)`), not in `em` (that would be
+  the text's, already shrunk, and shrink twice). Put a scale on the slide or a block around it,
+  not on the `Agenda` itself (there, its size would be the text's). Past 60%: a smaller
   `--ar-agenda-size` (or `--ar-agenda-gap`), or fewer sections.
 - A hand-written `ol` with the class `agenda` (`ol.agenda`) gets the same rows and numbers, with
   no state.

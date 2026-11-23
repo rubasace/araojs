@@ -59,9 +59,10 @@
      Classes and styles on a Slide go on its section, as a layout's own do (a parameter's token
      is set after the slide's style, so it wins over the same token there).
      What does not fit: the slide on screen is measured (composables/useOverflow.ts,
-     core/overflow.ts). With the class fit, its body's text shrinks just enough to fit (down to
-     60%), in every drawing; in development, what overflows is a console warning (the export
-     measures every page itself). A slide without fit is never resized.
+     core/overflow.ts). With the class fit, its body (its text, and all inside with it) shrinks
+     just enough to fit (down to 60%), in every drawing; in development, what overflows is a
+     console warning (the export measures every page itself). A slide without fit is never
+     resized.
      The slide's name in the jump menu, the presenter view and the notes pages is the text of its
      first heading outside the background and the footer (state/stage.ts).
      Speaker notes: Notes anywhere inside the slide (notes.ts); only the presenter view shows them. -->
@@ -226,7 +227,7 @@ const layer = shallowRef<HTMLElement | null>(null)
 const { id, index, active, drawn, step, steps, still, role, total, footer: footerSlot } = createSlide({ el, layer, layout: () => props.layout })
 
 // ---- what does not fit ---------------------------------------------------------------------------
-// Slide.fit (the class fit: its body's text shrunk until it fits) and, in development, a warning
+// Slide.fit (the class fit: its body shrunk until it fits) and, in development, a warning
 // when what is on screen overflows (composables/useOverflow.ts; the export checks every page)
 useOverflow({ el, active, step, steps, index, role, theme: deck.theme, deck: useDeckName() })
 
