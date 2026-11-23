@@ -10,7 +10,12 @@
      theme or not (the presenter view and its notes, the deck selector), and any rule of the
      project's own wins over them, :root { --ar-accent: … } included. A theme's rule, on the
      element that wears it (the audience's viewport, each Stage, the export's book), wins over
-     both; a token set on any element inside (a layout, a slide, a table) wins over all of them.
+     both (that element's own declaration beats what it inherits from the root): a project's
+     :root rule reaches `default` and the tokens a theme leaves alone; :root, [data-theme] { … }
+     (in the project's CSS, loaded after the engine's) every theme. A token set on any element
+     inside (a layout, a slide, a table) wins over all of them: one a theme sets inside a layout
+     ([data-theme="x"] .layout-section { … }) is overridden for every theme by
+     [data-theme] .layout-section { … }, not at the root (docs/guide/themes.md#overriding-tokens).
    - An element that shows a theme apart from the one around it (a theme's swatch in the
      controls) carries data-ar-theme-root: it takes the slide's colours (--ar-bg, --ar-fg,
      --ar-muted, --ar-accent, --ar-accent-fg) as the root has them, the defaults with the
@@ -44,7 +49,8 @@
   --ar-accent: #2a7de1;              /* h2, cover bar, section background (layouts/), progress, highlights */
   --ar-accent-fg: #fff;              /* text on the accent (section slides, layouts/section.css) */
   --ar-letterbox: #1b2a3a;           /* around the canvas when the window shape differs */
-  --ar-font-sans: Georgia, "Times New Roman", serif;
+  --ar-font-sans: "Gelasio", Georgia, serif;   /* Gelasio: Georgia's metrics, fetched by the build
+                                                  (vite/fonts.js); Georgia never is */
   --ar-font-mono: ui-monospace, Menlo, monospace;
   /* --ar-font-heading: not declared: headings keep the font around them (Slide.vue) */
   --ar-text-base: 42px;              /* base font size of a slide */
