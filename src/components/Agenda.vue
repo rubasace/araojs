@@ -21,7 +21,9 @@
                    sections, 1-based (:current="2", or current="2" as Pug and HTML write it), or
                    its title (current="How it works", as useDeck().slides gives it: whitespace
                    collapsed); done and upcoming follow from it. One that names no section warns,
-                   in development, and the slide's own rule applies
+                   in development, and the slide's own rule applies. false (:current="false", or
+                   current="false") marks the parts already given and highlights none as current:
+                   the part the talk is in looks like those to come
      Its look is its own, whatever the layout (the style below: its rows, its numbers in the
      accent, a set of --ar-agenda-* tokens per state, which a theme or a slide can make the same to
      show no state). A hand-written ol with the class agenda gets the same rows and numbers, with
@@ -44,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted } from 'vue'
+import { computed, nextTick, onMounted, type PropType } from 'vue'
 import { useDeck } from '../state/deck'
 import { useSlideIndex } from '../state/slide'
 import type { DeckSlide } from '../state/stage'
@@ -56,7 +58,9 @@ const props = defineProps({
   highlight: { type: Boolean, default: true },
   // the section shown as current, whatever the slide: its place among the sections (1-based) or
   // its title
-  current: [Number, String],
+  // false (:current="false", or current="false"): the parts already given are marked, and no part
+  // is highlighted as current (the one the talk is in looks like those to come)
+  current: { type: [Number, String, Boolean] as PropType<number | string | false>, default: undefined },
 })
 
 const deck = useDeck()
@@ -84,7 +88,9 @@ const named = (list: readonly DeckSlide[], current: number | string | undefined)
 
 type State = 'done' | 'current' | 'upcoming'
 const list = computed(() => deck.slides.value.filter((s) => s.layout === 'section'))
-const forced = computed(() => named(list.value, props.current))
+// current="false" / :current="false": no part highlighted as current
+const noCurrent = computed(() => props.current === false || props.current === 'false')
+const forced = computed(() => (noCurrent.value ? -1 : named(list.value, props.current as number | string | undefined)))
 // the section slides, each with its state as seen from this slide (none with highlight off): the
 // current one is the one current names, else the last section at or before this slide (none
 // before the first section: every one upcoming); those before it done, those after it upcoming
@@ -93,7 +99,7 @@ const sections = computed(() => {
   if (!props.highlight) return all.map((s) => ({ ...s, state: null }))
   const at = here?.value ?? -1
   const k = forced.value >= 0 ? forced.value : all.findLastIndex((s) => s.index <= at)
-  return all.map((s, i) => ({ ...s, state: (i < k ? 'done' : i === k ? 'current' : 'upcoming') as State }))
+  return all.map((s, i) => ({ ...s, state: (i < k ? 'done' : i === k && !noCurrent.value ? 'current' : 'upcoming') as State }))
 })
 // said once mounted (every slide of the deck has registered by then), in one copy of the deck
 // (not the presenter's preview, nor a thumbnail): no section to list; and, once every slide has
@@ -105,7 +111,7 @@ onMounted(async () => {
     return
   }
   await nextTick()
-  if (props.highlight && props.current != null && props.current !== '' && forced.value < 0)
+  if (props.highlight && props.current != null && props.current !== '' && typeof props.current !== 'boolean' && !noCurrent.value && forced.value < 0)
     console.warn(`[arao] Agenda's current="${props.current}" names no section: a place from 1 to ${list.value.length}, or the title of one (${list.value.map((s) => `"${s.title}"`).join(', ')}); it marks them as seen from its slide`)
 })
 </script>

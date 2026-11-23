@@ -104,7 +104,7 @@ Do:
   is the last section slide at or before it, so on the opening slides none is (all upcoming), and
   after section 2 it reads done, current, upcoming (its look is its own, tuned by
   `--ar-agenda-*` tokens). `Agenda(:current="2")` or `Agenda(current="<title>")` forces the
-  current one (announcing the next part); `Agenda(:highlight="false")` marks none (bound: Pug
+  current one (announcing the next part); `Agenda(:current="false")` keeps the seen ones marked but highlights none as current; `Agenda(:highlight="false")` marks none (bound: Pug
   drops `highlight=false`). A hand-written one: `ol.agenda`, the same rows with no state.
 - Start every slide with its heading (`h2`): the first heading names the slide in the jump
   menu, presenter view and notes pages, and there is no other way to name it. Something before it

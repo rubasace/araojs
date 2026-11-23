@@ -18,6 +18,7 @@
     <Agenda highlight="no" />
     <!-- @vue-expect-error current is a section's place or its title -->
     <Agenda :current="true" />
+    <Agenda :current="false" />
     <!-- @vue-expect-error width is a number -->
     <Deck :width="'wide'" />
     <!-- @vue-expect-error layout is a name, not a number -->
