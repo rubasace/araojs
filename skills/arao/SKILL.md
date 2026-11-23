@@ -69,7 +69,9 @@ at https://github.com/rubasace/araojs/tree/main/docs. Paths below like
   (the body, a side of `split`, a block of `grid`, a zone) utility classes arrange and mark
   things: `.cols`, `.cols-3`, `.row`, `.stack`, `.middle`, `.gap-sm`, `.grow`, `.text-lg`,
   `.accent`, `.highlight`… When columns or rows are the whole slide, that is a layout. `npx arao
-  layouts` prints the layouts, then every class, each described.
+  layouts` prints the layouts, then every class, each described. One class it does not print,
+  being `Agenda`'s: `ol.agenda`, a hand-written agenda in `Agenda`'s big numbered rows, with
+  no state.
 - Global in templates: `Deck Slide Background Img Icon Snippet Notes Agenda`, `v-step`,
   `v-step-from`. Addons (`ProgressBar`, `SlideNumber`) and composables (`useDeck`, `useSlide`)
   are imported from `'araojs'` in `<script setup>`.

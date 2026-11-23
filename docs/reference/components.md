@@ -150,7 +150,7 @@ file of the same name replaces it.
 |---|---|---|
 | `default` | the header, then the body filling the rest, inside the slide's padding; the body from the top (`--ar-body-align`); the footer shown | default, `#title` |
 | `cover` | the header and the body as one group, centred vertically, left-aligned; its title (an `h1`) at 1.25x `--ar-title`, in the text colour; a `.bar` element draws a short bar in the accent; no footer | default, `#title` |
-| `section` | everything centred both ways, on `--ar-accent` in `--ar-accent-fg` (the title, its subtitle and the footer too); its title (an `h1`) at 1.4x `--ar-title`; no footer | default, `#title` |
+| `section` | everything centred both ways, on `--ar-accent` in `--ar-accent-fg` (the title, its subtitle, the footer and an [`Agenda`](#agenda) too); its title (an `h1`) at 1.4x `--ar-title`; no footer | default, `#title` |
 | `split` | the header across the top, then the body's two children side by side, its two sides, filling the rest; a side may start with an `h3`, its heading (`columns="2fr 1fr"`, `gap`, `divider="2px solid …"`; default `1fr 1fr`, no divider) | default, `#title` |
 | `grid` | each child of the body a block (a leading `Icon`/`Img`/`img`/`svg` at one size, an `h3`, a muted `p`), in rows balanced by their count (1-3 in a row, 4: 2+2, 5: 3+2, 6: 3+3, 7: 4+3, 8: 4+4, 9: 3+3+3, 10: 5+5, 11: 4+4+3, 12: 4x3, 13 and more at `max-columns`), the last one centred; the more blocks, the smaller their pictures, padding, gap and text (from 9, 11, 12 and 16 blocks), so that up to 20 fit, each a title and a one-line description; a block's parts found at any depth in it (`columns`, `rows`, `max-columns`, `gap`, `align`, `cards`, `icon-size`, `text-size`) | default, `#title` |
 | `quote` | a `blockquote` opened by a big mark, and its `cite` (small, muted), in the middle; also two `p` (`size`, `mark`, `mark-color`, `align`); the footer shown | default, `#title` |
@@ -392,6 +392,15 @@ Each item (`li.ar-agenda-item`) carries one state, as seen from the slide the `A
   (`--ar-agenda-size`, `--ar-agenda-done-color`…: [Agenda tokens](theme-tokens.md#agenda)), set
   in a theme or on one slide (`Slide(style="--ar-agenda-done-opacity: 1")`). The same values for
   the three states show no state.
+- On a `section` slide, whose background is the accent, it takes the section's text colour, as
+  the title does: the numbers and the current part in it (the current one bold), the parts
+  already given that colour made lighter (at least 3:1 on every built-in theme). The section
+  sets those tokens on its slides: a theme changes them for `.layout-section`
+  (`[data-theme="x"] .layout-section { --ar-agenda-current-color: … }`), one slide in its
+  `style`.
+- Its size is a token (a part of `--ar-title`), not the body's text: `Slide.fit` does not shrink
+  it, and an agenda too long for its slide is said to be one `Slide.fit` cannot shrink. A smaller
+  `--ar-agenda-size` (or `--ar-agenda-gap`), or fewer sections.
 - A hand-written `ol` with the class `agenda` (`ol.agenda`) gets the same rows and numbers, with
   no state.
 - The titles are the sections' first headings (their name in the jump menu), the same in the

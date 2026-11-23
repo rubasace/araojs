@@ -87,7 +87,8 @@
   `Slide(layout="agenda")` → `Slide`, with its `h2` and `Agenda` as before (an `agenda` left
   there is a layout with no CSS, the default one: the `Agenda` still looks right, but the
   layout's parameters do nothing, and `vue-tsc` turns the name down; `check-deck.mjs` reports
-  it as "removed Slide API"). Its parameters are `--ar-agenda-*` tokens, set in a theme or in the
+  it as "removed Slide API", or only warns when a stylesheet styles `.layout-agenda`: a name
+  kept on purpose, as a hook for a theme's rules, is fine). Its parameters are `--ar-agenda-*` tokens, set in a theme or in the
   slide's `style`: `done-opacity="1"` → `style="--ar-agenda-done-opacity: 1"`, and so on for
   `size`, `gap`, `number-color` and each state's `-color`, `-number-color`, `-opacity` and
   `-weight` (a theme's `--ar-layout-agenda-<thing>` is `--ar-agenda-<thing>`). A hand-written

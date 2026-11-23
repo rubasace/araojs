@@ -89,10 +89,14 @@ onMounted(() => {
      --ar-agenda-done-number-color: var(--ar-accent);
      --ar-agenda-current-color: currentColor;
      --ar-agenda-current-weight: 400;
+   A section (layouts/section.css) sets them for its slides: there the accent is the background.
    A hand-written ol.agenda shares the rows and the numbers (its items have no state). The rules
-   are under .ar-slide, as specific as a layout's rule for its body's lists: a deck's rule for all
-   the lists of its slides (.ar-slide ol) leaves the agenda as it is, one of its own on
-   .ar-slide .ar-agenda restyles it. */
+   are under .ar-slide, (0,2,1) for the list: a rule for every list of a slide (.ar-slide ol,
+   (0,1,1)) leaves the agenda as it is, but one as specific loaded after this file wins over it,
+   a layout's, a theme's or the project's (.layout-x .ar-body ol, .ar-slide .ar-agenda).
+   Its size is a token, a part of --ar-title, not of the body's text: Slide.fit does not shrink
+   it (an agenda that does not fit is said to be one Slide.fit cannot shrink: a smaller
+   --ar-agenda-size, or fewer sections). */
 :where(.ar-agenda, ol.agenda) {
   --_ar-agenda-size: var(--ar-agenda-size, calc(var(--ar-title) * .65));
   --_ar-agenda-gap: var(--ar-agenda-gap, .35em);

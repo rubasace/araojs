@@ -667,8 +667,8 @@ export interface LibraryLayouts {
    * A divider between the parts of a talk.
    *
    * Its content centred both ways, on the accent; its title larger; the deck's footer hidden. Its
-   * title, its subtitle and its footer take its text colour. Its title is an `h1` (an `h2` looks the
-   * same), a subtitle after it an `h2` or a plain `p`.
+   * title, its subtitle, its footer and an `Agenda` in it take its text colour. Its title is an `h1`
+   * (an `h2` looks the same), a subtitle after it an `h2` or a plain `p`.
    *
    * Parameters (attributes):
    * - `bg`: the slide's background (default `--ar-accent`); the theme's default background
@@ -688,8 +688,8 @@ export interface LibraryLayouts {
      * A divider between the parts of a talk.
      *
      * Its content centred both ways, on the accent; its title larger; the deck's footer hidden. Its
-     * title, its subtitle and its footer take its text colour. Its title is an `h1` (an `h2` looks the
-     * same), a subtitle after it an `h2` or a plain `p`.
+     * title, its subtitle, its footer and an `Agenda` in it take its text colour. Its title is an `h1`
+     * (an `h2` looks the same), a subtitle after it an `h2` or a plain `p`.
      *
      * Parameters (attributes):
      * - `bg`: the slide's background (default `--ar-accent`); the theme's default background

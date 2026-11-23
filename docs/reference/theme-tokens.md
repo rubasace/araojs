@@ -177,7 +177,9 @@ A `*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows 
 
 [`Agenda`](components.md#agenda)'s look, in any slide (and a hand-written `ol.agenda`'s: its rows
 and numbers). Set them in a theme, at the project's `:root`, or on one slide, in its `style`
-(`Slide(style="--ar-agenda-done-opacity: 1")`).
+(`Slide(style="--ar-agenda-done-opacity: 1")`). On a `section` slide, whose background is the
+accent, the section sets the colours to its text colour (`currentColor`; done at 80 % of it):
+change them for `.layout-section`, as `--ar-title-color`.
 
 | Token | Default | Meaning |
 |---|---|---|

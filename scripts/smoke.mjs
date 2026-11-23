@@ -106,6 +106,9 @@
 //      padding: grids of 11, 12 and 13 blocks fit; Slide.fit's list, which does not fit without
 //      the class, fits with it (--_ar-fit on the body, from .6 to 1); Slide.scale-80's body is
 //      .8 of the slide's text
+//   4g. an Agenda on a section slide, under both servers, on the sixth deck, in every built-in
+//      theme: done, current and upcoming, each item's text and number at 3:1 at least against
+//      the section's background (the accent it draws in elsewhere), measured on the pixels
 //   5. useDeck()'s face, under the dev server, on the second deck: frozen, its refs read-only all
 //      the way down, setTheme refuses a name the deck has not (one [arao] warning), and in the
 //      presenter view's preview no function acts
@@ -346,7 +349,10 @@ Deck(:themes="['${IMPORTED}', 'default']")
 // a sixth deck of the smoke project only: its first slide, of the default layout, holds an Agenda
 // (on the slide at place 0) that lists its sections, the first one current, in its window and in
 // the list's thumbnail, where the sections draw nothing but their titles (OUTLINE_ITEMS); its
-// second a hand-written ol.agenda, which looks like it, with no state
+// second a hand-written ol.agenda, which looks like it, with no state; then its three sections,
+// each with an Agenda too, as a talk shows its progress on each (the second one's, done, current
+// and upcoming, legible in every built-in theme: OUTLINE_SECTION). No theme listed: it offers
+// every built-in one
 const OUTLINE = ['Outline.vue', `<template lang="pug">
 Deck
   Slide
@@ -359,11 +365,20 @@ Deck
       li Part two
   Slide(layout="section")
     h1 Part one
+    Agenda
   Slide(layout="section")
     h1 #[Icon(name="lucide:rocket")] Part two
+    Agenda
+  Slide(layout="section")
+    h1 Part three
+    Agenda
 </template>
 `]
-const OUTLINE_ITEMS = 'Part one:current, Part two:upcoming'
+const OUTLINE_ITEMS = 'Part one:current, Part two:upcoming, Part three:upcoming'
+// the outline's section whose Agenda shows the three states (its number), and the contrast each
+// item's text and number must keep on it, against the background beside them: 3:1, large text's
+const OUTLINE_SECTION = 4
+const SECTION_CONTRAST = 3
 
 // a seventh deck of the smoke project only, crowded slides that must fit (DENSE_SLIDES, by title):
 // grids of 11, 12 and 13 blocks (an icon, a title and a one-line description each: the grid's
@@ -1479,15 +1494,16 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
       checkAgendas('export mode', book[0] ?? [])
       checkLooks('export mode', await looks('.ar-book'), STATES.length)
       // the sixth deck's Agenda, on its first slide: in its window (with the ol.agenda of its
-      // second, two agendas with their look), and in its thumbnail in the list (where its
-      // sections draw their titles alone, and its second slide nothing)
-      const items = (scope) => page.evaluate((scope) => [...(document.querySelector(scope)?.querySelectorAll('.ar-agenda li') ?? [])]
+      // second and the Agendas of its three sections, five agendas with their look), and in its
+      // thumbnail in the list (where its sections draw their titles alone, and its second slide
+      // nothing). The items of the first Agenda in a part of the page
+      const items = (scope) => page.evaluate((scope) => [...(document.querySelector(scope)?.querySelector('.ar-agenda')?.children ?? [])]
         .map((li) => `${li.textContent.trim()}:${['done', 'current', 'upcoming'].filter((s) => li.classList.contains(`ar-agenda-${s}`)).join(' ')}`).join(', '), scope)
       const outline = basename(OUTLINE[0], '.vue').toLowerCase()
       await open(`${outline}#/1/1`)
       let listed = await items('.ar-viewport > .ar-stage')
       if (listed !== OUTLINE_ITEMS) complaints.push(`/${outline}: its Agenda on its first slide lists ${listed || 'nothing'}, not ${OUTLINE_ITEMS}`)
-      checkLooks(`/${outline}`, await looks('.ar-viewport > .ar-stage'), 2)
+      checkLooks(`/${outline}`, await looks('.ar-viewport > .ar-stage'), 5)
       await page.goto(base)
       const card = `.ar-decks-card:has(a[href$="/${outline}"]) .ar-thumb`
       await page.waitForFunction((card) => document.querySelector(`${card} .ar-agenda li`), card, { timeout: 30_000 }).catch(() => {})
@@ -1562,6 +1578,90 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
       await page.context().close()
     }
     for (const c of complaints) fail(`${mode} utility classes: ${c}`)
+  }
+
+  // an Agenda on a section slide (header, 4g), whose background is the accent the Agenda draws in
+  // elsewhere: on the outline's second section (done, current, upcoming), in every built-in theme,
+  // each item's text and its number keep SECTION_CONTRAST against the background beside them.
+  // Measured on the pixels of a screenshot (the section's background may be a gradient the theme
+  // draws over the accent): a glyph's colour is the pixel of its box farthest from the background,
+  // the background the middle one of a strip beside the text, on both sides (the gap after the
+  // number, past the text's end), the lower of the two counting
+  async function sectionAgendas(base, mode, themes) {
+    const complaints = []
+    const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
+    page.on('console', (m) => ['warning', 'error'].includes(m.type()) && complaints.push(`console ${m.type()}: ${m.text()}`))
+    page.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
+    const outline = basename(OUTLINE[0], '.vue').toLowerCase()
+    const worst = {}
+    try {
+      for (const theme of themes) {
+        await page.goto(new URL(`${outline}?theme=${theme}#/${OUTLINE_SECTION}/1`, base).href)
+        await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
+        await page.waitForFunction(() => !document.querySelector('[data-ar-busy]') && document.fonts.status === 'loaded', null, { timeout: 15_000 }).catch(() => {})
+        await pause(1200) // the slide's fade
+        // each item of the Agenda on the slide on screen: its state, and the boxes of its text,
+        // its number and the background beside the text (screen px)
+        const boxes = await page.evaluate(() => {
+          const slide = [...document.querySelectorAll('.ar-viewport .ar-slide')].find((s) => getComputedStyle(s).display !== 'none')
+          return [...(slide?.querySelectorAll('.ar-agenda > li') ?? [])].map((li) => {
+            const range = document.createRange()
+            range.selectNodeContents(li)
+            const t = range.getBoundingClientRect()
+            const l = li.getBoundingClientRect()
+            const gap = parseFloat(getComputedStyle(li).columnGap)
+            return {
+              state: ['done', 'current', 'upcoming'].filter((s) => li.classList.contains(`ar-agenda-${s}`)).join(' '),
+              text: [t.left, t.top, t.width, t.height],
+              number: [l.left, t.top, t.left - gap - l.left, t.height],
+              backs: [[t.left - gap + 4, t.top, gap - 8, t.height], [t.right + 8, t.top, 24, t.height]],
+            }
+          })
+        })
+        const states = boxes.map((b) => b.state).join(' ')
+        if (states !== 'done current upcoming') {
+          complaints.push(`${theme}: the Agenda on /${outline}'s slide ${OUTLINE_SECTION} has the states ${states || 'none'}, not done current upcoming`)
+          continue
+        }
+        const png = await page.screenshot()
+        const got = await page.evaluate(async ({ b64, boxes }) => {
+          const img = new Image()
+          img.src = `data:image/png;base64,${b64}`
+          await img.decode()
+          const canvas = document.createElement('canvas')
+          canvas.width = img.width
+          canvas.height = img.height
+          const g = canvas.getContext('2d')
+          g.drawImage(img, 0, 0)
+          const pixels = ([x, y, w, h]) => {
+            const d = g.getImageData(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h))).data
+            const out = []
+            for (let i = 0; i < d.length; i += 4) out.push([d[i], d[i + 1], d[i + 2]])
+            return out
+          }
+          const lin = (v) => ((v /= 255) <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)
+          const lum = ([r, gr, b]) => 0.2126 * lin(r) + 0.7152 * lin(gr) + 0.0722 * lin(b)
+          const ratio = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05)
+          const middle = (px) => px.sort((a, b) => lum(a) - lum(b))[px.length >> 1]
+          const glyph = (box, backs) => Math.min(...backs.map((back) => Math.max(...pixels(box).map((p) => ratio(p, back)))))
+          return boxes.map(({ state, text, number, backs }) => {
+            const bs = backs.map((b) => middle(pixels(b)))
+            return { state, text: glyph(text, bs), number: glyph(number, bs) }
+          })
+        }, { b64: png.toString('base64'), boxes })
+        for (const { state, text, number } of got) {
+          for (const [part, r] of [['text', text], ['number', number]]) {
+            if (!(r >= SECTION_CONTRAST)) complaints.push(`${theme}: an Agenda on a section, its ${state} item's ${part} at ${r.toFixed(2)}:1, not ${SECTION_CONTRAST}:1`)
+            worst[state] = Math.min(worst[state] ?? Infinity, r)
+          }
+        }
+      }
+    } finally {
+      await page.context().close()
+    }
+    const lowest = Object.entries(worst).map(([s, r]) => `${s} ${r.toFixed(1)}`).join(', ')
+    console.log(`  ${mode} an Agenda on a section: ${complaints.length ? 'problems below' : `done, current and upcoming, text and numbers, ${SECTION_CONTRAST}:1 at least in ${themes.join(', ')} (lowest: ${lowest})`}`)
+    for (const c of complaints) fail(`${mode} an Agenda on a section: ${c}`)
   }
 
   // crowded slides that fit (header, 4f), on the dense deck, in every built-in theme: each slide
@@ -2505,6 +2605,7 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
       await utilities(base, mode)
       await overlay(base, mode)
       await fits(base, mode, builtin)
+      await sectionAgendas(base, mode, builtin)
       if (mode === 'dev') {
         await face(base)
         await themes(base)

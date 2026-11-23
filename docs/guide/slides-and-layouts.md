@@ -12,8 +12,7 @@ slide's attributes too ([Layout parameters](#layout-parameters)). Every prop and
 (blocks in balanced rows: features, pillars, logos), `quote`, `statement` (one phrase or figure,
 huge), `overlay` (text over a full-slide `Background`), `caption` (one picture and its caption)
 and `image-left` / `image-right` (a full-height, edge-to-edge picture beside the text). Each is
-one CSS file of the
-library; the full table, and the tokens each one reads:
+one CSS file of the library; the full table, and the tokens each one reads:
 [Layouts](../reference/components.md#layouts). A name with no CSS behind it is the `default`
 layout, its slides carrying the class `layout-<name>` for a theme or a deck to style. In a
 TypeScript project the editor completes the names there are, each layout's parameters and zones,
@@ -660,7 +659,9 @@ own, on a slide of the default layout as on any other. Each row shows where the 
 that slide: the parts already given dimmed (`done`), the next one in the accent, bold
 (`current`), the ones after it as they are (`upcoming`). Write it once after each section, or on
 every section slide (the section itself is then the current one), and each copy shows the talk's
-progress; in the presenter view and the export too.
+progress; in the presenter view and the export too. On a section slide, whose background is the
+accent, it takes the section's text colour, as the title does: the current part bold, the ones
+already given lighter.
 
 <!-- example:agenda -->
 
@@ -700,6 +701,10 @@ Slide(style="--ar-agenda-done-color: currentColor; --ar-agenda-done-number-color
 
 A theme does the same for every slide: the same four tokens in its `[data-theme="…"]` block
 ([Agenda tokens](../reference/theme-tokens.md#agenda)).
+
+Its size is `--ar-agenda-size`, a part of `--ar-title`: `Slide.fit` does not shrink it (an agenda
+too long for its slide is said to be one `Slide.fit` cannot shrink); a smaller size, or fewer
+sections, makes it fit.
 
 An agenda written by hand, an `ol` with the class `agenda`, gets the same rows and numbers, with
 no state:

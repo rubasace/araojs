@@ -43,7 +43,9 @@ node <skill>/scripts/check-deck.mjs <the URL Vite printed><name> deck-check
   `Agenda` in any slide); and "removed components":
   `Cols`, `Rows`, `Grid` (rendered as plain elements of those names), each with its replacement.
   It warns, without failing, about a `center` element (the removed `Center`, or HTML's old
-  `<center>`) and the class `.small` (now `.text-sm`, unless it is the deck's own); the fixes:
+  `<center>`), the class `.small` (now `.text-sm`, unless it is the deck's own) and
+  `layout="agenda"` when a stylesheet styles `.layout-agenda` (maybe a hook kept on purpose);
+  the fixes:
   [troubleshooting.md](troubleshooting.md#decks-written-for-an-older-arao);
 - warns (without failing) about named templates that are no zone of their slide's layout
   (`template(#image)` on a `split`): its CSS does not place them. Fix the name, unless a theme or
