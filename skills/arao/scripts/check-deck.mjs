@@ -8,7 +8,8 @@
 // each slide, the slides whose content overflows (the warnings Arao itself gives in development,
 // "[arao] overflow: …", one per slide and step: what overflows, by how many px, and how to fix
 // it; the script waits on every step, so each is measured), Slide API that is gone (a removed
-// prop is no error in Vue: it lands on the slide as a plain HTML attribute and does nothing), components that are
+// prop is no error in Vue: it lands on the slide as a plain HTML attribute and does nothing; the
+// agenda layout, gone too, when neither araojs nor the project has one), components that are
 // gone (Cols, Rows, Grid: Vue renders an element of that name that lays nothing out), each with its
 // replacement, and saves a screenshot of every step in outDir (default ./deck-check), named
 // s<slide>-<step>.png. Exit code 1 if any warning, error, overflow, removed Slide API or
@@ -95,8 +96,13 @@ const slides = await page.locator('.ar-slide').count()
 
 // Slide API that is gone (araojs 0.5): its props fall through to the slide's section as plain
 // attributes, and template(#background) is a zone like any other (.ar-zone-background), as are
-// split's old #left and #right
-const removed = await page.evaluate(() => {
+// split's old #left and #right. And the agenda layout: a name with no CSS is the default layout,
+// where an Agenda looks the same (its look is its own), but the layout's parameters are plain
+// attributes and a hand-written ol is a plain list. Said only when the project's layouts are
+// known (arao layouts --json) and none is agenda: not its own src/layouts/agenda.css, nor the
+// library's of an older araojs
+const agendaGone = zonesOf != null && !Object.hasOwn(zonesOf, 'agenda')
+const removed = await page.evaluate((agendaGone) => {
   const now = {
     bg: 'Background(src="…") inside the slide, or style="background: …" for a colour',
     bgopacity: 'Background(opacity)', bgposition: 'Background(position)', bgblur: 'Background(blur)', bgfit: 'Background(fit)',
@@ -111,9 +117,11 @@ const removed = await page.evaluate(() => {
     if (slide.querySelector(':scope > .ar-zone-background')) found.push('template(#background) (now Background inside the slide)')
     if (slide.matches('.layout-split') && slide.querySelector(':scope > :is(.ar-zone-left, .ar-zone-right)'))
       found.push('template(#left) / template(#right) on split (now its two sides are the body\'s two children, a div each)')
+    if (agendaGone && slide.matches('.layout-agenda'))
+      found.push('layout="agenda" (now a Slide with Agenda in it, which has its own look; its parameters are --ar-agenda-* tokens, style="--ar-agenda-done-opacity: 1"; a hand-written ol is ol.agenda)')
     return found.length ? [`slide ${i + 1}: ${found.join('; ')}`] : []
   })
-})
+}, agendaGone)
 
 // components and classes that are gone (araojs 0.5): Cols, Rows, Grid and Center are no
 // components (Vue warns once and renders an element of that name, cols, rows, grid, center, that

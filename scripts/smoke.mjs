@@ -82,8 +82,10 @@
 //      others: in its place, its heading its header's title and its name in the jump list, its
 //      two steps walked, a page per step in the export; and Agenda lists the deck's sections,
 //      each done, current (aria-current) or upcoming as seen from its slide, in the audience
-//      view, the presenter view (its slide and the preview's copy) and the export's book; on
-//      the sixth deck, an Agenda on its first slide, in its window and in its thumbnail in the list
+//      view, the presenter view (its slide and the preview's copy) and the export's book, each
+//      with its own look on a slide of the default layout (its CSS, in the package's arao.css);
+//      on the sixth deck, an Agenda on its first slide, in its window and in its thumbnail in the
+//      list, and a hand-written ol.agenda with the same look
 //   4d. the utility classes, under both servers (so the package's arao.css has them), on the
 //      playground's slide "Utility classes" at its last step: .cols lays its two children out in
 //      columns of 3 to 2 (style="--ar-cols: 3fr 2fr"), which they do not inherit; .middle centres
@@ -341,14 +343,20 @@ Deck(:themes="['${IMPORTED}', 'default']")
 </template>
 `]
 
-// a sixth deck of the smoke project only: its first slide is an agenda slide, whose Agenda (on the
-// slide at place 0) lists its sections, the first one current, in its window and in the list's
-// thumbnail, where the sections draw nothing but their titles (OUTLINE_ITEMS)
+// a sixth deck of the smoke project only: its first slide, of the default layout, holds an Agenda
+// (on the slide at place 0) that lists its sections, the first one current, in its window and in
+// the list's thumbnail, where the sections draw nothing but their titles (OUTLINE_ITEMS); its
+// second a hand-written ol.agenda, which looks like it, with no state
 const OUTLINE = ['Outline.vue', `<template lang="pug">
 Deck
-  Slide(layout="agenda")
+  Slide
     h2 An outline first
     Agenda
+  Slide
+    h2 Written by hand
+    ol.agenda
+      li Part one
+      li Part two
   Slide(layout="section")
     h1 Part one
   Slide(layout="section")
@@ -1365,10 +1373,12 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
   // through its slot) is a slide like the others: in its place (right after "A table", right
   // before "Icons"), its heading the title of its header and its name in the jump list, at its
   // number; its two steps walked (#/n/1, #/n/2, then the next slide); a page per step in the
-  // export's book. And Agenda (the playground's two agenda slides) lists the titles of the deck's
-  // section slides, in order, each item marked as seen from its slide (done, current with
-  // aria-current, upcoming), in the audience view, the presenter view (its slide and the
-  // preview's copy) and the export's book.
+  // export's book. And Agenda (on the playground's two slides of the default layout that hold
+  // one) lists the titles of the deck's section slides, in order, each item marked as seen from
+  // its slide (done, current with aria-current, upcoming), in the audience view, the presenter
+  // view (its slide and the preview's copy) and the export's book; and wears its own look there,
+  // with no layout for it (big rows, numbered, the current one bold), as does a hand-written
+  // ol.agenda (the sixth deck's).
   async function deckSlides(base, mode) {
     const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
     const complaints = []
@@ -1400,6 +1410,26 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
         else if (states !== STATES[k]) complaints.push(`${what}: Agenda ${k + 1}'s states are ${states}, not ${STATES[k]}`)
         else if (items.some((i) => !i.item || (i.aria === 'step') !== (i.state === 'current'))) complaints.push(`${what}: Agenda ${k + 1}'s items are not each .ar-agenda-item, aria-current="step" on the current one alone`)
       })
+    }
+    // the look of every agenda in a part of the page (an Agenda, an ol.agenda), its own CSS
+    // (Agenda.vue) whatever the layout: what it lacks of it, '' for one that has it all (rows at
+    // 0.65x --ar-title, no list marker, a two-digit number before each item, the current one bold)
+    const looks = (scope) => page.evaluate((scope) => [...document.querySelectorAll(scope)]
+      .flatMap((root) => [...root.querySelectorAll('ol.ar-agenda, ol.agenda')]).map((ol) => {
+        const cs = getComputedStyle(ol)
+        const size = parseFloat(cs.fontSize) / parseFloat(cs.getPropertyValue('--ar-title'))
+        const number = ol.firstElementChild ? getComputedStyle(ol.firstElementChild, '::before').content : 'none'
+        const current = ol.querySelector(':scope > .ar-agenda-current')
+        return [
+          Math.abs(size - 0.65) > 0.01 && `its rows at ${size.toFixed(2)}x --ar-title`,
+          cs.listStyleType !== 'none' && `a ${cs.listStyleType} marker`,
+          !number.includes('counter(ar-agenda, decimal-leading-zero)') && `its numbers ${number}`,
+          current && Number(getComputedStyle(current).fontWeight) < 700 && 'its current item not bold',
+        ].filter(Boolean).join(', ')
+      }), scope)
+    const checkLooks = (what, found, count) => {
+      if (found.length !== count) complaints.push(`${what}: ${found.length} agendas drawn, not ${count}`)
+      found.forEach((lacks, k) => lacks && complaints.push(`${what}: agenda ${k + 1} has not its own look: ${lacks}`))
     }
     try {
       await open('playground#/1/1')
@@ -1433,32 +1463,38 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
         if (hashes.join(' ') !== walkedTo.join(' ')) complaints.push(`"${TITLE}" walked ${hashes.join(' → ')}, not ${walkedTo.join(' → ')}`)
       }
       checkAgendas('audience', (await agendas('.ar-viewport > .ar-stage'))[0] ?? [])
+      checkLooks('audience', await looks('.ar-viewport > .ar-stage'), STATES.length)
       await open('playground?presenter#/1/1')
       const drawings = await agendas('.ar-stage')
       if (drawings.length !== 2) complaints.push(`the presenter view draws ${drawings.length} stages, not 2`)
       drawings.forEach((found, k) => checkAgendas(`presenter view, ${k ? 'its preview' : 'its slide'}`, found))
+      checkLooks('presenter view (both copies)', await looks('.ar-stage'), 2 * STATES.length)
       // the export's book, once done: two pages for its two steps, and the Agendas as on screen
       await open('playground?export', 300)
       await page.waitForSelector('.ar-export-done', { timeout: 90_000 }).catch(() => complaints.push('export mode: the book was not done within 90 s'))
       const pages = await page.evaluate((title) => [...document.querySelectorAll('.ar-book .ar-page')].filter((p) => p.querySelector('.ar-header > .ar-title')?.textContent.trim() === title).length, TITLE)
       if (pages !== 2) complaints.push(`export mode: ${pages} pages of "${TITLE}", not 2 (one per step)`)
       const book = await agendas('.ar-book')
-      // each agenda slide is on one page (one step): the book's Agendas are its two, in order
+      // each slide with an Agenda is on one page (one step): the book's Agendas are its two, in order
       checkAgendas('export mode', book[0] ?? [])
-      // the sixth deck's Agenda, on its first slide: in its window, and in its thumbnail in the
-      // list (where its sections draw their titles alone)
+      checkLooks('export mode', await looks('.ar-book'), STATES.length)
+      // the sixth deck's Agenda, on its first slide: in its window (with the ol.agenda of its
+      // second, two agendas with their look), and in its thumbnail in the list (where its
+      // sections draw their titles alone, and its second slide nothing)
       const items = (scope) => page.evaluate((scope) => [...(document.querySelector(scope)?.querySelectorAll('.ar-agenda li') ?? [])]
         .map((li) => `${li.textContent.trim()}:${['done', 'current', 'upcoming'].filter((s) => li.classList.contains(`ar-agenda-${s}`)).join(' ')}`).join(', '), scope)
       const outline = basename(OUTLINE[0], '.vue').toLowerCase()
       await open(`${outline}#/1/1`)
       let listed = await items('.ar-viewport > .ar-stage')
       if (listed !== OUTLINE_ITEMS) complaints.push(`/${outline}: its Agenda on its first slide lists ${listed || 'nothing'}, not ${OUTLINE_ITEMS}`)
+      checkLooks(`/${outline}`, await looks('.ar-viewport > .ar-stage'), 2)
       await page.goto(base)
       const card = `.ar-decks-card:has(a[href$="/${outline}"]) .ar-thumb`
       await page.waitForFunction((card) => document.querySelector(`${card} .ar-agenda li`), card, { timeout: 30_000 }).catch(() => {})
       listed = await items(card)
       if (listed !== OUTLINE_ITEMS) complaints.push(`the list: /${outline}'s thumbnail shows an Agenda of ${listed || 'nothing'}, not ${OUTLINE_ITEMS}`)
-      console.log(`  ${mode} slides of the deck: ${complaints.length ? 'problems below' : `"${TITLE}" (a component wrapping Slide) is slide ${n}, titled, in the jump list, two steps, two pages; Agenda's sections and states in audience, presenter (both copies) and export, and on a first slide, in its window and its thumbnail`}`)
+      checkLooks(`the list: /${outline}'s thumbnail`, await looks(card), 1)
+      console.log(`  ${mode} slides of the deck: ${complaints.length ? 'problems below' : `"${TITLE}" (a component wrapping Slide) is slide ${n}, titled, in the jump list, two steps, two pages; Agenda's sections, states and look in audience, presenter (both copies) and export, and on a first slide, in its window and its thumbnail; an ol.agenda's look`}`)
     } finally {
       await page.context().close()
     }

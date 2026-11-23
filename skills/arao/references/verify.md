@@ -39,7 +39,8 @@ node <skill>/scripts/check-deck.mjs <the URL Vite printed><name> deck-check
     theme name;
 - reports "removed Slide API": a slide carrying a prop older Arao had (`title`, `align`,
   `footer`, `ratio`, `bg`, `bg-*`), which is now a plain HTML attribute that does nothing, or a
-  leftover `template(#background)` (a `.ar-zone-background` zone); and "removed components":
+  leftover `template(#background)` (a `.ar-zone-background` zone), or `layout="agenda"` (gone:
+  `Agenda` in any slide); and "removed components":
   `Cols`, `Rows`, `Grid` (rendered as plain elements of those names), each with its replacement.
   It warns, without failing, about a `center` element (the removed `Center`, or HTML's old
   `<center>`) and the class `.small` (now `.text-sm`, unless it is the deck's own); the fixes:

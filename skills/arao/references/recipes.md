@@ -145,9 +145,9 @@ Slide(layout="caption")
   figure
     Img(file="city.jpg" alt="The city")
     figcaption The city at night
-Slide(layout="agenda")          //- the section slides' titles, done / current / upcoming
+Slide                           //- the section slides' titles, done / current / upcoming
   h2 Agenda
-  Agenda
+  Agenda                        //- no layout: its look is its own (by hand: ol.agenda)
 ```
 
 ## Three columns: the grid layout

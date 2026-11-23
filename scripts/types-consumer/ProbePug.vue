@@ -16,7 +16,7 @@ Deck
     div
       Icon(name="lucide:rocket")
       h3 One
-  Slide(layout="agenda" current-weight="400")
+  Slide(style="--ar-agenda-current-weight: 400")
     h2 Agenda
     Agenda
   Slide(layout="callout" size="80px")

@@ -78,7 +78,7 @@ at https://github.com/rubasace/araojs/tree/main/docs. Paths below like
 
 Do:
 - Arrange the slide with a `layout` (the library's: `cover`, `section`, `split`, `grid`, `quote`,
-  `statement`, `overlay`, `caption`, `agenda`, `image-left`, `image-right`; each's HTML and
+  `statement`, `overlay`, `caption`, `image-left`, `image-right`; each's HTML and
   parameters: `npx arao layouts`): two sides are `split`, blocks in rows (features, pillars,
   logos, cards) are `grid`, columns of text `Slide.top(layout="grid" align="start"
   text-size="1em")`. Tune a layout on one slide with its parameters, attributes named after
@@ -95,8 +95,10 @@ Do:
 - Give a slide only its layout's zones as named templates (`template(#image)` on `image-*`;
   `#title` on any): another name is not placed, and fails `vue-tsc`. The other layouts read the
   body's children: `split`'s two sides, `grid`'s blocks, each a `div`.
-- The talk's agenda: `Slide(layout="agenda")` with `h2` and `Agenda`, which lists the `section`
-  slides' titles, marked done / current / upcoming from where it is.
+- The talk's agenda: a `Slide` (no layout) with `h2` and `Agenda`, which lists the `section`
+  slides' titles in big numbered rows, marked done / current / upcoming from where it is (its
+  look is its own, tuned by `--ar-agenda-*` tokens). A hand-written one: `ol.agenda`, the same
+  rows with no state.
 - Start every slide with its heading (`h2`): the first heading names the slide in the jump
   menu, presenter view and notes pages, and there is no other way to name it. Something before it
   (a kicker line) makes it body: use `template(#title)` for a richer header.

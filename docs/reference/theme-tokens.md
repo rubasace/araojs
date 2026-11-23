@@ -139,12 +139,6 @@ A `*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows 
 | `--ar-layout-overlay-color` | `color` | `#fff` | the text's colour, its title's and its footer's |
 | `--ar-layout-caption-caption-size` | `caption-size` | `--ar-text-small` | the caption's size |
 | `--ar-layout-caption-caption-align` | `caption-align` | `center` | the caption's alignment |
-| `--ar-layout-agenda-size` | `size` | 0.65x `--ar-title` | the rows' size |
-| `--ar-layout-agenda-gap` | `gap` | `.35em` | the space between rows |
-| `--ar-layout-agenda-number-color` | `number-color` | `--ar-accent` | the numbers' colour |
-| `--ar-layout-agenda-done-color` / `-number-color` / `-opacity` / `-weight` | `done-color`… | `--ar-muted` at 80 % / its colour / `1` / `400` | a part already given (`Agenda`'s `ar-agenda-done`): dimmed, at least 3:1 on every built-in theme |
-| `--ar-layout-agenda-current-color` / `-number-color` / `-opacity` / `-weight` | `current-color`… | `--ar-accent` / `number-color` / `1` / `700` | the next part (`ar-agenda-current`) |
-| `--ar-layout-agenda-upcoming-color` / `-number-color` / `-opacity` / `-weight` | `upcoming-color`… | `currentColor` / `number-color` / `1` / `400` | the parts after it (`ar-agenda-upcoming`) |
 | `--ar-layout-image-left-columns` / `--ar-layout-image-right-columns` | `columns` | `1fr 1fr` | the two sides' widths, left to right, as CSS grid columns (`3fr 2fr`, `1fr 720px`) |
 | `--ar-layout-image-left-inset` / `--ar-layout-image-right-inset` | `inset` | `0px` | padding around the picture in its zone |
 | `--ar-layout-image-left-footer` / `--ar-layout-image-right-footer` | `footer` | `flex` | the deck's footer on those slides, over the picture |
@@ -154,11 +148,6 @@ A `*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows 
 [data-theme="venue"] {
   --ar-layout-section-bg: #0b3d2e;
   --ar-layout-image-right-footer-bg: linear-gradient(transparent, rgb(0 0 0 / .45));
-  /* an agenda that shows no state: the three states alike */
-  --ar-layout-agenda-done-color: currentColor;
-  --ar-layout-agenda-done-number-color: var(--ar-accent);
-  --ar-layout-agenda-current-color: currentColor;
-  --ar-layout-agenda-current-weight: 400;
 }
 ```
 
@@ -183,6 +172,31 @@ A `*-footer` token is the footer's CSS `display`: `none` hides it, `flex` shows 
 | `--ar-code-shadow-room` | `70px` | room kept on each side of the window in a column of `.cols`, `.cols-*` or `.rows`, a side of `split` or a zone (they clip what is wider than them), so its shadow is not cut: keep it at least the shadow's sideways reach, its blur + spread + x offset (the widest of its shadows; `aurora` sets `90px`, `carbon` `80px`). Only sideways: they clip no height |
 | `--ar-code-light-1` / `-2` / `-3` | `#ff5f57` / `#febc2e` / `#28c840` | the title bar's three lights, left to right |
 | `--ar-code-duration` | `.3s` | lines and words dimming and lighting up between steps |
+
+## Agenda
+
+[`Agenda`](components.md#agenda)'s look, in any slide (and a hand-written `ol.agenda`'s: its rows
+and numbers). Set them in a theme, at the project's `:root`, or on one slide, in its `style`
+(`Slide(style="--ar-agenda-done-opacity: 1")`).
+
+| Token | Default | Meaning |
+|---|---|---|
+| `--ar-agenda-size` | 0.65x `--ar-title` | the rows' size |
+| `--ar-agenda-gap` | `.35em` | the space between rows |
+| `--ar-agenda-number-color` | `--ar-accent` | the numbers' colour |
+| `--ar-agenda-done-color` / `-number-color` / `-opacity` / `-weight` | `--ar-muted` at 80 % / its colour / `1` / `400` | a part already given (`ar-agenda-done`): dimmed by its colour, at least 3:1 on every built-in theme |
+| `--ar-agenda-current-color` / `-number-color` / `-opacity` / `-weight` | `--ar-accent` / `--ar-agenda-number-color` / `1` / `700` | the next part (`ar-agenda-current`) |
+| `--ar-agenda-upcoming-color` / `-number-color` / `-opacity` / `-weight` | `currentColor` / `--ar-agenda-number-color` / `1` / `400` | the parts after it (`ar-agenda-upcoming`) |
+
+```css
+[data-theme="venue"] {
+  /* an agenda that shows no state: the three states alike */
+  --ar-agenda-done-color: currentColor;
+  --ar-agenda-done-number-color: var(--ar-accent);
+  --ar-agenda-current-color: currentColor;
+  --ar-agenda-current-weight: 400;
+}
+```
 
 ## Interface
 
