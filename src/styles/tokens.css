@@ -29,8 +29,11 @@
    em lengths, unitless line heights, colour-mix percentages over a token, the opacity of a
    disabled or dimmed state); font weights; and the inner geometry of a part, in px (the paddings,
    gaps and offsets of the controls, the presenter view, the code window, the addons; button and
-   glyph boxes; the cover's bar; the 2px radius of a mark, as the step dot's). A part's inner
-   radii are proportions of its radius token.
+   glyph boxes; the 2px radius of a mark, as the step dot's). A part's inner radii are proportions
+   of its radius token.
+   A layout (layouts/, a project's src/layouts) is stricter: no literal colour and no fixed length
+   at all, hairlines and inner geometry included; each one is a token or a proportion of one
+   (vite/layout-literals.js checks it: the library's build stops, a project's gets a warning).
 
    Not declared here: --ar-scale, the canvas's scale, set by the engine (Stage.vue; 1 in the
    export's book, ExportView.vue); and the layouts' own tokens (--ar-layout-<name>-…), which each
@@ -43,6 +46,9 @@
   --ar-muted: #5b6b7b;               /* secondary text: .muted, the slide number, the footer */
   --ar-accent: #2a7de1;              /* h2, cover bar, section background (layouts/), progress, highlights */
   --ar-accent-fg: #fff;              /* text on the accent (section slides, layouts/section.css) */
+  --ar-on-image: #fff;               /* text over a picture (overlay slides, layouts/overlay.css) */
+  --ar-scrim: #000;                  /* the shade laid over a picture to keep the text on it legible
+                                        (overlay's scrim: its strength is the layout's) */
   --ar-letterbox: #1b2a3a;           /* around the canvas when the window shape differs */
   --ar-font-sans: Georgia, "Times New Roman", serif;
   --ar-font-mono: ui-monospace, Menlo, monospace;

@@ -32,13 +32,15 @@
 //      an HTML attribute (--ar-layout-cover-title) none, with one warning; with the
 //      zones each places (the cover's doc block's @zone, then the .ar-zone-<name> its CSS styles
 //      under .layout-cover, not a rule of split's) and its doc (read after a licence header, a Pug
-//      line starting with @ kept in its example), and one warning for its @param naming no token;
+//      line starting with @ kept in its example), and one warning for its @param naming no token,
+//      and one for the literal colour a rule of it writes (a layout's colours are theme tokens);
 //      with those files, <bin> layouts --json (the config printing as it loads: on stderr) gives
 //      the araojs version and lists default, the library's but cover (each documented in full;
 //      overlay's position with its nine values, its scrim 0..1 and none),
 //      then every project file (cover replacing the library's, as its doc block says, its /**
-//      comment after its code a problem; epigraph, the playground's, documented; plain, with no doc
-//      block and its problem; "bad name", which no slide can name), then the utility classes by
+//      comment after its code and its literal colour problems; epigraph, the playground's,
+//      documented; plain, with no doc block and its problem; "bad name", which no slide can
+//      name), then the utility classes by
 //      group (classGroups, each with a summary, an example and its classes, UTILITY_CLASSES
 //      among them, each described, none twice in a group: from the stylesheet the package ships);
 //      and <bin> layouts prints a block per layout saying
@@ -787,7 +789,8 @@ try {
     // Its doc block, after a licence header, names a zone (aside), and its CSS styles another
     // (badge): its zones are both, not caption (a rule of split's); its example keeps a Pug line
     // starting with @; its @param nope names no token, with a warning, and a /** comment after its
-    // code is no doc block, with a problem
+    // code is no doc block, with a problem; a rule of it writes a literal colour, #c0ffee, no theme
+    // token (vite/layout-literals.js), with a warning and a problem
     const COVER_DOC = ['The smoke project\'s own cover.', 'Slide(layout="cover" pad="20px")\n  h1 Hello\n  button(\n    @click="next"\n  ) Next', 'a note beside the title', 'the slide\'s padding', 'its colours']
     const added = {
       'cover.css': `/* smoke licence header */
@@ -801,7 +804,7 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
  * @param nope  no token of the layout
  */
 .layout-cover { --smoke-own-cover: 1; padding: var(--ar-layout-cover-pad, 0); --smoke-tone: var(--ar-layout-cover-tone, light); color: var(--ar-layout-cover-title, inherit); }
-.layout-cover > .ar-zone-badge { order: -1; }
+.layout-cover > .ar-zone-badge { order: -1; color: #c0ffee; }
 .layout-split .ar-zone-caption { order: 1; }
 /** not read */
 `,
@@ -826,10 +829,11 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
       else if ((typed = await typedParams('cover')) !== "pad, tone ('light' | 'dark')") fail(`${what}: src/arao-layouts.d.ts types cover's parameters as ${typed ?? 'nothing'}, not pad and tone, 'light' | 'dark' (the project's, which replace the library's; tone's values its doc block's {light|dark})`)
       else if ((typed = await typedZones('cover')) !== 'aside, badge') fail(`${what}: src/arao-layouts.d.ts types cover's zones as ${typed ?? 'nothing'}, not aside, badge (its @zone, then what its CSS styles)`)
       else if (!typedEntry(await typedInterface('ProjectLayouts'), 'cover')?.includes(COVER_DOC[0])) fail(`${what}: src/arao-layouts.d.ts does not carry cover's doc ("${COVER_DOC[0]}")`)
+      else if (said.match(/\[arao\] src\/layouts\/cover\.css: line \d+, color: #c0ffee is a literal colour/g)?.length !== 1) fail(`${what}: the warning that cover.css writes a literal colour (#c0ffee) is given ${said.match(/#c0ffee is a literal colour/g)?.length ?? 0} times, not once`)
       else if (said.match(/\[arao\] src\/layouts\/cover\.css: @param nope names no token of the layout/g)?.length !== 1) fail(`${what}: the warning that cover.css's @param nope names no token is given ${said.match(/@param nope names no token/g)?.length ?? 0} times, not once`)
       else if (!['--smoke-own-cover', '--smoke-bad', '--smoke-plain'].every((t) => css.includes(t))) fail(`${what}: the project's files are not all in the build`)
       else if (css.includes('--_ar-cover-bar')) fail(`${what}: the library's cover.css is in the build`)
-      else console.log('  layouts: a project cover replaces the library\'s, saying so, its parameters too (one typed as its values), its zones and its doc typed; a token named as an HTML attribute and a @param naming no token warn once; a file with a bad name, and one naming no layout, warn and load; the valid names are typed')
+      else console.log('  layouts: a project cover replaces the library\'s, saying so, its parameters too (one typed as its values), its zones and its doc typed; a token named as an HTML attribute, a @param naming no token and a literal colour warn once; a file with a bad name, and one naming no layout, warn and load; the valid names are typed')
 
       // arao layouts, with those files: every layout the project has, each with its doc. As JSON
       // (the config printing a line as it loads: on stderr, the JSON alone on stdout), with the
@@ -887,7 +891,7 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
           if (c.summary !== COVER_DOC[0] || c.example !== COVER_DOC[1]) complaints.push(`cover's summary and example are ${JSON.stringify([c.summary, c.example])}, not its doc block's`)
           if (JSON.stringify(c.zones) !== JSON.stringify([{ name: 'aside', description: COVER_DOC[2] }, { name: 'badge', description: '' }])) complaints.push(`cover's zones are ${JSON.stringify(c.zones)}, not aside (described) and badge`)
           if (JSON.stringify(c.params) !== JSON.stringify([{ name: 'pad', token: '--ar-layout-cover-pad', description: COVER_DOC[3], values: [] }, { name: 'tone', token: '--ar-layout-cover-tone', description: COVER_DOC[4], values: ['light', 'dark'] }])) complaints.push(`cover's parameters are ${JSON.stringify(c.params)}, not pad and tone (light or dark), described`)
-          if (![/@param nope names no token/, /--ar-layout-cover-title is no attribute/, /the \/\*\* comment at line \d+ is not its doc block/].every((re) => c.problems.some((p) => re.test(p)))) complaints.push(`cover's problems are ${JSON.stringify(c.problems)}: not its @param nope, its title token and its /** comment after its code`)
+          if (![/@param nope names no token/, /--ar-layout-cover-title is no attribute/, /the \/\*\* comment at line \d+ is not its doc block/, /^line \d+, color: #c0ffee is a literal colour; /].every((re) => c.problems.some((p) => re.test(p)))) complaints.push(`cover's problems are ${JSON.stringify(c.problems)}: not its @param nope, its title token, its /** comment after its code and its literal colour`)
         }
         if (by.plain?.documented !== false || !by.plain.problems.some((p) => /names no \.layout-plain/.test(p))) complaints.push('plain is not listed with no doc block and its problem (it names no .layout-plain)')
         // the utility classes, from the package's own stylesheet (src/styles/utilities.css, which
@@ -903,7 +907,7 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
         if ('classes' in printed) complaints.push('it has a flat classes list beside classGroups')
         if (classes.some((c) => ['Cols', 'Rows', 'Grid', 'Center'].includes(c.name))) complaints.push('it lists a removed component as a class')
         for (const x of complaints) fail(`${BIN} layouts --json: ${x}`)
-        if (!complaints.length) console.log(`  ${BIN} layouts --json: version ${printed.version}; ${names(got)}; each library layout described, the project's epigraph and cover as their doc blocks say (cover replacing the library's; after a licence header; its zones its own; its example with an @ line), plain and "bad name" with their problems; the config's own output on stderr; ${classes.length} utility classes in ${groups.length} groups, each described`)
+        if (!complaints.length) console.log(`  ${BIN} layouts --json: version ${printed.version}; ${names(got)}; each library layout described, the project's epigraph and cover as their doc blocks say (cover replacing the library's, its literal colour a problem; after a licence header; its zones its own; its example with an @ line), plain and "bad name" with their problems; the config's own output on stderr; ${classes.length} utility classes in ${groups.length} groups, each described`)
       }
       // and for a person: a block per layout, saying where it comes from
       log(`${BIN} layouts`)
@@ -1779,7 +1783,13 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
           const across = near(text.l, box.l) ? 'left' : near(text.r, box.r) ? 'right' : near(text.l + text.r, box.l + box.r) ? 'center' : `at ${Math.round((text.l - box.l) / k)}px`
           const down = near(text.t, box.t) ? 'top' : near(text.b, box.b) ? 'bottom' : near(text.t + text.b, box.t + box.b) ? 'center' : `at ${Math.round((text.t - box.t) / k)}px`
           const bg = getComputedStyle(s.querySelector('.ar-slide-bg'), '::after').backgroundImage
-          const alphas = [...bg.matchAll(/rgba?\(([^)]*)\)/g)].map((m) => { const c = m[1].split(','); return c.length === 4 ? parseFloat(c[3]) : 1 })
+          // each stop's alpha: an rgb() or rgba() (its end, transparent), or a color(srgb r g b / a)
+          // (the scrim's colour mixed over transparent, color-mix(), as a browser computes it)
+          const alphas = [...bg.matchAll(/rgba?\(([^)]*)\)|color\(srgb ([^)]*)\)/g)].map((m) => {
+            if (m[2] != null) return m[2].includes('/') ? parseFloat(m[2].split('/')[1]) : 1
+            const c = m[1].split(',')
+            return c.length === 4 ? parseFloat(c[3]) : 1
+          })
           const kind = bg === 'none' ? 'none'
             : bg.startsWith('radial-gradient(') ? `radial ${bg.match(/at ([\d.]+%) ([\d.]+%)/)?.slice(1).join(' ')}`
               : !bg.startsWith('linear-gradient(') ? bg

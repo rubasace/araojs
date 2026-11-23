@@ -118,7 +118,9 @@ Do:
   It must start with its doc block: a line saying what it is for, `@example` (a slide of it, in
   Pug), `@zone <name> <description>` per named template it places, `@param <thing> <description>`
   per token (`@param <thing> {a|b|c} <description>` for one that takes only those words,
-  `{0..1}` for a range of numbers); then
+  `{0..1}` for a range of numbers). Its colours and sizes are tokens, never literals: colours
+  `var(--ar-…)`, `currentColor`, `transparent`; lengths a token or relative to one
+  (`calc(var(--ar-title) * .45)`, `em`, `%`, `fr`), no `px` but `0`, no `#fff` or `rgb()`; then
   `npx arao layouts` shows it with no problems
   ([recipes.md](references/recipes.md), `docs/guide/slides-and-layouts.md#its-doc-block`).
 - Write tables as plain `table` / `thead` / `tbody`: the theme styles them.

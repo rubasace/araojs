@@ -111,8 +111,9 @@ descriptions come from the doc block its file starts with
 CSS reads, its zones its `@zone` tags and the `.ar-zone-<name>` its CSS styles. A project layout
 says so, and whether it replaces the library's of its name; one with no doc block says that. A
 project layout's problems are listed with it: what its doc block gets wrong (a `@param` naming no
-token, an unknown tag…), a token that is no attribute, a name that is no layout's, a file that
-styles no slide (the warnings the Vite plugin gives). It reads the files and writes nothing; it exits with 0 whatever the
+token, an unknown tag…), a token that is no attribute, a colour or a length written as a literal
+instead of a theme token ([Its values](../guide/slides-and-layouts.md#its-values)), a name that
+is no layout's, a file that styles no slide (the warnings the Vite plugin gives). It reads the files and writes nothing; it exits with 0 whatever the
 problems (1 only when the project's Vite config cannot be loaded or has no `arao()` plugin).
 What the project's Vite config prints as it loads goes to stderr, so stdout holds the command's
 output alone (the JSON, with `--json`).

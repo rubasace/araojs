@@ -48,7 +48,10 @@
 // zone's.
 // What a block gets wrong (an unknown tag, a zone named twice, a @param naming no token…) is a
 // problem, and so is a /** … */ comment that is not the doc block (after code, or after the doc
-// block): the plugin warns about a project's, the build of the library stops on its own.
+// block), and a declaration that writes a colour or a length as a literal instead of a token
+// (layout-literals.js): the plugin warns about a project's, the build of the library stops on its
+// own.
+import { literalProblems } from './layout-literals.js'
 import { camelize, cssCode, layoutParams, scanCss } from './layout-params.js'
 
 /**
@@ -345,6 +348,7 @@ export function describeLayout(css, name) {
   }
   for (const line of stray)
     problems.push(`the /** comment at line ${line} is not its doc block, and is not read: the doc block is the first one, before any code (only white space and plain /* comments before it)`)
+  problems.push(...literalProblems(css))
   const zones = [...(doc?.zones ?? [])]
   for (const z of cssZones(css, name)) if (!zones.some((d) => d.name === z)) zones.push({ name: z, description: '' })
   return {

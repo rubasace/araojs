@@ -110,15 +110,16 @@ export interface LibraryLayouts {
    * The deck's opening slide (and its closing one).
    *
    * Its content, title and all, is one group centred vertically, left-aligned like any slide; its
-   * title is larger, in the text colour; a `.bar` element draws a short bar in the accent; the
-   * deck's footer is hidden. Its title is an `h1` (an `h2` looks the same), a subtitle after it an
-   * `h2` or a plain `p`.
+   * title is larger, in the text colour; a `.bar` element draws a short bar in the accent, sized
+   * after the title; the deck's footer is hidden. Its title is an `h1` (an `h2` looks the same), a
+   * subtitle after it an `h2` or a plain `p`.
    *
    * Parameters (attributes):
    * - `bar`: the `.bar`'s colour (default `--ar-accent`)
    * - `footer`: the deck's footer: `none` hides it, `flex` shows it (default `none`); a slide's
    *   `with-footer` or `no-footer` class wins over it
-   * - `title-size`: the title's size (default 1.25 x `--ar-title`)
+   * - `title-size`: the title's size, and its `.bar`'s in proportion (default 1.25 x
+   *   `--ar-title`)
    *
    * @example
    * ```pug
@@ -133,15 +134,16 @@ export interface LibraryLayouts {
      * The deck's opening slide (and its closing one).
      *
      * Its content, title and all, is one group centred vertically, left-aligned like any slide; its
-     * title is larger, in the text colour; a `.bar` element draws a short bar in the accent; the
-     * deck's footer is hidden. Its title is an `h1` (an `h2` looks the same), a subtitle after it an
-     * `h2` or a plain `p`.
+     * title is larger, in the text colour; a `.bar` element draws a short bar in the accent, sized
+     * after the title; the deck's footer is hidden. Its title is an `h1` (an `h2` looks the same), a
+     * subtitle after it an `h2` or a plain `p`.
      *
      * Parameters (attributes):
      * - `bar`: the `.bar`'s colour (default `--ar-accent`)
      * - `footer`: the deck's footer: `none` hides it, `flex` shows it (default `none`); a slide's
      *   `with-footer` or `no-footer` class wins over it
-     * - `title-size`: the title's size (default 1.25 x `--ar-title`)
+     * - `title-size`: the title's size, and its `.bar`'s in proportion (default 1.25 x
+     *   `--ar-title`)
      *
      * @example
      * ```pug
@@ -166,7 +168,7 @@ export interface LibraryLayouts {
      */
     footer?: string
     /**
-     * the title's size (default 1.25 x `--ar-title`)
+     * the title's size, and its `.bar`'s in proportion (default 1.25 x `--ar-title`)
      *
      * `--ar-layout-cover-title-size`
      */
@@ -509,12 +511,13 @@ export interface LibraryLayouts {
    * Text over a full-slide picture: a `Background`, the title and a line over it.
    *
    * Meant for a slide with a `Background`: its title and its text sit in a corner, in the middle of
-   * a side or in the centre (the bottom left by default), white, over a scrim that darkens the
-   * picture from where the text is, which keeps them legible on any picture. The title is an `h2`,
-   * the text a `p` (or an `h3` subtitle) after it.
+   * a side or in the centre (the bottom left by default), in the theme's text-on-a-picture colour
+   * (`--ar-on-image`, white by default), over a scrim (`--ar-scrim`, black by default) that darkens
+   * the picture from where the text is, which keeps them legible on any picture. The title is an
+   * `h2`, the text a `p` (or an `h3` subtitle) after it.
    *
    * Parameters (attributes):
-   * - `color`: the text's colour, its title's and its footer's (default `#fff`)
+   * - `color`: the text's colour, its title's and its footer's (default `--ar-on-image`)
    * - `position`: one of `top-left`, `top`, `top-right`, `left`, `center`, `right`,
    *   `bottom-left`, `bottom`, `bottom-right`: where the text sits, in a corner, in the middle
    *   of a side or in the centre, its title and its paragraphs aligned to that side (default
@@ -536,12 +539,13 @@ export interface LibraryLayouts {
      * Text over a full-slide picture: a `Background`, the title and a line over it.
      *
      * Meant for a slide with a `Background`: its title and its text sit in a corner, in the middle of
-     * a side or in the centre (the bottom left by default), white, over a scrim that darkens the
-     * picture from where the text is, which keeps them legible on any picture. The title is an `h2`,
-     * the text a `p` (or an `h3` subtitle) after it.
+     * a side or in the centre (the bottom left by default), in the theme's text-on-a-picture colour
+     * (`--ar-on-image`, white by default), over a scrim (`--ar-scrim`, black by default) that darkens
+     * the picture from where the text is, which keeps them legible on any picture. The title is an
+     * `h2`, the text a `p` (or an `h3` subtitle) after it.
      *
      * Parameters (attributes):
-     * - `color`: the text's colour, its title's and its footer's (default `#fff`)
+     * - `color`: the text's colour, its title's and its footer's (default `--ar-on-image`)
      * - `position`: one of `top-left`, `top`, `top-right`, `left`, `center`, `right`,
      *   `bottom-left`, `bottom`, `bottom-right`: where the text sits, in a corner, in the middle
      *   of a side or in the centre, its title and its paragraphs aligned to that side (default
@@ -560,7 +564,7 @@ export interface LibraryLayouts {
      */
     layout?: 'overlay'
     /**
-     * the text's colour, its title's and its footer's (default `#fff`)
+     * the text's colour, its title's and its footer's (default `--ar-on-image`)
      *
      * `--ar-layout-overlay-color`
      */

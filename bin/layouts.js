@@ -15,8 +15,9 @@
 // each says is the doc block its CSS file starts with, read by vite/layout-docs.js (which the
 // types are written from too); its parameters are the tokens its CSS reads, its zones its @zone
 // tags and the .ar-zone-<name> its CSS styles. A project layout's problems (a doc block that names
-// a token it does not read, a token that is no attribute, a name that is no layout's, a file that
-// styles no slide) are listed with it. Reads, and writes nothing; what the project's Vite config
+// a token it does not read, a token that is no attribute, a colour or a length written as a
+// literal instead of a token, a name that is no layout's, a file that styles no slide) are listed
+// with it. Reads, and writes nothing; what the project's Vite config
 // prints as it loads goes to stderr (project.js), so the JSON is all there is on stdout.
 import { readFileSync } from 'node:fs'
 import { isAbsolute, relative } from 'node:path'
