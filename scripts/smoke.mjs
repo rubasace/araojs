@@ -114,9 +114,10 @@
 //      .8 of the slide's text; so do, on Slide.fit, an Agenda of ten sections and a grid whose
 //      pictures are given 300px (icon-size), neither of which fits without the class, and fit
 //      shrinks what is not in em too: the Agenda's rows and the pictures are --_ar-fit of their size
-//   4g. an Agenda on a section slide, under both servers, on the sixth deck, in every built-in
-//      theme: done, current and upcoming, each item's text and number at 3:1 at least against
-//      the section's background (the accent it draws in elsewhere), measured on the pixels
+//   4g. an Agenda and a muted line on a section slide, under both servers, on the sixth deck, in
+//      every built-in theme: done, current and upcoming, each item's text and number, and the
+//      p.muted, at 3:1 at least against the section's background (the accent it draws in
+//      elsewhere, not the --ar-bg the theme's --ar-muted is made for), measured on the pixels
 //   5. useDeck()'s face, under the dev server, on the second deck: frozen, its refs read-only all
 //      the way down, setTheme refuses a name the deck has not (one [arao] warning), and in the
 //      presenter view's preview no function acts
@@ -359,8 +360,8 @@ Deck(:themes="['${IMPORTED}', 'default']")
 // every one upcoming, in its window and in the list's thumbnail, where the sections draw nothing
 // but their titles (OUTLINE_ITEMS); its second a hand-written ol.agenda, which looks like it,
 // with no state; then two of its three sections, each with an Agenda too, as a talk shows its
-// progress on each (the second one's, done, current and upcoming, legible in every built-in theme:
-// OUTLINE_SECTION); after them, an Agenda on a slide after the second
+// progress on each (the second one's, done, current and upcoming, and its muted line, legible in
+// every built-in theme: OUTLINE_SECTION); after them, an Agenda on a slide after the second
 // section (done, current, upcoming), one whose current is forced by its title and one by its
 // place as Pug writes it (current="1", a string), one with :highlight="false" (no state); then
 // the third section. Each Agenda's states, in order, are OUTLINE_STATES. No theme listed: it
@@ -380,6 +381,7 @@ Deck
     Agenda
   Slide(layout="section")
     h1 #[Icon(name="lucide:rocket")] Part two
+    p.muted The middle of the talk
     Agenda
   Slide
     h2 Where we are
@@ -405,7 +407,8 @@ const OUTLINE_STATES = [
   'done done current', 'current upcoming upcoming', '- - -', 'done done current',
 ]
 // the outline's section whose Agenda shows the three states (its number), and the contrast each
-// item's text and number must keep on it, against the background beside them: 3:1, large text's
+// item's text and number, and its muted line, must keep on it, against the background beside
+// them: 3:1, large text's
 const OUTLINE_SECTION = 4
 const SECTION_CONTRAST = 3
 
@@ -1661,34 +1664,41 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
     for (const c of complaints) fail(`${mode} utility classes: ${c}`)
   }
 
-  // an Agenda on a section slide (header, 4g), whose background is the accent the Agenda draws in
-  // elsewhere: on the outline's second section (done, current, upcoming), in every built-in theme,
-  // each item's text and its number keep SECTION_CONTRAST against the background beside them.
-  // Measured on the pixels of a screenshot (the section's background may be a gradient the theme
-  // draws over the accent): a glyph's colour is the pixel of its box farthest from the background,
-  // the background the middle one of a strip beside the text, on both sides (the gap after the
-  // number, past the text's end), the lower of the two counting
-  async function sectionAgendas(base, mode, themes) {
+  // an Agenda and a muted line on a section slide (header, 4g), whose background is the accent the
+  // Agenda draws in elsewhere, not the --ar-bg the theme's --ar-muted is made for: on the
+  // outline's second section (done, current, upcoming, and its p.muted), in every built-in theme,
+  // each item's text and its number, and the muted line, keep SECTION_CONTRAST against the
+  // background beside them. Measured on the pixels of a screenshot (the section's background may
+  // be a gradient the theme draws over the accent): a glyph's colour is the pixel of its box
+  // farthest from the background, the background the middle one of a strip beside the text, on
+  // both sides (the gap after the number, or before the line's start; past the text's end), the
+  // lower of the two counting
+  async function sectionContrast(base, mode, themes) {
     const complaints = []
     const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
     page.on('console', (m) => ['warning', 'error'].includes(m.type()) && complaints.push(`console ${m.type()}: ${m.text()}`))
     page.on('pageerror', (e) => complaints.push(`page error: ${e.message}`))
     const outline = basename(OUTLINE[0], '.vue').toLowerCase()
     const worst = {}
+    const muted = {}
     try {
       for (const theme of themes) {
         await page.goto(new URL(`${outline}?theme=${theme}#/${OUTLINE_SECTION}/1`, base).href)
         await page.waitForSelector('.ar-slide', { state: 'attached', timeout: 30_000 })
         await page.waitForFunction(() => !document.querySelector('[data-ar-busy]') && document.fonts.status === 'loaded', null, { timeout: 15_000 }).catch(() => {})
         await pause(1200) // the slide's fade
-        // each item of the Agenda on the slide on screen: its state, and the boxes of its text,
-        // its number and the background beside the text (screen px)
+        // on the slide on screen, each item of the Agenda (its state, and the boxes of its text,
+        // its number and the background beside the text) and each muted line (state muted: the
+        // box of its text and the background on both sides of it), in screen px
         const boxes = await page.evaluate(() => {
           const slide = [...document.querySelectorAll('.ar-viewport .ar-slide')].find((s) => getComputedStyle(s).display !== 'none')
-          return [...(slide?.querySelectorAll('.ar-agenda > li') ?? [])].map((li) => {
+          const textBox = (el) => {
             const range = document.createRange()
-            range.selectNodeContents(li)
-            const t = range.getBoundingClientRect()
+            range.selectNodeContents(el)
+            return range.getBoundingClientRect()
+          }
+          const items = [...(slide?.querySelectorAll('.ar-agenda > li') ?? [])].map((li) => {
+            const t = textBox(li)
             const l = li.getBoundingClientRect()
             const gap = parseFloat(getComputedStyle(li).columnGap)
             return {
@@ -1698,10 +1708,19 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
               backs: [[t.left - gap + 4, t.top, gap - 8, t.height], [t.right + 8, t.top, 24, t.height]],
             }
           })
+          const lines = [...(slide?.querySelectorAll('.muted') ?? [])].map((el) => {
+            const t = textBox(el)
+            return { state: 'muted', text: [t.left, t.top, t.width, t.height], backs: [[t.left - 32, t.top, 24, t.height], [t.right + 8, t.top, 24, t.height]] }
+          })
+          return { items, lines }
         })
-        const states = boxes.map((b) => b.state).join(' ')
+        const states = boxes.items.map((b) => b.state).join(' ')
         if (states !== 'done current upcoming') {
           complaints.push(`${theme}: the Agenda on /${outline}'s slide ${OUTLINE_SECTION} has the states ${states || 'none'}, not done current upcoming`)
+          continue
+        }
+        if (boxes.lines.length !== 1) {
+          complaints.push(`${theme}: /${outline}'s slide ${OUTLINE_SECTION} shows ${boxes.lines.length} .muted lines, not 1`)
           continue
         }
         const png = await page.screenshot()
@@ -1727,15 +1746,18 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
           const ratio = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05)
           const middle = (px) => px.sort((a, b) => lum(a) - lum(b))[px.length >> 1]
           const glyph = (box, backs) => Math.min(...backs.map((back) => Math.max(...pixels(box).map((p) => ratio(p, back)))))
-          return boxes.map(({ state, text, number, backs }) => {
+          return [...boxes.items, ...boxes.lines].map(({ state, text, number, backs }) => {
             const bs = backs.map((b) => middle(pixels(b)))
-            return { state, text: glyph(text, bs), number: glyph(number, bs) }
+            return { state, text: glyph(text, bs), number: number && glyph(number, bs) }
           })
         }, { b64: png.toString('base64'), boxes })
         for (const { state, text, number } of got) {
           for (const [part, r] of [['text', text], ['number', number]]) {
-            if (!(r >= SECTION_CONTRAST)) complaints.push(`${theme}: an Agenda on a section, its ${state} item's ${part} at ${r.toFixed(2)}:1, not ${SECTION_CONTRAST}:1`)
+            if (r == null) continue
+            const what = state === 'muted' ? 'its muted line' : `its Agenda's ${state} item's ${part}`
+            if (!(r >= SECTION_CONTRAST)) complaints.push(`${theme}: ${what} at ${r.toFixed(2)}:1, not ${SECTION_CONTRAST}:1`)
             worst[state] = Math.min(worst[state] ?? Infinity, r)
+            if (state === 'muted') muted[theme] = r
           }
         }
       }
@@ -1743,8 +1765,9 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
       await page.context().close()
     }
     const lowest = Object.entries(worst).map(([s, r]) => `${s} ${r.toFixed(1)}`).join(', ')
-    console.log(`  ${mode} an Agenda on a section: ${complaints.length ? 'problems below' : `done, current and upcoming, text and numbers, ${SECTION_CONTRAST}:1 at least in ${themes.join(', ')} (lowest: ${lowest})`}`)
-    for (const c of complaints) fail(`${mode} an Agenda on a section: ${c}`)
+    const mutedBy = Object.entries(muted).map(([t, r]) => `${t} ${r.toFixed(1)}`).join(', ')
+    console.log(`  ${mode} a section's Agenda and muted text: ${complaints.length ? 'problems below' : `done, current and upcoming, text and numbers, and .muted, ${SECTION_CONTRAST}:1 at least in ${themes.join(', ')} (lowest: ${lowest}; .muted: ${mutedBy})`}`)
+    for (const c of complaints) fail(`${mode} a section's Agenda and muted text: ${c}`)
   }
 
   // crowded slides that fit (header, 4f), on the dense deck, in every built-in theme: each slide
@@ -2722,7 +2745,7 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
       await utilities(base, mode)
       await overlay(base, mode)
       await fits(base, mode, builtin)
-      await sectionAgendas(base, mode, builtin)
+      await sectionContrast(base, mode, builtin)
       if (mode === 'dev') {
         await face(base)
         await themes(base)

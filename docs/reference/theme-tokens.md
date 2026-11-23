@@ -25,7 +25,7 @@ layout at once.
 |---|---|---|
 | `--ar-bg` | `#f6f3ec` | slide background colour |
 | `--ar-fg` | `#1b2a3a` | text colour |
-| `--ar-muted` | `#5b6b7b` | secondary text (`.muted`, slide number, footer) |
+| `--ar-muted` | `#5b6b7b` | secondary text (`.muted`, slide number, footer); on a `section`, its text colour at 85 %, on an `overlay` at 80 % (each layout sets it: their backgrounds are not `--ar-bg`) |
 | `--ar-accent` | `#2a7de1` | `h2`, cover bar, section background (their layouts' defaults), progress, highlights |
 | `--ar-accent-fg` | `#fff` | text on accent (section slides) |
 | `--ar-on-image` | `#fff` | text over a picture: an `overlay` slide's text, its title and its footer (its layout's `color` default) |

@@ -1,8 +1,9 @@
 /**
  * A divider between the parts of a talk.
  * Its content centred both ways, on the accent; its title larger; the deck's footer hidden. Its
- * title, its subtitle, its footer and an `Agenda` in it take its text colour. Its title is an `h1`
- * (an `h2` looks the same), a subtitle after it an `h2` or a plain `p`.
+ * title, its subtitle, its footer and an `Agenda` in it take its text colour, and its muted text
+ * (`.muted`) that colour dimmed. Its title is an `h1` (an `h2` looks the same), a subtitle after
+ * it an `h2` or a plain `p`.
  * @example
  * Slide(layout="section")
  *   h1 Why a framework?
@@ -16,9 +17,9 @@
 /* Its tokens, --ar-layout-section-<thing>, each a @param above (a theme, the project's :root or
    one slide sets them, a slide also as attributes: Slide(layout="section" bg="#0b3d2e"); why each
    is resolved on the slide: cover.css).
-   Its title, its subtitle, its footer and an Agenda in it take its text colour (--ar-title-color,
-   --ar-subtitle-color, --ar-footer-color and the --ar-agenda-* below, set for .layout-section
-   in a theme, still win). Its
+   Its title, its subtitle, its footer and an Agenda in it take its text colour, and its muted
+   text that colour dimmed (--ar-title-color, --ar-subtitle-color, --ar-footer-color, --ar-muted
+   and the --ar-agenda-* below, set for .layout-section in a theme, still win). Its
    title (.ar-title, Slide.vue: an h1 or an h2, alike) is its own size, with its own leading, and
    the gap under it is in its size too (--ar-title-gap still wins). The theme's default
    background (--ar-slide-bg-image) is drawn over --ar-layout-section-bg, as on any slide: a
@@ -40,6 +41,13 @@
   --ar-agenda-current-color: currentColor;
   --ar-agenda-done-color: color-mix(in srgb, currentColor 80%, transparent);
   --ar-agenda-done-number-color: currentColor;
+  /* its muted text (.muted, and whatever reads --ar-muted in it: a table's head) is its text
+     colour dimmed, as overlay's is: the theme's --ar-muted is a grey made for --ar-bg, illegible
+     on the accent. At 85 % it keeps 4.5:1 on every built-in theme whose own text on its section
+     does (all but default, whose white on its blue is 4.1:1), and 3.4:1 on default (3:1: large
+     text's). Its colour, not currentColor, so muted inside muted is no dimmer. A theme still sets
+     it for .layout-section */
+  --ar-muted: color-mix(in srgb, var(--_ar-section-fg) 85%, transparent);
   /* no header band on a section: its title is part of the centred group */
   --ar-header-height: auto;
 }
