@@ -1631,7 +1631,9 @@ ${COVER_DOC[1].split('\n').map((l) => ` * ${l}`).join('\n')}
           const canvas = document.createElement('canvas')
           canvas.width = img.width
           canvas.height = img.height
-          const g = canvas.getContext('2d')
+          // read back many times: a context kept for it (else Chrome warns, a console warning
+          // that fails the smoke test)
+          const g = canvas.getContext('2d', { willReadFrequently: true })
           g.drawImage(img, 0, 0)
           const pixels = ([x, y, w, h]) => {
             const d = g.getImageData(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h))).data
