@@ -337,7 +337,7 @@ export interface Fix { kind: FixKind; text: string }
 const FIXES: Record<FixKind, string> = {
   usual: 'to fit it: Slide.fit (shrinks the body just enough), a .scale-90, .scale-80 or .scale-70 class on the slide or on a block, or fewer blocks',
   floor: `Slide.fit shrank its body to ${Math.round(FIT_MIN * 100)}%, its floor, and it still does not fit: fewer blocks, less text, or two slides`,
-  stuck: 'Slide.fit cannot shrink it (it is sized in px, or transformed): make it smaller, or fewer blocks',
+  stuck: 'Slide.fit cannot shrink it (it is sized in px by hand, or transformed): make it smaller, or fewer blocks',
   placed: 'past the top or the left it is placed, not pushed (a negative margin, a transform): if it is meant to reach out (a decoration), give it position: absolute or data-ar-bleed; else move it back in',
 }
 

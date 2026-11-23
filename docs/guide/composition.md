@@ -211,9 +211,11 @@ very block that has the scale (taken as you gave it), and a `Snippet`, which fit
 room it is given. A layout of your own that works a size out from the tokens on the slide
 (`.layout-x { --x-size: calc(var(--ar-title) * .8) }`) has it at full size, as the slide has
 them: work it out on the body instead (`.layout-x > .ar-body { … }`), and it follows. A scale
-inside another shrinks the text by both, the tokens by the inner one. A scale set on an element
-that a layout or a component sizes itself (a block of `grid`'s `p`, an `Agenda`) sets its size
-from the one it inherits: put it on a block around it, or on the slide.
+inside another shrinks everything by both (the text by every scale around it, the rest by two
+levels of them). Sizes in `em` given to a layout or to those tokens are worked out on the slide,
+in the slide's text ([Theme tokens](../reference/theme-tokens.md#spacing-and-shape)). A scale
+set on an element that a layout or a component sizes itself (a block of `grid`'s `p`, an
+`Agenda`) sets its size from the one it inherits: put it on a block around it, or on the slide.
 On a slide, `fit` and the scales set the body's font-size from the slide's: a font-size a layout
 of your own sets on `.ar-body` gives way to them. A layout that wants another text size sets it on
 the slide (`.layout-x { font-size: 1.1em }`): the body inherits it, and `fit` and the scales start

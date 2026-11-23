@@ -253,21 +253,24 @@
      --ar-text-base         the slide's text, for what is sized from it (Img's missing box)
    and whatever reads them inside follows, the project's own CSS too. The slide's own value is
    --_ar-<token>-full, registered so that it is resolved on the slide: a theme's value in em is
-   one of the slide's text, and one the slide sets in its style counts. A size worked out on the
+   one of the slide's text there (not of the element that reads it, as it is elsewhere), and one
+   the slide sets in its style counts. A size worked out on the
    slide (a layout's: a quote's, a statement's, split's gap) is a full size too: the layout draws
    it times --_ar-zoom in the body (layouts/), as an Icon does its size in px and an Agenda the size
    it is given. Not shrunk: a size in px written by hand (a width in a style or in the project's
    CSS), and a Snippet, which fits itself to the room it gets. The slide's padding (--ar-pad-x,
    -y) and the header are not inside: they stay.
    --_ar-zoom is that factor, 1 full size: on the body, Slide.fit's factor times the slide's scale
-   (--_ar-body-zoom); on a block with a scale, the body's times its own (a scale inside another:
-   the inner one counts for the tokens, the text takes both). Zero specificity: a rule that sets
-   one of the tokens on the body or on that block wins, its value taken as it is. */
-@property --_ar-title-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0px; }
-@property --_ar-gap-sm-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0px; }
-@property --_ar-gap-md-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0px; }
-@property --_ar-gap-lg-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0px; }
-@property --_ar-text-base-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0px; }
+   (--_ar-body-zoom); on a block with a scale, the body's times its own, times that of a block
+   with a scale around it (--_ar-scale-up: the text takes every scale it is in, the tokens two
+   levels of them; a third inside those takes one of the two around it, not both). Zero
+   specificity: a rule that sets one of the tokens on the body or on that block wins, its value
+   taken as it is. */
+@property --_ar-title-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
+@property --_ar-gap-sm-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
+@property --_ar-gap-md-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
+@property --_ar-gap-lg-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
+@property --_ar-text-base-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
 :where(.ar-slide) {
   --_ar-title-full: var(--ar-title);
   --_ar-gap-sm-full: var(--ar-gap-sm);
@@ -279,7 +282,12 @@
   --_ar-body-zoom: calc(var(--_ar-scale, 1) * var(--_ar-fit, 1));
   --_ar-zoom: var(--_ar-body-zoom);
 }
-:where(.ar-slide :is(.scale-90, .scale-80, .scale-70)) { --_ar-zoom: calc(var(--_ar-body-zoom, 1) * var(--_ar-scale)); }
+:where(.ar-slide :is(.scale-90, .scale-80, .scale-70)) {
+  --_ar-zoom: calc(var(--_ar-body-zoom, 1) * var(--_ar-scale-up, 1) * var(--_ar-scale));
+}
+:where(.ar-slide .scale-90 :is(.scale-90, .scale-80, .scale-70)) { --_ar-scale-up: .9; }
+:where(.ar-slide .scale-80 :is(.scale-90, .scale-80, .scale-70)) { --_ar-scale-up: .8; }
+:where(.ar-slide .scale-70 :is(.scale-90, .scale-80, .scale-70)) { --_ar-scale-up: .7; }
 :where(.ar-slide:is(.fit, .scale-90, .scale-80, .scale-70) > .ar-body, .ar-slide :is(.scale-90, .scale-80, .scale-70)) {
   --ar-title: calc(var(--_ar-title-full) * var(--_ar-zoom));
   --ar-gap-sm: calc(var(--_ar-gap-sm-full) * var(--_ar-zoom));

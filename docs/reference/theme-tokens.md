@@ -56,6 +56,15 @@ there shrinks with the text, a heading, a gap, an `Agenda`, the CSS of your own 
 ([When it does not fit](../guide/composition.md#when-it-does-not-fit)). Set them in a theme, at
 `:root` or on the slide; one set on the body or on that block is taken as given.
 
+Sizes in `em` there are worked out on the slide, in the slide's text, before the factor:
+- one of those tokens given in `em` (a theme's `--ar-gap-md: 1em`) is the slide's text inside
+  what fit and the scales shrink, and the text of the element that uses it everywhere else (a
+  `.text-lg` around a `.cols` widens its gap there, not inside a fitted body);
+- a layout's own sizes are always worked out on the slide, so one given in `em` is the slide's
+  text wherever it is drawn: a `statement`'s or a `quote`'s `size="3em"`, a `grid`'s
+  `icon-size`, `gap` and `text-size`, `split`'s `gap`, a `caption`'s `caption-size`, the
+  `cover`'s title size and `--ar-title-gap` (as the header has them), and `--ar-agenda-size`.
+
 ## Background, motion, addons
 
 | Token | Default | Meaning |
@@ -203,7 +212,7 @@ change them for `.layout-section`, as `--ar-title-color`.
 
 | Token | Default | Meaning |
 |---|---|---|
-| `--ar-agenda-size` | 0.65x `--ar-title` | the rows' size: a length in px or from the title's tokens, which `Slide.fit` and the scales shrink with the rest of the body |
+| `--ar-agenda-size` | 0.65x `--ar-title` | the rows' size: a length (px, `em`: the slide's text, or from the title's tokens), which `Slide.fit` and the scales shrink with the rest of the body; read from the slide (a theme, `:root`, the `Slide`), not from the `Agenda` itself |
 | `--ar-agenda-gap` | `.35em` | the space between rows |
 | `--ar-agenda-number-color` | `--ar-accent` | the numbers' colour |
 | `--ar-agenda-done-color` / `-number-color` / `-opacity` / `-weight` | `--ar-muted` at 80 % / its colour / `1` / `400` | a part already given (`ar-agenda-done`): dimmed by its colour, at least 3:1 on every built-in theme |

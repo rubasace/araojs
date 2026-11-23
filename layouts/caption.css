@@ -27,7 +27,7 @@
    Slide.fit and the scales shrink the caption too (styles/utilities.css): its size is worked out
    here, at full size (registered: in em, the slide's text), and drawn times their factor
    (--_ar-zoom). */
-@property --_ar-caption-size { syntax: '<length-percentage>'; inherits: true; initial-value: 0px; }
+@property --_ar-caption-size { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
 :where(.layout-caption) {
   --_ar-caption-size: var(--ar-layout-caption-caption-size, var(--ar-text-small));
   --_ar-caption-align: var(--ar-layout-caption-caption-align, center);

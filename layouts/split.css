@@ -28,7 +28,7 @@
    Slide.fit and the scales shrink it whole (styles/utilities.css): its gap is worked out here, at
    full size (--_ar-split-gap-full, registered: in em, the slide's text), and drawn in the body
    times their factor (--_ar-zoom), the divider's place and a Snippet's room with it. */
-@property --_ar-split-gap-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0px; }
+@property --_ar-split-gap-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
 :where(.layout-split) {
   --_ar-split-columns: var(--ar-layout-split-columns, 1fr 1fr);
   --_ar-split-gap-full: var(--ar-layout-split-gap, var(--ar-gap-lg));

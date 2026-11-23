@@ -38,8 +38,8 @@
    the slide's text, as the header has it), it is drawn in the body times their factor,
    --_ar-zoom (1 in the header, which they leave as it is). Here, the title and its gap when they
    are the body's, and the bar. */
-@property --_ar-cover-title { syntax: '<length-percentage>'; inherits: true; initial-value: 0px; }
-@property --_ar-cover-gap { syntax: '<length-percentage>'; inherits: true; initial-value: 0px; }
+@property --_ar-cover-title { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
+@property --_ar-cover-gap { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
 :where(.layout-cover) {
   --_ar-cover-title: var(--ar-layout-cover-title-size, calc(var(--ar-title) * 1.25));
   --_ar-cover-title-color: var(--ar-title-color, currentColor);

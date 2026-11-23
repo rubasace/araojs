@@ -705,8 +705,9 @@ A theme does the same for every slide: the same four tokens in its `[data-theme=
 Its size is `--ar-agenda-size`, a part of `--ar-title`, and `Slide.fit` shrinks it with the rest
 of the body: an agenda of many sections fits on a `Slide.fit`, down to 60% of its size (past
 that, a smaller size, or fewer sections). The scales shrink it too, on the slide or on a block
-around it. A size you give it is a length in px or from the title's tokens, which they shrink
-alike.
+around it. A size you give it (px, `em`: the slide's text, or from the title's tokens) shrinks
+alike; it is read from the slide, so set it in a theme, at `:root` or on the `Slide`, not on the
+`Agenda` itself.
 
 ```pug
 Slide.fit

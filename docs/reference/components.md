@@ -400,11 +400,13 @@ Each item (`li.ar-agenda-item`) carries one state, as seen from the slide the `A
   `style`.
 - Its size is a token (a part of `--ar-title`), not the body's text; `Slide.fit` and the scales
   shrink it all the same, with the rest of the body: an agenda too long for its slide fits with
-  `Slide.fit`, down to 60%. A size you give it (`--ar-agenda-size`) shrinks with them too: give
-  it in px or from the title's tokens (`calc(var(--ar-title) * .5)`), not in `em` (that would be
-  the text's, already shrunk, and shrink twice). Put a scale on the slide or a block around it,
-  not on the `Agenda` itself (there, its size would be the text's). Past 60%: a smaller
-  `--ar-agenda-size` (or `--ar-agenda-gap`), or fewer sections.
+  `Slide.fit`, down to 60%. A size you give it (`--ar-agenda-size`: px, `em`, the slide's text,
+  or from the title's tokens, `calc(var(--ar-title) * .5)`) shrinks with them too. It is read
+  from the slide, at full size: set it in a theme, at `:root` or on the `Slide`
+  (`Slide(style="--ar-agenda-size: 48px")`); on the `Agenda` itself, or on a block inside the
+  body, it is not read. Put a scale on the slide or a block around it, not on the `Agenda` itself
+  (there, its size would be the text's). Past 60%: a smaller `--ar-agenda-size` (or
+  `--ar-agenda-gap`), or fewer sections.
 - A hand-written `ol` with the class `agenda` (`ol.agenda`) gets the same rows and numbers, with
   no state.
 - The titles are the sections' first headings (their name in the jump menu), the same in the

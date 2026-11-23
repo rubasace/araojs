@@ -2880,7 +2880,7 @@ Deck
       }
       if (fitted.some((v) => v !== '1')) complaints.push(`Slide.fit shrank a body it cannot help (--_ar-fit ${fitted.join(', ')} on slides 3 and 4, not 1)`)
       const said = (step) => new RegExp(`^\\[arao\\] overflow: deck "Overflowing", slide 1 "${OVERFLOW_TITLE}", step ${step} of 3: the body overflows by (\\d+)px at the bottom, (under the footer|past the slide's edge \\(cut off\\))\\. To fit it: Slide\\.fit \\(.*\\), a \\.scale-90, \\.scale-80 or \\.scale-70 class on the slide or on a block, or fewer blocks\\.$`)
-      const stuck = /^\[arao\] overflow: deck "Overflowing", slide 3 "Too wide for fit": the body overflows by \d+px at the right\. Slide\.fit cannot shrink it \(it is sized in px, or transformed\): make it smaller, or fewer blocks\.$/
+      const stuck = /^\[arao\] overflow: deck "Overflowing", slide 3 "Too wide for fit": the body overflows by \d+px at the right\. Slide\.fit cannot shrink it \(it is sized in px by hand, or transformed\): make it smaller, or fewer blocks\.$/
       const placed = /^\[arao\] overflow: deck "Overflowing", slide 4 "Pulled to the left": the body overflows by \d+px at the left\. Past the top or the left it is placed, not pushed .*position: absolute or data-ar-bleed.*\.$/
       const [two, three] = [said(2).exec(warned[0] ?? ''), said(3).exec(warned[1] ?? '')]
       if (warned.length !== 4 || !two || !three || !stuck.test(warned[2]) || !placed.test(warned[3])) complaints.push(`not one warning for step 2 and one for step 3 of slide 1 (${said(2)}), then one for slide 3 (${stuck}) and one for slide 4 (${placed}), but ${warned.length}: ${warned.join(' | ') || 'none'}`)
@@ -3184,7 +3184,7 @@ Deck
       lines: [/^overflow\/overflowing\.pdf: 6 pages \(4 slides, 6 steps\)/m],
       errs: [/^3 slides do not fit \(a warning: --strict makes it an error\):$/m,
         new RegExp(`^  Overflowing, slide 1 "${OVERFLOW_TITLE}", steps 2-3 of 3: the body overflows by (\\d+)px at the bottom, (under the footer|past the slide's edge \\(cut off\\))$`, 'm'),
-        /^  Overflowing, slide 3 "Too wide for fit": the body overflows by \d+px at the right\. Slide\.fit cannot shrink it \(it is sized in px, or transformed\): make it smaller, or fewer blocks$/m,
+        /^  Overflowing, slide 3 "Too wide for fit": the body overflows by \d+px at the right\. Slide\.fit cannot shrink it \(it is sized in px by hand, or transformed\): make it smaller, or fewer blocks$/m,
         /^  Overflowing, slide 4 "Pulled to the left": the body overflows by \d+px at the left\. Past the top or the left it is placed, not pushed .*data-ar-bleed.*$/m,
         /^  To fit it: Slide\.fit \(.*\), a \.scale-90, \.scale-80 or \.scale-70 class on the slide or on a block, or fewer blocks\.$/m],
       notErrs: [/slide 2/, /To fit it[^]*To fit it/],

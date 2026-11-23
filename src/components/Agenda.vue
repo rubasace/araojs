@@ -64,9 +64,10 @@ onMounted(() => {
 <style>
 /* Its look, in any slide: big rows, numbered in the accent, each state its own. Tokens,
    --ar-agenda-<thing>, each with its default (a theme sets them, the project's :root, one slide in
-   its style: Slide(style="--ar-agenda-done-opacity: 1"), or the Agenda itself):
-     --ar-agenda-size                  the rows' size (0.65 x --ar-title): px, or from the title's
-                                       tokens
+   its style: Slide(style="--ar-agenda-done-opacity: 1"), or the Agenda itself, but its size):
+     --ar-agenda-size                  the rows' size (0.65 x --ar-title): a length (px, em: the
+                                       slide's text, or from the title's tokens), set in a theme,
+                                       at :root or on the slide (not on the Agenda: below)
      --ar-agenda-gap                   the space between rows (.35em)
      --ar-agenda-number-color          the numbers' colour (--ar-accent)
      --ar-agenda-done-color            a part already given: its colour (--ar-muted at 80 %)
@@ -96,13 +97,14 @@ onMounted(() => {
    (0,1,1)) leaves the agenda as it is, but one as specific loaded after this file wins over it,
    a layout's, a theme's or the project's (.layout-x .ar-body ol, .ar-slide .ar-agenda).
    Its size is a token, a part of --ar-title, not of the body's text; Slide.fit and the scales
-   shrink it all the same, as they shrink everything inside (styles/utilities.css): its default
-   through --ar-title, which they shrink, and a size given (--_ar-agenda-given, defined only then)
-   times their factor, --_ar-zoom. So a size given is a length, in px or from the title's tokens:
-   one in em would be the text's already, and shrink twice. */
+   shrink it all the same, as they shrink everything inside (styles/utilities.css): it is worked
+   out on the slide, at full size, as the slide has --ar-title (--_ar-agenda-size, registered, so
+   em is the slide's text too), and drawn times their factor, --_ar-zoom. Worked out inside the
+   body, where they have shrunk --ar-title already, it would shrink twice: so it is read from the
+   slide, and one set on the Agenda itself, or on a block inside the body, is not. */
+@property --_ar-agenda-size { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
+:where(.ar-slide) { --_ar-agenda-size: var(--ar-agenda-size, calc(var(--ar-title) * .65)); }
 :where(.ar-agenda, ol.agenda) {
-  --_ar-agenda-given: calc(var(--ar-agenda-size) * var(--_ar-zoom, 1));
-  --_ar-agenda-size: var(--_ar-agenda-given, calc(var(--ar-title) * .65));
   --_ar-agenda-gap: var(--ar-agenda-gap, .35em);
   --_ar-agenda-number: var(--ar-agenda-number-color, var(--ar-accent));
   --_ar-agenda-done-color: var(--ar-agenda-done-color, color-mix(in srgb, var(--ar-muted) 80%, transparent));
@@ -125,7 +127,7 @@ onMounted(() => {
   margin: 0; padding: 0;
   counter-reset: ar-agenda;
   display: flex; flex-direction: column; gap: var(--_ar-agenda-gap);
-  font-size: var(--_ar-agenda-size);
+  font-size: calc(var(--_ar-agenda-size) * var(--_ar-zoom, 1));
   line-height: 1.2;
 }
 .ar-slide :is(.ar-agenda, ol.agenda) > li {

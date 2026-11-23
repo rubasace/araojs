@@ -29,7 +29,7 @@
    Slide.fit and the scales shrink a statement in the body too (styles/utilities.css): its size
    is worked out here, at full size (registered: in em, the slide's text), and drawn there times
    their factor (--_ar-zoom, 1 in the header, which they leave as it is), its gap with it. */
-@property --_ar-statement-size { syntax: '<length-percentage>'; inherits: true; initial-value: 0px; }
+@property --_ar-statement-size { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
 :where(.layout-statement) {
   --_ar-statement-size: var(--ar-layout-statement-size, calc(var(--ar-title) * 1.5));
   --_ar-statement-color: var(--ar-layout-statement-color, var(--ar-accent));

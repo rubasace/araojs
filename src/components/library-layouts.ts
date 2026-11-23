@@ -198,8 +198,9 @@ export interface LibraryLayouts {
    *   (`color-mix(in srgb, currentColor 8%, transparent)`; default `none`)
    * - `columns`: blocks per row, whatever their count (default: balanced by their count, as
    *   above)
-   * - `gap`: the space between the blocks, the cards with `cards` (default `--ar-gap-sm`;
-   *   smaller from 11 blocks)
+   * - `gap`: the space between the blocks, the cards with `cards`: a length, with its unit
+   *   (`0px`, not `0`; no keyword: the blocks' widths are worked out from it) (default
+   *   `--ar-gap-sm`; smaller from 11 blocks)
    * - `icon-size`: the size of a block's leading picture or icon (default `3em`, three times the
    *   text's size; `2em` with 9 blocks or more, smaller from 11)
    * - `max-columns`: the most blocks in a row: 13 blocks and more wrap there, and no balanced
@@ -254,8 +255,9 @@ export interface LibraryLayouts {
      *   (`color-mix(in srgb, currentColor 8%, transparent)`; default `none`)
      * - `columns`: blocks per row, whatever their count (default: balanced by their count, as
      *   above)
-     * - `gap`: the space between the blocks, the cards with `cards` (default `--ar-gap-sm`;
-     *   smaller from 11 blocks)
+     * - `gap`: the space between the blocks, the cards with `cards`: a length, with its unit
+     *   (`0px`, not `0`; no keyword: the blocks' widths are worked out from it) (default
+     *   `--ar-gap-sm`; smaller from 11 blocks)
      * - `icon-size`: the size of a block's leading picture or icon (default `3em`, three times the
      *   text's size; `2em` with 9 blocks or more, smaller from 11)
      * - `max-columns`: the most blocks in a row: 13 blocks and more wrap there, and no balanced
@@ -304,8 +306,9 @@ export interface LibraryLayouts {
      */
     columns?: string
     /**
-     * the space between the blocks, the cards with `cards` (default `--ar-gap-sm`; smaller from 11
-     * blocks)
+     * the space between the blocks, the cards with `cards`: a length, with its unit (`0px`, not
+     * `0`; no keyword: the blocks' widths are worked out from it) (default `--ar-gap-sm`; smaller
+     * from 11 blocks)
      *
      * `--ar-layout-grid-gap`
      */

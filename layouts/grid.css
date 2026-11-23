@@ -37,8 +37,9 @@
  *                     rounded up (counted up to 24 blocks; `columns` wins over it)
  * @param max-columns  the most blocks in a row: 13 blocks and more wrap there, and no balanced
  *                     row is wider (default `5`)
- * @param gap          the space between the blocks, the cards with `cards` (default
- *                     `--ar-gap-sm`; smaller from 11 blocks)
+ * @param gap          the space between the blocks, the cards with `cards`: a length, with its
+ *                     unit (`0px`, not `0`; no keyword: the blocks' widths are worked out from
+ *                     it) (default `--ar-gap-sm`; smaller from 11 blocks)
  * @param align        a block's content: `center` or `start` (default `center`)
  * @param cards        each block's background, which makes it a card: a colour, a gradient
  *                     (`color-mix(in srgb, currentColor 8%, transparent)`; default `none`)
@@ -73,16 +74,16 @@
    (--_ar-grid-…-full, registered: in em, the slide's text), and drawn times the factor in the
    body (--_ar-grid-…-given, defined only when the parameter is: the 0 * <the parameter> adds
    nothing, and makes it undefined when there is none, so the default follows). */
-@property --_ar-grid-icon-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0px; }
-@property --_ar-grid-gap-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0px; }
-@property --_ar-grid-text-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0px; }
+@property --_ar-grid-icon-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
+@property --_ar-grid-gap-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
+@property --_ar-grid-text-full { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
 :where(.layout-grid) {
   --_ar-grid-max: var(--ar-layout-grid-max-columns, 5);
   --_ar-grid-align: var(--ar-layout-grid-align, center);
   --_ar-grid-cards: var(--ar-layout-grid-cards, none);
-  --_ar-grid-icon-full: var(--ar-layout-grid-icon-size, 0px);
-  --_ar-grid-gap-full: var(--ar-layout-grid-gap, 0px);
-  --_ar-grid-text-full: var(--ar-layout-grid-text-size, 0px);
+  --_ar-grid-icon-full: var(--ar-layout-grid-icon-size, 0);
+  --_ar-grid-gap-full: var(--ar-layout-grid-gap, 0);
+  --_ar-grid-text-full: var(--ar-layout-grid-text-size, 0);
   --ar-body-align: center;
 }
 

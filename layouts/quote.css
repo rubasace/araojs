@@ -31,7 +31,7 @@
    Slide.fit and the scales shrink the quote too (styles/utilities.css): its size is worked out
    here, at full size (registered: in em, the slide's text), and drawn times their factor
    (--_ar-zoom); the mark and the author, in em, follow by themselves. */
-@property --_ar-quote-size { syntax: '<length-percentage>'; inherits: true; initial-value: 0px; }
+@property --_ar-quote-size { syntax: '<length-percentage>'; inherits: true; initial-value: 0; }
 :where(.layout-quote) {
   --_ar-quote-size: var(--ar-layout-quote-size, calc(var(--ar-title) * .8));
   --_ar-quote-mark: var(--ar-layout-quote-mark, "\201C");
